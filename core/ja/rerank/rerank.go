@@ -98,13 +98,16 @@ func (r *Reranker) Rerank(seq reading.Sequence, drafts []lang.Result, ctx lang.C
 		return drafts
 	}
 
-	deadline := started.Add(r.cfg.Timeout)
 	rounds, verified := 0, 0
 	fallback := ""
 	passed := false
+	// 只把實際的驗證器呼叫時間算進預算。lattice 建構與限制式重搜等本地
+	// 工作不影響要不要再跑一輪，否則同一輸入在慢機器或高負載下會少跑
+	// 一輪，產生不同的重搜結果。
+	var spent time.Duration
 
 	for rounds < r.cfg.MaxRounds {
-		remaining := time.Until(deadline)
+		remaining := r.cfg.Timeout - spent
 		if remaining <= 0 {
 			fallback = "budget"
 			r.note(func(s *Stats) { s.BudgetStops++ })
@@ -114,13 +117,14 @@ func (r *Reranker) Rerank(seq reading.Sequence, drafts []lang.Result, ctx lang.C
 		if len(requestCandidates) == 0 {
 			break
 		}
-		wait := remaining
-		if wait > r.cfg.PerRequestTimeout {
-			wait = r.cfg.PerRequestTimeout
+		wait := r.cfg.PerRequestTimeout
+		if wait > remaining {
+			wait = remaining
 		}
 		callCtx, cancel := context.WithTimeout(context.Background(), wait)
 		start := time.Now()
 		result, err := r.verifier.Verify(callCtx, req)
+		spent += time.Since(start)
 		cancel()
 		rounds++
 		if err != nil {
@@ -167,11 +171,6 @@ func (r *Reranker) Rerank(seq reading.Sequence, drafts []lang.Result, ctx lang.C
 		}
 		prefix := clampPrefix(best.prefix, best.res)
 		if prefix == best.surface && prefix != "" {
-			break
-		}
-		if time.Until(deadline) <= 0 {
-			fallback = "budget"
-			r.note(func(s *Stats) { s.BudgetStops++ })
 			break
 		}
 		var added int
