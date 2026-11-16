@@ -1,0 +1,14 @@
+# case: tone-refused-bell
+# note: 打錯注音：沒有字的音節按聲調時不收，快照帶 Bell
+# step 01 syllables ㄘㄨㄛˋ
+{"revision":4,"handled":true,"preedit":[{"text":"ㄘㄨㄛ","style":"pending"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin","bell":true}
+# step 02 key Backspace
+{"revision":5,"handled":true,"preedit":[{"text":"ㄘㄨ","style":"pending"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Backspace
+{"revision":6,"handled":true,"preedit":[{"text":"ㄘ","style":"pending"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 04 key Backspace
+{"revision":7,"handled":true,"cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 05 key Backspace
+{"revision":8,"handled":false,"cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 06 key Escape
+{"revision":9,"handled":false,"cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

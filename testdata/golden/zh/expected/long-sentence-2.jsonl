@@ -1,0 +1,30 @@
+# case: long-sentence-2
+# note: 長句 2：這本書是我最喜歡的小說之一
+# step 01 syllables ㄓㄜˋ
+{"revision":3,"handled":true,"preedit":[{"text":"這","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄅㄣˇ
+{"revision":6,"handled":true,"preedit":[{"text":"這本","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄕㄨ
+{"revision":9,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄕˋ
+{"revision":11,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄨㄛˇ
+{"revision":14,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄗㄨㄟˋ
+{"revision":18,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄒㄧˇ
+{"revision":21,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"ㄒ","style":"normal"},{"text":"ㄧ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 08 syllables ㄏㄨㄢ
+{"revision":25,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄉㄜ˙
+{"revision":28,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄒㄧㄠˇ
+{"revision":32,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"},{"text":"的","style":"normal"},{"text":"ㄒ","style":"normal"},{"text":"ㄧ","style":"normal"},{"text":"ㄠ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 11 syllables ㄕㄨㄛ
+{"revision":36,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"},{"text":"的","style":"normal"},{"text":"小說","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄓ
+{"revision":38,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"},{"text":"的","style":"normal"},{"text":"小說","style":"normal"},{"text":"之","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 syllables ㄧ
+{"revision":40,"handled":true,"preedit":[{"text":"這本","style":"normal"},{"text":"書","style":"normal"},{"text":"是","style":"normal"},{"text":"我","style":"normal"},{"text":"最","style":"normal"},{"text":"喜歡","style":"normal"},{"text":"的","style":"normal"},{"text":"小說","style":"normal"},{"text":"之","style":"normal"},{"text":"一","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":41,"handled":true,"commit":"這本書是我最喜歡的小說之一","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

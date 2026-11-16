@@ -1,0 +1,12 @@
+# case: long-word
+# note: 長詞：四音節詞優先於逐字切分
+# step 01 syllables ㄇㄚˊ
+{"revision":3,"handled":true,"preedit":[{"text":"麻","style":"partial"}],"cursor":{"rune":1,"utf16":1},"suggestion":"煩","mode":"zhuyin"}
+# step 02 syllables ㄆㄛˊ
+{"revision":6,"handled":true,"preedit":[{"text":"麻婆","style":"partial"}],"cursor":{"rune":2,"utf16":2},"suggestion":"豆腐","mode":"zhuyin"}
+# step 03 syllables ㄉㄡˋ
+{"revision":9,"handled":true,"preedit":[{"text":"麻婆豆","style":"partial"}],"cursor":{"rune":3,"utf16":3},"suggestion":"腐","mode":"zhuyin"}
+# step 04 syllables ㄈㄨˇ
+{"revision":12,"handled":true,"preedit":[{"text":"麻婆豆腐","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 key Enter
+{"revision":13,"handled":true,"commit":"麻婆豆腐","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

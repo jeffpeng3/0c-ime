@@ -1,0 +1,34 @@
+# case: long-sentence-1
+# note: 長句 1：今天天氣很好我們一起去公園散步
+# step 01 syllables ㄐㄧㄣ
+{"revision":4,"handled":true,"preedit":[{"text":"今","style":"partial"}],"cursor":{"rune":1,"utf16":1},"suggestion":"天","mode":"zhuyin"}
+# step 02 syllables ㄊㄧㄢ
+{"revision":8,"handled":true,"preedit":[{"text":"今天","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄊㄧㄢ
+{"revision":12,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄑㄧˋ
+{"revision":15,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄏㄣˇ
+{"revision":18,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄏㄠˇ
+{"revision":21,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄨㄛˇ
+{"revision":24,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄇㄣ˙
+{"revision":27,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄧ
+{"revision":29,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄑㄧˇ
+{"revision":32,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄑㄩˋ
+{"revision":35,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"},{"text":"去","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄍㄨㄥ
+{"revision":39,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"},{"text":"去","style":"normal"},{"text":"ㄍ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄥ","style":"normal"}],"cursor":{"rune":14,"utf16":14},"mode":"zhuyin"}
+# step 13 syllables ㄩㄢˊ
+{"revision":42,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"},{"text":"去","style":"normal"},{"text":"公園","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 syllables ㄙㄢˋ
+{"revision":45,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"},{"text":"去","style":"normal"},{"text":"公園","style":"normal"},{"text":"ㄙ","style":"normal"},{"text":"ㄢ","style":"normal"},{"text":"ˋ","style":"normal"}],"cursor":{"rune":16,"utf16":16},"mode":"zhuyin"}
+# step 15 syllables ㄅㄨˋ
+{"revision":48,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"},{"text":"我們","style":"normal"},{"text":"一起","style":"normal"},{"text":"去","style":"normal"},{"text":"公園","style":"normal"},{"text":"散步","style":"normal"}],"cursor":{"rune":15,"utf16":15},"mode":"zhuyin"}
+# step 16 key Enter
+{"revision":49,"handled":true,"commit":"今天天氣很好我們一起去公園散步","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

@@ -1,0 +1,8 @@
+# case: rerank-off
+# note: 神經重排關閉：統計首選是程式
+# step 01 syllables ㄔㄥˊ
+{"revision":3,"handled":true,"preedit":[{"text":"ㄔ","style":"normal"},{"text":"ㄥ","style":"normal"},{"text":"ˊ","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 02 syllables ㄕˋ
+{"revision":5,"handled":true,"preedit":[{"text":"程式","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Enter
+{"revision":6,"handled":true,"commit":"程式","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

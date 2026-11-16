@@ -1,0 +1,14 @@
+# case: two-commits
+# note: 連續兩次送出：前文與被動學習
+# step 01 syllables ㄨㄛˇ
+{"revision":3,"handled":true,"preedit":[{"text":"我","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":4,"handled":true,"commit":"我","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 03 syllables ㄒㄧㄤˇ
+{"revision":8,"handled":true,"preedit":[{"text":"想","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 04 key Enter
+{"revision":9,"handled":true,"commit":"想","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 05 syllables ㄔ
+{"revision":11,"handled":true,"preedit":[{"text":"吃","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 06 key Enter
+{"revision":12,"handled":true,"commit":"吃","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

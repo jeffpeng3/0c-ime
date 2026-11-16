@@ -1,0 +1,10 @@
+# case: ctrl-punct
+# note: 標點：Ctrl+, 打全形逗號，接在組字後面
+# step 01 syllables ㄨㄛˇ
+{"revision":3,"handled":true,"preedit":[{"text":"我","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Ctrl+,
+{"revision":4,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"，","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄒㄧㄤˇ
+{"revision":8,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"，","style":"normal"},{"text":"想","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 key Enter
+{"revision":9,"handled":true,"commit":"我，想","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

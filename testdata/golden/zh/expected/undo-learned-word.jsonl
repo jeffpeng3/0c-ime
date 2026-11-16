@@ -1,0 +1,18 @@
+# case: undo-learned-word
+# note: 反悔鍵：手選學到井，下一次候選窗的 Shift+Delete 忘記它並留下 tombstone
+# step 01 syllables ㄐㄧㄥˇ
+{"revision":4,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Down
+{"revision":5,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"景","label":"common","key":"1"},{"id":1,"text":"井","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":0,"title":"修改「景」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 03 key Down
+{"revision":6,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"景","label":"common","key":"1"},{"id":1,"text":"井","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":1,"title":"修改「景」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 04 key Enter
+{"revision":7,"handled":true,"preedit":[{"text":"井","style":"locked"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 05 key Enter
+{"revision":8,"handled":true,"commit":"井","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 06 syllables ㄐㄧㄥˇ
+{"revision":12,"handled":true,"preedit":[{"text":"井","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 07 key Down
+{"revision":13,"handled":true,"preedit":[{"text":"井","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"井","label":"common","key":"1"},{"id":1,"text":"景","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":0,"title":"修改「井」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 08 key ShiftDelete
+{"personal_changed":true,"forgot":true,"revision":14,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"景","label":"common","key":"1"},{"id":1,"text":"井","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":0,"title":"修改「景」 · Tab 切換詞長","step_keys":true},"notices":["不再推薦：井"],"mode":"zhuyin"}

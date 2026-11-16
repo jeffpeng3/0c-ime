@@ -1,0 +1,430 @@
+{
+  "format": 1,
+  "cases": [
+    {
+      "name": "single-char",
+      "note": "單字：打完一個音節按 Enter 送出，學習被動證據",
+      "actions": [
+        {"syllables": "ㄨㄛˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "word",
+      "note": "詞：兩個音節合成一個詞",
+      "actions": [
+        {"syllables": "ㄨㄛˇ ㄒㄧㄤˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-word",
+      "note": "長詞：四音節詞優先於逐字切分",
+      "actions": [
+        {"syllables": "ㄇㄚˊ ㄆㄛˊ ㄉㄡˋ ㄈㄨˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "sentence",
+      "note": "整句：詞與詞的切分",
+      "actions": [
+        {"syllables": "ㄐㄧㄣ ㄊㄧㄢ ㄊㄧㄢ ㄑㄧˋ ㄏㄣˇ ㄏㄠˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "two-commits",
+      "note": "連續兩次送出：前文與被動學習",
+      "actions": [
+        {"syllables": "ㄨㄛˇ"},
+        {"key": "Enter"},
+        {"syllables": "ㄒㄧㄤˇ"},
+        {"key": "Enter"},
+        {"syllables": "ㄔ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-1",
+      "note": "長句 1：今天天氣很好我們一起去公園散步",
+      "actions": [
+        {"syllables": "ㄐㄧㄣ ㄊㄧㄢ ㄊㄧㄢ ㄑㄧˋ ㄏㄣˇ ㄏㄠˇ ㄨㄛˇ ㄇㄣ˙ ㄧ ㄑㄧˇ ㄑㄩˋ ㄍㄨㄥ ㄩㄢˊ ㄙㄢˋ ㄅㄨˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-2",
+      "note": "長句 2：這本書是我最喜歡的小說之一",
+      "actions": [
+        {"syllables": "ㄓㄜˋ ㄅㄣˇ ㄕㄨ ㄕˋ ㄨㄛˇ ㄗㄨㄟˋ ㄒㄧˇ ㄏㄨㄢ ㄉㄜ˙ ㄒㄧㄠˇ ㄕㄨㄛ ㄓ ㄧ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-3",
+      "note": "長句 3：他每天早上都會喝一杯熱咖啡",
+      "actions": [
+        {"syllables": "ㄊㄚ ㄇㄟˇ ㄊㄧㄢ ㄗㄠˇ ㄕㄤˋ ㄉㄡ ㄏㄨㄟˋ ㄏㄜ ㄧ ㄅㄟ ㄖㄜˋ ㄎㄚ ㄈㄟ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-4",
+      "note": "長句 4：明天下午我們在車站前面見面",
+      "actions": [
+        {"syllables": "ㄇㄧㄥˊ ㄊㄧㄢ ㄒㄧㄚˋ ㄨˇ ㄨㄛˇ ㄇㄣ˙ ㄗㄞˋ ㄔㄜ ㄓㄢˋ ㄑㄧㄢˊ ㄇㄧㄢˋ ㄐㄧㄢˋ ㄇㄧㄢˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-5",
+      "note": "長句 5：學習新的語言需要時間和耐心",
+      "actions": [
+        {"syllables": "ㄒㄩㄝˊ ㄒㄧˊ ㄒㄧㄣ ㄉㄜ˙ ㄩˇ ㄧㄢˊ ㄒㄩ ㄧㄠˋ ㄕˊ ㄐㄧㄢ ㄏㄜˊ ㄋㄞˋ ㄒㄧㄣ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-6",
+      "note": "長句 6：台灣的夜市有很多好吃的小吃",
+      "actions": [
+        {"syllables": "ㄊㄞˊ ㄨㄢ ㄉㄜ˙ ㄧㄝˋ ㄕˋ ㄧㄡˇ ㄏㄣˇ ㄉㄨㄛ ㄏㄠˇ ㄔ ㄉㄜ˙ ㄒㄧㄠˇ ㄔ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-7",
+      "note": "長句 7：請你把窗戶打開讓空氣流通",
+      "actions": [
+        {"syllables": "ㄑㄧㄥˇ ㄋㄧˇ ㄅㄚˇ ㄔㄨㄤ ㄏㄨˋ ㄉㄚˇ ㄎㄞ ㄖㄤˋ ㄎㄨㄥ ㄑㄧˋ ㄌㄧㄡˊ ㄊㄨㄥ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-8",
+      "note": "長句 8：冬天的山上常常下著白色的雪",
+      "actions": [
+        {"syllables": "ㄉㄨㄥ ㄊㄧㄢ ㄉㄜ˙ ㄕㄢ ㄕㄤˋ ㄔㄤˊ ㄔㄤˊ ㄒㄧㄚˋ ㄓㄜ˙ ㄅㄞˊ ㄙㄜˋ ㄉㄜ˙ ㄒㄩㄝˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-9",
+      "note": "長句 9：這件事情對我來說非常重要",
+      "actions": [
+        {"syllables": "ㄓㄜˋ ㄐㄧㄢˋ ㄕˋ ㄑㄧㄥˊ ㄉㄨㄟˋ ㄨㄛˇ ㄌㄞˊ ㄕㄨㄛ ㄈㄟ ㄔㄤˊ ㄓㄨㄥˋ ㄧㄠˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "long-sentence-10",
+      "note": "長句 10：大家一起努力完成這個工作",
+      "actions": [
+        {"syllables": "ㄉㄚˋ ㄐㄧㄚ ㄧ ㄑㄧˇ ㄋㄨˇ ㄌㄧˋ ㄨㄢˊ ㄔㄥˊ ㄓㄜˋ ㄍㄜ˙ ㄍㄨㄥ ㄗㄨㄛˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "heteronym-chong",
+      "note": "破音字：重 ㄔㄨㄥˊ（再次），與重 ㄓㄨㄥˋ 分開",
+      "actions": [
+        {"syllables": "ㄔㄨㄥˊ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "heteronym-chang",
+      "note": "破音字：長 ㄔㄤˊ（長短），與長 ㄓㄤˇ 分開",
+      "actions": [
+        {"syllables": "ㄔㄤˊ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "heteronym-hao",
+      "note": "破音字：好 ㄏㄠˋ（愛好）只在這個聲調有詞條",
+      "actions": [
+        {"syllables": "ㄏㄠˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "neutral-tone",
+      "note": "輕聲：ㄇㄣ˙ 是固定的輕聲音節",
+      "actions": [
+        {"syllables": "ㄨㄛˇ ㄇㄣ˙"},
+        {"key": "Enter"},
+        {"syllables": "ㄉㄜ˙"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "toneless-word",
+      "note": "聲調選填：不打聲調，完整音節遇到接不上的聲母就自己收尾",
+      "options": {"toneless": true},
+      "actions": [
+        {"bare": "ㄨㄛㄒㄧㄤ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "toneless-separator",
+      "note": "聲調選填：' 切開音節，ㄒㄧ｜ㄢ 是西安",
+      "options": {"toneless": true},
+      "actions": [
+        {"bare": "ㄒㄧ'ㄢ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "tone-refused-bell",
+      "note": "打錯注音：沒有字的音節按聲調時不收，快照帶 Bell",
+      "options": {"zhuyin_error_hint": true},
+      "actions": [
+        {"syllables": "ㄘㄨㄛˋ"},
+        {"key": "Backspace"},
+        {"key": "Backspace"},
+        {"key": "Backspace"},
+        {"key": "Backspace"},
+        {"key": "Escape"}
+      ]
+    },
+    {
+      "name": "candidates-first-tone",
+      "note": "候選：打完一聲音節後按 ↓ 開候選窗",
+      "actions": [
+        {"syllables": "ㄐㄧ"},
+        {"key": "Down"}
+      ]
+    },
+    {
+      "name": "candidates-paging",
+      "note": "翻頁：十二個同音字分成兩頁",
+      "actions": [
+        {"syllables": "ㄐㄧ"},
+        {"key": "Down"},
+        {"request": {"type": "page", "index": 1}},
+        {"key": "Down"},
+        {"key": "Enter"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "candidates-select-id",
+      "note": "選字：直接以候選 ID 選第二項",
+      "actions": [
+        {"syllables": "ㄐㄧ"},
+        {"key": "Down"},
+        {"request": {"type": "select", "index": 1}},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "candidates-digit",
+      "note": "選字：預設選字鍵 1 到 0 照位置選",
+      "actions": [
+        {"syllables": "ㄐㄧ"},
+        {"key": "Down"},
+        {"key": "3"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "tab-completion",
+      "note": "Tab 補全：打完 ㄇㄚˊ 建議麻煩，Tab 接受後送出",
+      "options": {"suggest": {"attention_cost": 0}},
+      "actions": [
+        {"syllables": "ㄇㄚˊ"},
+        {"key": "Tab"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "tab-completion-cancel",
+      "note": "Tab 補全：Esc 取消整段後重打，只送出畫面上的字，不留下學習",
+      "options": {"suggest": {"attention_cost": 0}},
+      "actions": [
+        {"syllables": "ㄇㄚˊ"},
+        {"key": "Tab"},
+        {"key": "Escape"},
+        {"syllables": "ㄇㄚˊ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "learning-select-preference",
+      "note": "個人學習：手選第二個候選井之後，同讀音再打一次就排第一",
+      "actions": [
+        {"syllables": "ㄐㄧㄥˇ"},
+        {"key": "Down"},
+        {"key": "Down"},
+        {"key": "Enter"},
+        {"key": "Enter"},
+        {"syllables": "ㄐㄧㄥˇ"}
+      ]
+    },
+    {
+      "name": "learning-forget-request",
+      "note": "忘記：手選學到的井經 Forget 撤銷，排序回到系統詞頻",
+      "actions": [
+        {"syllables": "ㄐㄧㄥˇ"},
+        {"key": "Down"},
+        {"key": "Down"},
+        {"key": "Enter"},
+        {"key": "Enter"},
+        {"request": {"type": "forget", "word": "井"}},
+        {"syllables": "ㄐㄧㄥˇ"}
+      ]
+    },
+    {
+      "name": "undo-learned-word",
+      "note": "反悔鍵：手選學到井，下一次候選窗的 Shift+Delete 忘記它並留下 tombstone",
+      "actions": [
+        {"syllables": "ㄐㄧㄥˇ"},
+        {"key": "Down"},
+        {"key": "Down"},
+        {"key": "Enter"},
+        {"key": "Enter"},
+        {"syllables": "ㄐㄧㄥˇ"},
+        {"key": "Down"},
+        {"key": "ShiftDelete"}
+      ]
+    },
+    {
+      "name": "undo-custom-word",
+      "note": "反悔鍵：候選窗的 Shift+Backspace 刪除自訂詞，可從設定程式復原",
+      "seed": {"vocab": [{"text": "世傑", "readings": ["ㄕˋ ㄐㄧㄝˊ"]}]},
+      "actions": [
+        {"syllables": "ㄕˋ ㄐㄧㄝˊ"},
+        {"key": "Down"},
+        {"key": "ShiftBackspace"}
+      ]
+    },
+    {
+      "name": "simplified-commit",
+      "note": "簡繁轉換：組字是繁體，送出的字是簡體",
+      "options": {"simplified": true},
+      "actions": [
+        {"syllables": "ㄌㄨㄥˊ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "simplified-sentence",
+      "note": "簡繁轉換：多字一起轉",
+      "options": {"simplified": true},
+      "actions": [
+        {"syllables": "ㄌㄨㄥˊ ㄈㄥ ㄒㄩㄝˊ ㄍㄨㄛˊ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "mixed-chinese-english-chinese",
+      "note": "中英混打：我hello吃，英文自成一個詞，不進注音學習",
+      "options": {"mixed_input": true},
+      "actions": [
+        {"keys": "ji3hellot "},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "mixed-english-prefix",
+      "note": "中英混打：英文在前，注音接在後面",
+      "options": {"mixed_input": true},
+      "actions": [
+        {"keys": "helloji3"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "english-completion",
+      "note": "英文自動補字：hellp 以 Tab 補成 hello，不污染中文學習",
+      "options": {"mixed_input": true, "english_autocomplete": true},
+      "actions": [
+        {"keys": "ji3hellp"},
+        {"key": "Tab"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "english-mode",
+      "note": "英文模式：切到英文後打英文，Tab 補字後送出",
+      "options": {"english_autocomplete": true},
+      "actions": [
+        {"request": {"type": "toggle"}},
+        {"keys": "hello"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "cjk-latin-space",
+      "note": "中英之間自動加空格：送出的字串補半形空格",
+      "options": {"mixed_input": true, "cjk_latin_space": true},
+      "actions": [
+        {"keys": "ji3hellot "},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "ctrl-punct",
+      "note": "標點：Ctrl+, 打全形逗號，接在組字後面",
+      "options": {"ctrl_punct": true},
+      "actions": [
+        {"syllables": "ㄨㄛˇ"},
+        {"key": "Ctrl+,"},
+        {"syllables": "ㄒㄧㄤˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "shift-punct",
+      "note": "標點：Shift+, 打全形逗號",
+      "actions": [
+        {"syllables": "ㄨㄛˇ"},
+        {"key": "<"},
+        {"syllables": "ㄒㄧㄤˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "punctuator-commit",
+      "note": "補標點：固定替身標點器只在漢字之間插入，驗證 Edit 驗證與套用",
+      "options": {"punct": {"mark": "，"}},
+      "actions": [
+        {"syllables": "ㄐㄧㄣ ㄊㄧㄢ"},
+        {"key": "Enter"},
+        {"syllables": "ㄨㄛˇ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "rerank-off",
+      "note": "神經重排關閉：統計首選是程式",
+      "actions": [
+        {"syllables": "ㄔㄥˊ ㄕˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "rerank-on",
+      "note": "神經重排開啟：替身評分器偏好城市，融合後換掉統計首選",
+      "options": {"rerank": {"weight": 1, "prefer": ["城市"]}},
+      "actions": [
+        {"syllables": "ㄔㄥˊ ㄕˋ"},
+        {"key": "Enter"}
+      ]
+    },
+    {
+      "name": "fuzzy-select",
+      "note": "模糊音：打 ㄗㄨㄥ，近音候選附上詞庫讀音 ㄓㄨㄥ",
+      "options": {"fuzzy": {"z-zh": "select"}},
+      "actions": [
+        {"syllables": "ㄗㄨㄥ"},
+        {"key": "Down"},
+        {"request": {"type": "select", "index": 1}},
+        {"key": "Enter"}
+      ]
+    }
+  ]
+}

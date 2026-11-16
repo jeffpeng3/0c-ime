@@ -1,0 +1,6 @@
+# case: mixed-english-prefix
+# note: 中英混打：英文在前，注音接在後面
+# step 01 keys helloji3
+{"revision":8,"handled":true,"preedit":[{"text":"h","style":"normal"},{"text":"e","style":"normal"},{"text":"l","style":"normal"},{"text":"l","style":"normal"},{"text":"o","style":"normal"},{"text":"我","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":9,"handled":true,"commit":"hello我","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

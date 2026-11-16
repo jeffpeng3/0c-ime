@@ -1,0 +1,6 @@
+# case: heteronym-chong
+# note: 破音字：重 ㄔㄨㄥˊ（再次），與重 ㄓㄨㄥˋ 分開
+# step 01 syllables ㄔㄨㄥˊ
+{"revision":4,"handled":true,"preedit":[{"text":"重","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":5,"handled":true,"commit":"重","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

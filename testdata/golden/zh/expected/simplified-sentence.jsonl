@@ -1,0 +1,12 @@
+# case: simplified-sentence
+# note: 簡繁轉換：多字一起轉
+# step 01 syllables ㄌㄨㄥˊ
+{"revision":4,"handled":true,"preedit":[{"text":"龍","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin","output_simplified":true}
+# step 02 syllables ㄈㄥ
+{"revision":7,"handled":true,"preedit":[{"text":"龍","style":"normal"},{"text":"風","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin","output_simplified":true}
+# step 03 syllables ㄒㄩㄝˊ
+{"revision":11,"handled":true,"preedit":[{"text":"龍","style":"normal"},{"text":"風","style":"normal"},{"text":"學","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin","output_simplified":true}
+# step 04 syllables ㄍㄨㄛˊ
+{"revision":15,"handled":true,"preedit":[{"text":"龍","style":"normal"},{"text":"風","style":"normal"},{"text":"學","style":"normal"},{"text":"國","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin","output_simplified":true}
+# step 05 key Enter
+{"revision":16,"handled":true,"commit":"龙风学国","cursor":{"rune":0,"utf16":0},"mode":"zhuyin","output_simplified":true}

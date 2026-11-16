@@ -1,0 +1,28 @@
+# case: long-sentence-7
+# note: 長句 7：請你把窗戶打開讓空氣流通
+# step 01 syllables ㄑㄧㄥˇ
+{"revision":4,"handled":true,"preedit":[{"text":"請","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄋㄧˇ
+{"revision":7,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄅㄚˇ
+{"revision":10,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄔㄨㄤ
+{"revision":14,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"ㄔ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄤ","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 05 syllables ㄏㄨˋ
+{"revision":17,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄉㄚˇ
+{"revision":20,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"ㄉ","style":"normal"},{"text":"ㄚ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 07 syllables ㄎㄞ
+{"revision":23,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄖㄤˋ
+{"revision":26,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"},{"text":"讓","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄎㄨㄥ
+{"revision":30,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"},{"text":"讓","style":"normal"},{"text":"ㄎ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄥ","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 10 syllables ㄑㄧˋ
+{"revision":33,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"},{"text":"讓","style":"normal"},{"text":"空氣","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄌㄧㄡˊ
+{"revision":37,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"},{"text":"讓","style":"normal"},{"text":"空氣","style":"normal"},{"text":"ㄌ","style":"normal"},{"text":"ㄧ","style":"normal"},{"text":"ㄡ","style":"normal"},{"text":"ˊ","style":"normal"}],"cursor":{"rune":14,"utf16":14},"mode":"zhuyin"}
+# step 12 syllables ㄊㄨㄥ
+{"revision":41,"handled":true,"preedit":[{"text":"請","style":"normal"},{"text":"你","style":"normal"},{"text":"把","style":"normal"},{"text":"窗戶","style":"normal"},{"text":"打開","style":"normal"},{"text":"讓","style":"normal"},{"text":"空氣","style":"normal"},{"text":"流通","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 key Enter
+{"revision":42,"handled":true,"commit":"請你把窗戶打開讓空氣流通","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

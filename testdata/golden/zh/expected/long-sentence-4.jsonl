@@ -1,0 +1,30 @@
+# case: long-sentence-4
+# note: 長句 4：明天下午我們在車站前面見面
+# step 01 syllables ㄇㄧㄥˊ
+{"revision":4,"handled":true,"preedit":[{"text":"明","style":"normal"}],"cursor":{"rune":1,"utf16":1},"suggestion":"天","mode":"zhuyin"}
+# step 02 syllables ㄊㄧㄢ
+{"revision":8,"handled":true,"preedit":[{"text":"明天","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄒㄧㄚˋ
+{"revision":12,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄨˇ
+{"revision":14,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄨㄛˇ
+{"revision":17,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄇㄣ˙
+{"revision":20,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄗㄞˋ
+{"revision":23,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄔㄜ
+{"revision":26,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"ㄔ","style":"normal"},{"text":"ㄜ","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 09 syllables ㄓㄢˋ
+{"revision":29,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"車站","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄑㄧㄢˊ
+{"revision":33,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"車站","style":"normal"},{"text":"前","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄇㄧㄢˋ
+{"revision":37,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"車站","style":"normal"},{"text":"前面","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄐㄧㄢˋ
+{"revision":41,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"車站","style":"normal"},{"text":"前面","style":"normal"},{"text":"件","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 syllables ㄇㄧㄢˋ
+{"revision":45,"handled":true,"preedit":[{"text":"明天","style":"normal"},{"text":"下午","style":"normal"},{"text":"我們","style":"normal"},{"text":"在","style":"normal"},{"text":"車站","style":"normal"},{"text":"前面","style":"normal"},{"text":"見面","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":46,"handled":true,"commit":"明天下午我們在車站前面見面","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

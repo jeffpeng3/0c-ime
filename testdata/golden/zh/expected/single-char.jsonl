@@ -1,0 +1,6 @@
+# case: single-char
+# note: 單字：打完一個音節按 Enter 送出，學習被動證據
+# step 01 syllables ㄨㄛˇ
+{"revision":3,"handled":true,"preedit":[{"text":"我","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":4,"handled":true,"commit":"我","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

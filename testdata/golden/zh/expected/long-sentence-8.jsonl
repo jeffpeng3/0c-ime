@@ -1,0 +1,30 @@
+# case: long-sentence-8
+# note: 長句 8：冬天的山上常常下著白色的雪
+# step 01 syllables ㄉㄨㄥ
+{"revision":4,"handled":true,"preedit":[{"text":"ㄉ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄥ","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 02 syllables ㄊㄧㄢ
+{"revision":8,"handled":true,"preedit":[{"text":"冬天","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄉㄜ˙
+{"revision":11,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄕㄢ
+{"revision":14,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"ㄕ","style":"normal"},{"text":"ㄢ","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 05 syllables ㄕㄤˋ
+{"revision":17,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄔㄤˊ
+{"revision":20,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"長","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄔㄤˊ
+{"revision":23,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄒㄧㄚˋ
+{"revision":27,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄓㄜ˙
+{"revision":30,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"},{"text":"著","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄅㄞˊ
+{"revision":33,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"},{"text":"著","style":"normal"},{"text":"白","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄙㄜˋ
+{"revision":36,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"},{"text":"著","style":"normal"},{"text":"白色","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄉㄜ˙
+{"revision":39,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"},{"text":"著","style":"normal"},{"text":"白色","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 syllables ㄒㄩㄝˇ
+{"revision":43,"handled":true,"preedit":[{"text":"冬天","style":"normal"},{"text":"的","style":"normal"},{"text":"山上","style":"normal"},{"text":"常常","style":"normal"},{"text":"下","style":"normal"},{"text":"著","style":"normal"},{"text":"白色","style":"normal"},{"text":"的","style":"normal"},{"text":"雪","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":44,"handled":true,"commit":"冬天的山上常常下著白色的雪","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

@@ -1,0 +1,8 @@
+# case: english-mode
+# note: 英文模式：切到英文後打英文，Tab 補字後送出
+# step 01 request toggle
+{"english_autocomplete":true,"english_can_start":true,"revision":1,"handled":true,"cursor":{"rune":0,"utf16":0},"mode":"english"}
+# step 02 keys hello
+{"english_autocomplete":true,"english_pending":true,"revision":6,"handled":true,"preedit":[{"text":"hello","style":"pending"}],"cursor":{"rune":5,"utf16":5},"mode":"english"}
+# step 03 key Enter
+{"english_autocomplete":true,"english_can_start":true,"revision":7,"handled":true,"commit":"hello","cursor":{"rune":0,"utf16":0},"mode":"english"}
