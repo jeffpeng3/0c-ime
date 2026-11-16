@@ -23,6 +23,9 @@
 | 詞庫來源（`data/`） | CC BY-SA 4.0、CC BY 4.0、MIT、政府資料開放授權條款第 1 版 | 符合 |
 | 簡體轉換字典（`internal/simplified/opencc`） | Apache-2.0 | 符合 |
 | 英文詞表（`data/english`） | SCOWL 授權 | 符合 |
+| 日文種子詞條、連接成本與詞頻（`data/ja`） | CC BY-SA 4.0 | 符合，可由 Git 內資料重建 |
+| 日文記号與顔文字（`data/ja/symbols`） | AGPL-3.0-only | 符合 |
+| 日文 zenz GGUF（選用、不隨安裝包出貨） | CC BY-SA 4.0 | 模型權重可散布；沒有公開訓練程式與資料，比照神經模型留在 main 之外 |
 | 測試資料（`testdata/`） | AGPL-3.0-only | 符合 |
 | Release：英文子包 `assets/data/english/` | SCOWL 授權 | 符合，可由 `data/english` 重建 |
 | Release：統計字典 `assets/data/lexicon.bin`、`lm.bin` | CC BY-SA 4.0 等 | 符合，可由 Git 內資料加 [0c-ime-data](https://github.com/0c-biggo/0c-ime-data) 的詞對統計重建 |
@@ -98,6 +101,10 @@ go-winio 只用於 Windows 的 named pipe，Linux 與 macOS 的執行檔不含�
 ### 英文詞表
 
 `data/english/LICENSE.txt` 為 SCOWL 的上游授權（允許使用、修改、散布與販售，只要求保留聲明），Debian 的 `scowl` 套件同樣在 main。
+
+### 日文資料
+
+`data/ja/` 的種子詞條、連接成本與詞頻由本專案維護，採 CC BY-SA 4.0；`data/ja/symbols/` 的記号與顔文字由本專案整理，採 AGPL-3.0-only。編譯器 `0c-compile -lang ja -public` 會逐來源檢查 `data/sources/ledger.tsv`、可散布標記與 `data/sources/licenses/ja-*.txt`，輸出的 `data/ja/NOTICE.txt` 保留完整姓名標示。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，依各自授權與混合邊界標示，不整體改寫成單一授權。zenz-v3.1-small GGUF 是選用的外部模型，不隨安裝包或來源 tarball 出貨；它的訓練程式與資料未公開，因此不進 main，使用方式見 [日文神經驗證 runtime](../platforms/neural/ja/README.md)。
 
 ### 圖示與圖片
 

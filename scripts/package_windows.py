@@ -2,7 +2,8 @@
 """Build a Windows x64 bundle on Windows; never install, register, or upload.
 
 The bundle also carries an i686 TSF DLL at x86/0c_tsf.dll for 32-bit applications (#112); the engine,
-candidate window and updater stay x64."""
+candidate window and updater stay x64. --ja-data adds an optional data/ja/ Japanese pack; without it the
+bundle is byte-for-byte the Chinese-only layout."""
 import argparse
 import json
 import os
@@ -18,7 +19,7 @@ import zipfile
 
 from install_package import digest, regular
 from collect_notices import collect
-from package_release import ROOT, DATA_FILES, check_licenses, copy_licenses, check_release_docs, copy_release_docs, check_data, copy_neural, copy_english, seal_data
+from package_release import ROOT, DATA_FILES, check_licenses, copy_licenses, check_release_docs, copy_release_docs, check_data, copy_neural, copy_english, copy_ja_data, seal_data
 import hf_models
 
 # 內嵌 Python 的 ._pth 或 PYTHONPATH 指向另一份原始碼時，會打包出那份程式（2026-10-01 曾因沿用舊建置目錄的
@@ -355,6 +356,8 @@ def build(args):
         for filename in DATA_FILES:
             copy(data / filename, "data/" + filename)
         copy_english(data, stage / "data", args.go)
+        if args.ja_data:
+            copy_ja_data(args.ja_data, stage / "data", public=not args.preview)
         if args.neural:
             copy_neural(args.neural, stage)
             check_pe(stage / "neural/python/python.exe")
@@ -384,6 +387,9 @@ def build(args):
                    "revision": revision, "dirty": dirty, "build_platform": platform.platform(),
                    "data_format": manifest["format"], "data_manifest_sha256": digest(stage / "data/manifest.json"),
                    "files": {p.relative_to(stage).as_posix(): digest(p) for p in sorted(stage.rglob("*")) if p.is_file()}}
+        if args.ja_data:
+            release["ja_data_format"] = 2
+            release["ja_data_manifest_sha256"] = digest(stage / "data/ja/manifest.json")
         (stage / "release.json").write_text(json.dumps(release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         subprocess.run([str(stage / "0c-update.exe"), "verify", "-bundle", str(stage)], check=True)
         (stage / "SHA256SUMS").write_text("".join(f"{digest(p)}  {p.relative_to(stage).as_posix()}\n"
@@ -406,6 +412,7 @@ def main():
     parser = argparse.ArgumentParser(description="建立靈犀注音 Windows x64 完整套件；不安裝、不註冊、不上傳")
     parser.add_argument("--release-docs", required=True, type=Path, help="外部文件目錄，須含 INSTALL.md、PRIVACY.md、UPDATING.md")
     parser.add_argument("--data", required=True, type=Path)
+    parser.add_argument("--ja-data", type=Path, help="0c-compile -lang ja -public 產生的日文資料包（含可選 symbols/）；放進 data/ja/")
     parser.add_argument("--version", required=True)
     parser.add_argument("--out", type=Path, default=ROOT / "build/release")
     parser.add_argument("--preview", action="store_true")

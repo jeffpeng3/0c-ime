@@ -736,6 +736,66 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "雜湊"):
             packager.check_english(copied)
 
+    def ja_pack(self, name="ja-pack", language="ja", public=True):
+        directory = self.root / name
+        directory.mkdir()
+        for filename, body in (("lexicon.bin", b"lexicon"), ("lm.bin", b"lm"),
+                               ("lexicon.tsv", b"surface\treading\n"), ("report.txt", b"report")):
+            (directory / filename).write_bytes(body)
+        source = {"ID": "curated", "Name": "0c 人工維護的詞條", "URL": "https://0c.biggo.com",
+                  "Version": "fixture", "License": "CC-BY-SA-4.0", "Attribution": "Funmula Co., Limited",
+                  "Distributable": public}
+        manifest = {"format": 2, "language": language, "options": {"Public": public}, "sources": [source],
+                    "files": {filename: {"size": (directory / filename).stat().st_size,
+                                         "sha256": installer.digest(directory / filename)}
+                              for filename in ("lexicon.bin", "lm.bin", "lexicon.tsv")}}
+        (directory / "manifest.json").write_bytes(packager.json_bytes(manifest))
+        (directory / "NOTICE.txt").write_text(
+            "== 0c 人工維護的詞條（curated）==\n"
+            "授權：CC-BY-SA-4.0\n版本：fixture\n網址：https://0c.biggo.com\n姓名標示：Funmula Co., Limited\n\n"
+            "CC BY-SA 4.0 fixture text.\n", encoding="utf-8")
+        symbols = directory / "symbols"
+        symbols.mkdir()
+        (symbols / "symbols.tsv").write_text("きごう\t※\t米印\t記号\n", encoding="utf-8")
+        return directory
+
+    def test_japanese_pack_is_validated_and_staged_without_touching_chinese(self):
+        pack = self.ja_pack()
+        manifest = packager.check_ja_data(pack, public=True)
+        self.assertEqual(manifest["language"], "ja")
+        destination = self.root / "stage" / "data"
+        destination.mkdir(parents=True)
+        (destination / "lm.bin").write_bytes(b"chinese")
+        packager.copy_ja_data(pack, destination)
+        for name in packager.JA_FILES:
+            self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
+        self.assertEqual((destination / "ja/symbols/symbols.tsv").read_text(encoding="utf-8"),
+                         "きごう\t※\t米印\t記号\n")
+        self.assertEqual((destination / "lm.bin").read_bytes(), b"chinese")
+        with self.assertRaisesRegex(ValueError, "已存在"):
+            packager.copy_ja_data(pack, destination)
+
+        (pack / "lexicon.bin").write_bytes(b"tampered")
+        with self.assertRaisesRegex(ValueError, "雜湊"):
+            packager.check_ja_data(pack, public=True)
+        (pack / "lexicon.bin").write_bytes(b"lexicon")
+        zh = self.ja_pack("zh-pack", language="zh")
+        with self.assertRaisesRegex(ValueError, "language=ja"):
+            packager.check_ja_data(zh, public=False)
+        private = self.ja_pack("private-pack", public=False)
+        with self.assertRaisesRegex(ValueError, "公開包"):
+            packager.check_ja_data(private, public=True)
+        manifest = json.loads((private / "manifest.json").read_text(encoding="utf-8"))
+        manifest["options"]["Public"] = True
+        (private / "manifest.json").write_bytes(packager.json_bytes(manifest))
+        with self.assertRaisesRegex(ValueError, "不可散布"):
+            packager.check_ja_data(private, public=True)
+        linked = self.ja_pack("linked-pack")
+        (linked / "symbols/symbols.tsv").unlink()
+        (linked / "symbols/symbols.tsv").symlink_to(pack / "symbols/symbols.tsv")
+        with self.assertRaisesRegex(ValueError, "符號連結"):
+            packager.check_ja_data(linked, public=False)
+
     def test_english_install_downgrade_rollback_and_uninstall_keep_user_data(self):
         data = self.bundle / "data"
         packager.copy_english(data, data, "go")

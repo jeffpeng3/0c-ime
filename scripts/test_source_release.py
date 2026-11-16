@@ -448,6 +448,67 @@ class SourceReleaseTests(unittest.TestCase):
         self.assertTrue(fetch_assets.installed(root))
         self.assertEqual([p.name for p in root.iterdir() if p.name.startswith(".")], [])
 
+    def test_fetch_assets_models_only_keeps_dictionary(self):
+        tarball = self.build()
+        models = self.models_of(tarball)
+        root = self.source_tree()
+        fetch_assets.install(tarball, root, with_models=False)
+        dictionary = (root / "assets/data/lm.bin").read_bytes()
+        (root / "models/select").mkdir(parents=True)
+        (root / "models/select/stale.onnx").write_bytes(b"old")
+        self.assertEqual(fetch_assets.install_models(tarball, models, root)["tag"], "v0.2.0")
+        self.assertEqual((root / "assets/data/lm.bin").read_bytes(), dictionary)
+        self.assertFalse((root / "models/select/stale.onnx").exists())
+        self.assertTrue(fetch_assets.installed(root))
+        with self.assertRaisesRegex(ValueError, "models tarball"):
+            fetch_assets.install_models(tarball, None, root)
+        # A different tree lock must be rejected before replacing the installed models.
+        other = self.source_tree("other")
+        fetch_assets.install(tarball, other, with_models=False)
+        pairing = other / "models/pairing.lock.json"
+        original = pairing.read_bytes()
+        pairing.write_text("{}\n")
+        with self.assertRaisesRegex(ValueError, "pairing lock"):
+            fetch_assets.install_models(tarball, models, other)
+        pairing.write_bytes(original)
+        # A different model lock is also rejected before replacing the installed models.
+        fetch_assets.install(tarball, other, models)
+        (other / "models/models.lock.json").write_text("{}\n")
+        with self.assertRaisesRegex(ValueError, "differs from v0.2.0"):
+            fetch_assets.install_models(tarball, models, other)
+
+    def test_build_ja_compiles_public_pack_and_keeps_old_output_on_failure(self):
+        root = self.work / "ja-tree"
+        symbols = root / "data/ja/symbols"
+        symbols.mkdir(parents=True)
+        (symbols / "symbols.tsv").write_text("きごう\t※\t米印\t記号\n")
+        out = root / "build/ja"
+
+        def run(command, cwd, check):
+            self.assertEqual((cwd, check), (root, True))
+            self.assertEqual(command[:3], ["go", "run", "./cmd/0c-compile"])
+            stage = Path(command[command.index("-out") + 1])
+            stage.mkdir(parents=True)
+            (stage / "manifest.json").write_text('{"format":2,"language":"ja"}\n')
+            (stage / "placeholder").write_text("new")
+
+        with patch.object(fetch_assets.subprocess, "run", side_effect=run):
+            self.assertEqual(fetch_assets.build_ja(root, out), out)
+        self.assertEqual((out / "manifest.json").read_text().strip(), '{"format":2,"language":"ja"}')
+        self.assertEqual((out / "symbols/symbols.tsv").read_text(), "きごう\t※\t米印\t記号\n")
+        self.assertEqual((out / "placeholder").read_text(), "new")
+
+        (out / "keep").write_text("old")
+
+        def fail(command, cwd, check):
+            raise subprocess.CalledProcessError(1, command)
+
+        with patch.object(fetch_assets.subprocess, "run", side_effect=fail):
+            with self.assertRaises(subprocess.CalledProcessError):
+                fetch_assets.build_ja(root, out)
+        self.assertEqual((out / "keep").read_text(), "old")
+        self.assertEqual((out / "placeholder").read_text(), "new")
+
     def test_fetch_assets_dictionary_only_and_legacy_release(self):
         tarball = self.build()
         root = self.source_tree()

@@ -25,6 +25,23 @@ tar -xJf 0c-ime-models-<版本>.tar.xz   # 選用：神經選字與補標點
 
 0.2.2 以前的版本只有一個 tarball，模型內附在 `models/` 裡；0.2.1 以前以 `ime-oss-<版本>.tar.xz` 為名。從 git clone 或 Source code 壓縮檔開始時，`make assets` 會下載同版本的 tarball，驗證後把 `assets/data/` 與兩個模型放進原始碼目錄；`make assets MODELS=0` 只取字典。大型 bigram TSV 另見 [從原始碼重建字典](#從原始碼重建字典)；原始語料、checkpoint 與訓練環境不附入。
 
+## 語言資產
+
+注音與日文的資料包分開。注音包從 Release tarball 取得；日文包目前由 repo 內的 `data/ja` 以公開模式編譯，輸出到 `build/ja`。兩者都不會互相覆蓋。
+
+| 指令 | 結果 |
+|---|---|
+| `make assets` | 注音字典與配對模型放在 `assets/data/`、`models/select/`、`models/punct/` |
+| `make assets MODELS=0` | 只放注音字典，不加模型 |
+| `make assets MODELS_ONLY=1` | 只換 `models/select/`、`models/punct/`；`assets/data/` 必須已存在，配對清單要與目前字典相符 |
+| `make assets LANG=ja` | 以 `0c-compile -lang ja -public` 編譯 `data/ja`，輸出 `build/ja`，並複製 `symbols/` |
+| `make assets LANG=all` | 同時處理注音與日文 |
+| `make assets LANG=ja JA_OUT=<目錄>` | 指定日文包輸出位置 |
+
+日文包沒有另附模型 tarball。zenz GGUF 由使用者自行提供，放進 `models/ja/` 並依 [日文神經驗證 runtime](platforms/neural/ja/README.md) 的 manifest 驗證；不進 Git、不進 Release、不隨安裝包出貨。
+
+日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。編譯器不寫時間戳，同一份 `data/ja` 連跑兩次得到相同雜湊。
+
 ## 發行版整合
 
 解壓原始碼 tarball，在根目錄執行：
@@ -74,6 +91,23 @@ python3 scripts/source_release.py verify build/source-release/<版本>/0c-ime-<�
 工具只讀取 tag 的 Git archive，不納入未提交改動。字典必須符合固定清單與公開來源檢查，並與模型配對清單一致；模型權重依上游 commit、大小與 SHA-256 取得，只依已驗證的配對清單產生綁定 metadata。模型快取完整時可加 `--offline`，不連網組裝。
 
 上一版的原始碼 tarball 可用 `source_release.py extract-data` 取出字典重用。repo variable `DICTIONARY_SOURCE_URL` 設定後，tag 的 CI 會從該網址取回字典、依當前 tag 的 lock 校驗並組裝兩個 tarball，解壓後離線建置與載入字典成功，才一起上傳到 Release 草稿；沒有設定時這個工作會略過。
+
+## Windows 安裝、移除與回復
+
+Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。完整套件需要外部文件目錄的 `INSTALL.md`、`PRIVACY.md`、`UPDATING.md`：
+
+```powershell
+make assets LANG=ja
+python scripts\package_windows.py --data assets\data --ja-data build\ja `
+  --release-docs <文件目錄> --version <版本> --out build\release
+python scripts\package_windows_installer.py --archive build\release\<ZIP> --out build\release
+```
+
+`--ja-data` 是選用的。有指定時，日文包以 `data/ja/` 放進 ZIP，`release.json` 多了 `ja_data_format` 與 `ja_data_manifest_sha256`；安裝後位於 `%LOCALAPPDATA%\Zuin\versions\<版本>-<雜湊>\data\ja\`。沒有指定時，ZIP 與原本的注音套件相同。日文包會經過 `check_ja_data`：format 2、`language: ja`、manifest 內的檔案雜湊、公開包的來源聲明與 `symbols/*.tsv` 都會檢查。日文資料不經過 `-seal`，因為 `0c-compile -seal` 目前只驗證注音 manifest；ZIP 的逐檔 SHA-256 與安裝收據仍會保護它。
+
+`0c-update` 安裝時逐檔核對 `release.json`，把整個版本目錄換上去；升級保留上一版，`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版。`-restore-user` 額外還原升級前的個人詞庫。`install.ps1 -Uninstall` 或 `0c-update uninstall` 取消 TSF 註冊並停用收據，**不刪**版本目錄、字典、備份或 `%LOCALAPPDATA%\Zuin\user.json`；要清掉所有本機檔案時，先解除安裝，再自行刪除 `%LOCALAPPDATA%\Zuin`。回復到不含日文包的版本時，使用中的版本目錄沒有 `data/ja/`，不會從別版補上；想移除日文包請換成不含 `--ja-data` 的套件再安裝或回復，不要手動刪除版本目錄裡的檔案，收據核對會失敗。
+
+Linux 與 macOS 套件仍出注音字典與既有模型；日文資料包目前只接入 Windows 套件，等各平台外殼正式載入日文詞典後再擴充。這樣沒有日文包時，注音安裝、更新與回復都不受影響。
 
 ## 更新字典
 

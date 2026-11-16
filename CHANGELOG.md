@@ -2,6 +2,22 @@
 
 每個版本的「公開摘要」與 [官網更新紀錄](https://0c.biggo.com/updates/) 相同；「原始碼套件」記錄 Release 完整 tarball 的內容變化。
 
+## 未發布
+
+### 公開摘要
+
+- 日文輸入仍是預覽，尚未列為正式支援。這個版本整理日文資料包、Windows 套件與文件，讓後續整合有可重現的打包流程；注音、英文、更新與個人學習行為不變。
+- 日文資料包可以用 `make assets LANG=ja` 從 `data/ja` 編譯，Windows 套件可選擇內附 `data/ja/`。沒有日文包時，注音照常安裝、更新與回復。
+- 日文品質只引用 T33 的統計轉換 baseline。目前的 137 詞條種子包分數低，不能拿來和注音的 86.0% 或 Mozc 比較，也不代表轉換器上限。
+
+### 原始碼套件
+
+- 語言資產：`make assets` 新增 `LANG=zh|ja|all`、`MODELS=0`、`MODELS_ONLY=1` 與 `JA_OUT`。日文包以 `0c-compile -lang ja -public` 編譯到 `build/ja`，並複製 `data/ja/symbols/`；`--models-only` 只換已配對模型，要求 `assets/data/` 已存在且配對清單相符。
+- Windows 打包：`scripts/package_windows.py --ja-data <日文包>` 把日文包放進 `data/ja/`，並在 `release.json` 記錄 `ja_data_format` 與 `ja_data_manifest_sha256`。`check_ja_data` 驗證 format 2、`language: ja`、manifest 雜湊、公開來源與 `symbols/*.tsv`；沒有 `--ja-data` 時套件維持原本的注音布局。
+- 授權：`legal/README.md`、`legal/TERMS.md`、`legal/DFSG-free.md` 與 `legal/copyright` 補上日文詞條、記号與顔文字、以及選用 zenz GGUF 的邊界。日文資料包的逐來源聲明仍在編譯輸出的 `data/ja/NOTICE.txt`。
+- 文件：README 增加日文預覽、系統需求、安裝與資產指令；PACKAGING 增加語言資產、Windows 安裝／移除／回復流程；CLI 範例補上 `0c-compile -lang ja` 與 `0c-eval-ja`。
+- T33 baseline（`testdata/ja/baseline.json`）：`modern-500` top-1 23.2%、top-5 23.2%、邊界 exact 14.4%、邊界 F1 0.445；`hard-cases` 14.3%／14.3%／14.3%／0.238；`anthy-corpus1` 2.5%／2.5%／1.5%／0.253；`ajimee-200` 1.5%／1.5%，邊界不計。延遲只在同一台機器比較，不進 CI 門檻。
+
 ## 0.2.12（2026-11-16，public-beta）
 
 ### 公開摘要
