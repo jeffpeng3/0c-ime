@@ -42,6 +42,9 @@ type ProfileView struct {
 	Running string        `json:"running"`
 	Pending bool          `json:"pending"`
 	Items   []ProfileItem `json:"items"`
+	// Language 是語言選擇與日文選項（T27）。0c-update 的 settings 契約原樣轉送這個結構，
+	// 設定程式從 profiles.language 讀；舊版 0c-update 沒有這個欄位時只顯示原本的設定。
+	Language []Item `json:"language,omitempty"`
 }
 
 var profileKeys = []string{"toggle-key", "caps-lock-english", "esc-clear", "space-selects", "advance-after-select", "candidate-cursor", "candidate-layout", "selection-keys", "mixed-input", "english-autocomplete", "emoji-shortcut", "emoji-equals-first", "ctrl-punctuation", "toneless"}
@@ -180,7 +183,7 @@ func (s Settings) profileAvailability(p Profile) (bool, string) {
 }
 func (s Settings) Profiles() ProfileView {
 	st := s.store()
-	out := ProfileView{Active: st.Active, Items: []ProfileItem{}}
+	out := ProfileView{Active: st.Active, Items: []ProfileItem{}, Language: s.LanguageItems()}
 	for _, preset := range inputstyle.PresetsForPlatform(runtime.GOOS) {
 		p := builtinProfile(preset)
 		for _, saved := range st.Items {

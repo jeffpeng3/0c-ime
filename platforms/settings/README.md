@@ -29,15 +29,32 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 
 | 頁面（`--page`） | 項目 |
 |---|---|
-| 中英切換（`mode`） | 中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
+| 語言與中英切換（`mode`） | 輸入語言、切換輸入框後的語言、全域切換熱鍵、日文輸入方式、ライブ変換、記号與顔文字、日文學習、日文神經模型；中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
 | 選字（`candidates`） | 選字方式（神經選字）、依前文選字、空白鍵選字、修改字詞的位置、選字後游標移到下一個字、選字排列、選字鍵、按 Esc 清除整段組字，另一張卡是模糊音總開關 |
 | 鍵盤與符號（`keyboard`） | 鍵盤排列、Ctrl＋標點打全形、標點寬度、提交時補標點（Beta）、Emoji 選單（子選項「將 = 放在第一項」） |
 
-側欄順序：總覽、中英切換、選字、鍵盤與符號、輸出設定、我的詞彙、模型、更新、問題排解、關於。「輸出設定」（`output`）照舊獨立。契約裡不在任何一頁的新項目（較新的 0c-update 才有）畫在「選字」最後，所以新增設定不必先改畫面；要放別頁再加進 `INPUT_PAGES`。舊的頁名 `input`（0.2.5 以前的 `0c-update open-settings input`、說明文件）照樣接受，畫面導到側欄第一頁「中英切換」（`PAGE_ALIAS`；Go 與 Rust 的白名單也保留它，舊版設定程式照舊開輸入設定）。三份頁名清單由 `internal/settingsapp` 的 `TestPageNamesMatchTheSettingsApp` 核對。總覽的「有設定已儲存、尚未套用」帶到第一個尚未套用的項目所在的那一頁。
+側欄順序：總覽、輸入習慣、語言與中英切換、選字、鍵盤與符號、輸出設定、我的詞彙、模型、更新、問題排解、關於。「輸出設定」（`output`）照舊獨立。契約裡不在任何一頁的新項目（較新的 0c-update 才有）畫在「選字」最後，所以新增設定不必先改畫面；要放別頁再加進 `INPUT_PAGES`。舊的頁名 `input`（0.2.5 以前的 `0c-update open-settings input`、說明文件）照樣接受，畫面導到側欄第一頁「語言與中英切換」（`PAGE_ALIAS`；Go 與 Rust 的白名單也保留它，舊版設定程式照舊開輸入設定）。三份頁名清單由 `internal/settingsapp` 的 `TestPageNamesMatchTheSettingsApp` 核對。總覽的「有設定已儲存、尚未套用」帶到第一個尚未套用的項目所在的那一頁。
 
 契約的項目帶 `disabled` 時（倚天 41 鍵時的中英混打、Emoji 選單與等號首項，許氏時的中英混打，#183；不用 Shift 時的開始模式，#184）開關反灰、畫成關閉，名稱旁顯示 `disabled_reason`，不在 Tab 順序裡；設定檔的值不動，切回標準排列照原值顯示（#83）。造成停用的那一項（`disabled_by`）在別頁時，說明下面多一個「到「鍵盤與符號」修改「鍵盤排列」」，按了切到那一頁並把焦點放在那一項（例如中英混打在「中英切換」、鍵盤排列在「鍵盤與符號」）；在同一頁（開始模式就在中英切換鍵下面）不另外放。
 
 Emoji 選單以一個開關控制（`emoji-shortcut`：off／equals），預設開啟，保留使用者明確關閉的設定。另有 `emoji-equals-first` 開關（預設 on），可取消第一項的等號；設定說明提醒關閉後仍可按兩次 == 輸入一個 =。模糊音顯示一列總開關，預設開啟（四組 select），開啟時以同一次設定交易將四組近音都設為 select，關閉時全部設 off；沒有逐組控制或自動修正單選。舊設定只啟用部分配對或使用 auto 時，畫面視為開啟，載入不改寫；關閉再開啟才統一成四組 select。CLI 的逐組設定與原有檔案格式仍保留，未知欄位與唯讀保護沿用既有契約。
+
+## 語言與日文選項（T27）
+
+側欄第一頁「語言與中英切換」（`--page mode`，頁名不變）最上面是語言區塊：
+
+- **輸入語言**（`language`，`zh` 注音／`ja` 日文）：送 `0c-update set language ja -apply -json`，在沒有組字時交接，下一個按鍵生效。每個輸入框實際使用的語言由引擎的工作階段記住；設定程式只送切換請求並顯示設定快照，不自己保存使用中語言。
+- **切換輸入框後的語言**（`language-memory`，`field` 每個輸入框記住／`global` 全部共用）。
+- **全域切換熱鍵**（`language-hotkey`，預設開）：`Ctrl＋Shift＋F9`（macOS `⌃⇧F9`）；外殼攔鍵，關閉時交給應用程式。
+- **日文輸入方式**（`ja-input-method`，`romaji` 羅馬字／`kana` 直接かな）、**ライブ変換**（`ja-live-conversion`，預設關）、**記号與顔文字**（`ja-symbols`）、**日文學習**（`ja-learning`）、**日文神經模型**（`ja-model`）。
+
+語言選項沒有放進 `settings.items`（`0c-update settings` 的文字清單是逐項寫死的，新增項目會讓那份清單與 CLI 不同步），而是由 `settings.Profiles().Language` 帶出，0c-update 原樣轉送成 `profiles.language`。設定程式只從那裡讀；`Set language …`／`Value("language")` 照常可用，舊版 0c-update 沒有這個欄位時不顯示語言區塊。
+
+引擎設定清單的每個 item 多了 `languages` 與 `capabilities`（舊版 0c-update 沒有時視為通用、沒有能力需求）。`languages` 含 `zh` 的項目在日文模式收起：鍵盤排列、模糊音、聲調（不打聲調、打錯注音時提示）、簡繁轉換、標點與 Emoji 等注音專屬設定；`ja-*` 只在日文模式出現。設定檔的值不動，切回注音照原值顯示。`capabilities` 是 `core/proto` 的旗標（`japanese`、`convert_keys`、`clause_display`、`live_conversion`），語言區塊下方列出四項；引擎在 health／open 回報同名旗標才實際生效，舊引擎沒有 `japanese` 時外殼不送日文按鍵。
+
+舊設定檔（沒有 `language` 或 `ja_*`）照注音與日文預設值載入，schema 維持 2：新版寫入的欄位，舊版讀不懂時原樣保留，不會被拒收或重設。讀不懂的語言值只退回預設並在 `notes` 說明。寫入失敗沿用 `set_settings` 的錯誤（`read_only`、`corrupt`、`busy` 或系統錯誤訊息）。
+
+畫面邏輯在 `ui/language.js`（`ZcLanguage`）；`test/language_test.js` 驗證語言值、`item.languages` 篩選與能力旗標清單，`test/input_styles_test.js` 另外核對舊版沒有 `languages` 時照舊全部顯示。
 
 ## 我的詞彙（0.2.0，#125）
 
