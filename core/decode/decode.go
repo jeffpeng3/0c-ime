@@ -7,6 +7,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/0c-biggo/0c-ime/core/input"
+	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
 	"github.com/0c-biggo/0c-ime/core/lm"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
@@ -77,13 +78,16 @@ func segMatched(lat input.Lattice, start int, e lexicon.Entry, cost float64) str
 	return matchedReading(lat, start, e.Reading)
 }
 
-// MaxWordLen 是詞條讀音長度的搜尋上限。
+// MaxWordLen 是沒有語言上限時的詞條讀音長度搜尋上限。
 const MaxWordLen = 8
 
 type Decoder struct {
 	Left  string // 已確認的文件前詞；空值為 BOS，不寫入語言模型
 	Lex   lexicon.Source
 	Score Scorer
+	// Limits 是語言 profile／資料包 manifest 宣告的轉換上限。零值沿用既有預設：
+	// 詞長上限為 MaxWordLen，或詞庫回報的更長詞（自訂詞、系統長詞）。
+	Limits lang.Limits
 
 	// TopM：每個尾端讀音只彙總依系統先驗排序的前 M 個詞（子樹彙總以 unigram 預算，
 	// 上下文與個人化只對前 K 名重算）。0 表示預設值。
@@ -166,9 +170,23 @@ func MaxLen(lex lexicon.Source) int {
 	return max(MaxWordLen, lexicon.Longest(lex))
 }
 
+// MaxLenFor 依語言上限回傳讀音長度搜尋上限。
+//
+// limits.MaxWordUnits 大於 0 時直接採用，讓日文等其他語言不必固定用 8；
+// 否則沿用詞庫宣告的長度（注音的既有行為）。
+func MaxLenFor(lex lexicon.Source, limits lang.Limits) int {
+	if limits.MaxWordUnits > 0 {
+		return limits.MaxWordUnits
+	}
+	return MaxLen(lex)
+}
+
+// maxLen 是這個解碼器的讀音長度上限。
+func (d *Decoder) maxLen() int { return MaxLenFor(d.Lex, d.Limits) }
+
 // spans 列舉從 start 起、與音節格相容的所有讀音（以詞庫前綴剪枝）。
 func (d *Decoder) spans(lat input.Lattice, start int, fn func(reading []zhuyin.Syllable, cost float64)) {
-	limit := MaxLen(d.Lex)
+	limit := d.maxLen()
 	var walk func(pos int, reading []zhuyin.Syllable, cost float64)
 	walk = func(pos int, reading []zhuyin.Syllable, cost float64) {
 		if pos == len(lat) || pos-start == limit {
@@ -488,7 +506,7 @@ type Completion struct {
 // 同一詞面的多讀音只保留最佳路徑，避免重複詞條灌高先驗或個人證據。
 func (d *Decoder) CompleteHomophones(lat input.Lattice, start int, left string) (Completion, bool) {
 	typed := len(lat) - start
-	if typed < 2 || typed >= MaxLen(d.Lex) {
+	if typed < 2 || typed >= d.maxLen() {
 		return Completion{}, false
 	}
 	xp, _ := d.Score.(Explicit)
@@ -790,7 +808,7 @@ func (d *Decoder) CandidatesInContextWindows(lat input.Lattice, start, length in
 // 的字就排到前面。鍵是候選詞面與讀音（innerKey）；fw 是 forward(lat[:start]) 的結果。
 func (d *Decoder) innerScores(lat input.Lattice, fw [][]state, start, end int, kept map[int]Lock, suffix func(int, string) float64) map[string]float64 {
 	out := map[string]float64{}
-	limit := MaxLen(d.Lex)
+	limit := d.maxLen()
 	for s := max(0, end-limit); s <= start; s++ {
 		if len(fw[s]) == 0 {
 			continue

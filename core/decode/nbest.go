@@ -321,7 +321,7 @@ func (d *Decoder) AuditTarget(lat input.Lattice, locks map[int]Lock, prefix bool
 			out.Best = &h
 		}
 	}
-	limit := MaxLen(d.Lex)
+	limit := d.maxLen()
 	for at := 0; at < n; at++ {
 		for end := at + 1; end <= min(n, at+limit); end++ {
 			if surface[at] && d.Lex.Has(string(runes[at:end])) {

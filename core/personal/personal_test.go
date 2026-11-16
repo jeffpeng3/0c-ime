@@ -9,6 +9,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/lexicon"
 	"github.com/0c-biggo/0c-ime/core/lm"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -31,6 +32,27 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 	if !reflect.DeepEqual(m.Store, back) {
 		t.Errorf("存檔來回不一致\n%+v\n%+v", m.Store, back)
+	}
+}
+
+// 個人學習檔的鍵值改用 reading.Key，但注音字串與舊版完全相同：舊檔的鍵仍能命中。
+func TestReadingKeysRemainCompatible(t *testing.T) {
+	lex := lexicon.NewMem()
+	syls := zhuyin.ParseReading("ㄑㄧㄣ ㄗˇ")
+	lex.Add(lexicon.Entry{Surface: "親子", Reading: syls, PRW: 0.25})
+	m := NewModel(lex, lm.NewMem())
+	// 舊版存下來的鍵：詞面 + TAB + 空白分隔的注音。
+	m.Store.Readings[pair("親子", zhuyin.Key(syls))] = true
+
+	if got, want := reading.Key(reading.Sequence(syls)), zhuyin.Key(syls); got != want {
+		t.Fatalf("reading.Key = %q, want %q", got, want)
+	}
+	es := m.Source().Exact(syls)
+	if len(es) != 1 {
+		t.Fatalf("Exact = %+v", es)
+	}
+	if es[0].PRW != 1 {
+		t.Errorf("舊鍵沒有命中，PRW = %v", es[0].PRW)
 	}
 }
 

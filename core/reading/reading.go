@@ -5,18 +5,31 @@
 // （例：き、ゃ、ー），小寫かな、長音符與踊り字都各自算一個單位。
 //
 // 單位只描述讀音，不限制詞面長度：一個詞可以有兩個單位，對應三個字的表面。
+//
+// 相容性：在 T20 把 session 改成語言 profile 之前，Unit 必須與 zhuyin.Syllable
+// 是同一個型別，既有呼叫端才能把注音音節直接當成讀音單位傳遞而不必改動。
+// 因此這裡用型別別名，而不是另立一個 defined type。日文的かな一樣可以放進
+// Unit；語言特定的合法性由該語言的 profile 判斷。
 package reading
 
 import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
 // Unit 是一個讀音位置。
-type Unit string
+//
+// 與 zhuyin.Syllable 是型別別名，讓注音路徑可以零轉換接上讀音泛化。
+// Unit.Valid 因此是注音的結構檢查；語言共通的檢查請用 Valid。
+type Unit = zhuyin.Syllable
 
 // Sequence 是一串讀音單位，依輸入順序排列。
+//
+// 這是 defined type，而不是別名：詞庫與解碼器用它標記讀音序列，
+// 但底層仍是 []Unit，注音的 []zhuyin.Syllable 可以直接指派進來。
 type Sequence []Unit
 
 // KeySeparator 是 Key 用來串接單位的分隔字元。
@@ -38,8 +51,8 @@ func Key(seq Sequence) string {
 // Valid 回報單位是否為一般形式的單一讀音。
 //
 // 檢查的是所有語言共通的部分：非空、合法 UTF-8、不含空白與分隔字元。
-// 語言特定的合法性（例如注音音節結構）由該語言的套件判斷。
-func (u Unit) Valid() bool {
+// 語言特定的合法性（例如注音音節結構、日文かな表）由該語言的套件判斷。
+func Valid(u Unit) bool {
 	s := string(u)
 	if s == "" || !utf8.ValidString(s) {
 		return false

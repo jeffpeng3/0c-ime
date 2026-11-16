@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -55,7 +56,7 @@ type habitIndex struct {
 func clamp01(x float64) float64 { return max(0, min(1, x)) }
 
 // ReadingLift 是 word 以 reading 讀時的讀音習慣分數（自然對數）；0 表示沒有習慣（decode.ReadingPreference）。
-func (m *Model) ReadingLift(word string, reading []zhuyin.Syllable) float64 {
+func (m *Model) ReadingLift(word string, syls []zhuyin.Syllable) float64 {
 	if m.P.HabitLift <= 0 || len(m.Store.Confirmed) == 0 {
 		return 0
 	}
@@ -67,7 +68,7 @@ func (m *Model) ReadingLift(word string, reading []zhuyin.Syllable) float64 {
 	if lifts == nil {
 		return 0
 	}
-	k := zhuyin.Key(reading)
+	k := reading.Key(syls)
 	for _, l := range lifts {
 		if l.reading == k {
 			return l.lift
@@ -154,7 +155,7 @@ func (m *Model) keepConfirmed(syls []zhuyin.Syllable, g Seg) {
 	if len(s.Confirmed) == 0 || g.Partial || g.End-g.Start < habitMinSyllables || g.Start < 0 || g.End > len(syls) {
 		return
 	}
-	k := pair(g.Word, zhuyin.Key(syls[g.Start:g.End]))
+	k := pair(g.Word, reading.Key(syls[g.Start:g.End]))
 	if e, ok := s.Confirmed[k]; ok && s.Time > e.Updated {
 		e.Updated = s.Time
 		s.Confirmed[k] = e
