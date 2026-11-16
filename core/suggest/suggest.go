@@ -8,15 +8,16 @@ import (
 	"github.com/0c-biggo/0c-ime/core/decode"
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/layout"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
 // Suggestion 是一個補全建議。
 type Suggestion struct {
-	Word    string            // 完整的詞
-	Start   int               // 該詞在組字區的起點（音節位置）
-	Rest    string            // 尚未輸入的部分，以淡色顯示
-	Syls    []zhuyin.Syllable // 尚未輸入的音節
+	Word    string           // 完整的詞
+	Start   int              // 該詞在組字區的起點（音節位置）
+	Rest    string           // 尚未輸入的部分，以淡色顯示
+	Syls    reading.Sequence // 尚未輸入的音節
 	Conf    float64
 	Replace string // 非空時為將被替換的已顯示前綴，必須清楚預覽後才接受
 }
@@ -178,7 +179,7 @@ func completion(c decode.Completion, start, typed int, o Options) *Suggestion {
 	// 這是操作效益的代理量，不宣稱等同真實輸入時間。
 	keys := 0
 	for _, syl := range c.Entry.Reading[typed:] {
-		keys += len(layout.Standard.Keys(syl))
+		keys += len(layout.Standard.Keys(zhuyin.Syllable(syl)))
 	}
 	if o.AttentionCost > 0 && c.Conf*float64(keys-1) <= o.AttentionCost {
 		return nil

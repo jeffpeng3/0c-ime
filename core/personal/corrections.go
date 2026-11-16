@@ -4,7 +4,6 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -38,7 +37,7 @@ func CorrectionFor(syls []zhuyin.Syllable, g Seg) (Correction, bool) {
 			return Correction{}, false
 		}
 	}
-	c := Correction{Reading: reading.Key(syls[g.Start:g.End]), Word: g.Word}
+	c := Correction{Reading: readingKey(syls[g.Start:g.End]), Word: g.Word}
 	if g.Start > 0 && syls[g.Start-1].Legal() {
 		c.Left = syls[g.Start-1]
 	}
@@ -88,7 +87,7 @@ func (m *Model) resolveCorrections(syls []zhuyin.Syllable, start, end int, word 
 			if j < len(syls) && syls[j].Legal() {
 				right = syls[j]
 			}
-			k := correctionKey(reading.Key(syls[i:j]), left, right)
+			k := correctionKey(readingKey(syls[i:j]), left, right)
 			old, ok := m.Store.Corrections[k]
 			if !ok || m.Store.Tombstones[old.Word] {
 				continue

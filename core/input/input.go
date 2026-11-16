@@ -37,11 +37,11 @@ func (Exact) Expand(syls []zhuyin.Syllable) Lattice {
 	for i, s := range syls {
 		if s.Untoned() {
 			for _, y := range s.Tones() {
-				lat[i] = append(lat[i], Hyp{Syl: y, Untoned: true})
+				lat[i] = append(lat[i], Hyp{Syl: reading.Unit(y), Untoned: true})
 			}
 			continue
 		}
-		lat[i] = []Hyp{{Syl: s}}
+		lat[i] = []Hyp{{Syl: reading.Unit(s)}}
 	}
 	return lat
 }

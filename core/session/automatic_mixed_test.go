@@ -114,7 +114,7 @@ func TestMixedExplicitPhoneticAndLiteralAmbiguity(t *testing.T) {
 		t.Fatalf("explicit phonetic: %+v", snap)
 	}
 	s = mixedSession()
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "誰", Reading: zhuyin.ParseReading("ㄕㄟ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "誰", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄕㄟ")), PRW: 1})
 	mixedType(s, "go")
 	key(s, proto.KeyDown)
 	pickText(t, s, "go")
@@ -139,7 +139,7 @@ func TestMixedFirstToneEnglishCollisions(t *testing.T) {
 			fresh := func() *Session {
 				s := mixedSession()
 				s.English = english.New([]english.Word{{Text: tc.raw, Weight: 100}, {Text: tc.completion, Weight: 50}})
-				s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: tc.word, Reading: zhuyin.ParseReading(tc.reading), PRW: 1})
+				s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: tc.word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(tc.reading)), PRW: 1})
 				return s
 			}
 			s := fresh()
@@ -204,7 +204,7 @@ func TestMixedCompleteEnglishWordKeepsSpace(t *testing.T) {
 		}
 		s.English = english.New(words)
 		for _, e := range []struct{ surface, reading string }{{"欸", "ㄟ"}, {"婀", "ㄜ"}, {"斯", "ㄙ"}, {"一", "ㄧ"}, {"窩", "ㄨㄛ"}, {"音", "ㄧㄣ"}} {
-			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: e.surface, Reading: zhuyin.ParseReading(e.reading), PRW: 1})
+			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: e.surface, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.reading)), PRW: 1})
 		}
 		return s
 	}
@@ -394,7 +394,7 @@ func TestMixedLetterIAndNeutralToneParticle(t *testing.T) {
 		for _, e := range []struct{ surface, reading string }{
 			{"喔", "ㄛ"}, {"呣", "ㄇ"}, {"阿", "ㄜ"}, {"餓", "ㄜˋ"}, {"呃", "ㄜˋ"}, {"安", "ㄢ"}, {"唉", "ㄞ"}, {"欸", "ㄞ"}, {"欸", "ㄟ"}, {"哦", "ㄜˊ"}, {"哦", "ㄛˊ"}, {"啦", "ㄌㄚ˙"}, {"拉", "ㄌㄚ"}, {"東", "ㄉㄨㄥ"}, {"西", "ㄒㄧ"}, {"東西", "ㄉㄨㄥ ㄒㄧ˙"},
 		} {
-			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: e.surface, Reading: zhuyin.ParseReading(e.reading), PRW: 1})
+			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: e.surface, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.reading)), PRW: 1})
 		}
 		s.model.LM.(*lm.Mem).SetUni("東", 6e-4) // 常用字：2j/␣ 接空白組成罕用字才照字面（#249）
 		return s

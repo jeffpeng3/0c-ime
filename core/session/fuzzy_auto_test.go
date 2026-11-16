@@ -361,7 +361,7 @@ func TestAutoSpliceKeepsTheBaseOutsideTheBlock(t *testing.T) {
 func TestFuzzyAutoLeavesAnExistingCorrectionAlone(t *testing.T) {
 	const typed = "ㄧㄣ ㄍㄞ"
 	lex, sys := fuzzyLexicon(fillers(typed)...)
-	lex.Add(lexicon.Entry{Surface: "應該", Reading: zhuyin.ParseReading("ㄧㄣ ㄍㄞ"), PRW: 1, Correction: true})
+	lex.Add(lexicon.Entry{Surface: "應該", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄣ ㄍㄞ")), PRW: 1, Correction: true})
 	s := New(personal.NewModel(lex, sys))
 	s.Fuzzy = autoConfig(fuzzy.EnEng)
 	s.Opt.PrefixAware = false

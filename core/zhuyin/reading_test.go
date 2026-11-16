@@ -50,3 +50,15 @@ func TestReadingUnitsRoundTrip(t *testing.T) {
 		t.Errorf("Syllables(nil) = %#v, want nil", got)
 	}
 }
+
+// reading.Unit.Valid 不能與注音的結構檢查分歧。
+func TestReadingUnitValidityMatchesZhuyin(t *testing.T) {
+	for _, s := range []string{
+		"ㄓㄨˋ", "ㄇㄜ˙", "ㄔ", "ㄐㄩㄥˇ", "ㄧ", "ㄦˊ", "ㄅㄆ", "ㄚㄅ", "ˉ", "ㄓˋˊ", "ㄓx", "", "ㄓ ㄨˋ",
+	} {
+		got, want := reading.Unit(s).Valid(), zhuyin.Syllable(s).Valid()
+		if got != want {
+			t.Errorf("%q: reading.Unit.Valid = %v, zhuyin.Syllable.Valid = %v", s, got, want)
+		}
+	}
+}

@@ -20,7 +20,7 @@ const armstrongReading = "ㄒㄧㄣ ㄚ ㄇㄨˇ ㄙ ㄊㄜˋ ㄌㄤˇ ㄏㄨㄟ
 func vocabEngine() *Engine {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	add := func(w, r string, p float64) {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading(r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(r)), PRW: 1})
 		sys.SetUni(w, p)
 	}
 	syls := zhuyin.ParseReading(armstrongReading)
@@ -235,7 +235,7 @@ func TestVocabTabCompletion(t *testing.T) {
 func TestVocabAnnotate(t *testing.T) {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	add := func(w, r string, prw, p float64) {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading(r), PRW: prw})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(r)), PRW: prw})
 		sys.SetUni(w, p)
 	}
 	add("曾", "ㄘㄥˊ", 1, 1e-4)
@@ -288,7 +288,7 @@ func TestVocabReadingsConflict(t *testing.T) {
 // 排名與標注音只對漢字有意義，英文詞略過；刪除英文詞不動自動學到的英文字。
 func TestVocabEnglishWords(t *testing.T) {
 	e := vocabEngine()
-	e.Model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "孬", Reading: zhuyin.ParseReading("ㄋㄠ"), PRW: 1})
+	e.Model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "孬", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄋㄠ")), PRW: 1})
 	e.Model.LM.(*lm.Mem).SetUni("孬", 1e-5)
 	e.MixedInput, e.Preview02 = true, true
 	typeKeys := func(keys string) string {

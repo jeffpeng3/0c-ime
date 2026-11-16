@@ -49,7 +49,7 @@ func toyEngine(Arm) (*engine.Engine, error) {
 		w, r string
 		p    float64
 	}{{"吃飯", "ㄔ ㄈㄢˋ", 1e-3}, {"飯", "ㄈㄢˋ", 2e-3}, {"吃", "ㄔ", 2e-3}, {"疵", "ㄘ", 1e-6}, {"知識", "ㄓ ㄕˋ", 1e-3}, {"資", "ㄗ", 1e-6}, {"是", "ㄕˋ", 1e-6}} {
-		lex.Add(lexicon.Entry{Surface: w.w, Reading: zhuyin.ParseReading(w.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(w.r)), PRW: 1})
 		sys.SetUni(w.w, w.p)
 	}
 	return engine.New(lex, sys), nil

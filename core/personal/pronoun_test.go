@@ -11,7 +11,7 @@ import (
 func pronounModel() *Model {
 	lex := lexicon.NewMem()
 	for _, e := range [][2]string{{"他們", "ㄊㄚ ㄇㄣ˙"}, {"她們", "ㄊㄚ ㄇㄣ˙"}, {"吉他", "ㄐㄧˊ ㄊㄚ"}, {"你好", "ㄋㄧˇ ㄏㄠˇ"}, {"妳好", "ㄋㄧˇ ㄏㄠˇ"}} {
-		lex.Add(lexicon.Entry{Surface: e[0], Reading: zhuyin.ParseReading(e[1]), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e[0], Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e[1])), PRW: 1})
 	}
 	return NewModel(lex, lm.NewMem())
 }
@@ -73,7 +73,7 @@ func TestPronounGlobalHabit(t *testing.T) {
 // 固定詞中的「她」沒有對應的中性詞，不是可換的代名詞（code review：崇她社 被改成 崇他社）。
 func TestPronounFixedWordsAreNotSites(t *testing.T) {
 	m := pronounModel()
-	m.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "崇她社", Reading: zhuyin.ParseReading("ㄔㄨㄥˊ ㄊㄚ ㄕㄜˋ"), PRW: 1})
+	m.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "崇她社", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄔㄨㄥˊ ㄊㄚ ㄕㄜˋ")), PRW: 1})
 	if sites := m.PronounSites([]Seg{{Word: "崇她社", Start: 0, End: 3}, {Word: "她", Start: 3, End: 4}}); len(sites) != 1 || sites[0].Seg != 1 {
 		t.Fatalf("只有單字「她」是代名詞：%+v", sites)
 	}
@@ -109,7 +109,7 @@ func TestPronounCueCreationAndEviction(t *testing.T) {
 // 撤銷固定詞不清除代名詞習慣；撤銷「她」才清除。
 func TestPronounForgetOnlyPronounWords(t *testing.T) {
 	m := pronounModel()
-	m.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "崇她社", Reading: zhuyin.ParseReading("ㄔㄨㄥˊ ㄊㄚ ㄕㄜˋ"), PRW: 1})
+	m.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "崇她社", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄔㄨㄥˊ ㄊㄚ ㄕㄜˋ")), PRW: 1})
 	learnPronoun(m, "她", true, "男朋友")
 	m.Forget("崇她社")
 	if _, ok := m.Store.Pronouns["他"]; !ok {

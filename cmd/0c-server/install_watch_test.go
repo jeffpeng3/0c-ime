@@ -158,7 +158,7 @@ func writeCompiledData(t *testing.T, data string) string {
 	if err := os.MkdirAll(data, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	lex, err := lexicon.Build([]lexicon.Entry{{Surface: "麻婆", Reading: zhuyin.ParseReading("ㄇㄚˊ ㄆㄛˊ"), PRW: 1}})
+	lex, err := lexicon.Build([]lexicon.Entry{{Surface: "麻婆", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄇㄚˊ ㄆㄛˊ")), PRW: 1}})
 	if err != nil {
 		t.Fatal(err)
 	}

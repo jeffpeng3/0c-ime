@@ -20,7 +20,7 @@ func zhuyinTextSession() *Session {
 	}{
 		{"我", "ㄨㄛˇ", 1e-2}, {"天", "ㄊㄧㄢ", 3e-3}, {"的", "ㄉㄜ˙", 2e-2}, {"吃", "ㄔ", 2e-3}, {"好", "ㄏㄠˇ", 5e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

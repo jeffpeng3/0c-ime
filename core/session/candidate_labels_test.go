@@ -166,7 +166,7 @@ func TestDocumentLabelRequiresConfirmedEnabledContext(t *testing.T) {
 
 func TestLabelsPreserveNearNotesAndOmitSymbols(t *testing.T) {
 	s := newSession()
-	entry := lexicon.Entry{Surface: "景", Reading: zhuyin.ParseReading("ㄐㄧㄥˇ"), PRW: 1}
+	entry := lexicon.Entry{Surface: "景", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄐㄧㄥˇ")), PRW: 1}
 	c := &candState{items: []decode.Candidate{{Entry: entry}}, matched: []string{"ㄐㄧㄥˇ"}}
 	c.labels = s.candidateLabels(c)
 	s.cand = c

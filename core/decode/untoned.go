@@ -108,7 +108,7 @@ func reading(lex lexicon.Source, lat input.Lattice, start, end int, word string,
 			if h.Cost > 0 {
 				continue
 			}
-			r := append(reading[:len(reading):len(reading)], h.Syl)
+			r := append(reading[:len(reading):len(reading)], zhuyin.Syllable(h.Syl))
 			if lex.HasPrefix(r) {
 				walk(pos+1, r)
 			}

@@ -18,7 +18,7 @@ func cursorSession() *Session {
 		{"風", "ㄈㄥ"}, {"景", "ㄐㄧㄥˇ"}, {"井", "ㄐㄧㄥˇ"},
 		{"風景", "ㄈㄥ ㄐㄧㄥˇ"}, {"風井", "ㄈㄥ ㄐㄧㄥˇ"},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ParseReading(e.reading), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.reading)), PRW: 1})
 		sys.SetUni(e.word, .001)
 	}
 	return New(personal.NewModel(lex, sys))

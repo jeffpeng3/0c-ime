@@ -5,6 +5,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/layout"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -27,9 +28,9 @@ func (s *Session) expand(syls []zhuyin.Syllable) input.Lattice {
 		if len(readings) < 2 {
 			continue
 		}
-		row := []input.Hyp{{Syl: readings[0]}}
+		row := []input.Hyp{{Syl: readingpkg.Unit(readings[0])}}
 		for _, r := range readings[1:] {
-			row = append(row, input.Hyp{Syl: r, Cost: layout.AltCost})
+			row = append(row, input.Hyp{Syl: readingpkg.Unit(r), Cost: layout.AltCost})
 		}
 		for _, h := range lat[i] {
 			if !slices.ContainsFunc(row, func(x input.Hyp) bool { return x.Syl == h.Syl }) {

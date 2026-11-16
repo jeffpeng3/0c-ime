@@ -114,7 +114,7 @@ func main() {
 func readings(lex *lexicon.Compact, w string) string {
 	var out []string
 	for _, e := range lex.Lookup(w) {
-		out = append(out, zhuyin.Key(e.Reading))
+		out = append(out, zhuyin.Key(zhuyin.Syllables(e.Reading)))
 	}
 	sort.Strings(out)
 	return strings.Join(out, "／")

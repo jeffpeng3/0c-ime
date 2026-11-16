@@ -23,7 +23,7 @@ func weakPrefixSession(favor string) *Session {
 		{"這個", "ㄓㄜˋ ㄍㄜ˙", 2e-3}, {"法", "ㄈㄚˋ", 1.46e-4}, {"發", "ㄈㄚˋ", 2e-5}, {"髮型", "ㄈㄚˋ ㄒㄧㄥˊ", 8.52e-6},
 		{"型", "ㄒㄧㄥˊ", 5e-5}, {"好", "ㄏㄠˇ", 1e-3}, {"禿", "ㄊㄨ", 4.29e-6}, {"突然", "ㄊㄨ ㄖㄢˊ", 1.4e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

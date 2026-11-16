@@ -104,10 +104,10 @@ func main() {
 		if len(e.Reading) != 1 || e.Correction || utf8.RuneCountInString(e.Surface) != 1 {
 			return
 		}
-		s := bySyl[e.Reading[0]]
+		s := bySyl[zhuyin.Syllable(e.Reading[0])]
 		if s == nil {
 			s = &syl{}
-			bySyl[e.Reading[0]] = s
+			bySyl[zhuyin.Syllable(e.Reading[0])] = s
 		}
 		if isRare(e.Surface) {
 			s.rare = append(s.rare, e.Surface)
@@ -135,7 +135,7 @@ func main() {
 				best = e
 			}
 		}
-		return best.Reading
+		return zhuyin.Syllables(best.Reading)
 	}
 	set := map[string]scenario{}
 	add := func(left string, r zhuyin.Syllable) {

@@ -91,7 +91,7 @@ func TestShippedLexiconRanksNonBig5CharsAfterCommonOnes(t *testing.T) {
 			}
 			if e.Rare == common[ch] {
 				if wrong++; wrong <= 10 {
-					t.Errorf("%s %s：罕用 %v，但一般來源 %v", ch, zhuyin.Key(e.Reading), e.Rare, common[ch])
+					t.Errorf("%s %s：罕用 %v，但一般來源 %v", ch, zhuyin.Key(zhuyin.Syllables(e.Reading)), e.Rare, common[ch])
 				}
 			}
 		}

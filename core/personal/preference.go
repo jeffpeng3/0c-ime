@@ -4,7 +4,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -68,7 +67,7 @@ func (m *Model) ReadingLift(word string, syls []zhuyin.Syllable) float64 {
 	if lifts == nil {
 		return 0
 	}
-	k := reading.Key(syls)
+	k := readingKey(syls)
 	for _, l := range lifts {
 		if l.reading == k {
 			return l.lift
@@ -155,7 +154,7 @@ func (m *Model) keepConfirmed(syls []zhuyin.Syllable, g Seg) {
 	if len(s.Confirmed) == 0 || g.Partial || g.End-g.Start < habitMinSyllables || g.Start < 0 || g.End > len(syls) {
 		return
 	}
-	k := pair(g.Word, reading.Key(syls[g.Start:g.End]))
+	k := pair(g.Word, readingKey(syls[g.Start:g.End]))
 	if e, ok := s.Confirmed[k]; ok && s.Time > e.Updated {
 		e.Updated = s.Time
 		s.Confirmed[k] = e

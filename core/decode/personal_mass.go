@@ -6,6 +6,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -79,7 +80,7 @@ func (d *Decoder) readingLift(start, end int, left string, e lexicon.Entry) floa
 	if !ok {
 		return 0
 	}
-	lift := r.ReadingLift(e.Surface, e.Reading)
+	lift := r.ReadingLift(e.Surface, zhuyin.Syllables(e.Reading))
 	if lift <= 0 {
 		return 0
 	}
@@ -109,7 +110,7 @@ func (d *Decoder) HabitLift(lat input.Lattice, h Hypothesis, seg Seg, reading []
 		}
 	}
 	d.prepareMass(lat)
-	return d.readingLift(seg.Start, seg.End, left, lexicon.Entry{Surface: seg.Word, Reading: reading})
+	return d.readingLift(seg.Start, seg.End, left, lexicon.Entry{Surface: seg.Word, Reading: zhuyin.ReadingUnits(reading)})
 }
 
 func (d *Decoder) arcProbability(start, end int, left string, e lexicon.Entry) float64 {
@@ -134,12 +135,12 @@ func (d *Decoder) languageProbability(left string, e lexicon.Entry) float64 {
 	if !ok || !a.HasAdaptation() {
 		return p
 	}
-	key := left + "\t" + zhuyin.Key(e.Reading)
+	key := left + "\t" + readingpkg.Key(e.Reading)
 	if factor, ok := d.massScale[key]; ok {
 		return p * factor
 	}
 	// Deduplicate surfaces so duplicated sources cannot manufacture mass.
-	entries := d.Lex.Exact(e.Reading)
+	entries := d.Lex.Exact(zhuyin.Syllables(e.Reading))
 	weights := map[string]float64{}
 	var order []string
 	for _, c := range entries {

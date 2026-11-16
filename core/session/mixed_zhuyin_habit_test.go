@@ -25,7 +25,7 @@ func zhuyinHabitModel() *personal.Model {
 		{"我", "ㄨㄛˇ", 1e-2}, {"窩", "ㄨㄛˇ", 1e-4}, {"天", "ㄊㄧㄢ", 3e-3}, {"的", "ㄉㄜ˙", 2e-2}, {"有", "ㄧㄡˇ", 5e-3},
 		{"真", "ㄓㄣ", 2e-3}, {"個", "ㄍㄜ˙", 3e-3}, {"第", "ㄉㄧˋ", 2e-3}, {"名", "ㄇㄧㄥˊ", 1e-3}, {"吃", "ㄔ", 2e-3}, {"兒", "ㄦ", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	return personal.NewModel(lex, sys)
@@ -623,7 +623,7 @@ func TestZhuyinHabitPickOverCharKeepsNeuralDisplay(t *testing.T) {
 	// 換掉的字在神經選的詞裡（窩兒）：詞的另一半留著。
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, e := range []struct{ w, r string }{{"真", "ㄓㄣ"}, {"我", "ㄨㄛˇ"}, {"窩", "ㄨㄛˇ"}, {"兒", "ㄦ"}, {"窩兒", "ㄨㄛˇ ㄦ"}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, 1e-3)
 	}
 	sys.SetUni("窩", 1e-5)

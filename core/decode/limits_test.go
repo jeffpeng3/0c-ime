@@ -21,7 +21,7 @@ func TestLimitsControlWordLength(t *testing.T) {
 	}
 
 	lex := lexicon.NewMem()
-	lex.Add(lexicon.Entry{Surface: word, Reading: syls, PRW: 1})
+	lex.Add(lexicon.Entry{Surface: word, Reading: zhuyin.ReadingUnits(syls), PRW: 1})
 	lat := input.Exact{}.Expand(syls)
 
 	if got := MaxLenFor(lex, lang.Limits{MaxWordUnits: 12}); got != 12 {

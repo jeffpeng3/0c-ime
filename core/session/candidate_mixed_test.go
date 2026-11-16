@@ -28,7 +28,7 @@ func shiwuSession() *Session {
 		{"世", "ㄕˋ", .001}, {"市", "ㄕˋ", .001},
 		{"物", "ㄨˋ", .003}, {"務", "ㄨˋ", .002}, {"誤", "ㄨˋ", .001},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ParseReading(e.reading), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.reading)), PRW: 1})
 		sys.SetUni(e.word, e.p)
 	}
 	return New(personal.NewModel(lex, sys))

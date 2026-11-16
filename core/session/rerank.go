@@ -9,6 +9,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/decode"
 	"github.com/0c-biggo/0c-ime/core/input"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/rerank"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
@@ -312,7 +313,7 @@ func (s *Session) expandNeutral(lat input.Lattice, start, end int, rows []decode
 		return rows
 	}
 	neutral := slices.Clone(lat[start:end])
-	neutral[len(neutral)-1] = []input.Hyp{{Syl: last.WithTone(5)}}
+	neutral[len(neutral)-1] = []input.Hyp{{Syl: readingpkg.Unit(last.WithTone(5))}}
 	syls := slices.Clone(s.syls[start:end])
 	syls[len(syls)-1] = last.WithTone(5)
 	penalty := s.dec.CorrectionPenalty

@@ -31,7 +31,7 @@ func hsuSession(t *testing.T) *Session {
 		{"想", "ㄒㄧㄤˇ", 3e-3}, {"吃", "ㄔ", 2e-3}, {"的", "ㄉㄜ˙", 3e-2}, {"這", "ㄓㄜˋ", 5e-3},
 		{"欸你好", "ㄟˋ ㄋㄧˇ ㄏㄠˇ", 1e-3}, {"你", "ㄋㄧˇ", 8e-3}, {"你好", "ㄋㄧˇ ㄏㄠˇ", 2e-3}, {"國", "ㄍㄨㄛˊ", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

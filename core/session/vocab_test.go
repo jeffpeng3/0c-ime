@@ -27,7 +27,7 @@ func TestNeuralKeepsCustomWord(t *testing.T) {
 		{"宜君", "ㄧˊ ㄐㄩㄣ", 1e-5}, {"甲乙", "ㄐㄧㄚˇ ㄧˇ", 1e-6}, {"丙丁戊", "ㄅㄧㄥˇ ㄉㄧㄥ ㄨˋ", 1e-6},
 		{"今天", "ㄐㄧㄣ ㄊㄧㄢ", 1e-3}, {"今", "ㄐㄧㄣ", 1e-4}, {"天", "ㄊㄧㄢ", 1e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	m := personal.NewModel(lex, sys)

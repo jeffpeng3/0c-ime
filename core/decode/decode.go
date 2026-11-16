@@ -10,6 +10,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
 	"github.com/0c-biggo/0c-ime/core/lm"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -63,7 +64,7 @@ type Lock struct {
 // matchedReading 回傳詞條讀音相對於使用者打的音（音節格第一個假設）有差異時的讀音鍵，沒有差異為空字串。
 func matchedReading(lat input.Lattice, start int, reading []zhuyin.Syllable) string {
 	for k, y := range reading {
-		if at := start + k; at < len(lat) && len(lat[at]) > 0 && lat[at][0].Syl != y {
+		if at := start + k; at < len(lat) && len(lat[at]) > 0 && lat[at][0].Syl != readingpkg.Unit(y) {
 			return zhuyin.Key(reading)
 		}
 	}
@@ -75,7 +76,7 @@ func segMatched(lat input.Lattice, start int, e lexicon.Entry, cost float64) str
 	if cost <= 0 {
 		return ""
 	}
-	return matchedReading(lat, start, e.Reading)
+	return matchedReading(lat, start, zhuyin.Syllables(e.Reading))
 }
 
 // MaxWordLen 是沒有語言上限時的詞條讀音長度搜尋上限。
@@ -196,7 +197,7 @@ func (d *Decoder) spans(lat input.Lattice, start int, fn func(reading []zhuyin.S
 			if d.MaxCost > 0 && cost+h.Cost > d.MaxCost {
 				continue
 			}
-			r := append(reading[:len(reading):len(reading)], h.Syl)
+			r := append(reading[:len(reading):len(reading)], zhuyin.Syllable(h.Syl))
 			if !d.Lex.HasPrefix(r) {
 				continue
 			}
@@ -457,7 +458,7 @@ func partialMatched(lat input.Lattice, start, end int, t *tail) string {
 	if t.bestCost <= 0 || len(t.best.Reading) < end-start {
 		return ""
 	}
-	return matchedReading(lat, start, t.best.Reading[:end-start])
+	return matchedReading(lat, start, zhuyin.Syllables(t.best.Reading[:end-start]))
 }
 
 // group 依顯示字串（詞的前 k 個字）彙總尾端詞條的機率；更長的詞乘上 cont（0 表示不打折）。
@@ -778,7 +779,7 @@ func (d *Decoder) CandidatesInContextWindows(lat input.Lattice, start, length in
 				best = math.Max(best, st.score+d.arcLog(start, end, st.last, e, cost))
 			}
 			score := best + suffix(end, e.Surface)
-			if v, ok := inner[innerKey(e.Surface, e.Reading)]; ok && v > score {
+			if v, ok := inner[innerKey(e.Surface, zhuyin.Syllables(e.Reading))]; ok && v > score {
 				score = v
 			}
 			viable = viable || !math.IsInf(score, -1)

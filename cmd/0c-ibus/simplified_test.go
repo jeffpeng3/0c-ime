@@ -136,7 +136,7 @@ func TestSimplifiedNoticeClearsWithCandidatePages(t *testing.T) {
 	e, _, sock := newTestEngine(t)
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, w := range strings.Split("是事世市式室試視示士勢氏仕侍誓適釋飾", "") {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading("ㄕˋ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄕˋ")), PRW: 1})
 		sys.SetUni(w, 1e-4)
 	}
 	eng := core.New(lex, sys)

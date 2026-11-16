@@ -46,7 +46,7 @@ var fuzzyWords = []word{
 func fuzzyLexicon(extra ...word) (*lexicon.Mem, *lm.Mem) {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, e := range append(slices.Clone(fuzzyWords), extra...) {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	return lex, sys

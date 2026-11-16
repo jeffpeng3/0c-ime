@@ -17,7 +17,7 @@ import (
 func testEngine() *Engine {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, w := range []string{"吃", "痴"} {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading("ㄔ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄔ")), PRW: 1})
 		sys.SetUni(w, 1e-3)
 	}
 	return New(lex, sys)

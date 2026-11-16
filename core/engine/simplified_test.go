@@ -18,7 +18,7 @@ func planEngine(t *testing.T) *Engine {
 	t.Helper()
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, e := range []struct{ w, r string }{{"計畫", "ㄐㄧˋ ㄏㄨㄚˋ"}, {"計", "ㄐㄧˋ"}, {"畫", "ㄏㄨㄚˋ"}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, 1e-3)
 	}
 	return New(lex, sys)

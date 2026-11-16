@@ -15,7 +15,7 @@ import (
 
 func TestPackRuntimeCalibration(t *testing.T) {
 	dir := t.TempDir()
-	lex, err := lexicon.Build([]lexicon.Entry{{Surface: "甲", Reading: zhuyin.ParseReading("ㄐㄧㄚˇ"), PRW: 1}})
+	lex, err := lexicon.Build([]lexicon.Entry{{Surface: "甲", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄐㄧㄚˇ")), PRW: 1}})
 	if err != nil {
 		t.Fatal(err)
 	}

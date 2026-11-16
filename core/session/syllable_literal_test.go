@@ -20,7 +20,7 @@ func syllableLiteralSession(extra ...word) *Session {
 	for _, e := range append([]word{
 		{"我", "ㄨㄛˇ", 1e-2}, {"想", "ㄒㄧㄤˇ", 3e-3}, {"吃", "ㄔ", 2e-3}, {"欠", "ㄑㄧㄢˋ", 1e-3}, {"喔", "ㄛ", 1e-3},
 	}, extra...) {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	return New(personal.NewModel(lex, sys))

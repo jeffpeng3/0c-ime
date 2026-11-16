@@ -288,13 +288,13 @@ func (m *Model) rankChecker(margin float64) *rankChecker {
 	return r
 }
 
-func (r *rankChecker) homophones(syls []zhuyin.Syllable) map[string]float64 {
+func (r *rankChecker) homophones(syls reading.Sequence) map[string]float64 {
 	k := reading.Key(syls)
 	if h, ok := r.homo[k]; ok {
 		return h
 	}
 	h := map[string]float64{}
-	for _, e := range r.src.Exact(syls) {
+	for _, e := range r.src.Exact(zhuyin.Syllables(syls)) {
 		if !e.Correction {
 			h[e.Surface] = max(h[e.Surface], e.PRW)
 		}

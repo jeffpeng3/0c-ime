@@ -54,7 +54,7 @@ func newUser(tb testing.TB, p personal.Params, extras ...extra) *user {
 		tb.Fatal(err)
 	}
 	for _, x := range extras {
-		lex.Add(lexicon.Entry{Surface: x.surface, Reading: zhuyin.ParseReading(x.reading), PRW: x.prw})
+		lex.Add(lexicon.Entry{Surface: x.surface, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.reading)), PRW: x.prw})
 		sys.SetUni(x.surface, x.uni)
 	}
 	var e *engine.Engine

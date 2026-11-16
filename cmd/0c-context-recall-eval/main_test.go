@@ -27,7 +27,7 @@ func fixture(partial bool) (*lexicon.Mem, *lm.Mem) {
 		}{"風", "ㄈㄥ", .5})
 	}
 	for _, e := range entries {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	sys.SetBi("風", "景", .9)

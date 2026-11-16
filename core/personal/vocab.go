@@ -6,7 +6,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/0c-biggo/0c-ime/core/lm"
-	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/vocab"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
@@ -41,7 +40,7 @@ func (m *Model) HasVocab() bool { return m.vocabLen() > 0 }
 
 // VocabReading 回報 w 是否為讀音 syls 的自訂詞。
 func (m *Model) VocabReading(w string, syls []zhuyin.Syllable) bool {
-	return m.vocabLen() > 0 && m.Vocab.HasReading(w, reading.Key(syls))
+	return m.vocabLen() > 0 && m.Vocab.HasReading(w, readingKey(syls))
 }
 
 // VocabEnglish 回報混打的待定按鍵 raw 是否恰好是使用者加的英文詞（大小寫照字面，#146）。

@@ -40,7 +40,7 @@ func simplifiedSession(t *testing.T, on bool) (*Session, *zhconv.Converter) {
 		{"安", "ㄢ", 1e-6}, {"淨", "ㄐㄧㄥˋ", 1e-6}, {"下", "ㄒㄧㄚˋ", 1e-6}, {"沈", "ㄔㄣˊ", 1e-6}, {"明", "ㄇㄧㄥˊ", 1e-6},
 		{"瞭", "ㄌㄧㄠˋ", 1e-6}, {"瞭", "ㄌㄧㄠˇ", 1e-6}, {"望", "ㄨㄤˋ", 1e-6}, {"大", "ㄉㄚˋ", 1e-6}, {"學", "ㄒㄩㄝˊ", 1e-6},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

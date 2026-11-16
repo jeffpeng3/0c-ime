@@ -23,7 +23,7 @@ func lateInitialSession() *Session {
 		{"本", "ㄅㄣˇ", 1.2e-3}, {"我", "ㄨㄛˇ", 2e-3}, {"好", "ㄏㄠˇ", 1e-3}, {"你", "ㄋㄧˇ", 1e-3}, {"是", "ㄕˋ", 5e-3},
 		{"低", "ㄉㄧ", 2e-4}, {"震", "ㄓㄣˋ", 5e-5}, {"播", "ㄅㄛˋ", 5e-5}, {"跛", "ㄅㄛˇ", 1e-6}, {"博", "ㄅㄛˊ", 5e-4}, {"辣", "ㄌㄚˋ", 3e-5},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

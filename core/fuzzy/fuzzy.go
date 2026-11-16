@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/0c-biggo/0c-ime/core/input"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -315,8 +316,8 @@ func (c Config) Widen(lat input.Lattice, syls []zhuyin.Syllable, from, to int) i
 		row := append([]input.Hyp(nil), lat[i]...)
 		for _, y := range syls[i].Tones() { // 沒打聲調的音節（#150）：每個聲調各自的近音；其他音節只有自己
 			for _, a := range c.Alternatives(y) {
-				if !hasSyl(row, a.Syl) {
-					row = append(row, input.Hyp{Syl: a.Syl, Cost: a.Cost()})
+				if !hasSyl(row, reading.Unit(a.Syl)) {
+					row = append(row, input.Hyp{Syl: reading.Unit(a.Syl), Cost: a.Cost()})
 				}
 			}
 		}
@@ -325,7 +326,7 @@ func (c Config) Widen(lat input.Lattice, syls []zhuyin.Syllable, from, to int) i
 	return out
 }
 
-func hasSyl(row []input.Hyp, s zhuyin.Syllable) bool {
+func hasSyl(row []input.Hyp, s reading.Unit) bool {
 	for _, h := range row {
 		if h.Syl == s {
 			return true

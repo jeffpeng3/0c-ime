@@ -36,7 +36,7 @@ func newShemeSessionWithKeeps(t testing.TB) *Session {
 		{"為", "ㄨㄟˋ", 1e-3}, {"為什麼", "ㄨㄟˋ ㄕㄜˊ ㄇㄜ˙", 2e-4}, {"為甚麼", "ㄨㄟˋ ㄕㄜˊ ㄇㄜ˙", 1e-5},
 		{"時候", "ㄕˊ ㄏㄡˋ", 1e-3}, {"時", "ㄕˊ", 1e-4}, {"候", "ㄏㄡˋ", 1e-5}, {"是", "ㄕˋ", 1e-2},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

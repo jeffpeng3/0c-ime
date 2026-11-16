@@ -41,8 +41,8 @@ func TestLongestWord(t *testing.T) {
 	long := "阿姆斯特朗回旋加速噴氣式阿姆斯特朗炮"
 	reading := "ㄚ ㄇㄨˇ ㄙ ㄊㄜˋ ㄌㄤˇ ㄏㄨㄟˊ ㄒㄩㄢˊ ㄐㄧㄚ ㄙㄨˋ ㄆㄣ ㄑㄧˋ ㄕˋ ㄚ ㄇㄨˇ ㄙ ㄊㄜˋ ㄌㄤˇ ㄆㄠˋ"
 	es := []Entry{
-		{Surface: "阿姆斯特朗", Reading: zhuyin.ParseReading("ㄚ ㄇㄨˇ ㄙ ㄊㄜˋ ㄌㄤˇ"), PRW: 1},
-		{Surface: "喔", Reading: zhuyin.ParseReading("ㄛ"), PRW: 1},
+		{Surface: "阿姆斯特朗", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄚ ㄇㄨˇ ㄙ ㄊㄜˋ ㄌㄤˇ")), PRW: 1},
+		{Surface: "喔", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄛ")), PRW: 1},
 	}
 	short, err := Build(es)
 	if err != nil {
@@ -51,7 +51,7 @@ func TestLongestWord(t *testing.T) {
 	if got := Longest(short); got != 5 {
 		t.Errorf("短詞庫：%d", got)
 	}
-	es = append(es, Entry{Surface: long, Reading: zhuyin.ParseReading(reading), PRW: 1})
+	es = append(es, Entry{Surface: long, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(reading)), PRW: 1})
 	mem := NewMem()
 	for _, e := range es {
 		mem.Add(e)
@@ -88,7 +88,7 @@ func TestLoadVariableLengthReading(t *testing.T) {
 		{reading.Sequence{"お", "ち", "ゃ"}, "お茶"},
 	}
 	for _, c := range cases {
-		es := m.Exact(c.reading)
+		es := m.Exact(zhuyin.Syllables(c.reading))
 		if len(es) != 1 || es[0].Surface != c.want {
 			t.Errorf("Exact(%s) = %+v, want %q", reading.Key(c.reading), es, c.want)
 		}
@@ -100,7 +100,7 @@ func TestLoadVariableLengthReading(t *testing.T) {
 		t.Errorf("LongestWord = %d, want 4", got)
 	}
 	// 前綴查詢也要跨過詞面長度。
-	if es := m.Prefixed(reading.Sequence{"た", "べ"}); len(es) != 1 || es[0].Surface != "食べた" {
+	if es := m.Prefixed(zhuyin.Syllables(reading.Sequence{"た", "べ"})); len(es) != 1 || es[0].Surface != "食べた" {
 		t.Errorf("Prefixed = %+v", es)
 	}
 }

@@ -3,6 +3,7 @@ package lexicon
 import (
 	"testing"
 
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -12,13 +13,13 @@ func TestNeutralParticles(t *testing.T) {
 		{"喔", "ㄛ"}, {"啊", "ㄛ"}, {"哦", "ㄛˊ"}, {"阿", "ㄜ"}, {"餓", "ㄜˋ"}, {"呃", "ㄜˋ"},
 		{"啦", "ㄌㄚ˙"}, {"拉", "ㄌㄚ"}, {"嗎", "ㄇㄚ"}, {"西", "ㄒㄧ"}, {"東西", "ㄉㄨㄥ ㄒㄧ˙"}, {"安", "ㄢ"},
 	} {
-		m.Add(Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		m.Add(Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 	}
 	src := NeutralParticles(m)
 	surfaces := func(es []Entry) (out []string) {
 		for _, e := range es {
 			out = append(out, e.Surface)
-			if zhuyin.Key(e.Reading) != zhuyin.Key(es[0].Reading) {
+			if reading.Key(e.Reading) != reading.Key(es[0].Reading) {
 				t.Fatalf("mixed readings: %+v", es)
 			}
 		}
@@ -41,7 +42,7 @@ func TestNeutralParticles(t *testing.T) {
 				t.Fatalf("%s Exact = %v want %v", tc.reading, got, tc.want)
 			}
 		}
-		if es := src.Exact(syls); len(es) > 0 && zhuyin.Key(es[0].Reading) != tc.reading {
+		if es := src.Exact(syls); len(es) > 0 && reading.Key(es[0].Reading) != tc.reading {
 			t.Fatalf("%s fallback keeps the typed neutral reading: %+v", tc.reading, es)
 		}
 		if src.HasPrefix(syls) != (len(tc.want) > 0) || len(src.Prefixed(syls)) != len(tc.want) {

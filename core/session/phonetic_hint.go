@@ -126,7 +126,7 @@ func (s *Session) findPhoneticHint() *phoneticHint {
 				if cost+h.Cost > w.MaxCost {
 					continue
 				}
-				next := append(reading[:len(reading):len(reading)], h.Syl)
+				next := append(reading[:len(reading):len(reading)], zhuyin.Syllable(h.Syl))
 				if s.dec.Lex.HasPrefix(next) {
 					walk(at+1, next, cost+h.Cost)
 				}
@@ -152,7 +152,7 @@ func (s *Session) phoneticLocksAllow(start int, e lexicon.Entry) bool {
 		if lock.Matched != "" {
 			reading = zhuyin.ParseReading(lock.Matched)
 		}
-		if !slices.Equal(reading, e.Reading[at-start:at-start+lock.Len]) {
+		if !slices.Equal(reading, zhuyin.Syllables(e.Reading[at-start:at-start+lock.Len])) {
 			return false
 		}
 	}
@@ -170,7 +170,7 @@ func (s *Session) acceptPhonetic() bool {
 			delete(s.locks, at)
 		}
 	}
-	matched := zhuyin.Key(h.entry.Reading)
+	matched := zhuyin.Key(zhuyin.Syllables(h.entry.Reading))
 	s.locks[h.start] = decode.Lock{Word: h.entry.Surface, Len: len(h.entry.Reading), Completion: true, Matched: matched}
 	s.previewRewrite = false
 	s.refreshSelection(u.path, u.auto, decode.Seg{Word: h.entry.Surface, Start: h.start, End: len(s.syls), Matched: matched})

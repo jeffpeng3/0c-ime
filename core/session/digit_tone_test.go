@@ -23,7 +23,7 @@ func digitToneSession(mixed bool) *Session {
 		{"班", "ㄅㄢ", 3e-4}, {"把", "ㄅㄚˇ", 2e-3}, {"啊", "ㄚ˙", 1e-3},
 		{"大", "ㄉㄚˋ", 2e-3}, {"打", "ㄉㄚˇ", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

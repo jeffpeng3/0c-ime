@@ -91,7 +91,7 @@ func TestSelectInsideWordWithoutFragmentEntries(t *testing.T) {
 
 func TestSelectDoesNotFreezeFutureInput(t *testing.T) {
 	s := selectionStabilitySession(false)
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "都", Reading: zhuyin.ParseReading("ㄉㄨ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "都", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄉㄨ")), PRW: 1})
 	s.model.LM.(*lm.Mem).SetUni("都", .1)
 	typeReadingLocal(s, "ㄅㄧˋ ㄐㄧㄢˇ")
 	selectText(t, s, 1, "剪")

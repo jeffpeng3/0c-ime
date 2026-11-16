@@ -3,6 +3,7 @@ package lexicon
 import (
 	"sort"
 
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -38,7 +39,7 @@ func (n neutralParticles) fallback(syls []zhuyin.Syllable) []Entry {
 		for _, e := range n.Source.Exact([]zhuyin.Syllable{syls[0].WithTone(tone)}) {
 			if _, ok := particles[e.Surface]; ok && !seen[e.Surface] && (home[e.Surface] == "" || home[e.Surface] == syls[0].Base()) {
 				seen[e.Surface] = true
-				e.Reading = []zhuyin.Syllable{syls[0]}
+				e.Reading = reading.Sequence{reading.Unit(syls[0])}
 				out = append(out, e)
 			}
 		}

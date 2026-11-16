@@ -62,7 +62,7 @@ func (e *Engine) charSupport() map[rune]map[zhuyin.Syllable]float64 {
 				if e.support[c] == nil {
 					e.support[c] = map[zhuyin.Syllable]float64{}
 				}
-				e.support[c][x.Reading[i]] += p
+				e.support[c][zhuyin.Syllable(x.Reading[i])] += p
 			}
 		})
 	})
@@ -103,7 +103,7 @@ func (e *Engine) annotate(texts []string) []Annotation {
 					continue
 				}
 				if sc := best[j] + math.Log(e.Model.LM.Uni(w)); sc > best[i] {
-					best[i], back[i], read[i] = sc, j, pick.Reading
+					best[i], back[i], read[i] = sc, j, zhuyin.Syllables(pick.Reading)
 				}
 			}
 		}
@@ -160,7 +160,7 @@ func charOptions(es []lexicon.Entry, support map[zhuyin.Syllable]float64) []stri
 		case a.PRW != b.PRW:
 			return cmpDesc(a.PRW, b.PRW)
 		default:
-			return cmpDesc(support[a.Reading[0]], support[b.Reading[0]])
+			return cmpDesc(support[zhuyin.Syllable(a.Reading[0])], support[zhuyin.Syllable(b.Reading[0])])
 		}
 	})
 	var out []string
@@ -178,14 +178,14 @@ func ambiguous(es []lexicon.Entry, support map[zhuyin.Syllable]float64) bool {
 	bases := map[zhuyin.Syllable]int{}
 	for _, x := range es {
 		if !x.Correction && len(x.Reading) == 1 {
-			bases[x.Reading[0].Base()]++
+			bases[zhuyin.Syllable(x.Reading[0]).Base()]++
 		}
 	}
 	for _, x := range es {
 		if x.Correction || len(x.Reading) != 1 {
 			continue
 		}
-		y := x.Reading[0]
+		y := zhuyin.Syllable(x.Reading[0])
 		if seen[y] || y.ToneOf() == 5 && bases[y.Base()] > 1 { // 輕聲變體不算另一個讀音；了的 ㄌㄜ˙ 本身是主讀音
 			continue
 		}

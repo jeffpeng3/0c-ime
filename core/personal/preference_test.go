@@ -20,7 +20,7 @@ func habitModel() *Model {
 		{"程式", habitReading}, {"城市", habitReading}, {"的", "ㄉㄜ˙"}, {"用", "ㄩㄥˋ"}, {"寫", "ㄒㄧㄝˇ"}, {"看", "ㄎㄢˋ"},
 		{"這個", "ㄓㄜˋ ㄍㄜ˙"}, {"獨詞", "ㄉㄨˊ ㄘˊ"}, {"在", "ㄗㄞˋ"}, {"再", "ㄗㄞˋ"},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 	}
 	m := NewModel(lex, lm.NewMem())
 	m.AdvanceTime(100 * daySeconds)

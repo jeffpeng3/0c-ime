@@ -127,7 +127,9 @@ func TestContractsAndContextPolicy(t *testing.T) {
 // v2 套件（#281）要帶合法的 tone_policy 才載入；v1 不能帶。桌面的請求沒有 tone_known，打了聲調的段落照常評分。
 func TestSequenceV2TonePolicy(t *testing.T) {
 	zero, one := 0, 1
-	mask := func(id *int) *rerank.TonePolicy { return &rerank.TonePolicy{Schema: rerank.ToneMaskSchema, UnknownToneID: id} }
+	mask := func(id *int) *rerank.TonePolicy {
+		return &rerank.TonePolicy{Schema: rerank.ToneMaskSchema, UnknownToneID: id}
+	}
 	for _, c := range []struct {
 		name   string
 		schema string

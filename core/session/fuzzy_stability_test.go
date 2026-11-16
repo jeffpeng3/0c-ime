@@ -61,7 +61,7 @@ func TestFuzzyAutoKeepsAnExactWordDisplayedAsSeparateCharacters(t *testing.T) {
 func TestFuzzyAutoKeepsAnExactWordAlsoShownAsALongerPrefix(t *testing.T) {
 	s := exactVideoSession()
 	s.Opt.PrefixAware = true
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "影片大全", Reading: zhuyin.ParseReading("ㄧㄥˇ ㄆㄧㄢˋ ㄉㄚˋ ㄑㄩㄢˊ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "影片大全", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄥˇ ㄆㄧㄢˋ ㄉㄚˋ ㄑㄩㄢˊ")), PRW: 1})
 	s.model.LM.(*lm.Mem).SetUni("影片大全", .5)
 	if snap := fzType(s, "ㄧㄥˇ ㄆㄧㄢˋ"); snap.Text() != "影片" || len(s.shownPath) != 1 || !s.shownPath[0].Partial {
 		t.Fatalf("前提：長詞前綴顯示影片，影片也有完整原音詞條：%+v；%v", snap, s.shownPath)
@@ -125,7 +125,7 @@ func TestFuzzyAutoKeepsExactWordAfterLiteral(t *testing.T) {
 func TestFuzzyAutoKeepsExactWordWithRequiredSuffixCorrection(t *testing.T) {
 	s := exactVideoSession()
 	s.Fuzzy = autoConfig(fuzzy.EnEng, fuzzy.SSh)
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "送", Reading: zhuyin.ParseReading("ㄙㄨㄥˋ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "送", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄙㄨㄥˋ")), PRW: 1})
 	s.model.LM.(*lm.Mem).SetUni("送", 1e-3)
 	if snap := fzType(s, "ㄧㄥˇ ㄆㄧㄢˋ ㄕㄨㄥˋ ㄒㄧㄣˋ"); snap.Text() != "影片送信" {
 		t.Fatalf("新音節必須換音時也須保留前面的原音：%+v；%v", snap, s.AutoChanges())
@@ -149,7 +149,7 @@ func TestFuzzyAutoExactWordDoesNotBlockRetypingItsReading(t *testing.T) {
 func TestFuzzyAutoExactWordDoesNotBlockNewSuffixCorrection(t *testing.T) {
 	s := exactVideoSession()
 	s.Fuzzy = autoConfig(fuzzy.EnEng, fuzzy.CCh)
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "次", Reading: zhuyin.ParseReading("ㄘ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "次", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄘ")), PRW: 1})
 	s.model.LM.(*lm.Mem).SetUni("次", 1e-6)
 	if snap := fzType(s, "ㄧㄥˇ ㄆㄧㄢˋ ㄘ ㄈㄢˋ"); snap.Text() != "影片吃飯" {
 		t.Fatalf("新尾端仍可自動修正，先前影片不換音：%+v；%v", snap, s.AutoChanges())

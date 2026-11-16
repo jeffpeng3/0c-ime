@@ -30,7 +30,7 @@ func swappedKeysSession() *Session {
 		{"外", "ㄨㄞˋ", 3e-4}, {"晚", "ㄨㄢˇ", 2e-4}, {"遠", "ㄩㄢˇ", 2e-4}, {"與", "ㄩˇ", 5e-4}, {"瓦", "ㄨㄚˇ", 3e-5},
 		{"餘", "ㄩˊ", 2e-4}, {"元", "ㄩㄢˊ", 4e-4}, {"遇", "ㄩˋ", 1e-4}, {"院", "ㄩㄢˋ", 3e-4}, {"跌", "ㄉㄧㄝ", 1e-4}, {"別", "ㄅㄧㄝˊ", 5e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

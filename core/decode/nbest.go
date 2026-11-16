@@ -95,7 +95,7 @@ func offer(rows []Hypothesis, h Hypothesis, seg Seg, delta float64, capped, weak
 func (d *Decoder) tailChars(lat input.Lattice) map[string]bool {
 	own := map[string]bool{}
 	for _, h := range lat[len(lat)-1] {
-		for _, e := range d.Lex.Exact([]zhuyin.Syllable{h.Syl}) {
+		for _, e := range d.Lex.Exact([]zhuyin.Syllable{zhuyin.Syllable(h.Syl)}) {
 			if !e.Correction {
 				own[e.Surface] = true
 			}

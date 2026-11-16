@@ -79,7 +79,7 @@ func (m *Mem) Add(e Entry) {
 	n := &m.root
 	for _, s := range e.Reading {
 		if n.children == nil {
-			n.children = map[zhuyin.Syllable]*node{}
+			n.children = map[reading.Unit]*node{}
 		}
 		c, ok := n.children[s]
 		if !ok {
@@ -100,7 +100,7 @@ func (m *Mem) LongestWord() int { return m.longest }
 func (m *Mem) find(syls []zhuyin.Syllable) *node {
 	n := &m.root
 	for _, s := range syls {
-		c, ok := n.children[s]
+		c, ok := n.children[reading.Unit(s)]
 		if !ok {
 			return nil
 		}
@@ -204,7 +204,7 @@ func LoadWithOptions(r io.Reader, o LoadOptions) (*Mem, error) {
 		if len(f) < 2 {
 			return nil, fmt.Errorf("第 %d 行：至少需要詞面與讀音", ln)
 		}
-		e := Entry{Surface: f[0], Reading: reading.Sequence(zhuyin.ParseReading(f[1])), PRW: 1}
+		e := Entry{Surface: f[0], Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(f[1])), PRW: 1}
 		if len(e.Reading) == 0 {
 			return nil, fmt.Errorf("第 %d 行：缺少讀音", ln)
 		}

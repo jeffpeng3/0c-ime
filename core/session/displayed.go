@@ -48,7 +48,7 @@ func (s *Session) decodeAroundUnreadable() map[int]string {
 	lat := s.lattice()
 	readable := func(i int) bool {
 		for _, h := range lat[i] {
-			if len(s.model.Source().Exact([]zhuyin.Syllable{h.Syl})) > 0 {
+			if len(s.model.Source().Exact([]zhuyin.Syllable{zhuyin.Syllable(h.Syl)})) > 0 {
 				return true
 			}
 		}

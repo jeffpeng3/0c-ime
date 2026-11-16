@@ -25,7 +25,7 @@ func newPronounSession() *Session {
 		{"男朋友", "ㄋㄢˊ ㄆㄥˊ ㄧㄡˇ", 1e-4}, {"女朋友", "ㄋㄩˇ ㄆㄥˊ ㄧㄡˇ", 1e-4},
 		{"吉他", "ㄐㄧˊ ㄊㄚ", 1e-4}, {"很", "ㄏㄣˇ", 5e-3}, {"好", "ㄏㄠˇ", 5e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	sys.SetBi("她", "的", 0.5)

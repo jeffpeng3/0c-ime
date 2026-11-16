@@ -39,12 +39,12 @@ func TestStoreRoundTrip(t *testing.T) {
 func TestReadingKeysRemainCompatible(t *testing.T) {
 	lex := lexicon.NewMem()
 	syls := zhuyin.ParseReading("ㄑㄧㄣ ㄗˇ")
-	lex.Add(lexicon.Entry{Surface: "親子", Reading: syls, PRW: 0.25})
+	lex.Add(lexicon.Entry{Surface: "親子", Reading: zhuyin.ReadingUnits(syls), PRW: 0.25})
 	m := NewModel(lex, lm.NewMem())
 	// 舊版存下來的鍵：詞面 + TAB + 空白分隔的注音。
 	m.Store.Readings[pair("親子", zhuyin.Key(syls))] = true
 
-	if got, want := reading.Key(reading.Sequence(syls)), zhuyin.Key(syls); got != want {
+	if got, want := reading.Key(zhuyin.ReadingUnits(syls)), zhuyin.Key(syls); got != want {
 		t.Fatalf("reading.Key = %q, want %q", got, want)
 	}
 	es := m.Source().Exact(syls)
