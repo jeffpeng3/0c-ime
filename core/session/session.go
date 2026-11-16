@@ -16,6 +16,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/fuzzy"
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/inputstyle"
+	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/layout"
 	"github.com/0c-biggo/0c-ime/core/personal"
 	"github.com/0c-biggo/0c-ime/core/proto"
@@ -104,6 +105,8 @@ type Session struct {
 	styleGrid    bool
 	// Rerank 由宿主在第一次 Handle 前設定；零值保持原引擎。
 	Rerank rerank.Options
+	// Events 由宿主設定：學習與補完事件會帶著語言 ID 分流（T20）。零值不通知。
+	Events LanguageEvents
 	// Punct 由宿主設定：提交時補標點（只插入、不改原字）；nil 停用。私人／暫停／英數狀態一律不送出文字。
 	Punct punct.Punctuator
 	// Fuzzy 由宿主依使用者設定：逐對啟用的模糊音；零值全部關閉，行為與沒有此功能時相同。
@@ -211,6 +214,12 @@ type Session struct {
 	layout             layout.Layout
 	Opt                Options
 
+	// 語言 profile（T20）：注音是預設語言；其他語言由宿主註冊後用 SetLanguage 切換。
+	// 每個語言各自保留 composer、converter 與変換狀態，切換語言不會重啟 session。
+	languages  map[lang.ID]lang.Profile
+	languageID lang.ID
+	runtimes   map[lang.ID]*languageRuntime
+
 	comp            zhuyin.Composer
 	pendingLiterals []pendingLiteral // 暫存成字面注音的組音狀態，撤銷旁邊的英數後可接續
 	toggleStash     *pendingStash    // 切到英文時清掉的未打完注音；下一個請求不是立即切回就丟棄（#90）
@@ -248,6 +257,9 @@ func New(m *personal.Model) *Session {
 		EmojiShortcut:    "equals",
 		EmojiEqualsFirst: true,
 		locks:            map[int]decode.Lock{},
+		languages:        map[lang.ID]lang.Profile{lang.Zh: zhProfile{}},
+		languageID:       lang.Zh,
+		runtimes:         map[lang.ID]*languageRuntime{},
 	}
 }
 
@@ -274,6 +286,9 @@ func (s *Session) emojiEquals() bool {
 }
 
 func (s *Session) composing() bool {
+	if s.Language() != lang.Zh {
+		return s.languageComposing()
+	}
 	return s.symbolPrefix || len(s.syls) > 0 || !s.comp.Empty() || s.mixed.raw != ""
 }
 
@@ -365,12 +380,22 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 		s.cand = nil
 		handled = s.backspace()
 	case proto.Cursor:
-		s.flushMixed()
-		s.moveTo(r.To)
+		if s.Language() == lang.Zh {
+			s.flushMixed()
+			s.moveTo(r.To)
+		}
 	case proto.Candidates:
-		s.openCandidates(r.Length)
+		if rt, ok := s.activeRuntime(); ok && rt.converting {
+			s.languageLoadCandidates()
+		} else if s.Language() == lang.Zh {
+			s.openCandidates(r.Length)
+		}
 	case proto.Page:
-		if s.cand != nil && r.Index >= 0 && r.Index < s.pages() {
+		if rt, ok := s.activeRuntime(); ok && rt.converting {
+			if r.Index >= 0 && r.Index < s.languagePages(rt) {
+				rt.candidate = r.Index * perPage
+			}
+		} else if s.cand != nil && r.Index >= 0 && r.Index < s.pages() {
 			s.cand.cursor = r.Index * s.pageSize()
 		}
 	case proto.Select:
@@ -382,6 +407,11 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 			s.englishDismissed = true
 		}
 		s.cand = nil
+		if rt, ok := s.activeRuntime(); ok {
+			rt.candidates = nil
+			rt.candidate = 0
+			rt.candidateFor = -1
+		}
 	case proto.Accept:
 		handled = s.accept()
 	case proto.Commit:
@@ -473,6 +503,21 @@ func (s *Session) status(snap *proto.Snapshot) {
 	if s.english {
 		snap.Mode = proto.ModeEnglish
 	}
+	if id := s.Language(); id != lang.Zh {
+		// 注音維持原有快照（不新增欄位），日文才送出 T15 的語言欄位。
+		snap.Language = string(id)
+		snap.InputMethod = s.InputMethod().ID
+		if !s.english {
+			snap.Mode = proto.ModeJapanese
+		}
+		if r, ok := s.activeRuntime(); ok {
+			snap.Converting = r.converting
+			if r.converting {
+				snap.ClauseIndex = r.clause // 0 起算，與 T15 fixture 一致；Converting 區分沒有変換
+				snap.ClauseCount = len(r.clauses)
+			}
+		}
+	}
 	snap.CapsLock, snap.CapsEnglish = s.capsLock, s.capsEnglish
 	snap.OutputSimplified = s.Simplified != nil // #169：外殼的狀態顯示跟著
 }
@@ -529,6 +574,9 @@ func (s *Session) CapsLockOn() bool { return s.capsLock }
 func (s *Session) EnglishMode() bool { return s.english }
 
 func (s *Session) key(k string) (handled bool, commit string) {
+	if handled, commit, ok := s.languageKey(k); ok {
+		return handled, commit
+	}
 	if s.paletteUndo != nil && k != proto.KeyBackspace {
 		s.paletteUndo = nil
 	}
@@ -952,6 +1000,9 @@ func (s *Session) insert(syl zhuyin.Syllable) {
 }
 
 func (s *Session) backspace() bool {
+	if s.Language() != lang.Zh {
+		return s.languageBackspace()
+	}
 	if s.undoPhonetic() {
 		return true
 	}
@@ -1553,6 +1604,16 @@ func (s *Session) moveHighlight(d int) {
 
 // selectCandidate 鎖定選取的詞。手動選取是硬條件；被換掉的原區段記下來供學習使用。
 func (s *Session) selectCandidate(id int) bool {
+	if s.Language() != lang.Zh {
+		r, ok := s.activeRuntime()
+		if !ok || !r.converting {
+			return false
+		}
+		if len(r.candidates) == 0 {
+			s.languageLoadCandidates()
+		}
+		return s.languageSelectIndex(id, true)
+	}
 	if s.cand != nil && s.cand.ids != nil {
 		id = slices.Index(s.cand.ids, id)
 	}
@@ -1600,9 +1661,21 @@ func (s *Session) selectCandidate(id int) bool {
 	return true
 }
 
-// accept 接受 Tab 補全：補上尚未輸入的音節並鎖定整個詞。接受是明確操作，
-// 學習時保留補全來源，權重低於主動手選，避免系統建議自我強化。
+// accept 接受 Tab 補全；非注音語言交給語言狀態處理。補完事件會帶語言 ID。
 func (s *Session) accept() bool {
+	if s.Language() != lang.Zh {
+		return s.languageAccept()
+	}
+	if !s.acceptZh() {
+		return false
+	}
+	s.emitComplete(lang.Zh, s.snapshot().Text())
+	return true
+}
+
+// acceptZh 接受 Tab 補全：補上尚未輸入的音節並鎖定整個詞。接受是明確操作，
+// 學習時保留補全來源，權重低於主動手選，避免系統建議自我強化。
+func (s *Session) acceptZh() bool {
 	if s.englishWord {
 		return s.acceptEnglish()
 	}
@@ -1630,6 +1703,9 @@ func (s *Session) accept() bool {
 }
 
 func (s *Session) commit() string {
+	if s.Language() != lang.Zh {
+		return s.languageCommit()
+	}
 	// Resolve pending English exactly as displayed; never accept a suggestion on Enter.
 	s.flushMixed()
 	s.finishUntoned() // 聲調選填：最後一個沒打聲調的音節也照解碼結果送出（#150）
@@ -1668,6 +1744,9 @@ func (s *Session) commit() string {
 	}
 	if s.mixedInput() && learn && !s.localBlocked {
 		s.model.LearnZhuyinKeys(s.zhuyinKeyCommits())
+	}
+	if learn {
+		s.emitLearn(lang.Zh, text)
 	}
 	shown := text
 	text = s.punctuate(text)
@@ -1763,6 +1842,30 @@ func (s *Session) punctuate(text string) string {
 }
 
 func (s *Session) reset() {
+	if s.Language() != lang.Zh {
+		// 只清目前語言；切走時另一邊未完成的組字保留。
+		s.styleCycle = nil
+		s.englishWord, s.englishDismissed, s.englishTokenBlocked = false, false, false
+		s.paletteUndo = nil
+		s.symbolPrefix = false
+		s.styleGrid = false
+		s.mark = nil
+		s.paletteCommit = false
+		s.clearDocumentContext()
+		s.rerankCache = nil
+		s.rerankMemo = nil
+		s.sugPrev, s.sugPrevKey = nil, ""
+		s.hint = nil
+		s.previewRewrite = false
+		s.private = false
+		s.localBlocked = false
+		s.learningCleared = false
+		s.cand = nil
+		if r, ok := s.activeRuntime(); ok {
+			r.reset()
+		}
+		return
+	}
 	s.styleCycle = nil
 	s.englishWord, s.englishDismissed, s.englishTokenBlocked = false, false, false
 	s.paletteUndo = nil
@@ -1799,6 +1902,9 @@ func (s *Session) reset() {
 
 func (s *Session) snapshot() proto.Snapshot {
 	snap := proto.Snapshot{FullWidth: s.fullWidth, Revision: s.rev, EnglishAutocomplete: s.EnglishAutocomplete, EnglishPending: s.englishWord, EnglishCanStart: s.englishCanStart()}
+	if r, ok := s.activeRuntime(); ok {
+		return s.languageSnapshot(snap, r)
+	}
 	pending := s.comp.String()
 	if s.symbolPrefix {
 		pending += "`"
