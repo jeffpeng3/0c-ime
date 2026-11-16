@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"runtime"
 	"testing"
 	"time"
 
@@ -162,6 +163,43 @@ func TestConstrainedResearchFindsCandidateOutsideNBest(t *testing.T) {
 	for _, res := range got {
 		if !resultMatches(res, seqUnits("あめあめあめあめ")) {
 			t.Fatalf("候選讀音不忠實：%s", decode.ResultSurface(res.Clauses))
+		}
+	}
+}
+
+func TestRepeatedRerankIsDeterministicAcrossGOMAXPROCS(t *testing.T) {
+	old := runtime.GOMAXPROCS(0)
+	defer runtime.GOMAXPROCS(old)
+
+	seq := seqUnits("あめあめあめあめ")
+	target := "雨雨飴飴"
+	var want []lang.Result
+	for _, procs := range []int{1, 2, 4} {
+		runtime.GOMAXPROCS(procs)
+		for i := 0; i < 20; i++ {
+			dec := ambiguousDecoder(t)
+			v := &scriptedVerifier{target: target, prefix: "雨雨"}
+			dec.Reranker = New(dec, v, Config{})
+			got, err := dec.NBest(seq, langContext(), 8)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(got) == 0 || decode.ResultSurface(got[0].Clauses) != target {
+				t.Fatalf("GOMAXPROCS=%d 第 %d 次結果 = %#v，want 第一名 %s",
+					procs, i, surfaces(got), target)
+			}
+			if want == nil {
+				want = got
+				continue
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("GOMAXPROCS=%d 第 %d 次結果不穩定：%#v != %#v",
+					procs, i, surfaces(got), surfaces(want))
+			}
+			if v.calls != 2 {
+				t.Fatalf("GOMAXPROCS=%d 第 %d 次 verify 次數 = %d，want 2",
+					procs, i, v.calls)
+			}
 		}
 	}
 }

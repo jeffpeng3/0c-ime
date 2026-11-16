@@ -56,8 +56,9 @@ type Stats struct {
 // Config 是 rerank 的開關、預算與權重。
 //
 // Disabled 是完整停用神經層的開關；停用時 Rerank 不呼叫驗證器，直接回傳
-// 統計結果。Timeout 是單次轉換的總預算，預設 100 ms，與 contracts.md 的
-// 神經驗證預算一致。
+// 統計結果。Timeout 是所有驗證器呼叫累計的預算，預設 100 ms；本地
+// lattice 與限制式重搜的工作不計入，讓相同輸入的輪數不受機器負載影響。
+// PerRequestTimeout 是單次呼叫的上限，與 contracts.md 的神經驗證預算一致。
 type Config struct {
 	Disabled          bool
 	Timeout           time.Duration
