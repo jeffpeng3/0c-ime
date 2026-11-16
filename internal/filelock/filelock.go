@@ -32,7 +32,7 @@ func Acquire(base, name string) (func(), error) {
 		// 前一次執行被中止時會留下鎖：記錄的行程已不存在（或鎖超過一小時）即接手。
 		if st, e := os.Stat(file); e == nil {
 			var pid int
-			b, e := os.ReadFile(file)
+			b, e := readLockFile(file)
 			if e != nil {
 				if errors.Is(e, os.ErrNotExist) {
 					return Acquire(base, name)
@@ -62,7 +62,8 @@ func Acquire(base, name string) (func(), error) {
 	return func() { os.Remove(file) }, nil
 }
 
-// Wait 只在被別人持有時等待，最多 2 秒；檔案系統錯誤照原樣回傳。
+// Wait 只在被別人持有時等待，最多 2 秒；其他檔案系統錯誤照原樣回傳。Windows 上暫時的
+// ACCESS_DENIED／SHARING_VIOLATION（刪除進行中、handle 尚未關閉）同樣在 2 秒內重試。
 func Wait(ctx context.Context, base, name string) (func(), error) {
 	deadline := time.Now().Add(2 * time.Second)
 	for {
@@ -73,7 +74,7 @@ func Wait(ctx context.Context, base, name string) (func(), error) {
 		if err == nil {
 			return unlock, nil
 		}
-		if !errors.Is(err, ErrLocked) || !time.Now().Before(deadline) {
+		if (!errors.Is(err, ErrLocked) && !transientLockError(err)) || !time.Now().Before(deadline) {
 			return nil, err
 		}
 		timer := time.NewTimer(10 * time.Millisecond)
