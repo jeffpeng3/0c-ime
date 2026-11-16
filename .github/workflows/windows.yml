@@ -1,0 +1,122 @@
+name: Windows
+
+# 功能性 CI：Go 測試與 Windows 編譯、Rust TSF 與候選窗編譯、32 位元 DLL、引擎與 CLI 的 Windows 建置。
+# 不覆蓋（由 platforms/windows/test 的腳本與使用者手動驗收補上，見 T29）：
+# - TSF 註冊與語言列。
+# - WPF、記事本、Terminal、Edge、WebView2、搜尋框的實際輸入。
+# - 安裝、升級、回復、解除安裝。
+# - 候選窗像素與主題。
+# 不需要任何 secret。
+
+on:
+  push:
+    branches: [main, 'ja/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          # Go module 與 build cache，鍵由 go.sum 決定。
+          cache: true
+      - name: Add the 32-bit Rust target
+        run: rustup target add i686-pc-windows-msvc
+      - name: Cache Cargo
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            platforms/windows/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('platforms/windows/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: Check public source paths
+        shell: pwsh
+        run: |
+          # Windows 映像的 Python 3 只保證 python，python3 不一定有。
+          $python = Get-Command python3 -ErrorAction SilentlyContinue
+          if (-not $python) { $python = Get-Command python -ErrorAction Stop }
+          & $python.Source scripts/check_public_tree.py
+      - name: Test Go code
+        shell: bash
+        run: |
+          set -o pipefail
+          go test ./... 2>&1 | tee go-test.log
+      - name: Vet Go code
+        run: go vet ./...
+      - name: Build Go code
+        run: go build ./...
+      - name: Build the Windows engine
+        shell: bash
+        run: |
+          mkdir -p build/windows
+          CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -o build/windows/0c-server.exe ./cmd/0c-server
+      - name: Build Rust x64
+        shell: bash
+        working-directory: platforms/windows
+        run: |
+          set -o pipefail
+          cargo build --release --locked 2>&1 | tee rust-build-x64.log
+      - name: Test Rust
+        shell: bash
+        working-directory: platforms/windows
+        run: |
+          set -o pipefail
+          cargo test --release --locked 2>&1 | tee rust-test.log
+      - name: Build the 32-bit TSF DLL
+        shell: bash
+        working-directory: platforms/windows
+        run: |
+          set -o pipefail
+          cargo build --release --locked --target i686-pc-windows-msvc -p zuin-tsf 2>&1 | tee rust-build-x86.log
+      - name: Verify build outputs
+        shell: bash
+        run: |
+          for output in \
+            platforms/windows/target/release/0c_tsf.dll \
+            platforms/windows/target/release/0c-ui.exe \
+            platforms/windows/target/i686-pc-windows-msvc/release/0c_tsf.dll \
+            build/windows/0c-server.exe; do
+            test -f "$output" || { echo "missing build output: $output" >&2; exit 1; }
+          done
+      - name: Upload Go test output and Rust build logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-logs
+          path: |
+            go-test.log
+            platforms/windows/rust-*.log
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload Windows binaries
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-binaries
+          path: |
+            platforms/windows/target/release/0c_tsf.dll
+            platforms/windows/target/release/0c-ui.exe
+            platforms/windows/target/i686-pc-windows-msvc/release/0c_tsf.dll
+            build/windows/0c-server.exe
+          if-no-files-found: warn
+          retention-days: 14
