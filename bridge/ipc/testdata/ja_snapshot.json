@@ -1,0 +1,28 @@
+{
+  "ok": true,
+  "snapshot": {
+    "revision": 12,
+    "handled": true,
+    "preedit": [
+      {
+        "text": "今日",
+        "style": "clause"
+      },
+      {
+        "text": "は",
+        "style": "clause_active"
+      }
+    ],
+    "cursor": {
+      "rune": 3,
+      "utf16": 3
+    },
+    "mode": "japanese",
+    "language": "ja",
+    "input_method": "romaji",
+    "converting": true,
+    "clause_index": 1,
+    "clause_count": 2
+  },
+  "engine_us": 51
+}
