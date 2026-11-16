@@ -1,0 +1,400 @@
+# T11 日文 composer 表驅動案例
+# 欄位：按鍵序列 <TAB> 完成かな（空白分隔，- 表示空） <TAB> 未完成按鍵（- 表示空）
+# 一個かな等於一個 reading.Unit。
+
+# 母音
+a	あ	-
+i	い	-
+u	う	-
+e	え	-
+o	お	-
+
+# か行
+ka	か	-
+ki	き	-
+ku	く	-
+ke	け	-
+ko	こ	-
+kya	きゃ	-
+kyi	きぃ	-
+kyu	きゅ	-
+kye	きぇ	-
+kyo	きょ	-
+
+# が行
+ga	が	-
+gi	ぎ	-
+gu	ぐ	-
+ge	げ	-
+go	ご	-
+gya	ぎゃ	-
+gyi	ぎぃ	-
+gyu	ぎゅ	-
+gye	ぎぇ	-
+gyo	ぎょ	-
+
+# さ行
+sa	さ	-
+si	し	-
+shi	し	-
+su	す	-
+se	せ	-
+so	そ	-
+sha	しゃ	-
+shu	しゅ	-
+she	しぇ	-
+sho	しょ	-
+sya	しゃ	-
+syu	しゅ	-
+syo	しょ	-
+
+# ざ行
+za	ざ	-
+zi	じ	-
+ji	じ	-
+zu	ず	-
+ze	ぜ	-
+zo	ぞ	-
+ja	じゃ	-
+ju	じゅ	-
+je	じぇ	-
+jo	じょ	-
+jya	じゃ	-
+jyu	じゅ	-
+jyo	じょ	-
+zya	じゃ	-
+zyu	じゅ	-
+zyo	じょ	-
+
+# た行
+ta	た	-
+ti	ち	-
+chi	ち	-
+tsu	つ	-
+tu	つ	-
+te	て	-
+to	と	-
+cha	ちゃ	-
+chu	ちゅ	-
+che	ちぇ	-
+cho	ちょ	-
+tya	ちゃ	-
+tyu	ちゅ	-
+tyo	ちょ	-
+cya	ちゃ	-
+cyu	ちゅ	-
+cyo	ちょ	-
+
+# だ行
+da	だ	-
+di	ぢ	-
+du	づ	-
+de	で	-
+do	ど	-
+dya	ぢゃ	-
+dyu	ぢゅ	-
+dyo	ぢょ	-
+
+# な行
+na	な	-
+ni	に	-
+nu	ぬ	-
+ne	ね	-
+no	の	-
+nya	にゃ	-
+nyu	にゅ	-
+nyo	にょ	-
+
+# は行
+ha	は	-
+hi	ひ	-
+hu	ふ	-
+fu	ふ	-
+he	へ	-
+ho	ほ	-
+hya	ひゃ	-
+hyu	ひゅ	-
+hyo	ひょ	-
+fa	ふぁ	-
+fi	ふぃ	-
+fe	ふぇ	-
+fo	ふぉ	-
+fya	ふゃ	-
+fyu	ふゅ	-
+fyo	ふょ	-
+
+# ば行
+ba	ば	-
+bi	び	-
+bu	ぶ	-
+be	べ	-
+bo	ぼ	-
+bya	びゃ	-
+byu	びゅ	-
+byo	びょ	-
+
+# ぱ行
+pa	ぱ	-
+pi	ぴ	-
+pu	ぷ	-
+pe	ぺ	-
+po	ぽ	-
+pya	ぴゃ	-
+pyu	ぴゅ	-
+pyo	ぴょ	-
+
+# ま行
+ma	ま	-
+mi	み	-
+mu	む	-
+me	め	-
+mo	も	-
+mya	みゃ	-
+myu	みゅ	-
+myo	みょ	-
+
+# や行
+ya	や	-
+yi	い	-
+yu	ゆ	-
+ye	いぇ	-
+yo	よ	-
+
+# ら行
+ra	ら	-
+ri	り	-
+ru	る	-
+re	れ	-
+ro	ろ	-
+rya	りゃ	-
+ryu	りゅ	-
+ryo	りょ	-
+
+# わ行
+wa	わ	-
+wi	うぃ	-
+wu	う	-
+we	うぇ	-
+wo	を	-
+wyi	ゐ	-
+wye	ゑ	-
+
+# ゔ行
+va	ゔぁ	-
+vi	ゔぃ	-
+vu	ゔ	-
+ve	ゔぇ	-
+vo	ゔぉ	-
+vya	ゔゃ	-
+vyu	ゔゅ	-
+vyo	ゔょ	-
+
+# くぁ行
+qa	くぁ	-
+qi	くぃ	-
+qu	く	-
+qe	くぇ	-
+qo	くぉ	-
+qya	くゃ	-
+qyu	くゅ	-
+qyo	くょ	-
+
+# c で始まる別表記
+ca	か	-
+ci	し	-
+cu	く	-
+ce	せ	-
+co	こ	-
+
+# 小書きかな（x）
+xa	ぁ	-
+xi	ぃ	-
+xu	ぅ	-
+xe	ぇ	-
+xo	ぉ	-
+xya	ゃ	-
+xyu	ゅ	-
+xyo	ょ	-
+xtu	っ	-
+xtsu	っ	-
+xwa	ゎ	-
+xka	ゕ	-
+xke	ゖ	-
+
+# 小書きかな（l）
+la	ぁ	-
+li	ぃ	-
+lu	ぅ	-
+le	ぇ	-
+lo	ぉ	-
+lya	ゃ	-
+lyu	ゅ	-
+lyo	ょ	-
+ltu	っ	-
+ltsu	っ	-
+lwa	ゎ	-
+lka	ゕ	-
+lke	ゖ	-
+
+# 促音
+kka	っか	-
+kki	っき	-
+kku	っく	-
+kke	っけ	-
+kko	っこ	-
+ssa	っさ	-
+sshi	っし	-
+ssu	っす	-
+sse	っせ	-
+sso	っそ	-
+ssha	っしゃ	-
+tta	った	-
+ttsu	っつ	-
+tte	って	-
+tto	っと	-
+ppa	っぱ	-
+ppi	っぴ	-
+ppu	っぷ	-
+ppe	っぺ	-
+ppo	っぽ	-
+kkya	っきゃ	-
+kkyu	っきゅ	-
+kkyo	っきょ	-
+ccha	っちゃ	-
+cchi	っち	-
+dda	っだ	-
+ddya	っぢゃ	-
+gga	っが	-
+zza	っざ	-
+jja	っじゃ	-
+jjya	っじゃ	-
+bba	っば	-
+rra	っら	-
+mma	っま	-
+hha	っは	-
+ffa	っふぁ	-
+vva	っゔぁ	-
+
+# 長音
+-	ー	-
+a-	あー	-
+ka-	かー	-
+nn-	んー	-
+ko-hi-	こーひー	-
+su-pa-	すーぱー	-
+ra-menn'	らーめん	-
+supo-tsu	すぽーつ	-
+
+# n と nn の境界
+n	-	n
+nn	ん	-
+n'	ん	-
+n'a	んあ	-
+nn'	ん	-
+nn'a	んあ	-
+nna	んな	-
+nni	んに	-
+nnya	んにゃ	-
+nnka	んか	-
+nnna	んな	-
+nnn	ん	n
+nny	ん	ny
+nka	んか	-
+nshi	んし	-
+nta	んた	-
+n-	んー	-
+nkya	んきゃ	-
+
+# 未完成前綴與顯示
+k	-	k
+ky	-	ky
+sh	-	sh
+ts	-	ts
+ch	-	ch
+xt	-	xt
+lts	-	lts
+ny	-	ny
+l	-	l
+x	-	x
+q	-	q
+v	-	v
+c	-	c
+
+# 常用詞
+konnichiha	こんにちは	-
+konnichiwa	こんにちわ	-
+nihongo	にほんご	-
+shinjuku	しんじゅく	-
+gakkou	がっこう	-
+kitte	きって	-
+tokkyo	とっきょ	-
+zasshi	ざっし	-
+maccha	まっちゃ	-
+ressha	れっしゃ	-
+zutto	ずっと	-
+yappari	やっぱり	-
+kanji	かんじ	-
+denwa	でんわ	-
+konbanha	こんばんは	-
+arigatou	ありがとう	-
+ohayou	おはよう	-
+sayounara	さようなら	-
+oishii	おいしい	-
+tsumetai	つめたい	-
+chikyuu	ちきゅう	-
+nyuugaku	にゅうがく	-
+byouinn'	びょういん	-
+jisho	じしょ	-
+ryoushinn'	りょうしん	-
+shashinn'	しゃしん	-
+toukyou	とうきょう	-
+ryokou	りょこう	-
+gakusei	がくせい	-
+benkyou	べんきょう	-
+sanpo	さんぽ	-
+kekkonn'	けっこん	-
+zannenn'	ざんねん	-
+nipponn'	にっぽん	-
+nihonn'	にほん	-
+ongaku	おんがく	-
+daigaku	だいがく	-
+sensei	せんせい	-
+tomodachi	ともだち	-
+kazoku	かぞく	-
+manga	まんが	-
+rajio	らじお	-
+terebi	てれび	-
+pasokonn'	ぱそこん	-
+eiga	えいが	-
+kaisha	かいしゃ	-
+shigoto	しごと	-
+denki	でんき	-
+tokei	とけい	-
+natsu	なつ	-
+fuyu	ふゆ	-
+aki	あき	-
+haru	はる	-
+asa	あさ	-
+yoru	よる	-
+hiru	ひる	-
+mizu	みず	-
+sora	そら	-
+yama	やま	-
+kawa	かわ	-
+neko	ねこ	-
+inu	いぬ	-
+tori	とり	-
+hana	はな	-
+tsuki	つき	-
+hoshi	ほし	-
+kaze	かぜ	-
+yuki	ゆき	-
+ame	あめ	-
+kumo	くも	-
+umi	うみ	-
+mori	もり	-
+hito	ひと	-
+kokoro	こころ	-
+kotoba	ことば	-
+chotto	ちょっと	-
+kippu	きっぷ	-
