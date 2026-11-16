@@ -356,6 +356,8 @@ func rollback(_ string, restoreUser bool) error {
 	if err != nil {
 		return err
 	}
+	// T28：回復到舊版時只留 zh-TW profile；新版加入的 ja-JP 語言清單項目要一起移除。
+	removeInputMethodJa()
 	ensureSettingsEntry()        // 回到沒有設定程式的舊版時移除開始功能表項目；回到有的版本則留著
 	refreshStableMCP(basePath()) // 回到沒有附 0c-mcp 的舊版時移走，設定程式照實註明
 	syncUninstallEntry()
@@ -380,6 +382,9 @@ func uninstall() error {
 	if err != nil {
 		return err
 	}
+	// T28：解除安裝要移除兩個 profile 的語言清單項目與記號，重新安裝才會重新加入。
+	// DLL 的 unregister 已移除 TSF profile；這裡處理使用者清單（input.dll）。
+	removeInputMethods()
 	pruneFrom = pruneExecutable() // #179：回復用的那一份之外，更早的在背景清
 	// 收據已停用：移走 AI 工具用的 0c-mcp。AI 工具正在執行它時刪不掉，改名讓原路徑空出來（之後 bin 整個移除）。
 	refreshStableMCP(basePath())

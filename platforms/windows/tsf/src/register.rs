@@ -20,16 +20,19 @@ use windows::Win32::Security::Authorization::{
 use windows::Win32::Security::{ACL, DACL_SECURITY_INFORMATION, NO_INHERITANCE, PSECURITY_DESCRIPTOR, PSID};
 use windows::Win32::Storage::FileSystem::{DELETE, FILE_GENERIC_EXECUTE, FILE_GENERIC_READ};
 use windows_core::PWSTR;
+use windows::Win32::UI::Input::KeyboardAndMouse::HKL;
 use windows::Win32::UI::TextServices::{
-    ITfCategoryMgr, ITfInputProcessorProfiles, CLSID_TF_CategoryMgr, CLSID_TF_InputProcessorProfiles,
-    GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER, GUID_TFCAT_TIPCAP_COMLESS, GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT,
-    GUID_TFCAT_TIPCAP_SYSTRAYSUPPORT, GUID_TFCAT_TIPCAP_UIELEMENTENABLED, GUID_TFCAT_TIP_KEYBOARD,
+    ITfCategoryMgr, ITfInputProcessorProfileMgr, ITfInputProcessorProfiles, CLSID_TF_CategoryMgr,
+    CLSID_TF_InputProcessorProfiles, GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER, GUID_TFCAT_TIPCAP_COMLESS,
+    GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT, GUID_TFCAT_TIPCAP_SYSTRAYSUPPORT, GUID_TFCAT_TIPCAP_UIELEMENTENABLED,
+    GUID_TFCAT_TIP_KEYBOARD, TF_INPUTPROCESSORPROFILE, TF_PROFILETYPE_INPUTPROCESSOR,
 };
-use windows_core::{Error, PCWSTR, GUID};
+use windows_core::{Error, Interface, PCWSTR, GUID};
 use zuin_win_common::wide;
 
-use crate::guids::{CLSID_ZUIN, DESCRIPTION, GUID_PROFILE, LANGID};
+use crate::guids::{CLSID_ZUIN, DESCRIPTION};
 use crate::log::zlog;
+use crate::profile::{self, PROFILES};
 
 // UIELEMENTENABLED：候選清單以 ITfCandidateListUIElement 提供（uielement.rs）。自行繪製候選的宿主
 // （例如英雄聯盟遊戲內聊天）以 TF_TMAE_UIELEMENTENABLEDONLY 啟用，只載入有這個類別的輸入法（#86）。
@@ -240,13 +243,28 @@ impl Drop for ComInit {
     }
 }
 
+/// 這個帳號的 TSF 資料庫裡是否已有 profile。升級時已有 zh-TW profile 就跳過，不重複 AddLanguageProfile。
+fn profile_listed(manager: &ITfInputProcessorProfileMgr, profile: &profile::Profile) -> bool {
+    let mut found = TF_INPUTPROCESSORPROFILE::default();
+    unsafe {
+        manager
+            .GetProfile(
+                TF_PROFILETYPE_INPUTPROCESSOR,
+                profile.langid,
+                &CLSID_ZUIN,
+                &profile.guid,
+                HKL::default(),
+                &mut found,
+            )
+            .is_ok()
+    }
+}
+
 fn register_profiles() -> windows_core::Result<()> {
     unsafe {
         zlog!("register: profiles");
         let profiles: ITfInputProcessorProfiles = CoCreateInstance(&CLSID_TF_InputProcessorProfiles, None, CLSCTX_INPROC_SERVER)?;
         profiles.Register(&CLSID_ZUIN)?;
-        // msctf 把這兩個字串當 NUL 結尾讀（不只看長度）：不含 NUL 會把後面的記憶體一起寫進登錄。
-        let desc = wide(DESCRIPTION);
         // 圖示檔不能傳空 slice：msctf 會讀那個懸空指標而當掉。品牌圖示是 DLL 本身的第一個圖示（build.rs 連入）。
         // 兩份 DLL 都有同一個圖示；優先用 x64 那份，32 位元與 64 位元的註冊才不會互相改寫圖示路徑。
         let [x64, _] = dll_paths()?;
@@ -254,8 +272,17 @@ fn register_profiles() -> windows_core::Result<()> {
             Some(p) => p,
             None => dll_path()?,
         });
-        zlog!("register: language profile");
-        profiles.AddLanguageProfile(&CLSID_ZUIN, LANGID, &GUID_PROFILE, &desc, &icon, 0)?;
+        let manager: Option<ITfInputProcessorProfileMgr> = profiles.cast().ok();
+        for profile in PROFILES {
+            // msctf 把這兩個字串當 NUL 結尾讀（不只看長度）：wide 會補 NUL。
+            let desc = wide(profile.description);
+            if manager.as_ref().is_some_and(|m| profile_listed(m, &profile)) {
+                zlog!("register: profile {} 已存在，保留既有設定", profile.language);
+                continue;
+            }
+            zlog!("register: language profile {} ({:#06x})", profile.language, profile.langid);
+            profiles.AddLanguageProfile(&CLSID_ZUIN, profile.langid, &profile.guid, &desc, &icon, 0)?;
+        }
         zlog!("register: categories");
         let categories: ITfCategoryMgr = CoCreateInstance(&CLSID_TF_CategoryMgr, None, CLSCTX_INPROC_SERVER)?;
         for cat in &CATEGORIES {
@@ -275,6 +302,12 @@ fn unregister_profiles() -> windows_core::Result<()> {
             }
         }
         let profiles: ITfInputProcessorProfiles = CoCreateInstance(&CLSID_TF_InputProcessorProfiles, None, CLSCTX_INPROC_SERVER)?;
+        // 明確移除兩個 profile；移除本來就不存在的 profile 不算錯。最後的 Unregister 再清掉其他殘留
+        // （例如舊版只認得 zh-TW 時留下的資料）。
+        for profile in PROFILES {
+            zlog!("unregister: language profile {} ({:#06x})", profile.language, profile.langid);
+            let _ = profiles.RemoveLanguageProfile(&CLSID_ZUIN, profile.langid, &profile.guid);
+        }
         profiles.Unregister(&CLSID_ZUIN)?;
     }
     Ok(())
@@ -346,6 +379,20 @@ pub fn unregister() -> windows_core::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registers_both_language_profiles() {
+        // T28：語言列要同時有注音與日文；取消註冊也走同一份清單。
+        assert_eq!(PROFILES.len(), 2);
+        assert_eq!(PROFILES[0].langid, 0x0404);
+        assert_eq!(PROFILES[0].guid, crate::guids::GUID_PROFILE);
+        assert_eq!(PROFILES[1].langid, 0x0411);
+        assert_eq!(PROFILES[1].guid, crate::guids::GUID_PROFILE_JA);
+        assert_ne!(PROFILES[0].guid, PROFILES[1].guid);
+        // 同一個 CLSID 與 DLL，只有 profile 與語言不同。
+        assert_eq!(PROFILES[0].language, "zh");
+        assert_eq!(PROFILES[1].language, "ja");
+    }
 
     #[test]
     fn categories_include_comless() {

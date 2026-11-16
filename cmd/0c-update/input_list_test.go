@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -23,12 +24,29 @@ func TestInputTipMatchesTSFRegistration(t *testing.T) {
 		}
 		return strings.ToUpper(fmt.Sprintf("{%s-%s-%s-%s-%s}", m[1], m[2], m[3], m[4], m[5]))
 	}
-	lang := regexp.MustCompile(`pub const LANGID: u16 = 0x([0-9a-fA-F]{4});`).FindStringSubmatch(src)
-	if lang == nil {
-		t.Fatal("guids.rs 沒有 LANGID")
+	lang := func(name string) string {
+		m := regexp.MustCompile(`pub const ` + name + `: u16 = 0x([0-9a-fA-F]{4});`).FindStringSubmatch(src)
+		if m == nil {
+			t.Fatalf("guids.rs 沒有 %s", name)
+		}
+		return m[1]
 	}
-	if want := lang[1] + ":" + guid("CLSID_ZUIN") + guid("GUID_PROFILE"); inputTip != want {
-		t.Fatalf("inputTip = %s，DLL 註冊的是 %s", inputTip, want)
+	clsid := guid("CLSID_ZUIN")
+	for _, c := range []struct {
+		lang, profile, tip string
+	}{
+		{lang("LANGID"), guid("GUID_PROFILE"), inputTipZh},
+		{lang("LANGID_JA"), guid("GUID_PROFILE_JA"), inputTipJa},
+	} {
+		if want := c.lang + ":" + clsid + c.profile; c.tip != want {
+			t.Fatalf("%s 對應的 input tip = %s，DLL 註冊的是 %s", c.lang, c.tip, want)
+		}
+	}
+	if inputTip != inputTipZh {
+		t.Fatalf("inputTip 應保留為 zh-TW 的識別，得到 %s", inputTip)
+	}
+	if len(inputTips) != 2 || inputTips[0] != inputTipZh || inputTips[1] != inputTipJa {
+		t.Fatalf("inputTips 應固定為 zh-TW、ja-JP 兩個：%v", inputTips)
 	}
 }
 
@@ -36,11 +54,11 @@ func TestInputTipMatchesTSFRegistration(t *testing.T) {
 func TestListInputMethodOnce(t *testing.T) {
 	base := t.TempDir()
 	yes := func() bool { return true }
-	calls := 0
+	var calls []string
 	fail := errors.New("input.dll 失敗")
-	add := func() error {
-		calls++
-		if calls == 1 {
+	add := func(tip string) error {
+		calls = append(calls, tip)
+		if len(calls) == 1 {
 			return fail
 		}
 		return nil
@@ -51,19 +69,107 @@ func TestListInputMethodOnce(t *testing.T) {
 	if _, err := os.Stat(inputListMarker(base)); !os.IsNotExist(err) {
 		t.Fatal("加入失敗不能留下記號，否則之後不會再試")
 	}
-	if err := listInputMethodOnce(base, yes, add); err != nil || calls != 2 {
-		t.Fatalf("下一次安裝要重試：err=%v calls=%d", err, calls)
+	if err := listInputMethodOnce(base, yes, add); err != nil || len(calls) != 3 {
+		t.Fatalf("下一次安裝要重試兩個語言：err=%v calls=%v", err, calls)
 	}
-	if b, err := os.ReadFile(inputListMarker(base)); err != nil || strings.TrimSpace(string(b)) != inputTip {
-		t.Fatalf("記號內容不對：%q %v", b, err)
+	want := strings.Join(inputTips, "\n") + "\n"
+	if b, err := os.ReadFile(inputListMarker(base)); err != nil || string(b) != want {
+		t.Fatalf("記號內容不對：%q %v，want %q", b, err, want)
 	}
 	for i := 0; i < 3; i++ { // 之後的更新
 		if err := listInputMethodOnce(base, yes, add); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if calls != 2 {
-		t.Fatalf("加入過之後不能再改使用者的清單，呼叫了 %d 次", calls)
+	if len(calls) != 3 {
+		t.Fatalf("加入過之後不能再改使用者的清單，呼叫了 %v", calls)
+	}
+}
+
+// T28：標記分語言。一個語言加入失敗時，已加入的另一個要記住，下次只重試缺的那一個。
+func TestListInputMethodOnceTracksEachLanguage(t *testing.T) {
+	base := t.TempDir()
+	yes := func() bool { return true }
+	jaErr := errors.New("ja 失敗")
+	add := func(tip string) error {
+		if tip == inputTipJa {
+			return jaErr
+		}
+		return nil
+	}
+	if err := listInputMethodOnce(base, yes, add); !errors.Is(err, jaErr) {
+		t.Fatalf("ja 失敗應回報，得到 %v", err)
+	}
+	recorded, err := readInputListMarker(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !recorded[inputTipZh] || recorded[inputTipJa] {
+		t.Fatalf("只應記住已加入的 zh：%v", recorded)
+	}
+	var retried []string
+	if err := listInputMethodOnce(base, yes, func(tip string) error {
+		retried = append(retried, tip)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(retried) != 1 || retried[0] != inputTipJa {
+		t.Fatalf("下次只重試 ja，得到 %v", retried)
+	}
+	recorded, err = readInputListMarker(base)
+	if err != nil || !recorded[inputTipZh] || !recorded[inputTipJa] {
+		t.Fatalf("兩個語言都要記住：%v %v", recorded, err)
+	}
+}
+
+// T28：舊版留下只含 zh 的記號時，更新要補上 ja；使用者自己移除的 ja 之後不會被加回。
+func TestListInputMethodOnceUpgradesLegacyMarker(t *testing.T) {
+	base := t.TempDir()
+	marker := inputListMarker(base)
+	if err := os.MkdirAll(filepath.Dir(marker), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(marker, []byte(inputTipZh+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var added []string
+	add := func(tip string) error { added = append(added, tip); return nil }
+	if err := listInputMethodOnce(base, func() bool { return true }, add); err != nil {
+		t.Fatal(err)
+	}
+	if len(added) != 1 || added[0] != inputTipJa {
+		t.Fatalf("舊記號只缺 ja，得到 %v", added)
+	}
+	if err := listInputMethodOnce(base, func() bool { return true }, add); err != nil {
+		t.Fatal(err)
+	}
+	if len(added) != 1 {
+		t.Fatalf("之後的更新不能再加回使用者移除的語言：%v", added)
+	}
+}
+
+// T28：回復舊版只留 zh 記號；解除安裝清掉記號，重新安裝才會再加兩個語言。
+func TestInputListMarkerForgetAndClear(t *testing.T) {
+	base := t.TempDir()
+	if err := writeInputListMarker(base, map[string]bool{inputTipZh: true, inputTipJa: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := forgetInputListTips(base, inputTipJa); err != nil {
+		t.Fatal(err)
+	}
+	recorded, err := readInputListMarker(base)
+	if err != nil || !recorded[inputTipZh] || recorded[inputTipJa] {
+		t.Fatalf("回復舊版後只留 zh：%v %v", recorded, err)
+	}
+	if err := clearInputListMarker(base); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(inputListMarker(base)); !os.IsNotExist(err) {
+		t.Fatal("解除安裝要清掉記號")
+	}
+	if err := clearInputListMarker(base); err != nil {
+		t.Fatalf("重複清除不算錯：%v", err)
 	}
 }
 
@@ -73,7 +179,7 @@ func TestListInputMethodOnce(t *testing.T) {
 func TestListInputMethodOnceChecksMarkerBeforeIdentity(t *testing.T) {
 	base := t.TempDir()
 	asked, added := 0, 0
-	add := func() error { added++; return nil }
+	add := func(string) error { added++; return nil }
 	notOwner := func() bool { asked++; return false }
 	if err := listInputMethodOnce(base, notOwner, add); err != nil || asked != 1 || added != 0 {
 		t.Fatalf("不是工作階段的使用者：err=%v asked=%d added=%d", err, asked, added)
@@ -82,7 +188,7 @@ func TestListInputMethodOnceChecksMarkerBeforeIdentity(t *testing.T) {
 		t.Fatal("沒有加入不能留下記號")
 	}
 	owner := func() bool { asked++; return true }
-	if err := listInputMethodOnce(base, owner, add); err != nil || asked != 2 || added != 1 {
+	if err := listInputMethodOnce(base, owner, add); err != nil || asked != 2 || added != len(inputTips) {
 		t.Fatalf("工作階段的使用者：err=%v asked=%d added=%d", err, asked, added)
 	}
 	for i := 0; i < 3; i++ { // 之後的登入與每日檢查
@@ -90,7 +196,7 @@ func TestListInputMethodOnceChecksMarkerBeforeIdentity(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if asked != 2 || added != 1 {
+	if asked != 2 || added != len(inputTips) {
 		t.Fatalf("有記號之後不能再查身分：asked=%d added=%d", asked, added)
 	}
 }
