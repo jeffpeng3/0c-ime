@@ -9,6 +9,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/decode"
 	"github.com/0c-biggo/0c-ime/core/input"
+	"github.com/0c-biggo/0c-ime/core/lang"
 	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/rerank"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
@@ -746,5 +747,6 @@ func (s *Session) acceptHint() bool {
 		s.locks[g.Start] = decode.Lock{Word: g.Word, Len: g.End - g.Start, Suggested: true}
 	}
 	s.hint = nil
+	s.emitComplete(lang.Zh, s.snapshot().Text())
 	return true
 }
