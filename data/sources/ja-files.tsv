@@ -1,0 +1,42 @@
+# 日文來源逐檔授權清單。T02 產出；source 欄對應 ja-sources.tsv 與 ledger.tsv 的來源 ID。
+# Mozc 的 dictionary_oss 是混合授權：詞典、品詞、連接成本類檔案同時帶 NAIST/IPAdic 與 ICOT 條款；不可只看 Mozc 的 BSD-3。
+# 欄位：source	file	lineage	license	distributable	notes
+ja-mozc	BUILD.bazel	Google 建置設定	BSD-3-Clause	yes	只描述建置規則，不含詞條。
+ja-mozc	README.md	Google 說明	BSD-3-Clause	yes	aux_dictionary.tsv 與 dictionary_filter.tsv 的格式說明。
+ja-mozc	README.txt	Google 說明，內含 IPAdic 與沖繩辭書授權全文	BSD-3-Clause	yes	散布時必須保留；本檔是混合授權的主要依據。
+ja-mozc	aux_dictionary.tsv	Google 追加詞	BSD-3-Clause	yes	以既有詞條為基準追加。
+ja-mozc	collocation.txt	Google 共起詞	BSD-3-Clause	yes	轉換候選整理用。
+ja-mozc	collocation_suppression.txt	Google 共起抑制	BSD-3-Clause	yes	轉換候選整理用。
+ja-mozc	connection_single_column.txt	IPAdic 連接矩陣衍生的單列成本	BSD-3-Clause + NAIST-IPAdic + ICOT	yes	不可只標 BSD-3；散布時附 NAIST 與 ICOT 聲明。
+ja-mozc	dictionary00.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary01.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary02.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary03.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary04.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary05.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary06.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary07.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary08.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	混合詞條，無法逐詞拆分；整檔附完整聲明。
+ja-mozc	dictionary09.txt	IPAdic、ICOT、沖繩辭書、Google 追加詞	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain（沖繩辭書）	yes	OSS 版不含郵遞區號詞典；混合詞條整檔附完整聲明。
+ja-mozc	dictionary_filter.tsv	Google 過濾規則	BSD-3-Clause	yes	以正規表示式移除特定詞條。
+ja-mozc	evaluation.tsv	Google 轉換評測	BSD-3-Clause	yes	只供上游回歸測試，不進 0c 資料包。
+ja-mozc	id.def	IPAdic 品詞 ID 表與 Google 調整	BSD-3-Clause + NAIST-IPAdic + ICOT	yes	不可只標 BSD-3；散布時附 NAIST 與 ICOT 聲明。
+ja-mozc	reading_correction.tsv	Google 讀音修正	BSD-3-Clause	yes	轉換前讀音正規化。
+ja-mozc	suffix.txt	IPAdic 接尾詞與 Google 調整	BSD-3-Clause + NAIST-IPAdic + ICOT	yes	不可只標 BSD-3；散布時附 NAIST 與 ICOT 聲明。
+ja-mozc	suggestion_filter.txt	Google 預測過濾	BSD-3-Clause	yes	預測候選過濾用。
+ja-sudachidict	src/main/text/small_lex.csv	UniDic 詞彙	Apache-2.0 + UniDic BSD-3-Clause	yes	SudachiDict 小型詞典來源；LEGAL 已附 UniDic BSD 全文。
+ja-sudachidict	src/main/text/core_lex.csv	UniDic 與 NEologd 詞彙	Apache-2.0 + UniDic BSD-3-Clause + NEologd 聲明	yes	Core 詞典來源；LEGAL 已附 UniDic 與 NEologd 聲明。
+ja-sudachidict	src/main/text/notcore_lex.csv	NEologd 詞彙	Apache-2.0 + NEologd 聲明	yes	Core 補充詞彙；LEGAL 已附 NEologd 聲明。
+ja-sudachidict	src/main/text/matrix.def.zip	UniDic 連接矩陣	Apache-2.0 + UniDic BSD-3-Clause	yes	Sudachi 格式連接成本；LEGAL 已附 UniDic BSD 全文。
+ja-unidic	unidic-cwj-202512.zip	現代書き言葉UniDic 本體	BSD-3-Clause（自 GPL-2.0／LGPL-2.1／BSD-3 三選一）	yes	附 BSD 全文與作者聲明；T13 打包時從 zip 取出 AUTHORS 併入 NOTICE。
+ja-zenz	ggml-model-Q5_K_M.gguf	zenz-v3.1-small 量化權重	CC-BY-SA-4.0	yes	模型檔獨立散布；量化後仍為 CC-BY-SA-4.0。
+ja-anthy-corpus	calctrans/corpus.0.txt	除錯用，無資料列	無授權聲明（不得散布）	no	只有註解，不用於評測。
+ja-anthy-corpus	calctrans/corpus.1.txt	一般轉換測試，1,743 筆	Public-Domain	yes	檔案開頭明示 copying: public domain；出處為 Anthy corpus。
+ja-anthy-corpus	calctrans/corpus.2.txt	追加測試，23 筆	無授權聲明（不得散布）	no	沒有授權聲明；不得當成 public domain 散布。
+ja-anthy-corpus	calctrans/corpus.3.txt	大規模測試，9,252 筆	無授權聲明（不得散布）	no	沒有授權聲明；不得當成 public domain 散布。
+ja-anthy-corpus	calctrans/corpus.4.txt	錯誤轉換示例	無授權聲明（不得散布）	no	不是正確答案資料，不用於評測。
+ja-anthy-corpus	calctrans/corpus.5.txt	追加測試，47 筆	無授權聲明；出處不明（不得散布）	no	檔案與 corpus.0 都標示出處不明；不得散布。
+ja-ajimee	JWTD_v2/v1/evaluation_items.json	日本語Wikipedia入力誤りデータセット v2 的 200 筆抽樣	CC-BY-SA-3.0	yes	保留出處、授權與修改說明；衍生格式仍為 CC-BY-SA-3.0。
+ja-ajimee	utils.py	azooKey 評測程式	CC0-1.0	yes	可自由使用；不進資料包。
+ja-ajimee	test_utils.py	azooKey 評測程式測試	CC0-1.0	yes	可自由使用；不進資料包。
+ja-wiki	jawiki-20261101-pages-articles.xml.bz2	日本語版 Wikipedia 條目文字	CC-BY-SA-4.0	yes	衍生詞頻與 n-gram 維持 CC-BY-SA-4.0；附作者、來源與版本。
