@@ -1152,8 +1152,8 @@ mod parse_tests {
 
     #[test]
     fn clause_title_combines_with_candidate_title_and_guards_bad_indexes() {
-        let mut s = parse(&json!({"snapshot": {"mode": "japanese", "candidate_title": "変換",
-            "clause_index": 0, "clause_count": 3, "candidates": {"items": []}}}));
+        let mut s = parse(&json!({"snapshot": {"mode": "japanese",
+            "clause_index": 0, "clause_count": 3, "candidates": {"title": "変換", "items": []}}}));
         assert_eq!(s.clause_title(), "文節 1/3");
         assert_eq!(s.candidate_title(), "変換　文節 1/3");
         s.clause_index = 9;
@@ -1754,7 +1754,7 @@ mod tests {
             use std::io::{Read, Write};
             use std::os::windows::io::FromRawHandle;
             use std::sync::atomic::Ordering;
-            use windows::Win32::Foundation::{GetLastError, ERROR_PIPE_CONNECTED};
+            use windows::Win32::Foundation::{GetLastError, ERROR_NO_DATA, ERROR_PIPE_CONNECTED};
             use windows::Win32::Storage::FileSystem::PIPE_ACCESS_DUPLEX;
             use windows::Win32::System::Pipes::{
                 ConnectNamedPipe, CreateNamedPipeW, PIPE_READMODE_BYTE, PIPE_TYPE_BYTE, PIPE_WAIT,
@@ -1794,8 +1794,20 @@ mod tests {
                     if let Some(r) = ready.take() {
                         r.send(()).unwrap();
                     }
+                    // A client may connect between CreateNamedPipeW and ConnectNamedPipe
+                    // (ERROR_PIPE_CONNECTED), or connect and close again before the call
+                    // (ERROR_NO_DATA). Both are normal races for this fixture, not a broken
+                    // listener: the second case just closes this instance and listens again.
                     let connected = unsafe { ConnectNamedPipe(handle, None) };
-                    assert!(connected.is_ok() || unsafe { GetLastError() } == ERROR_PIPE_CONNECTED);
+                    let accept_error = unsafe { GetLastError() };
+                    if connected.is_err() && accept_error == ERROR_NO_DATA {
+                        continue;
+                    }
+                    assert!(
+                        connected.is_ok() || accept_error == ERROR_PIPE_CONNECTED,
+                        "ConnectNamedPipe failed: {}",
+                        accept_error.0
+                    );
                     if stopping.load(Ordering::SeqCst) {
                         break;
                     }
@@ -1841,19 +1853,26 @@ mod tests {
             use std::sync::atomic::Ordering;
             self.stop.store(true, Ordering::SeqCst);
             let worker = self.worker.take().unwrap();
-            // Wake a blocking accept after the test session has closed its pipe.
-            while !worker.is_finished() {
-                if let Ok(wake) = std::fs::OpenOptions::new()
+            // Wake a blocking accept after the test session has closed its pipe. Keep the
+            // wake connection open until the worker exits: dropping it while the worker is
+            // still inside ConnectNamedPipe turns the accept into ERROR_NO_DATA (the client
+            // connected and closed before the call returned).
+            let wake = loop {
+                if worker.is_finished() {
+                    break None;
+                }
+                match std::fs::OpenOptions::new()
                     .read(true)
                     .write(true)
                     .open(&self.name)
                 {
-                    drop(wake);
-                    break;
+                    Ok(pipe) => break Some(pipe),
+                    Err(_) => std::thread::sleep(std::time::Duration::from_millis(2)),
                 }
-                std::thread::sleep(std::time::Duration::from_millis(2));
-            }
-            worker.join().unwrap()
+            };
+            let keys = worker.join().unwrap();
+            drop(wake);
+            keys
         }
     }
 
