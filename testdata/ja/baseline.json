@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "rules_sha256": "8c0b0e8a7613601c379e2f2b1df1a992e3ea279cf021c328351c14a0c6c917fd",
+  "engine": {
+    "name": "stats",
+    "data": "data/ja",
+    "lexicon_sha256": "68f55535277e964dfe486ddbc3087e5bed813255afa20a5b7dc87cbdfdab3411",
+    "connection_sha256": "4609be258f563a5ed9e0657566aff10a183dfafa4b28c9dda49a952e98170e72"
+  },
+  "measured_on": "2026-11-17",
+  "corpora": {
+    "ajimee-200": {
+      "n": 200,
+      "top1_rate": 0.015,
+      "top5_rate": 0.015,
+      "boundary_n": 0,
+      "boundary_exact_rate": 0,
+      "boundary_f1": 0,
+      "latency_p50_ms_informational": 0.073419,
+      "latency_p95_ms_informational": 0.655088,
+      "timeout_rate_informational": 0
+    },
+    "anthy-corpus1": {
+      "n": 200,
+      "top1_rate": 0.025,
+      "top5_rate": 0.025,
+      "boundary_n": 199,
+      "boundary_exact_rate": 0.01507537688442211,
+      "boundary_f1": 0.2526230831315577,
+      "latency_p50_ms_informational": 0.05058,
+      "latency_p95_ms_informational": 0.258318,
+      "timeout_rate_informational": 0
+    },
+    "hard-cases": {
+      "n": 35,
+      "top1_rate": 0.14285714285714285,
+      "top5_rate": 0.14285714285714285,
+      "boundary_n": 35,
+      "boundary_exact_rate": 0.14285714285714285,
+      "boundary_f1": 0.2375,
+      "latency_p50_ms_informational": 0.01426,
+      "latency_p95_ms_informational": 0.209198,
+      "timeout_rate_informational": 0
+    },
+    "modern-500": {
+      "n": 500,
+      "top1_rate": 0.232,
+      "top5_rate": 0.232,
+      "boundary_n": 500,
+      "boundary_exact_rate": 0.144,
+      "boundary_f1": 0.4454293628808864,
+      "latency_p50_ms_informational": 0.04999,
+      "latency_p95_ms_informational": 0.247218,
+      "timeout_rate_informational": 0
+    }
+  }
+}

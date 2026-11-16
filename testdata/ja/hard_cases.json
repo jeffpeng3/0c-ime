@@ -1,0 +1,594 @@
+{
+ "name": "hard-cases",
+ "license": "CC0-1.0. Original test data authored for 0c.",
+ "source": "Original homophone and bunsetsu-boundary cases, not derived from any corpus.",
+ "count": 35,
+ "items": [
+  {
+   "id": "hard-001",
+   "reading": "はしをわたる",
+   "surface": "橋を渡る",
+   "reading_segments": [
+    "はしを",
+    "わたる"
+   ],
+   "segments": [
+    "橋を",
+    "渡る"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-002",
+   "reading": "はしでごはんをたべる",
+   "surface": "箸でご飯を食べる",
+   "reading_segments": [
+    "はしで",
+    "ごはんを",
+    "たべる"
+   ],
+   "segments": [
+    "箸で",
+    "ご飯を",
+    "食べる"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-003",
+   "reading": "あめがふる",
+   "surface": "雨が降る",
+   "reading_segments": [
+    "あめが",
+    "ふる"
+   ],
+   "segments": [
+    "雨が",
+    "降る"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-004",
+   "reading": "あめをたべる",
+   "surface": "飴を食べる",
+   "reading_segments": [
+    "あめを",
+    "たべる"
+   ],
+   "segments": [
+    "飴を",
+    "食べる"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-005",
+   "reading": "かみをきる",
+   "surface": "髪を切る",
+   "reading_segments": [
+    "かみを",
+    "きる"
+   ],
+   "segments": [
+    "髪を",
+    "切る"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-006",
+   "reading": "かみをすてる",
+   "surface": "紙を捨てる",
+   "reading_segments": [
+    "かみを",
+    "すてる"
+   ],
+   "segments": [
+    "紙を",
+    "捨てる"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-007",
+   "reading": "はなをかぐ",
+   "surface": "花を嗅ぐ",
+   "reading_segments": [
+    "はなを",
+    "かぐ"
+   ],
+   "segments": [
+    "花を",
+    "嗅ぐ"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-008",
+   "reading": "はなをかむ",
+   "surface": "鼻をかむ",
+   "reading_segments": [
+    "はなを",
+    "かむ"
+   ],
+   "segments": [
+    "鼻を",
+    "かむ"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-009",
+   "reading": "くもがうかぶ",
+   "surface": "雲が浮かぶ",
+   "reading_segments": [
+    "くもが",
+    "うかぶ"
+   ],
+   "segments": [
+    "雲が",
+    "浮かぶ"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-010",
+   "reading": "くもがはう",
+   "surface": "蜘蛛が這う",
+   "reading_segments": [
+    "くもが",
+    "はう"
+   ],
+   "segments": [
+    "蜘蛛が",
+    "這う"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-011",
+   "reading": "かきをたべる",
+   "surface": "柿を食べる",
+   "reading_segments": [
+    "かきを",
+    "たべる"
+   ],
+   "segments": [
+    "柿を",
+    "食べる"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-012",
+   "reading": "しゃしんをとる",
+   "surface": "写真を撮る",
+   "reading_segments": [
+    "しゃしんを",
+    "とる"
+   ],
+   "segments": [
+    "写真を",
+    "撮る"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-013",
+   "reading": "いえにかえる",
+   "surface": "家に帰る",
+   "reading_segments": [
+    "いえに",
+    "かえる"
+   ],
+   "segments": [
+    "家に",
+    "帰る"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-014",
+   "reading": "はなしをきく",
+   "surface": "話を聞く",
+   "reading_segments": [
+    "はなしを",
+    "きく"
+   ],
+   "segments": [
+    "話を",
+    "聞く"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-015",
+   "reading": "えいがをみる",
+   "surface": "映画を見る",
+   "reading_segments": [
+    "えいがを",
+    "みる"
+   ],
+   "segments": [
+    "映画を",
+    "見る"
+   ],
+   "tags": [
+    "verb"
+   ]
+  },
+  {
+   "id": "hard-016",
+   "reading": "ともだちにあう",
+   "surface": "友達に会う",
+   "reading_segments": [
+    "ともだちに",
+    "あう"
+   ],
+   "segments": [
+    "友達に",
+    "会う"
+   ],
+   "tags": [
+    "verb"
+   ]
+  },
+  {
+   "id": "hard-017",
+   "reading": "えきまではしる",
+   "surface": "駅まで走る",
+   "reading_segments": [
+    "えきまで",
+    "はしる"
+   ],
+   "segments": [
+    "駅まで",
+    "走る"
+   ],
+   "tags": [
+    "particle"
+   ]
+  },
+  {
+   "id": "hard-018",
+   "reading": "てがみをかく",
+   "surface": "手紙を書く",
+   "reading_segments": [
+    "てがみを",
+    "かく"
+   ],
+   "segments": [
+    "手紙を",
+    "書く"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-019",
+   "reading": "えをかく",
+   "surface": "絵を描く",
+   "reading_segments": [
+    "えを",
+    "かく"
+   ],
+   "segments": [
+    "絵を",
+    "描く"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-020",
+   "reading": "くるまをなおす",
+   "surface": "車を直す",
+   "reading_segments": [
+    "くるまを",
+    "なおす"
+   ],
+   "segments": [
+    "車を",
+    "直す"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-021",
+   "reading": "かさをかす",
+   "surface": "傘を貸す",
+   "reading_segments": [
+    "かさを",
+    "かす"
+   ],
+   "segments": [
+    "傘を",
+    "貸す"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-022",
+   "reading": "ほんをかりる",
+   "surface": "本を借りる",
+   "reading_segments": [
+    "ほんを",
+    "かりる"
+   ],
+   "segments": [
+    "本を",
+    "借りる"
+   ],
+   "tags": [
+    "homophone"
+   ]
+  },
+  {
+   "id": "hard-023",
+   "reading": "きょうはいいてんきですね",
+   "surface": "今日はいい天気ですね",
+   "reading_segments": [
+    "きょうは",
+    "いい",
+    "てんきですね"
+   ],
+   "segments": [
+    "今日は",
+    "いい",
+    "天気ですね"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-024",
+   "reading": "わたしはがくせいです",
+   "surface": "私は学生です",
+   "reading_segments": [
+    "わたしは",
+    "がくせいです"
+   ],
+   "segments": [
+    "私は",
+    "学生です"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-025",
+   "reading": "とうきょうにいく",
+   "surface": "東京に行く",
+   "reading_segments": [
+    "とうきょうに",
+    "いく"
+   ],
+   "segments": [
+    "東京に",
+    "行く"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-026",
+   "reading": "にほんごをべんきょうする",
+   "surface": "日本語を勉強する",
+   "reading_segments": [
+    "にほんごを",
+    "べんきょうする"
+   ],
+   "segments": [
+    "日本語を",
+    "勉強する"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-027",
+   "reading": "あしたはあめがふるらしい",
+   "surface": "明日は雨が降るらしい",
+   "reading_segments": [
+    "あしたは",
+    "あめが",
+    "ふるらしい"
+   ],
+   "segments": [
+    "明日は",
+    "雨が",
+    "降るらしい"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-028",
+   "reading": "でんしゃがおくれているのでちこくします",
+   "surface": "電車が遅れているので遅刻します",
+   "reading_segments": [
+    "でんしゃが",
+    "おくれているので",
+    "ちこくします"
+   ],
+   "segments": [
+    "電車が",
+    "遅れているので",
+    "遅刻します"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-029",
+   "reading": "このほんをよんだことがありますか",
+   "surface": "この本を読んだことがありますか",
+   "reading_segments": [
+    "この",
+    "ほんを",
+    "よんだことが",
+    "ありますか"
+   ],
+   "segments": [
+    "この",
+    "本を",
+    "読んだことが",
+    "ありますか"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-030",
+   "reading": "ゆっくりはなしてください",
+   "surface": "ゆっくり話してください",
+   "reading_segments": [
+    "ゆっくり",
+    "はなして",
+    "ください"
+   ],
+   "segments": [
+    "ゆっくり",
+    "話して",
+    "ください"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-031",
+   "reading": "もういちどおしえてください",
+   "surface": "もう一度教えてください",
+   "reading_segments": [
+    "もう",
+    "いちど",
+    "おしえてください"
+   ],
+   "segments": [
+    "もう",
+    "一度",
+    "教えてください"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-032",
+   "reading": "しごとがおわったらでんわします",
+   "surface": "仕事が終わったら電話します",
+   "reading_segments": [
+    "しごとが",
+    "おわったら",
+    "でんわします"
+   ],
+   "segments": [
+    "仕事が",
+    "終わったら",
+    "電話します"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-033",
+   "reading": "れんしゅうがたりないのでもういちどやります",
+   "surface": "練習が足りないのでもう一度やります",
+   "reading_segments": [
+    "れんしゅうが",
+    "たりないので",
+    "もういちど",
+    "やります"
+   ],
+   "segments": [
+    "練習が",
+    "足りないので",
+    "もう一度",
+    "やります"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-034",
+   "reading": "でんわをかけなおしてください",
+   "surface": "電話をかけ直してください",
+   "reading_segments": [
+    "でんわを",
+    "かけなおして",
+    "ください"
+   ],
+   "segments": [
+    "電話を",
+    "かけ直して",
+    "ください"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  },
+  {
+   "id": "hard-035",
+   "reading": "つぎのことをかんがえる",
+   "surface": "次のことを考える",
+   "reading_segments": [
+    "つぎの",
+    "ことを",
+    "かんがえる"
+   ],
+   "segments": [
+    "次の",
+    "ことを",
+    "考える"
+   ],
+   "tags": [
+    "boundary"
+   ]
+  }
+ ]
+}
