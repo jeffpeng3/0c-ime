@@ -110,6 +110,66 @@ def copy_english(source, destination, go):
     check_english(destination)
 
 
+JA_FILES = ("lexicon.bin", "lm.bin", "manifest.json", "NOTICE.txt", "report.txt", "lexicon.tsv")
+
+
+def check_ja_data(directory, public):
+    """Validate a compiled Japanese pack (and optional symbols/) before it enters a bundle."""
+    directory = Path(directory)
+    if directory.is_symlink() or not directory.is_dir():
+        raise ValueError("日文資料包必須是一般目錄")
+    manifest = json.loads(regular(directory / "manifest.json").read_text(encoding="utf-8"))
+    if manifest.get("format") != 2 or manifest.get("language") != "ja":
+        raise ValueError("日文資料包需要 format 2 與 language=ja")
+    for name in JA_FILES:
+        regular(directory / name)
+    for name, info in manifest.get("files", {}).items():
+        relative = Path(name)
+        path = directory / relative
+        if relative.is_absolute() or ".." in relative.parts or path.is_symlink() or not path.is_file():
+            raise ValueError(f"日文資料包含無效檔案：{name}")
+        if digest(path) != info.get("sha256") or path.stat().st_size != info.get("size"):
+            raise ValueError(f"日文資料包雜湊或大小不符：{name}")
+    if public:
+        # Japanese packs use lowercase "public" and the same per-source NOTICE layout as Chinese packs.
+        normalized = dict(manifest)
+        options = manifest.get("options") or {}
+        normalized["options"] = dict(options, Public=options.get("Public") is True or options.get("public") is True)
+        check_public_sources(normalized, (directory / "NOTICE.txt").read_text(encoding="utf-8"))
+    symbols = directory / "symbols"
+    if symbols.exists() or symbols.is_symlink():
+        if symbols.is_symlink() or not symbols.is_dir():
+            raise ValueError("日文記号目錄必須是一般目錄")
+        for path in symbols.rglob("*"):
+            if path.is_symlink():
+                raise ValueError(f"日文記号目錄不接受符號連結：{path.name}")
+            if path.is_file() and path.suffix != ".tsv" and path.name != "README.md":
+                raise ValueError(f"日文記号目錄只接受 .tsv 或 README.md：{path.name}")
+        if not any(symbols.glob("*.tsv")):
+            raise ValueError("日文記号目錄沒有 .tsv 檔")
+    return manifest
+
+
+def copy_ja_data(source, destination, public=True):
+    """Stage the Japanese pack as data/ja/; the Chinese pack and its model bindings stay untouched."""
+    source = Path(source).resolve()
+    manifest = check_ja_data(source, public)
+    target = Path(destination) / "ja"
+    if target.exists() or target.is_symlink():
+        raise ValueError("日文資料包目標已存在")
+    target.mkdir(parents=True)
+    for name in JA_FILES:
+        shutil.copy2(regular(source / name), target / name)
+    symbols = source / "symbols"
+    if symbols.is_dir():
+        for path in sorted(symbols.rglob("*")):
+            if path.is_file():
+                copy = target / "symbols" / path.relative_to(symbols)
+                copy.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, copy)
+    return manifest
+
+
 def valid_version(version):
     if not re.fullmatch(r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?", version):
         return False

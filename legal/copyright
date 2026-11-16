@@ -69,6 +69,22 @@ Comment: 由 data/ 與 https://github.com/0c-biggo/0c-ime-data 的詞對統計�
  只在原始碼 tarball 內，不在 Git；逐來源的授權聲明在 assets/data/NOTICE.txt。
  詞條依 origin 欄標示來源，各來源見 data/sources/ledger.tsv 與 data/sources/licenses/。McBopomofo 的 BPMFMappings 最初簡化自 libtabe 的 tsi.src（BSD 授權）。
 
+Files: data/ja/lexicon/words.tsv
+       data/ja/connection.tsv
+       data/ja/lm/unigram.tsv
+       data/ja/lm/bigram.tsv
+Copyright: 2026 Funmula Co., Limited
+License: CC-BY-SA-4.0
+Comment: 0c 人工維護的日文種子詞條、連接成本與詞頻；編譯後資料包只在原始碼 tarball 或安裝包內，
+ 逐來源授權聲明見 data/ja/NOTICE.txt。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，
+ 依 data/sources/ledger.tsv 另行標示混合授權。
+
+Files: data/ja/symbols/symbols.tsv
+       data/ja/symbols/kaomoji.tsv
+Copyright: 2026 Funmula Co., Limited
+License: AGPL-3
+Comment: 本專案整理的日文記号與顔文字辭典，未整檔移植 Mozc 的 symbol.tsv。
+
 Files: data/english/esdb.tsv
        data/english/LICENSE.txt
 Copyright: 2000-2026 Kevin Atkinson

@@ -7,10 +7,15 @@ tarball) from GitHub Releases, verifies them, checks that their dictionary,
 model and pairing locks equal this tree's, and installs assets/data/ and
 models/{select,punct}/ in the same layout as the unpacked tarballs. Releases up
 to 0.2.2 bundle the models in the source tarball.
+
+The Japanese pack has no published tarball yet: --lang ja compiles data/ja with
+0c-compile -public and copies its symbols/ directory. --lang all installs the
+Chinese assets and builds the Japanese pack in one run.
 """
 
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -87,6 +92,71 @@ def install(tarball, root, models=None, with_models=True):
     return record
 
 
+def install_models(tarball, models, root):
+    """Install only models/{select,punct} from a matching release; keep assets/data untouched.
+
+    The pairing lock is checked against the dictionary already installed in this tree, so a
+    models-only refresh cannot silently pair a new model with an old dictionary."""
+    if models is None:
+        raise ValueError("models-only needs the release's models tarball")
+    record = release.verify(tarball, models)
+    dictionary = root / release_dictionary.DIRECTORY / "manifest.json"
+    if not dictionary.is_file():
+        raise ValueError("models-only needs an installed dictionary in assets/data")
+    pair = json.loads((root / PAIR_LOCK).read_text(encoding="utf-8"))
+    if release.digest(dictionary) != pair.get("dictionary_manifest_sha256"):
+        raise ValueError("installed dictionary does not match this tree's pairing lock; install the dictionary first")
+    targets = MODEL_TARGETS
+    with tempfile.TemporaryDirectory(prefix=".models-", dir=root) as temp:
+        stage = Path(temp)
+        with tarfile.open(tarball) as archive:
+            release.extract(archive, stage)
+        with tarfile.open(models) as archive:
+            release.extract(archive, stage)
+        (source,) = stage.iterdir()
+        for lock in (release.LOCK, PAIR_LOCK):
+            if release.digest(source / lock) != release.digest(root / lock):
+                raise ValueError(f"{lock} differs from {record['tag']}: this tree's models are not in that release")
+        for target in targets:
+            old = root / target
+            if old.is_symlink() or old.is_file():
+                raise ValueError(f"refusing to replace non-directory: {target}")
+            old.parent.mkdir(parents=True, exist_ok=True)
+            if old.exists():
+                shutil.rmtree(old)
+            os.rename(source / target, old)
+    release_dictionary.check_models_paired(root)
+    return record
+
+
+def build_ja(root, output, go="go"):
+    """Compile the Japanese data pack from this tree and replace output only after success.
+
+    A git checkout carries data/ja sources but no compiled pack. The compiler is deterministic,
+    so rebuilding is the way to get the same bytes as a release. Symbols and kaomoji live beside
+    the pack because the runtime reads them as TSV files, not from lexicon.bin."""
+    output = Path(output)
+    if not output.is_absolute():
+        output = root / output
+    if output.is_symlink() or (output.exists() and not output.is_dir()):
+        raise ValueError(f"refusing to replace non-directory: {output}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix=".ja-assets-", dir=output.parent) as temp:
+        stage = Path(temp) / "ja"
+        subprocess.run([go, "run", "./cmd/0c-compile", "-lang", "ja", "-public", "-out", str(stage)],
+                       cwd=root, check=True)
+        manifest = json.loads((stage / "manifest.json").read_text(encoding="utf-8"))
+        if manifest.get("format") != 2 or manifest.get("language") != "ja":
+            raise ValueError("0c-compile did not write a format 2 Japanese pack")
+        symbols = root / "data" / "ja" / "symbols"
+        if symbols.is_dir():
+            shutil.copytree(symbols, stage / "symbols")
+        if output.exists():
+            shutil.rmtree(output)
+        os.rename(stage, output)
+    return output
+
+
 def fetch(url, target, expected):
     if target.exists() and release.digest(target) == expected:
         return target
@@ -139,29 +209,57 @@ def main():
     parser.add_argument("--release", help="release tag to fetch (default: this tree's version)")
     parser.add_argument("--tarball", type=Path, help="use an already downloaded source tarball")
     parser.add_argument("--models-tarball", type=Path, help="with --tarball: the release's models tarball")
-    parser.add_argument("--no-models", action="store_true", help="install only the dictionary")
+    parser.add_argument("--lang", choices=("zh", "ja", "all"), default="zh",
+                        help=" zh: download the Chinese dictionary and models; ja: compile data/ja; all: both")
+    parser.add_argument("--ja-out", type=Path, default=Path("build/ja"),
+                        help="Japanese pack output directory (default: build/ja)")
+    parser.add_argument("--no-models", action="store_true", help="install only the Chinese dictionary (MODELS=0)")
+    parser.add_argument("--models-only", action="store_true",
+                        help="install only the Chinese models; assets/data must already be present (MODELS_ONLY=1)")
     parser.add_argument("--cache", type=Path, default=release.ROOT / "build/cache/releases")
     args = parser.parse_args()
     root = release.ROOT
     with_models = not args.no_models
     try:
+        if args.models_only and args.no_models:
+            raise ValueError("--models-only and --no-models cannot be combined")
+        if args.lang == "ja" and args.models_only:
+            raise ValueError("Japanese has no separate models package; --models-only applies to Chinese (LANG=zh)")
+        if args.lang == "ja" and (args.tarball or args.models_tarball or args.release):
+            raise ValueError("--lang ja compiles data/ja; do not pass --release, --tarball or --models-tarball")
         if args.models_tarball and not args.tarball:
             raise ValueError("--models-tarball needs --tarball")
-        if args.tarball is None and installed(root, with_models):
-            print("Dictionary" + (" and models" if with_models else "") + " already match this tree's locks.")
-            return
-        if args.tarball:
-            tarball, models = args.tarball.absolute(), args.models_tarball and args.models_tarball.absolute()
-        else:
-            tag = args.release or default_tag(root)
-            if not release.TAG.fullmatch(tag):
-                raise ValueError(f"not a release tag: {tag}")
-            tarball, models = download(tag, args.cache.absolute(), models=with_models)
-        record = install(tarball, root, models, with_models)
-        targets = TARGETS if with_models else (release_dictionary.DIRECTORY,)
-        print(f"Installed the dictionary{' and paired models' if with_models else ''} from {record['tag']} into "
-              f"{', '.join(t + '/' for t in targets)}.")
-    except (ValueError, OSError, KeyError, urllib.error.URLError, tarfile.TarError) as error:
+        if args.lang in ("zh", "all"):
+            if args.models_only:
+                if args.tarball:
+                    tarball, models = args.tarball.absolute(), args.models_tarball and args.models_tarball.absolute()
+                else:
+                    tag = args.release or default_tag(root)
+                    if not release.TAG.fullmatch(tag):
+                        raise ValueError(f"not a release tag: {tag}")
+                    tarball, models = download(tag, args.cache.absolute())
+                record = install_models(tarball, models, root)
+                print(f"Installed paired models from {record['tag']} into {', '.join(t + '/' for t in MODEL_TARGETS)}.")
+            elif args.tarball is None and installed(root, with_models):
+                print("Dictionary" + (" and models" if with_models else "") + " already match this tree's locks.")
+            else:
+                if args.tarball:
+                    tarball, models = args.tarball.absolute(), args.models_tarball and args.models_tarball.absolute()
+                else:
+                    tag = args.release or default_tag(root)
+                    if not release.TAG.fullmatch(tag):
+                        raise ValueError(f"not a release tag: {tag}")
+                    tarball, models = download(tag, args.cache.absolute(), models=with_models)
+                record = install(tarball, root, models, with_models)
+                targets = TARGETS if with_models else (release_dictionary.DIRECTORY,)
+                print(f"Installed the dictionary{' and paired models' if with_models else ''} from {record['tag']} into "
+                      f"{', '.join(t + '/' for t in targets)}.")
+        if args.lang in ("ja", "all"):
+            output = build_ja(root, args.ja_out)
+            print(f"Compiled the Japanese data pack from data/ja into {output.relative_to(root)}/"
+                  if output.is_relative_to(root) else f"Compiled the Japanese data pack into {output}/")
+    except (ValueError, OSError, KeyError, subprocess.CalledProcessError,
+            urllib.error.URLError, tarfile.TarError) as error:
         parser.exit(1, f"fetch assets: {error}\n")
 
 

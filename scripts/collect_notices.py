@@ -131,7 +131,7 @@ def collect(platform, neural=None, go="go", cargo=None):
     """Return the notices text for a bundle; raises when an expected license text is missing."""
     header = ("靈犀注音（0c）第三方元件聲明\n\n"
               "自有程式依套件內 LICENSE 授權，授權範圍見 legal/README.md 與 TERMS.md。以下是隨套件出貨的第三方元件及其授權條款；"
-              "字典資料的來源與授權另見 data/NOTICE.txt。\n\n")
+              "注音字典資料的來源與授權另見 data/NOTICE.txt，日文資料包另見 data/ja/NOTICE.txt。\n\n")
     if platform == "windows-amd64":
         parts = go_sections(go, "windows", ["./cmd/0c-server", "./cmd/0c-update"])
         parts += rust_sections(cargo, ROOT / "platforms/windows")

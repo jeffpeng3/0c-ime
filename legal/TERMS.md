@@ -22,7 +22,7 @@
 
 詞庫、詞頻、語料、模型、第三方程式、字型及其他素材各依其授權或權利聲明處理，不因本專案的 AGPL 或商業授權而改變。各內容的著作權仍屬其權利人。
 
-原始碼內的來源帳本與逐來源授權聲明位於 data/sources/；英文詞表授權位於 data/english/LICENSE.txt。編譯資料包的來源與授權見 data/NOTICE.txt，安裝包的第三方元件聲明見 THIRD_PARTY_NOTICES.txt；模型授權見各模型目錄隨附 LICENSE。
+原始碼內的來源帳本與逐來源授權聲明位於 data/sources/；英文詞表授權位於 data/english/LICENSE.txt。注音資料包的來源與授權見 data/NOTICE.txt，日文資料包見 data/ja/NOTICE.txt；安裝包的第三方元件聲明見 THIRD_PARTY_NOTICES.txt；模型授權見各模型目錄隨附 LICENSE。
 
 ## 5. 隱私與更新
 

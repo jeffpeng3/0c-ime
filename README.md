@@ -34,6 +34,8 @@
 
 > **English** — 0C (靈犀注音) is a Zhuyin (Bopomofo) input method for Traditional Chinese. An on-device Transformer language model reads what you have just written and picks the right homophones, so you can type a whole sentence without stopping to choose characters. It runs entirely on your computer, and ships shells for Fcitx5, IBus, macOS InputMethodKit and Windows TSF.
 
+> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと Windows の ja-JP プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
+
 ## ✨ 特色
 
 - 🧠 **Transformer 選字**：自行訓練的語言模型參考整段前文與注音判斷同音字，大多數時候不必停下來挑字。
@@ -70,6 +72,40 @@ flowchart TD
 2. **Transformer 重排** 🧠：讀入剛送出、游標仍緊接其後的前文（最多 64 字）、目前的注音與每個候選，替前 8 名重新評分。attention 能同時參考整段前文，不只看緊鄰的詞。
 3. **本機學習** 👤：你選過、改過的字詞記在本機個人詞庫，下次同樣的情況優先出現。
 4. **有把握才補全** ⇥：後續字詞的信心夠高時才顯示 Tab 建議。
+
+## 🇯🇵 日文輸入（預覽）
+
+日文輸入還在整合階段，不是正式支援的功能。目前 repo 內有這些部分：
+
+- かな與羅馬字輸入、文節轉換、候選、預測、カタカナ／半角カナ、変換／無変換鍵，以及記号與顔文字辭典。
+- 日文個人學習、ライブ変換開關與日英混打規則。
+- Windows TSF 的 `zh-TW` 與 `ja-JP` 兩個語言 profile，以及設定程式的語言選項。
+- `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
+
+目前 repo 的日文資料包是 137 詞條的種子包，不是 Mozc 全量詞典；`make assets LANG=ja` 會編譯這份資料。Windows 套件可選擇內附 `data/ja/`：
+
+```sh
+make assets LANG=zh                 # 注音字典與模型
+make assets LANG=ja                 # 日文資料包，輸出 build/ja
+make assets LANG=all                # 注音與日文一起準備
+make assets MODELS_ONLY=1           # 只換注音模型，需已有 assets/data
+python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
+```
+
+系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64；安裝 ja-JP 鍵盤／語言，才能從語言列選擇靈犀注音的日文 profile。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。日文神經模型 zenz 不隨安裝包出貨，缺少模型時使用統計轉換。
+
+### 量測
+
+T33 在凍結的題庫上量測目前的統計轉換。分數低是因為 137 詞條種子包覆蓋不足，不代表轉換器上限，也不能拿來和注音的 86.0% 或 Mozc 比較。
+
+| 題庫 | n | 首選 top-1 | 前 5 名 top-5 | 文節邊界 exact | 邊界 F1 |
+|---|---:|---:|---:|---:|---:|
+| `modern-500` | 500 | 23.2% | 23.2% | 14.4% | 0.445 |
+| `hard-cases` | 35 | 14.3% | 14.3% | 14.3% | 0.238 |
+| `anthy-corpus1` | 200 | 2.5% | 2.5% | 1.5% | 0.253 |
+| `ajimee-200` | 200 | 1.5% | 1.5% | 不計 | 不計 |
+
+規則、題庫雜湊與 CI 門檻見 [testdata/ja/README.md](testdata/ja/README.md)。延遲只在同一台機器比較，不進 CI 門檻。
 
 ## 📈 評測：首選錯誤少約六成
 
@@ -108,6 +144,8 @@ Windows、macOS、Linux 安裝包請到官網下載：👉 [0c.biggo.com/downloa
 
 發行版打包請用 [Releases](https://github.com/0c-biggo/0c-ime/releases/latest) 的 `0c-ime-<版本>.tar.xz`：內附現成字典，符合 DFSG，解壓即可建置；已配對的神經模型在另附的 `0c-ime-models-<版本>.tar.xz`。見 [打包與發佈](PACKAGING.md)。
 
+Windows 解除安裝不會刪個人詞庫；`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版，`-restore-user` 一併還原升級前的詞庫。內附的日文資料在該版本的 `data/ja/`，回復時跟著切換版本，注音字典與 `%LOCALAPPDATA%\Zuin\user.json` 不受影響。完整步驟見 [打包與發佈](PACKAGING.md#windows-安裝移除與回復)。
+
 ## 🛠️ 從原始碼建置
 
 需要 Go 1.26 以上；測試與發佈工具使用 Python 3.11 以上。以下指令在 repo 根目錄執行，不會安裝或重啟桌面輸入法：
@@ -120,9 +158,20 @@ go test ./...
 go run ./cmd/0c-cli -data assets/data
 ```
 
-`make assets` 從同版本的 [Release](https://github.com/0c-biggo/0c-ime/releases) 取得原始碼與模型 tarball（合計約 275 MB），驗證後把現成字典放到 `assets/data/`、已配對模型放到 `models/select/` 與 `models/punct/`，和出貨內容相同；0.2.2 起 Release 附的 Source code 壓縮檔也適用。要指定版本用 `make assets RELEASE=v0.2.2`，只取字典用 `make assets MODELS=0`（約 36 MB，以統計選字運作）。
+`make assets` 從同版本的 [Release](https://github.com/0c-biggo/0c-ime/releases) 取得原始碼與模型 tarball（合計約 275 MB），驗證後把現成字典放到 `assets/data/`、已配對模型放到 `models/select/` 與 `models/punct/`，和出貨內容相同；0.2.2 起 Release 附的 Source code 壓縮檔也適用。要指定版本用 `make assets RELEASE=v0.2.2`，只取字典用 `make assets MODELS=0`（約 36 MB，以統計選字運作），只換模型用 `make assets MODELS_ONLY=1`（需已有字典）。日文資料包用 `make assets LANG=ja` 從 `data/ja` 編譯到 `build/ja`，`make assets LANG=all` 會同時處理注音與日文。
 
 `cmd/` 下工具的旗標、輸入輸出與範例見官網 [CLI 文件](https://0c.biggo.com/docs/cli/)，例如 [0c-cli](https://0c.biggo.com/docs/cli/0c-cli/)、[0c-update](https://0c.biggo.com/docs/cli/0c-update/)、[0c-mcp](https://0c.biggo.com/docs/cli/0c-mcp/)。
+
+日文相關命令：
+
+```sh
+go run ./cmd/0c-compile -lang ja -public -out build/ja   # 編譯公開日文資料包
+go run ./cmd/0c-eval-ja                                  # 跑 T33 題庫並印摘要
+go run ./cmd/0c-eval-ja -gate                            # 與 baseline 比較，退步時非零結束
+go run ./cmd/0c-eval-ja -write-baseline testdata/ja/baseline.json   # 刻意更新 baseline
+```
+
+`0c-eval-ja` 的 `-data`、`-rules`、`-baseline`、`-out`、`-determinism` 旗標與題庫重建方式見 [testdata/ja/README.md](testdata/ja/README.md)。
 
 發行版維護者以 `make install PREFIX=/usr` 做系統安裝、由套件管理員更新，見 [Linux 系統安裝](platforms/linux-system/README.md)。
 
