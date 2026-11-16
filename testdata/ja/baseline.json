@@ -4,7 +4,7 @@
   "engine": {
     "name": "stats",
     "data": "data/ja",
-    "lexicon_sha256": "68f55535277e964dfe486ddbc3087e5bed813255afa20a5b7dc87cbdfdab3411",
+    "lexicon_sha256": "51cc49de9a2a6fa2db1d8157d954ed699499bbff638d81ede51ae26ec5ab7f76",
     "connection_sha256": "4609be258f563a5ed9e0657566aff10a183dfafa4b28c9dda49a952e98170e72"
   },
   "measured_on": "2026-11-17",
@@ -16,8 +16,8 @@
       "boundary_n": 0,
       "boundary_exact_rate": 0,
       "boundary_f1": 0,
-      "latency_p50_ms_informational": 0.073419,
-      "latency_p95_ms_informational": 0.655088,
+      "latency_p50_ms_informational": 0.076859,
+      "latency_p95_ms_informational": 0.679359,
       "timeout_rate_informational": 0
     },
     "anthy-corpus1": {
@@ -27,8 +27,8 @@
       "boundary_n": 199,
       "boundary_exact_rate": 0.01507537688442211,
       "boundary_f1": 0.2526230831315577,
-      "latency_p50_ms_informational": 0.05058,
-      "latency_p95_ms_informational": 0.258318,
+      "latency_p50_ms_informational": 0.054659,
+      "latency_p95_ms_informational": 0.262838,
       "timeout_rate_informational": 0
     },
     "hard-cases": {
@@ -38,8 +38,8 @@
       "boundary_n": 35,
       "boundary_exact_rate": 0.14285714285714285,
       "boundary_f1": 0.2375,
-      "latency_p50_ms_informational": 0.01426,
-      "latency_p95_ms_informational": 0.209198,
+      "latency_p50_ms_informational": 0.016800000000000002,
+      "latency_p95_ms_informational": 0.048799999999999996,
       "timeout_rate_informational": 0
     },
     "modern-500": {
@@ -49,8 +49,8 @@
       "boundary_n": 500,
       "boundary_exact_rate": 0.144,
       "boundary_f1": 0.4454293628808864,
-      "latency_p50_ms_informational": 0.04999,
-      "latency_p95_ms_informational": 0.247218,
+      "latency_p50_ms_informational": 0.04278,
+      "latency_p95_ms_informational": 0.216468,
       "timeout_rate_informational": 0
     }
   }

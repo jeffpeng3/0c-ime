@@ -253,12 +253,12 @@ func NormalizeReading(s string) (reading.Sequence, error) {
 		case r >= 'ヽ' && r <= 'ヾ':
 			r -= 0x60 // 片假名踊り字 → 平假名踊り字
 		}
-		if !isKana(r) && !unicode.IsPunct(r) && !unicode.IsSymbol(r) {
-			return nil, fmt.Errorf("讀音含有非かな字元 %q", r)
+		if !isKana(r) {
+			return nil, fmt.Errorf("讀音含有非かな字元 %q；讀音只能使用かな，記号與標點屬於 T22 的記号辭典", r)
 		}
 		unit := reading.Unit(r)
 		if !unit.Valid() {
-			return nil, fmt.Errorf("讀音含有不合法字元 %q", r)
+			return nil, fmt.Errorf("讀音單位 %q 不合法：未通過 reading.Unit.Valid", r)
 		}
 		seq = append(seq, unit)
 	}

@@ -5,12 +5,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/0c-biggo/0c-ime/core/ja/rewrite"
 	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/internal/jaimport"
 )
 
 type jaFixture struct {
@@ -320,6 +324,78 @@ func TestSourceHashIgnoresPaths(t *testing.T) {
 	b["x/b.tsv"] = FileInfo{SHA256: "cc", Size: 2}
 	if sourceHash(a) == sourceHash(b) {
 		t.Fatal("內容不同應得到不同雜湊")
+	}
+}
+
+func TestJASeedLexiconReadingsValid(t *testing.T) {
+	root := filepath.Join("..", "..", "data")
+	d, errs, err := LoadJA(filepath.Join(root, "ja"), root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(errs) > 0 {
+		t.Fatalf("種子詞典載入失敗：%v", errs)
+	}
+	if len(d.Entries) == 0 {
+		t.Fatal("種子詞典沒有詞條")
+	}
+	for _, e := range d.Entries {
+		if e.POS == jaimport.POSSymbol && slices.Contains(e.Origins, "curated") {
+			t.Fatalf("curated 語音詞典不應有 symbol 詞條：%q", e.Surface)
+		}
+		for _, u := range e.Reading {
+			if !u.Valid() {
+				t.Fatalf("%q 的讀音單位 %q 未通過 reading.Unit.Valid", e.Surface, u)
+			}
+		}
+	}
+}
+
+func TestJARejectsPunctuationReading(t *testing.T) {
+	f := newJAFixture(t)
+	mustWrite(t, filepath.Join(f.dir, "lexicon", "words.tsv"), `# 詞面	讀音	成本	詞性	來源	活用型
+明日	あした	1	noun	curated	-
+。	。	0.2	symbol	curated	-
+`)
+	_, errs, err := LoadJA(f.dir, f.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := fmt.Sprint(errs)
+	if len(errs) == 0 {
+		t.Fatal("標點讀音沒有被拒絕")
+	}
+	for _, want := range []string{"讀音", "かな", "。"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("錯誤訊息缺少 %q：%s", want, got)
+		}
+	}
+}
+
+func TestJABuildRejectsPunctuationReading(t *testing.T) {
+	d, _ := buildJAFixture(t)
+	d.Entries = append(d.Entries, jaimport.MakeEntry("。", reading.Sequence{"。"}, 0.2, jaimport.POSSymbol, []string{"curated"}, jaimport.ConjNone))
+	res := BuildJA(d, DefaultJAOptions())
+	if len(res.Errors) == 0 {
+		t.Fatal("BuildJA 接受標點讀音")
+	}
+	if !strings.Contains(fmt.Sprint(res.Errors), "讀音單位") {
+		t.Fatalf("BuildJA 錯誤沒有指出讀音單位：%v", res.Errors)
+	}
+}
+
+func TestJASymbolCandidatesComeFromRewriter(t *testing.T) {
+	symbols, err := rewrite.LoadSymbolsFS(os.DirFS(filepath.Join("..", "..", "data", "ja")), "symbols")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if symbols.Len() == 0 {
+		t.Fatal("T22 記号辭典是空的")
+	}
+	for _, r := range []string{"きごう", "かおもじ"} {
+		if len(symbols.Lookup(r)) == 0 {
+			t.Fatalf("T22 記号辭典查不到 %q", r)
+		}
 	}
 }
 
