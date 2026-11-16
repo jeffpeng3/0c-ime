@@ -43,6 +43,13 @@ struct Snapshot {
     bool capsLock = false; // 引擎記得的 Caps Lock 狀態（caps_lock，#173）
     // 送出的文字目前會轉成簡體（output_simplified，#169）。只有回報 output_simplified_live 的引擎才有這一項。
     bool outputSimplified = false;
+    // 日文契約（T15）的可選欄位。舊引擎不送，外殼據此照舊走注音。
+    std::string language;     // "zh"、"ja"
+    std::string inputMethod;  // "zhuyin"、"romaji"、"kana"
+    bool japanese = false;    // mode == "japanese"
+    bool converting = false;  // 日文変換中
+    int clauseIndex = 0;      // 目前文節（0 起算）
+    int clauseCount = 0;      // 文節總數
     // 這一鍵被擋下（bell，#300 打錯注音時提示）：按了聲調但讀音沒有字，注音停在組字區。Fcitx5 沒有統一的提示音，
     // 把這次快照裡停住的注音（pending）反白（preeditLayout）。只在擋下的那次快照出現，舊引擎沒有這一項。
     bool bell = false;
@@ -110,6 +117,15 @@ public:
     }
     bool contextAllowed() const { return documentContextEnabled_ && !private_ && !paused_ && !tainted_ && !english_; }
     bool english() const { return english_; }
+    // 日文模式（T15）：語言與輸入法取自最近快照；日文按鍵只在引擎回報 japanese 與 convert_keys 時才送。
+    // 能力旗標快取在 open 回覆，跟 simplifiedLive 一樣只看這一代連線；舊引擎沒有這些項目時為 false。
+    bool japanese() const { return japanese_; }
+    const std::string &language() const { return language_; }
+    const std::string &inputMethod() const { return inputMethod_; }
+    bool japaneseCapable() const { return capability("japanese"); }
+    bool convertKeys() const { return capability("convert_keys"); }
+    bool japaneseKeys() const { return japaneseCapable() && convertKeys(); }
+    bool clauseDisplay() const { return capability("clause_display"); }
     // 引擎目前載入的中英切換鍵設定（toggle-key，#117）。每次向引擎查詢，設定套用（引擎重啟）後立即生效。
     ShiftKeys shiftKeys();
     // 引擎是否認得 0.2.0 的加詞與反悔鍵名（open 回覆的 vocab_keys，#123）。值隨 session 快取，
@@ -149,6 +165,7 @@ public:
 
 private:
     bool ensureOpen();
+    bool capability(const std::string &name) const;
     Snapshot parse(const nlohmann::json &reply);
     uint64_t traceRequest(const nlohmann::json &request, const nlohmann::json &after,
                           int64_t started, int attempts, unsigned generationBefore, int64_t engineUS = -1);
@@ -167,6 +184,8 @@ private:
     bool englishPending_ = false;
     bool toggled_ = false;            // 上一個操作是成功的切換；見 toggle()
     bool english_ = false;            // 最近快照的模式；有組字時連同模式重播
+    bool japanese_ = false;           // 最近快照的 mode == japanese（T15）
+    std::string language_, inputMethod_; // 最近快照的 language、input_method（T15）
     bool capsLock_ = false;           // 最近快照的 caps_lock（#173）
     std::vector<nlohmann::json> log_; // 這次組字以來的請求（提交或放棄後清空）
     std::vector<nlohmann::json> cleared_; // 切到英文清空組字前的日誌；只給緊接著的放回切換接續（#90）

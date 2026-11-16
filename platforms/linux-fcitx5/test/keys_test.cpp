@@ -80,6 +80,22 @@ int main() {
     EXPECT(!zuin::simplifiedHotkey(0xffc9, true, true, false));         // Ctrl＋Shift＋F12
     EXPECT(!zuin::simplifiedHotkey('F', true, true, false));            // Ctrl＋Shift＋F
 
+    // T23：日文具名鍵。引擎回報 japanese 與 convert_keys 時才換成協定鍵名。
+    EXPECT(zuin::japaneseKey(zuin::keyHenkan, false, true) == "Convert");
+    EXPECT(zuin::japaneseKey(zuin::keyMuhenkan, false, true) == "NonConvert");
+    EXPECT(zuin::japaneseKey(zuin::keyF6, false, true) == "F6");
+    EXPECT(zuin::japaneseKey(zuin::keyF7, false, true) == "F7");
+    EXPECT(zuin::japaneseKey(zuin::keyF8, false, true) == "F8");
+    EXPECT(zuin::japaneseKey(zuin::keyF9, false, true) == "F9");
+    EXPECT(zuin::japaneseKey(zuin::keyF10, false, true) == "F10");
+    // 舊引擎沒有能力旗標：按鍵照舊交給應用程式。
+    for (uint32_t sym : {zuin::keyHenkan, zuin::keyMuhenkan, zuin::keyF6, zuin::keyF7, zuin::keyF8, zuin::keyF9, zuin::keyF10}) {
+        EXPECT(zuin::japaneseKey(sym, false, false).empty());
+        EXPECT(zuin::japaneseKey(sym, true, true).empty()); // Shift＋F6 等是應用程式快捷鍵
+    }
+    // 不是日文鍵：不換名，也不看能力旗標。
+    for (uint32_t sym : {uint32_t{'a'}, uint32_t{0xff0d}, uint32_t{0xffc8}, uint32_t{0xff22 - 1}}) { EXPECT(zuin::japaneseKey(sym, false, true).empty()); }
+
     asked = 0;
     EXPECT(zuin::styleKey(" ", true, yes) == "ShiftSpace");
     EXPECT(zuin::styleKey(" ", true, no) == " ");

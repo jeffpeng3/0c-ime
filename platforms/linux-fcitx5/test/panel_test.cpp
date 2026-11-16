@@ -102,6 +102,47 @@ int main() {
     auto unknown = zuin::preeditStyle("future");
     EXPECT(unknown.underline && !unknown.highlight);
 
+    // T23：日文変換的文節。一般文節只有底線，目前文節反白，兩者一眼分得出來。
+    auto clause = zuin::preeditStyle("clause");
+    EXPECT(clause.underline && !clause.highlight && !clause.bold && !clause.italic);
+    auto activeClause = zuin::preeditStyle("clause_active");
+    EXPECT(activeClause.underline && activeClause.highlight && !activeClause.bold && !activeClause.italic);
+    const std::vector<zuin::Segment> clauses = {{"今日", "clause"}, {"は", "clause_active"}};
+    auto clauseLayout = zuin::preeditLayout(clauses, static_cast<int>(std::string("今日は").size()));
+    EXPECT(clauseLayout.runs.size() == 2 && clauseLayout.runs[0].text == "今日" && clauseLayout.runs[1].text == "は");
+    EXPECT(!clauseLayout.runs[0].style.highlight && clauseLayout.runs[1].style.highlight);
+    EXPECT(clauseLayout.runs[1].style.underline);
+    EXPECT(clauseLayout.cursor == static_cast<int>(std::string("今日は").size()));
+
+    // T23：候選窗依 clause_index／clause_count 顯示目前文節；一般注音沒有這些欄位，提示列不變。
+    zuin::Snapshot converting;
+    converting.preedit = {{"今日", "clause"}, {"は", "clause_active"}};
+    converting.converting = true;
+    converting.clauseIndex = 1;
+    converting.clauseCount = 3;
+    EXPECT(zuin::panelAux(converting, true).up.empty() && zuin::panelAux(converting, true).down == "文節 2/3");
+    EXPECT(zuin::panelAux(converting, false).down == "文節 2/3");
+    auto convertingCandidates = converting;
+    convertingCandidates.candidates = {{1, "今日"}, {2, "京"}};
+    convertingCandidates.candidateTitle = "変換 · Space 換候選 · Tab 換文節";
+    convertingCandidates.pages = 2;
+    auto clauseClient = zuin::panelAux(convertingCandidates, true);
+    EXPECT(clauseClient.up == "変換 · Space 換候選 · Tab 換文節" && clauseClient.down == "文節 2/3　1/2");
+    auto clausePanel = zuin::panelAux(convertingCandidates, false);
+    EXPECT(clausePanel.up.empty() && clausePanel.down == "変換 · Space 換候選 · Tab 換文節　文節 2/3　1/2");
+    // 通知優先於候選標題，文節與頁碼照舊。
+    auto clauseNotice = convertingCandidates;
+    clauseNotice.notices = {"已從詞庫刪除：今日"};
+    EXPECT(zuin::panelAux(clauseNotice, true).up == "已從詞庫刪除：今日" && zuin::panelAux(clauseNotice, true).down == "文節 2/3　1/2");
+    // 越界的文節索引夾回 1..count，不畫出 0/2 或 4/3。
+    auto clamped = converting;
+    clamped.clauseIndex = 9;
+    EXPECT(zuin::panelAux(clamped, true).down == "文節 3/3");
+    clamped.clauseIndex = -1;
+    EXPECT(zuin::panelAux(clamped, true).down == "文節 1/3");
+    // 注音快照沒有文節欄位（clause_count 為 0）：提示列與原本完全相同。
+    EXPECT(zuin::panelAux(list, true).down == "2/3");
+
     // 讀音提示（#162）：中英混打打 20 時在提示列顯示 ㄉㄢ（按空白出「單」、Enter 留 20）；組字畫在面板上時放 auxDown。
     // 數字照一般組字畫底線（Fcitx5 沒有顏色格式）。通知優先。
     zuin::Snapshot digits;

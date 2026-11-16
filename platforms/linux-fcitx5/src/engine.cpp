@@ -63,6 +63,7 @@ public:
     zuin::DocumentContext context;
     bool active = false;
     bool shownEnglish = false; // 狀態區（注／英圖示）最近一次畫的模式
+    bool shownJapanese = false; // 狀態區最近一次畫的是不是日文模式（T23）
 };
 
 // Fcitx 5.1.9 才有候選附註 CandidateWord::setComment；Ubuntu 24.04 的 5.1.7 沒有，直接連結會讓整個外殼載入失敗。
@@ -300,6 +301,12 @@ public:
             }
         }
         std::string key = toKey(typed);
+        // 日文（T23）：實體変換／無変換鍵與 F6–F10 換成協定鍵名。只送給回報 japanese 與 convert_keys 的引擎，
+        // 舊引擎與注音模式照舊交還應用程式；按著 Shift 的 F 鍵是應用程式快捷鍵，不接手。
+        if (key.empty() && !modified(event)) {
+            key = zuin::japaneseKey(typed.sym(), event.rawKey().states().test(fcitx::KeyState::Shift),
+                                    !session.english() && session.japaneseKeys());
+        }
         if (key.empty()) {
             session.bypassed();
             std::string boundary;
@@ -349,7 +356,15 @@ public:
     }
 
     std::string subMode(const fcitx::InputMethodEntry &, fcitx::InputContext &ic) override {
-        if (state(&ic)->session.english()) { return "英文"; }
+        auto *s = state(&ic);
+        if (s->session.english()) { return "英文"; }
+        // 日文模式（T23）：語言加上目前輸入法。引擎回報的 input_method 只有 romaji／kana，舊引擎沒有這一項。
+        if (s->session.japanese()) {
+            const auto &method = s->session.inputMethod();
+            if (method == "kana") { return "日文・假名"; }
+            if (method == "romaji") { return "日文・羅馬"; }
+            return "日文";
+        }
         return simplified_ ? "注音・簡體輸出" : "注音"; // #169：送出時轉成簡體
     }
 
@@ -361,8 +376,11 @@ public:
     // The icon itself contains 注／英; leave the text label empty on both modes.
     // 「輸出簡體字」開著時（#169）注音模式改用文字「注簡」：誤開時從面板看得出來（組字和候選照樣是繁體，送出才轉）。
     // 跟 IBus 外殼同樣兩個字（GNOME 頂列的 IBus 指示只採用不到 3 個字的 symbol），換框架時看到的一樣。
+    // 日文模式（T23）沒有新的圖示，用標籤「日」取代「注」，跟「注簡」同一條路。
     std::string subModeLabelImpl(const fcitx::InputMethodEntry &, fcitx::InputContext &ic) override {
-        if (simplified_ && !state(&ic)->session.english()) { return "注簡"; }
+        auto *s = state(&ic);
+        if (s->session.japanese() && !s->session.english()) { return "日"; }
+        if (simplified_ && !s->session.english()) { return "注簡"; }
         return {};
     }
 
@@ -382,6 +400,7 @@ public:
         placeActions(ic);
         if (std::chrono::steady_clock::now() - refreshed_ > std::chrono::minutes(1)) { runUpdater({}); }
         s->shownEnglish = s->session.english();
+        s->shownJapanese = s->session.japanese();
         ic->updateUserInterface(fcitx::UserInterfaceComponent::StatusArea);
     }
 
@@ -432,6 +451,7 @@ private:
         if (!snap.ok) { return; }
         render(ic, snap);
         s->shownEnglish = s->session.english();
+        s->shownJapanese = s->session.japanese();
         ic->updateUserInterface(fcitx::UserInterfaceComponent::StatusArea);
         // 內部模式切換不會觸發框架的輸入法切換提示，需主動顯示。
         instance_->showInputMethodInformation(ic);
@@ -548,9 +568,11 @@ private:
         ic->updatePreedit();
         ic->updateUserInterface(fcitx::UserInterfaceComponent::InputPanel);
         // 模式不是使用者切換而改變時（開始時是英文的新 session 第一個按鍵、共用模式跟上別的輸入框，#160、#115），
-        // 注／英圖示也要跟著換。
-        if (state(ic)->shownEnglish != state(ic)->session.english()) {
-            state(ic)->shownEnglish = state(ic)->session.english();
+        // 注／英圖示也要跟著換。日文模式（T23）同樣在第一個日文快照時更新「日」標籤。
+        auto *st = state(ic);
+        if (st->shownEnglish != st->session.english() || st->shownJapanese != st->session.japanese()) {
+            st->shownEnglish = st->session.english();
+            st->shownJapanese = st->session.japanese();
             ic->updateUserInterface(fcitx::UserInterfaceComponent::StatusArea);
         }
         // 「輸出簡體字」在設定程式或別的外殼切換後（#169），下一個快照就跟上；只信回報即時切換的引擎（舊引擎沒有這一項）。

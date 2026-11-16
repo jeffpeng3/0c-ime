@@ -70,15 +70,20 @@ $(BUILD)/keys_test: test/keys_test.cpp src/keys.h
 	@mkdir -p $(BUILD)
 	$(CXX) $(ZC_CPPFLAGS) $(CPPFLAGS) $(ZC_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ test/keys_test.cpp
 
+$(BUILD)/japanese_test: $(CLIENT_SRC) test/japanese_test.cpp src/*.h
+	@mkdir -p $(BUILD)
+	$(CXX) $(ZC_CPPFLAGS) $(CPPFLAGS) $(ZC_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $(CLIENT_SRC) test/japanese_test.cpp
+
 $(BUILD)/replay_guard_test: $(CLIENT_SRC) test/replay_guard_test.cpp src/*.h
 	@mkdir -p $(BUILD)
 	$(CXX) $(ZC_CPPFLAGS) $(CPPFLAGS) $(ZC_CXXFLAGS) $(CXXFLAGS) $(LDFLAGS) -o $@ $(CLIENT_SRC) test/replay_guard_test.cpp
 
-test: $(BUILD)/session_test $(BUILD)/0c-server $(BUILD)/trace_test $(BUILD)/replay_guard_test $(BUILD)/legacy_socket_test $(BUILD)/menu_test $(BUILD)/locate_test $(BUILD)/panel_test $(BUILD)/keys_test
+test: $(BUILD)/session_test $(BUILD)/0c-server $(BUILD)/trace_test $(BUILD)/replay_guard_test $(BUILD)/legacy_socket_test $(BUILD)/menu_test $(BUILD)/locate_test $(BUILD)/panel_test $(BUILD)/keys_test $(BUILD)/japanese_test
 	$(BUILD)/menu_test
 	$(BUILD)/locate_test
 	$(BUILD)/panel_test
 	$(BUILD)/keys_test
+	$(BUILD)/japanese_test
 	$(BUILD)/replay_guard_test
 	$(BUILD)/legacy_socket_test $(abspath $(BUILD)/0c-server) $(abspath $(ROOT)/testdata/toy)
 	$(BUILD)/trace_test

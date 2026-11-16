@@ -25,8 +25,10 @@ inline PreeditStyle preeditStyle(const std::string &style) {
     // classicui／kimpanel 畫成選取色，GTK／Qt 前端轉成反白的前景與背景色；GTK3 的選取色就是反白色，
     // 跟滑鼠選取只差一條底線，所以範圍前後另加【】（見 preeditLayout）。
     else if (style == "marked") { out.highlight = true; }
+    // 日文変換中的文節（T15）：一般文節只有底線，目前文節反白，跟標示加詞的範圍一樣一眼看得出游標在哪一節。
+    else if (style == "clause_active") { out.highlight = true; }
     // 按空白會組成中文的數字（reading，#162）：Fcitx5 的組字格式沒有顏色，畫不出灰字，
-    // 照一般組字畫底線；讀音畫在提示列（見 panelAux）。
+    // 照一般組字畫底線；讀音畫在提示列（見 panelAux）。clause 也用底線，不必另設。
     return out;
 }
 
@@ -90,14 +92,23 @@ inline PanelAux panelAux(const Snapshot &snap, bool clientPreedit) {
     } else if (!snap.suggestion.empty()) { // Tab 補全：在提示列顯示，不塞進應用程式的組字區
         hint = "⇥ " + snap.suggestion;
     }
+    std::string clause;
+    if (snap.clauseCount > 0) { // 日文変換（T15）：目前文節／總數，候選窗與組字都看得到
+        int index = snap.clauseIndex + 1;
+        if (index < 1) { index = 1; }
+        if (index > snap.clauseCount) { index = snap.clauseCount; }
+        clause = "文節 " + std::to_string(index) + "/" + std::to_string(snap.clauseCount);
+    }
     std::string page;
     if (!snap.candidates.empty()) {
         if (snap.notices.empty() && !snap.candidateTitle.empty()) { hint = snap.candidateTitle; }
         if (snap.pages > 1) { page = std::to_string(snap.page + 1) + "/" + std::to_string(snap.pages); }
     }
-    if (clientPreedit) { return {hint, page}; }
-    if (hint.empty() || page.empty()) { return {"", hint + page}; }
-    return {"", hint + "　" + page};
+    std::string tail = clause;
+    if (!page.empty()) { tail += (tail.empty() ? "" : "　") + page; }
+    if (clientPreedit) { return {hint, tail}; }
+    if (hint.empty() || tail.empty()) { return {"", hint + tail}; }
+    return {"", hint + "　" + tail};
 }
 
 } // namespace zuin
