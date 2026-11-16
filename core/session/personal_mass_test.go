@@ -19,7 +19,7 @@ func TestPassiveFirstWordDoesNotBreakCompleteWord(t *testing.T) {
 	}{
 		{"切", "ㄑㄧㄝ", 3e-5, 1}, {"入", "ㄖㄨˋ", 9e-5, 1}, {"肉", "ㄖㄨˋ", 4.7e-5, .1}, {"切入", "ㄑㄧㄝ ㄖㄨˋ", 1.4e-5, 1},
 	} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: x.rw})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: x.rw})
 		sys.SetUni(x.w, x.p)
 	}
 	sys.SetBi("切", "肉", .004)

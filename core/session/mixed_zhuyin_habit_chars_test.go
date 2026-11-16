@@ -27,7 +27,7 @@ func zhuyinCharsModel() *personal.Model {
 		{"是", "ㄓˋ", 1e-2}, {"至", "ㄓˋ", 1e-3}, {"吃", "ㄔ", 2e-3}, {"我", "ㄨㄛˇ", 1e-2}, {"窩", "ㄨㄛˇ", 1e-4}, {"天", "ㄊㄧㄢ", 3e-3},
 		{"真", "ㄓㄣ", 2e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	return personal.NewModel(lex, sys)

@@ -26,7 +26,7 @@ func mixedReadingSession() *Session {
 		{"別", "ㄅㄧㄝˊ", 1e-3}, {"蹩", "ㄅㄧㄝˊ", 1e-6}, {"疊", "ㄉㄧㄝˊ", 1e-4}, {"蝶", "ㄉㄧㄝˊ", 5e-5},
 		{"繃", "ㄅㄥˇ", 3e-7}, {"大", "ㄉㄚˋ", 2e-3}, {"挲", "ㄙㄚ˙", 1e-6}, {"啊", "ㄚ˙", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

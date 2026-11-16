@@ -140,7 +140,7 @@ func TestEnglishInsertionPreservesSplitWord(t *testing.T) {
 func TestEnglishInsertionDoesNotReselectSplitWord(t *testing.T) {
 	s := newSession()
 	for _, word := range []string{"煩", "凡"} {
-		s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: word, Reading: zhuyin.ParseReading("ㄈㄢˊ"), PRW: 1})
+		s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄈㄢˊ")), PRW: 1})
 	}
 	s.model.LM.(*lm.Mem).SetUni("麻煩", 0.5)
 	s.model.LM.(*lm.Mem).SetUni("煩", 0.0001)

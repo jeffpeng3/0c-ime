@@ -21,7 +21,7 @@ func testServer(t *testing.T) (*Server, *httptest.Server, string) {
 	t.Helper()
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, w := range []struct{ w, r string }{{"曾", "ㄘㄥˊ"}, {"曾", "ㄗㄥ"}, {"曾經", "ㄘㄥˊ ㄐㄧㄥ"}, {"曾孫", "ㄗㄥ ㄙㄨㄣ"}, {"小", "ㄒㄧㄠˇ"}, {"明", "ㄇㄧㄥˊ"}} {
-		lex.Add(lexicon.Entry{Surface: w.w, Reading: zhuyin.ParseReading(w.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(w.r)), PRW: 1})
 		sys.SetUni(w.w, 1e-4)
 	}
 	dir := t.TempDir()

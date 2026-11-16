@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/0c-biggo/0c-ime/core/lexicon"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -287,13 +288,13 @@ func (m *Model) rankChecker(margin float64) *rankChecker {
 	return r
 }
 
-func (r *rankChecker) homophones(reading []zhuyin.Syllable) map[string]float64 {
-	k := zhuyin.Key(reading)
+func (r *rankChecker) homophones(syls reading.Sequence) map[string]float64 {
+	k := reading.Key(syls)
 	if h, ok := r.homo[k]; ok {
 		return h
 	}
 	h := map[string]float64{}
-	for _, e := range r.src.Exact(reading) {
+	for _, e := range r.src.Exact(zhuyin.Syllables(syls)) {
 		if !e.Correction {
 			h[e.Surface] = max(h[e.Surface], e.PRW)
 		}
@@ -318,7 +319,7 @@ func (r *rankChecker) safe(left, w string, count, kappa float64) bool {
 	}
 	seen := map[string]bool{}
 	for _, e := range r.lookup.Lookup(w) {
-		k := zhuyin.Key(e.Reading)
+		k := reading.Key(e.Reading)
 		if e.Correction || seen[k] {
 			continue
 		}

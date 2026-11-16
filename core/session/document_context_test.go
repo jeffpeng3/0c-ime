@@ -17,7 +17,7 @@ func documentSession() *Session {
 		w, r string
 		p    float64
 	}{{"風", "ㄈㄥ", .01}, {"景", "ㄐㄧㄥˇ", .001}, {"井", "ㄐㄧㄥˇ", .01}} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 		sys.SetUni(x.w, x.p)
 	}
 	sys.SetBi("風", "景", .9)
@@ -118,7 +118,7 @@ func TestDocumentContextFeedsCompletionAndExplanation(t *testing.T) {
 			w, r string
 			p    float64
 		}{{"景色", "ㄐㄧㄥˇ ㄙㄜˋ", .001}, {"景點", "ㄐㄧㄥˇ ㄉㄧㄢˇ", .01}} {
-			lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+			lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 			sys.SetUni(x.w, x.p)
 		}
 		sys.SetBi("風", "景色", .9)

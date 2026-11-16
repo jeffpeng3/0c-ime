@@ -22,7 +22,7 @@ const (
 func longWordEngine(withLong bool) *Engine {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	add := func(w, r string, p float64) {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading(r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(r)), PRW: 1})
 		sys.SetUni(w, p)
 	}
 	syls := zhuyin.ParseReading(systemLongReading)

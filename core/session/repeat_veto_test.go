@@ -23,7 +23,7 @@ func enSession() *Session {
 		{"恩", "ㄣ", 5.1e-5}, {"嗯", "ㄣ", 5e-5}, {"嗯嗯", "ㄣ ㄣ", 5.3e-8},
 		{"怨", "ㄩㄢˋ", 3e-5}, {"恩恩怨怨", "ㄣ ㄣ ㄩㄢˋ ㄩㄢˋ", 6.9e-7},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	sys.SetBi(lm.BOS, "恩", 3e-5)
@@ -73,7 +73,7 @@ func TestNeuralDoesNotTurnFrequentLexiconRepeatBackIntoNonWord(t *testing.T) {
 		w, r string
 		p    float64
 	}{{"恩", "ㄣ", 8.66e-5}, {"嗯", "ㄣ", 3.98e-5}, {"嗯嗯", "ㄣ ㄣ", 1.72e-6}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	sys.SetBi("恩", "恩", 5.13e-3)

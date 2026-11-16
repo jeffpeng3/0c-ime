@@ -24,7 +24,7 @@ func punctKeySession() *Session {
 		{"骯", "ㄤ", 1e-5}, {"鞥", "ㄥ", 1e-7}, {"兒", "ㄦ", 1e-4}, {"之", "ㄓ", 1e-3},
 		{"摟", "ㄌㄡ", 1e-4}, {"都", "ㄉㄡ", 1e-2}, {"公", "ㄍㄨㄥ", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

@@ -7,6 +7,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/decode"
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -58,9 +59,9 @@ func (s *Session) phoneticWindow(lat input.Lattice, pos, length int) (decode.Win
 			return decode.Window{}, false
 		}
 		// Start from physical input, not an expanded frontend or prior repair.
-		wide[at] = []input.Hyp{{Syl: typed}}
+		wide[at] = []input.Hyp{{Syl: readingpkg.Unit(typed)}}
 		for _, base := range phoneticNeighbours[typed.Base()] {
-			wide[at] = append(wide[at], input.Hyp{Syl: base.WithTone(typed.ToneOf()), Cost: 1})
+			wide[at] = append(wide[at], input.Hyp{Syl: readingpkg.Unit(base.WithTone(typed.ToneOf())), Cost: 1})
 		}
 	}
 	return decode.Window{

@@ -42,7 +42,7 @@ func enFixture() (*lexicon.Mem, bigramScore) {
 		{"是", "ㄕˋ", 1.08e-2}, {"試", "ㄕˋ", 3.4e-5}, {"試試", "ㄕˋ ㄕˋ", 2.9e-5},
 		{"看", "ㄎㄢˋ", 6e-4}, {"看看", "ㄎㄢˋ ㄎㄢˋ", 3e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		b.uni[e.w] = e.p
 	}
 	b.bi[[2]string{lm.BOS, "恩"}] = 3e-5
@@ -121,7 +121,7 @@ func repeatFixture(entries []repeatEntry, bi map[[2]string]float64) (*lexicon.Me
 		if prw == 0 {
 			prw = 1
 		}
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: prw})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: prw})
 		b.uni[e.w] = e.p
 	}
 	return lex, priorScore{b}

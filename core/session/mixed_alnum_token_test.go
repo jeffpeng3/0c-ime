@@ -27,7 +27,7 @@ func alnumTokenSession() *Session {
 		{"思", "ㄙ˙", 3e-6}, {"子", "ㄗ˙", 2e-4}, {"意思", "ㄧˋ ㄙ˙", 3e-4}, {"意", "ㄧˋ", 2e-4}, {"喔", "ㄛ", 9e-4}, {"呃", "ㄜ", 2e-5},
 		{"阿", "ㄜ", 1e-4}, {"屋", "ㄨ", 1e-3}, {"一", "ㄧ", 2e-3}, {"淤", "ㄩ", 1e-6}, {"資", "ㄗ", 3e-4}, {"之", "ㄓ", 5e-4}, {"啊", "ㄚ", 8e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

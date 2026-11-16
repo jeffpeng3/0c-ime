@@ -191,7 +191,7 @@ func TestPhoneticCandidatePreservesDeliberateNameAndCanBeReselected(t *testing.T
 
 func TestPhoneticCandidateSkipsAliasesAndDeduplicatesDialect(t *testing.T) {
 	s := typoSession()
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "錯誤別名", Reading: zhuyin.ParseReading(idiomReading), PRW: 1, Correction: true})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "錯誤別名", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(idiomReading)), PRW: 1, Correction: true})
 	fzType(s, typoReading)
 	if _, ok := find(listCandidates(s, 0, 4), "錯誤別名"); ok {
 		t.Fatal("correction alias bypassed edit budget")

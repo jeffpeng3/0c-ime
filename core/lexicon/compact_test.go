@@ -6,6 +6,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -34,7 +35,7 @@ func norm(es []Entry) []Entry {
 		if out[i].Surface != out[j].Surface {
 			return out[i].Surface < out[j].Surface
 		}
-		return zhuyin.Key(out[i].Reading) < zhuyin.Key(out[j].Reading)
+		return reading.Key(out[i].Reading) < reading.Key(out[j].Reading)
 	})
 	return out
 }
@@ -57,9 +58,9 @@ func TestCompactMatchesMem(t *testing.T) {
 	queries := [][]zhuyin.Syllable{nil, {"ㄅㄚ"}, {"ㄧㄣ", "ㄇㄚˊ"}}
 	for _, e := range es {
 		for k := 1; k <= len(e.Reading); k++ {
-			queries = append(queries, e.Reading[:k])
+			queries = append(queries, zhuyin.Syllables(e.Reading[:k]))
 		}
-		queries = append(queries, append(append([]zhuyin.Syllable(nil), e.Reading...), "ㄉㄨㄥˋ"))
+		queries = append(queries, append(append([]zhuyin.Syllable(nil), zhuyin.Syllables(e.Reading)...), "ㄉㄨㄥˋ"))
 	}
 	for _, c := range []*Compact{built, decoded} {
 		for _, q := range queries {
@@ -104,8 +105,8 @@ func TestDecodeRejectsCorruption(t *testing.T) {
 
 func TestBuildKeepsBestDuplicate(t *testing.T) {
 	c, err := Build([]Entry{
-		{Surface: "丼", Reading: []zhuyin.Syllable{"ㄐㄧㄥˇ"}, PRW: 0.1},
-		{Surface: "丼", Reading: []zhuyin.Syllable{"ㄐㄧㄥˇ"}, PRW: 0.5},
+		{Surface: "丼", Reading: reading.Sequence{"ㄐㄧㄥˇ"}, PRW: 0.1},
+		{Surface: "丼", Reading: reading.Sequence{"ㄐㄧㄥˇ"}, PRW: 0.5},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -122,7 +123,7 @@ func TestLookupOrderIsTotal(t *testing.T) {
 	var entries []Entry
 	for i := range 2000 { // 夠多，不穩定排序才會真的打亂同鍵的元素
 		for _, r := range readings {
-			entries = append(entries, Entry{Surface: string(rune(0x4E00 + i)), Reading: zhuyin.ParseReading(r), PRW: 0.1})
+			entries = append(entries, Entry{Surface: string(rune(0x4E00 + i)), Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(r)), PRW: 0.1})
 		}
 	}
 	c, err := Build(entries)
@@ -132,10 +133,35 @@ func TestLookupOrderIsTotal(t *testing.T) {
 	for i := range 2000 {
 		var got []string
 		for _, e := range c.Lookup(string(rune(0x4E00 + i))) {
-			got = append(got, zhuyin.Key(e.Reading))
+			got = append(got, reading.Key(e.Reading))
 		}
 		if len(got) != len(readings) || !sort.StringsAreSorted(got) {
 			t.Fatalf("%c 的讀音順序 %v 不是依讀音排序", rune(0x4E00+i), got)
+		}
+	}
+}
+
+// 可変長讀音要原樣通過 Build、Encode、Decode：資料包格式不假設詞面長度等於讀音長度。
+func TestCompactVariableLengthReading(t *testing.T) {
+	es := []Entry{
+		{Surface: "妖精", Reading: reading.Sequence{"よ", "う", "せ", "い"}, PRW: 1},
+		{Surface: "今日", Reading: reading.Sequence{"き", "ょ", "う"}, PRW: 0.5},
+	}
+	built, err := Build(es)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := Decode(built.Encode())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, c := range map[string]*Compact{"Build": built, "Decode": decoded} {
+		got := c.Exact(zhuyin.Syllables(reading.Sequence{"よ", "う", "せ", "い"}))
+		if len(got) != 1 || got[0].Surface != "妖精" || reading.Key(got[0].Reading) != "よ う せ い" {
+			t.Errorf("%s：Exact = %+v", name, got)
+		}
+		if n := c.LongestWord(); n != 4 {
+			t.Errorf("%s：LongestWord = %d, want 4", name, n)
 		}
 	}
 }

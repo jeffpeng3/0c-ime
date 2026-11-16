@@ -54,12 +54,12 @@ func NewReader(lex *lexicon.Compact, sys lm.System) Reader {
 			return
 		}
 		if len(rs) == 1 {
-			add(r.charPRW, rs[0], e.Reading[0], e.PRW, false)
+			add(r.charPRW, rs[0], zhuyin.Syllable(e.Reading[0]), e.PRW, false)
 			return
 		}
 		w := sys.Uni(e.Surface) * e.PRW
 		for i, c := range rs {
-			add(r.support, c, e.Reading[i], w, true)
+			add(r.support, c, zhuyin.Syllable(e.Reading[i]), w, true)
 		}
 	})
 	return r
@@ -76,8 +76,8 @@ func (r Reader) better(w string, a, b *lexicon.Entry) bool {
 		if a.Reading[i] == b.Reading[i] {
 			continue
 		}
-		prw += r.charPRW[c][a.Reading[i]] - r.charPRW[c][b.Reading[i]]
-		sup += r.support[c][a.Reading[i]] - r.support[c][b.Reading[i]]
+		prw += r.charPRW[c][zhuyin.Syllable(a.Reading[i])] - r.charPRW[c][zhuyin.Syllable(b.Reading[i])]
+		sup += r.support[c][zhuyin.Syllable(a.Reading[i])] - r.support[c][zhuyin.Syllable(b.Reading[i])]
 	}
 	if prw != 0 {
 		return prw > 0
@@ -119,7 +119,7 @@ func (r Reader) Segment(text string) ([]zhuyin.Syllable, []string, bool) {
 				continue
 			}
 			if sc := best[j] + math.Log(r.LM.Uni(w)); sc > best[i] {
-				best[i], back[i], read[i] = sc, j, pick.Reading
+				best[i], back[i], read[i] = sc, j, zhuyin.Syllables(pick.Reading)
 			}
 		}
 	}

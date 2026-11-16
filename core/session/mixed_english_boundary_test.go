@@ -30,7 +30,7 @@ func englishBoundarySession() *Session {
 		{"爾", "ㄦˇ", 1e-4}, {"二", "ㄦˋ", 3e-4}, {"偶", "ㄡˇ", 5e-5}, {"天", "ㄊㄧㄢ", 1e-3}, {"換", "ㄏㄨㄢˋ", 2e-4},
 		{"一", "ㄧ", 2e-3}, {"誒", "ㄟ", 1e-5}, {"資", "ㄗ", 3e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

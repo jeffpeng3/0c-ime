@@ -28,7 +28,7 @@ func tokenBoundarySession() *Session {
 		{"美", "ㄇㄟˇ", 8e-4}, {"收", "ㄕㄡ", 3e-4}, {"崩", "ㄅㄥ", 3e-5},
 		{"安", "ㄢ", 3e-4}, {"裝", "ㄓㄨㄤ", 3e-4}, {"站", "ㄓㄢˋ", 3e-4}, {"俺", "ㄢˇ", 1e-4}, {"把", "ㄅㄚˇ", 1e-3}, {"答", "ㄉㄚˊ", 2e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

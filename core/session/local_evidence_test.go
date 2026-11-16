@@ -16,7 +16,7 @@ func evidenceSession() *Session {
 		w, r string
 		p    float64
 	}{{"心", "ㄒㄧㄣ", .3}, {"新", "ㄒㄧㄣ", .1}, {"圖", "ㄊㄨˊ", .2}, {"並", "ㄅㄧㄥˋ", .1}, {"意", "ㄧˋ", .2}} {
-		l.Add(lexicon.Entry{Surface: v.w, Reading: zhuyin.ParseReading(v.r), PRW: 1})
+		l.Add(lexicon.Entry{Surface: v.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(v.r)), PRW: 1})
 		m.SetUni(v.w, v.p)
 	}
 	s := New(personal.NewModel(l, m))
@@ -145,7 +145,7 @@ func TestLocalCorrectionIsRetractedByEditsCancelAndPrivacy(t *testing.T) {
 
 func TestCandidateStartsAtCurrentSegmentRatherThanUnrelatedLongWord(t *testing.T) {
 	s := evidenceSession()
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "新圖", Reading: zhuyin.ParseReading("ㄒㄧㄣ ㄊㄨˊ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "新圖", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄒㄧㄣ ㄊㄨˊ")), PRW: 1})
 	s.model.LM.(*lm.Mem).SetUni("新圖", .00001)
 	typeReadingLocal(s, "ㄒㄧㄣ ㄊㄨˊ")
 	s.Handle(proto.Request{Type: proto.Cursor, To: 0})

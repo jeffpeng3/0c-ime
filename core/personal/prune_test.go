@@ -20,7 +20,7 @@ func pruneFixture(t *testing.T) (*Model, lexicon.Source, lm.System) {
 	lex := lexicon.NewMem()
 	sys := lm.NewMem()
 	add := func(w, reading string, uni float64) {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading(reading), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(reading)), PRW: 1})
 		sys.SetUni(w, uni)
 	}
 	add("我", "ㄨㄛˇ", 0.02)

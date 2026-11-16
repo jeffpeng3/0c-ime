@@ -32,7 +32,7 @@ func newTonelessSession(toneless bool) *Session {
 		{"會議", "ㄏㄨㄟˋ ㄧˋ", 6e-4}, {"回憶", "ㄏㄨㄟˊ ㄧˋ", 3e-4}, {"會意", "ㄏㄨㄟˋ ㄧˋ", 1e-5},
 		{"我", "ㄨㄛˇ", 1e-2}, {"們", "ㄇㄣ˙", 5e-3}, {"門", "ㄇㄣˊ", 1e-3}, {"我們", "ㄨㄛˇ ㄇㄣ˙", 3e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))
@@ -230,7 +230,7 @@ func TestTonelessUnresolvedReadingIsNotLearned(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := newTonelessSession(true)
-			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "你號", Reading: zhuyin.ParseReading("ㄋㄧˇ ㄏㄠˋ"), PRW: 1, Correction: true})
+			s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "你號", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄋㄧˇ ㄏㄠˋ")), PRW: 1, Correction: true})
 			s.model.LM.(*lm.Mem).SetUni("你號", tc.uni)
 			typeBare(s, "ㄋㄧㄏㄠ")
 			key(s, tc.move) // 先完成未打完的 ㄏㄠ
@@ -271,7 +271,7 @@ func TestTonelessUnresolvedReadingIsNotLearned(t *testing.T) {
 
 // withNiHaoCorrection 在聲調選填的測試詞庫加一個只有修正讀音的詞「你號」（ㄋㄧˇ ㄏㄠˋ），uni 決定它是否勝過「你好」。
 func withNiHaoCorrection(s *Session, uni float64) *Session {
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "你號", Reading: zhuyin.ParseReading("ㄋㄧˇ ㄏㄠˋ"), PRW: 1, Correction: true})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "你號", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄋㄧˇ ㄏㄠˋ")), PRW: 1, Correction: true})
 	s.model.LM.(*lm.Mem).SetUni("你號", uni)
 	return s
 }

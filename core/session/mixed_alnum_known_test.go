@@ -24,7 +24,7 @@ func knownAlnumSession() *Session {
 		{"站", "ㄓㄢˋ", 3e-4}, {"案", "ㄢˋ", 3e-4}, {"吧", "ㄅㄚ˙", 1e-3}, {"啊", "ㄚ˙", 1e-3}, {"辦", "ㄅㄢˋ", 3e-4},
 		{"日", "ㄖˋ", 5e-4}, {"電", "ㄉㄧㄢˋ", 5e-4}, {"晏", "ㄧㄢˋ", 1e-5},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

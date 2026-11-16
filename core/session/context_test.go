@@ -20,7 +20,7 @@ func homophoneSession() *Session {
 		{"小", "ㄒㄧㄠˇ", .01}, {"龍", "ㄌㄨㄥˊ", .01}, {"小龍", "ㄒㄧㄠˇ ㄌㄨㄥˊ", .6},
 		{"小籠包", "ㄒㄧㄠˇ ㄌㄨㄥˊ ㄅㄠ", .1}, {"包", "ㄅㄠ", .01}, {"我", "ㄨㄛˇ", .1},
 	} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 		sys.SetUni(x.w, x.p)
 	}
 	return New(personal.NewModel(lex, sys))

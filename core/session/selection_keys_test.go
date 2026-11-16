@@ -15,7 +15,7 @@ import (
 func manySession(keys string) *Session {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for i, w := range []rune("是事市試式世室士視示適勢誓釋") {
-		lex.Add(lexicon.Entry{Surface: string(w), Reading: zhuyin.ParseReading("ㄕˋ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: string(w), Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄕˋ")), PRW: 1})
 		sys.SetUni(string(w), 1e-2/float64(i+1))
 	}
 	s := New(personal.NewModel(lex, sys))

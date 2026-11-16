@@ -23,7 +23,7 @@ func newSession() *Session {
 		{"景", "ㄐㄧㄥˇ", 1e-3}, {"井", "ㄐㄧㄥˇ", 3e-4}, {"風", "ㄈㄥ", 6e-4}, {"風景", "ㄈㄥ ㄐㄧㄥˇ", 2e-4},
 		{"嘛", "ㄇㄚˊ", 5e-4}, {"麻煩", "ㄇㄚˊ ㄈㄢˊ", 3e-4}, // ㄈㄢˊ 沒有單字：只能靠「麻煩」到達
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	return New(personal.NewModel(lex, sys))

@@ -33,7 +33,7 @@ func numberWritingSession() *Session {
 		{"丟", "ㄉㄧㄡ", 1e-4},
 		{"窄", "ㄓㄞˇ", 2e-5}, {"齋", "ㄓㄞ", 2e-5}, {"眨", "ㄓㄚˇ", 8e-6}, {"把", "ㄅㄚˇ", 2e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

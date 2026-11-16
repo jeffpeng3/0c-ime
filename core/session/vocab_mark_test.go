@@ -24,7 +24,7 @@ func markSession() *Session {
 		{"我", "ㄨㄛˇ", 1e-2}, {"和", "ㄏㄜˊ", 1e-2}, {"是", "ㄕˋ", 1e-2}, {"世", "ㄕˋ", 4e-5}, {"結", "ㄐㄧㄝˊ", 2e-5}, {"傑", "ㄐㄧㄝˊ", 4e-5},
 		{"甲乙", "ㄐㄧㄚˇ ㄧˇ", 1e-6}, {"丙丁", "ㄅㄧㄥˇ ㄉㄧㄥ", 2e-6},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))
@@ -235,7 +235,7 @@ func TestMarkHintsAndEdits(t *testing.T) {
 // 已在詞庫、系統詞庫已有的詞：說明與結果照實講（三平台調查：重複或內建時不能說「已加入」）。
 func TestMarkDuplicateAndSystemWord(t *testing.T) {
 	s := markSession()
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "我和", Reading: zhuyin.ParseReading("ㄨㄛˇ ㄏㄜˊ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "我和", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄨㄛˇ ㄏㄜˊ")), PRW: 1})
 	typeReadingLocal(s, "ㄨㄛˇ ㄏㄜˊ")
 	key(s, proto.KeyShiftLeft)
 	if snap := key(s, proto.KeyShiftLeft); !slices.Contains(snap.Notices, "Enter 設為優先：我和（ㄨㄛˇ ㄏㄜˊ）　Esc 取消") {
@@ -269,7 +269,7 @@ func TestCandidateNoteForCustomWord(t *testing.T) {
 // 親手加詞是比過去的手選更新的明確選擇，要勝出。
 func TestVocabAddBeatsEarlierPick(t *testing.T) {
 	s := markSession()
-	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "士", Reading: zhuyin.ParseReading("ㄕˋ"), PRW: 1})
+	s.model.Lex.(*lexicon.Mem).Add(lexicon.Entry{Surface: "士", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄕˋ")), PRW: 1})
 	typeReadingLocal(s, "ㄕˋ ㄐㄧㄝˊ")
 	selectAt(t, s, 0, "士")
 	selectAt(t, s, 1, "傑")

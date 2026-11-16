@@ -15,6 +15,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/english"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
 	"github.com/0c-biggo/0c-ime/core/lm"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/symbols"
 	"github.com/0c-biggo/0c-ime/core/vocab"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
@@ -183,6 +184,11 @@ func LoadStore(r io.Reader) (*Store, error) {
 
 func pair(a, b string) string { return a + "\t" + b }
 
+// readingKey / readingSeq 把注音音節轉成核心讀音型別；輸出的鍵字串與舊版相同。
+func readingKey(syls []zhuyin.Syllable) string { return reading.Key(zhuyin.ReadingUnits(syls)) }
+
+func readingSeq(syls []zhuyin.Syllable) reading.Sequence { return zhuyin.ReadingUnits(syls) }
+
 // Model 把系統語言模型與個人資料合成解碼用的機率，並負責學習。
 type Model struct {
 	englishIndex      *english.Dictionary
@@ -277,10 +283,10 @@ func (m *Model) PriorMass(left, word string) float64 {
 // ChoseReading 回報使用者是否曾親手用讀音 syls 選過 w（個人讀音自適應的同一份紀錄）。
 // 自訂詞的讀音視同親手選過：神經選字不得把它換成使用者沒選過的寫法（#96、#122）。
 func (m *Model) ChoseReading(w string, syls []zhuyin.Syllable) bool {
-	if len(m.Store.Readings) > 0 && m.Store.Readings[pair(w, zhuyin.Key(syls))] {
+	if len(m.Store.Readings) > 0 && m.Store.Readings[pair(w, readingKey(syls))] {
 		return true
 	}
-	return m.Vocab != nil && m.Vocab.HasReading(w, zhuyin.Key(syls))
+	return m.Vocab != nil && m.Vocab.HasReading(w, readingKey(syls))
 }
 
 // PickedSingle 回報使用者是否曾以音節 syl 手動選過單字 w。
@@ -304,11 +310,11 @@ func (v view) adjust(es []lexicon.Entry) []lexicon.Entry {
 	}
 	out := make([]lexicon.Entry, 0, len(es))
 	for _, e := range es {
-		k := pair(e.Surface, zhuyin.Key(e.Reading))
+		k := pair(e.Surface, reading.Key(e.Reading))
 		if e.Correction && v.m.Store.Rejects[k] >= v.m.P.RejectsToDisable {
 			continue
 		}
-		if v.m.Store.Readings[k] || v.m.vocabLen() > 0 && !e.Correction && v.m.Vocab.HasReading(e.Surface, zhuyin.Key(e.Reading)) {
+		if v.m.Store.Readings[k] || v.m.vocabLen() > 0 && !e.Correction && v.m.Vocab.HasReading(e.Surface, reading.Key(e.Reading)) {
 			e.PRW = 1
 		}
 		out = append(out, e)
@@ -323,7 +329,7 @@ func (v view) phrases(match func(readingKey string) bool) []lexicon.Entry {
 	var out []lexicon.Entry
 	for _, ph := range v.m.Store.PhraseOrder {
 		if rk, ok := v.m.Store.Phrases[ph]; ok && match(rk) {
-			out = append(out, lexicon.Entry{Surface: ph, Reading: zhuyin.ParseReading(rk), PRW: 1})
+			out = append(out, lexicon.Entry{Surface: ph, Reading: readingSeq(zhuyin.ParseReading(rk)), PRW: 1})
 		}
 	}
 	return out
@@ -336,7 +342,7 @@ func hasSylPrefix(readingKey, prefixKey string) bool {
 func (v view) Exact(syls []zhuyin.Syllable) []lexicon.Entry {
 	es := v.adjust(v.sys().Exact(syls))
 	if len(v.m.Store.PhraseOrder) > 0 {
-		k := zhuyin.Key(syls)
+		k := readingKey(syls)
 		es = append(es, v.phrases(func(rk string) bool { return rk == k })...)
 	}
 	if v.m.vocabLen() > 0 {
@@ -348,7 +354,7 @@ func (v view) Exact(syls []zhuyin.Syllable) []lexicon.Entry {
 func (v view) Prefixed(syls []zhuyin.Syllable) []lexicon.Entry {
 	es := v.adjust(v.sys().Prefixed(syls))
 	if len(v.m.Store.PhraseOrder) > 0 {
-		k := zhuyin.Key(syls)
+		k := readingKey(syls)
 		es = append(es, v.phrases(func(rk string) bool { return hasSylPrefix(rk, k) })...)
 	}
 	if v.m.vocabLen() > 0 {
@@ -362,13 +368,13 @@ func (v view) withVocab(es []lexicon.Entry, ms []vocab.Match) []lexicon.Entry {
 	for _, m := range ms {
 		dup := false
 		for _, e := range es {
-			if e.Surface == m.Text && !e.Correction && slices.Equal(e.Reading, m.Reading) {
+			if e.Surface == m.Text && !e.Correction && slices.Equal(e.Reading, readingSeq(m.Reading)) {
 				dup = true
 				break
 			}
 		}
 		if !dup {
-			es = append(es, lexicon.Entry{Surface: m.Text, Reading: m.Reading, PRW: 1})
+			es = append(es, lexicon.Entry{Surface: m.Text, Reading: readingSeq(m.Reading), PRW: 1})
 		}
 	}
 	return es
@@ -387,12 +393,12 @@ func (v view) Adjust(es []lexicon.Entry) []lexicon.Entry { return v.adjust(es) }
 func (v view) PersonalPrefixed(syls []zhuyin.Syllable) []lexicon.Entry {
 	var out []lexicon.Entry
 	if len(v.m.Store.PhraseOrder) > 0 {
-		k := zhuyin.Key(syls)
+		k := readingKey(syls)
 		out = v.phrases(func(rk string) bool { return hasSylPrefix(rk, k) })
 	}
 	if v.m.vocabLen() > 0 {
 		for _, m := range v.m.Vocab.Prefixed(syls, 0) {
-			out = append(out, lexicon.Entry{Surface: m.Text, Reading: m.Reading, PRW: 1})
+			out = append(out, lexicon.Entry{Surface: m.Text, Reading: readingSeq(m.Reading), PRW: 1})
 		}
 	}
 	return out
@@ -405,7 +411,7 @@ func (v view) HasPrefix(syls []zhuyin.Syllable) bool {
 	if len(v.m.Store.PhraseOrder) == 0 {
 		return false
 	}
-	k := zhuyin.Key(syls)
+	k := readingKey(syls)
 	return len(v.phrases(func(rk string) bool { return hasSylPrefix(rk, k) })) > 0
 }
 
@@ -514,12 +520,12 @@ func (m *Model) Learn(c Commit) {
 	var noLearn [][2]int
 	for _, r := range c.Rejected {
 		if r.Correction {
-			reading := c.Syls[r.Start:r.End]
+			rd := c.Syls[r.Start:r.End]
 			if len(r.Reading) == r.End-r.Start {
-				reading = r.Reading
+				rd = r.Reading
 			}
-			if !zhuyin.HasUntoned(reading) {
-				s.Rejects[pair(r.Word, zhuyin.Key(reading))]++
+			if !zhuyin.HasUntoned(rd) {
+				s.Rejects[pair(r.Word, readingKey(rd))]++
 			}
 			noLearn = append(noLearn, [2]int{r.Start, r.End})
 		}
@@ -584,7 +590,7 @@ func (m *Model) Learn(c Commit) {
 		m.observeEvidence(l, g.Word, w)
 		// 片語晉升：手動選取的區間與左鄰合併
 		if g.Manual && l != lm.BOS && runeLen(l)+runeLen(g.Word) <= m.P.PhraseMaxLen {
-			m.seePhrase(l+g.Word, zhuyin.Key(c.Syls[path[k-1].Start:g.End]), left(k-1), w)
+			m.seePhrase(l+g.Word, readingKey(c.Syls[path[k-1].Start:g.End]), left(k-1), w)
 		}
 	}
 	// 既有的暫定片語再次完整出現時累計
@@ -594,7 +600,7 @@ func (m *Model) Learn(c Commit) {
 		}
 		ph := path[k-1].Word + path[k].Word
 		if _, seen := s.PhraseSeen[ph]; seen {
-			m.seePhrase(ph, zhuyin.Key(c.Syls[path[k-1].Start:path[k].End]), left(k-1), m.P.WPassive)
+			m.seePhrase(ph, readingKey(c.Syls[path[k-1].Start:path[k].End]), left(k-1), m.P.WPassive)
 		}
 	}
 }
@@ -611,7 +617,7 @@ func (m *Model) noteManual(syls []zhuyin.Syllable, g Seg) {
 		syl := string(syls[g.Start])
 		s.Picked[syl] = append(s.Picked[syl], g.Word)
 	}
-	s.Readings[pair(g.Word, zhuyin.Key(syls[g.Start:g.End]))] = true // 個人讀音自適應
+	s.Readings[pair(g.Word, readingKey(syls[g.Start:g.End]))] = true // 個人讀音自適應
 }
 
 func (m *Model) seePhrase(ph, readingKey, left string, weight float64) {

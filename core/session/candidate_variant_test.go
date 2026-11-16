@@ -29,7 +29,7 @@ func kongqiSession() *Session {
 		{"気", "ㄑㄧˋ", 1.5e-7, true},
 		{"炁", "ㄑㄧˋ", 1e-9, true},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ParseReading(e.reading), PRW: 1, Rare: e.rare})
+		lex.Add(lexicon.Entry{Surface: e.word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.reading)), PRW: 1, Rare: e.rare})
 		sys.SetUni(e.word, e.p)
 	}
 	// 0.2.0 出貨字典的實際值：P(気|空) 2.1e-4、P(器|空) 2.5e-4，P(氣|空) 沒有配對。

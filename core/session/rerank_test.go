@@ -318,7 +318,7 @@ func TestNeuralNeutralExpansionAddsParticleCandidates(t *testing.T) {
 		w, r string
 		p    float64
 	}{{"好", "ㄏㄠˇ", 1e-2}, {"馬", "ㄇㄚˇ", 1e-3}, {"碼", "ㄇㄚˇ", 5e-4}, {"嗎", "ㄇㄚ˙", 1e-3}, {"嘛", "ㄇㄚ˙", 5e-4}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	var seen [][]string
@@ -383,8 +383,8 @@ func TestNeuralKeepsShownChoicesWhenNBestOverflows(t *testing.T) {
 	pairs := [][2]string{{"八", "巴"}, {"搭", "耷"}, {"媽", "抹"}, {"發", "罰"}, {"他", "塌"}}
 	good := map[rune]bool{}
 	for i, p := range pairs {
-		lex.Add(lexicon.Entry{Surface: p[0], Reading: zhuyin.ParseReading(syls[i]), PRW: 1})
-		lex.Add(lexicon.Entry{Surface: p[1], Reading: zhuyin.ParseReading(syls[i]), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: p[0], Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(syls[i])), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: p[1], Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(syls[i])), PRW: 1})
 		sys.SetUni(p[0], 1e-2)
 		sys.SetUni(p[1], 1e-3)
 		good[[]rune(p[1])[0]] = true

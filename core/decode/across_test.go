@@ -20,7 +20,7 @@ func TestCompleteAcrossRatio(t *testing.T) {
 		{"沒有", "ㄇㄟˊ ㄧㄡˇ", 1e-3}, {"不", "ㄅㄨˋ", 2e-3}, {"不同", "ㄅㄨˋ ㄊㄨㄥˊ", 1e-3},
 		{"沒有不同", "ㄇㄟˊ ㄧㄡˇ ㄅㄨˋ ㄊㄨㄥˊ", 2e-7}, {"沒有不透風的牆", "ㄇㄟˊ ㄧㄡˇ ㄅㄨˋ ㄊㄡˋ ㄈㄥ ㄉㄜ˙ ㄑㄧㄤˊ", 1e-8},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		score[e.w] = e.p
 	}
 	d := &Decoder{Lex: lex, Score: score, Continue: 0.5}

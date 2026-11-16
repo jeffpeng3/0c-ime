@@ -15,7 +15,7 @@ import (
 func unlearnModel() (*Model, []zhuyin.Syllable) {
 	lex := lexicon.NewMem()
 	for _, e := range []struct{ w, r string }{{"親子", "ㄑㄧㄣ ㄗˇ"}, {"丼", "ㄐㄧㄥˇ"}, {"井", "ㄐㄧㄥˇ"}, {"好", "ㄏㄠˇ"}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 	}
 	m := NewModel(lex, lm.NewMem())
 	syls := zhuyin.ParseReading("ㄑㄧㄣ ㄗˇ ㄐㄧㄥˇ")

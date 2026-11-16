@@ -18,7 +18,7 @@ func (s *massScore) HasAdaptation() bool                   { return true }
 func TestOrdinaryAdaptationConservesReadingMass(t *testing.T) {
 	lex := lexicon.NewMem()
 	r := zhuyin.ParseReading("ㄐㄧㄚˇ")
-	entries := []lexicon.Entry{{Surface: "甲", Reading: r, PRW: 1}, {Surface: "假", Reading: r, PRW: .1}}
+	entries := []lexicon.Entry{{Surface: "甲", Reading: zhuyin.ReadingUnits(r), PRW: 1}, {Surface: "假", Reading: zhuyin.ReadingUnits(r), PRW: .1}}
 	for _, e := range entries {
 		lex.Add(e)
 	}
@@ -49,7 +49,7 @@ func TestOrdinaryAdaptationConservesReadingMass(t *testing.T) {
 func TestOrdinaryAdaptationDoesNotRewardSplitting(t *testing.T) {
 	lex := lexicon.NewMem()
 	for _, x := range []struct{ w, r string }{{"甲", "ㄐㄧㄚˇ"}, {"假", "ㄐㄧㄚˇ"}, {"乙", "ㄧˇ"}, {"甲乙", "ㄐㄧㄚˇ ㄧˇ"}} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 	}
 	score := &massScore{map[string]float64{"甲": .001, "假": .001, "乙": .5, "甲乙": .005}, map[string]float64{"甲": .8, "假": .001, "乙": .5, "甲乙": .005}}
 	d := Decoder{Lex: lex, Score: score}
@@ -83,7 +83,7 @@ func TestOrdinaryAdaptationDoesNotRewardSplitting(t *testing.T) {
 
 func TestPrefixGuardNeverRaisesUnobservedMass(t *testing.T) {
 	lex := lexicon.NewMem()
-	e := lexicon.Entry{Surface: "甲", Reading: zhuyin.ParseReading("ㄐㄧㄚˇ"), PRW: 1}
+	e := lexicon.Entry{Surface: "甲", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄐㄧㄚˇ")), PRW: 1}
 	lex.Add(e)
 	score := &massScore{map[string]float64{"甲": .1}, map[string]float64{"甲": .001}}
 	d := Decoder{Lex: lex, Score: score}
@@ -103,7 +103,7 @@ func (s *versionedMass) MassVersion() (int, int64) { return s.gen, 0 }
 func TestMassScaleKeptPerVersionAndBounded(t *testing.T) {
 	lex := lexicon.NewMem()
 	for _, x := range []struct{ w, r string }{{"甲", "ㄐㄧㄚˇ"}, {"假", "ㄐㄧㄚˇ"}, {"乙", "ㄧˇ"}, {"甲乙", "ㄐㄧㄚˇ ㄧˇ"}} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 	}
 	score := &versionedMass{massScore: massScore{map[string]float64{"甲": .01, "假": .02, "乙": .5, "甲乙": .005}, map[string]float64{"甲": .001, "假": .9, "乙": .5, "甲乙": .005}}}
 	d := Decoder{Lex: lex, Score: score}

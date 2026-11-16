@@ -58,7 +58,7 @@ func TestMixedTrailingPunctuationKeyIsLiteral(t *testing.T) {
 func numberSession() *Session {
 	lex, sys := lexicon.NewMem(), lm.NewMem()
 	for _, e := range []struct{ w, r string }{{"我", "ㄨㄛˇ"}, {"八", "ㄅㄚ"}, {"單", "ㄉㄢ"}, {"班", "ㄅㄢ"}, {"暈", "ㄩㄣ"}, {"詩", "ㄕ"}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, 1e-3)
 	}
 	s := New(personal.NewModel(lex, sys))

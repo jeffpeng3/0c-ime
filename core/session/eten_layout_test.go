@@ -26,7 +26,7 @@ func etenSession(t *testing.T) *Session {
 		{"風", "ㄈㄥ", 6e-4}, {"景", "ㄐㄧㄥˇ", 1e-3}, {"風景", "ㄈㄥ ㄐㄧㄥˇ", 2e-4},
 		{"班", "ㄅㄢ", 5e-4}, {"嗯", "ㄣ", 1e-4}, {"昂", "ㄤˊ", 1e-4}, {"嘛", "ㄇㄚ˙", 5e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

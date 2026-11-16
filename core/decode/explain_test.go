@@ -31,7 +31,7 @@ func TestPrefixMassDoesNotCountSameWordTwice(t *testing.T) {
 	d := fixture()
 	d.SeparateContinuation = true
 	reading := zhuyin.ParseReading("ㄧㄣ ㄨㄟˋ")
-	e := lexicon.Entry{Surface: "因為", Reading: reading, PRW: 1}
+	e := lexicon.Entry{Surface: "因為", Reading: zhuyin.ReadingUnits(reading), PRW: 1}
 	a := d.group([]tailEntry{{e, 0}}, 1, "<s>", .5)
 	b := d.group([]tailEntry{{e, 0}, {e, 1}, {e, 0}}, 1, "<s>", .5)
 	if len(a) != 1 || len(b) != 1 || a[0].mass != b[0].mass {

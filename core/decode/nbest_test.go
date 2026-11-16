@@ -23,7 +23,7 @@ func (s nbScore) HasContext(string) bool { return s.contextual }
 func nbLex(pairs ...string) *lexicon.Mem {
 	l := lexicon.NewMem()
 	for i := 0; i < len(pairs); i += 2 {
-		l.Add(lexicon.Entry{Surface: pairs[i], Reading: zhuyin.ParseReading(pairs[i+1]), PRW: 1})
+		l.Add(lexicon.Entry{Surface: pairs[i], Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(pairs[i+1])), PRW: 1})
 	}
 	return l
 }

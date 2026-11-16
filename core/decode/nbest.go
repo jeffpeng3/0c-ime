@@ -95,7 +95,7 @@ func offer(rows []Hypothesis, h Hypothesis, seg Seg, delta float64, capped, weak
 func (d *Decoder) tailChars(lat input.Lattice) map[string]bool {
 	own := map[string]bool{}
 	for _, h := range lat[len(lat)-1] {
-		for _, e := range d.Lex.Exact([]zhuyin.Syllable{h.Syl}) {
+		for _, e := range d.Lex.Exact([]zhuyin.Syllable{zhuyin.Syllable(h.Syl)}) {
 			if !e.Correction {
 				own[e.Surface] = true
 			}
@@ -321,7 +321,7 @@ func (d *Decoder) AuditTarget(lat input.Lattice, locks map[int]Lock, prefix bool
 			out.Best = &h
 		}
 	}
-	limit := MaxLen(d.Lex)
+	limit := d.maxLen()
 	for at := 0; at < n; at++ {
 		for end := at + 1; end <= min(n, at+limit); end++ {
 			if surface[at] && d.Lex.Has(string(runes[at:end])) {

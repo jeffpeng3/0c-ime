@@ -30,7 +30,7 @@ func deferredNumberSession() *Session {
 		{"啊", "ㄚ", 1e-3}, {"哀", "ㄞ", 2e-4}, {"安", "ㄢ", 3e-4}, {"兒", "ㄦ", 1e-4}, {"點", "ㄉㄧㄢˇ", 5e-4}, {"年", "ㄋㄧㄢˊ", 5e-4},
 		{"當", "ㄉㄤ", 1e-3}, {"張", "ㄓㄤ", 5e-4}, {"燈", "ㄉㄥ", 2e-4}, {"都", "ㄉㄡ", 2e-3}, {"週", "ㄓㄡ", 3e-4}, {"周", "ㄓㄡ", 5e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

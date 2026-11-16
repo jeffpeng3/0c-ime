@@ -4,11 +4,16 @@
 // 會在同一位置放入多個帶成本的假設。解碼器對所有前端一視同仁。
 package input
 
-import "github.com/0c-biggo/0c-ime/core/zhuyin"
+import (
+	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/core/zhuyin"
+)
 
-// Hyp 是某個位置的一個音節假設。Cost 為負對數機率，0 表示確定。
+// Hyp 是某個位置的一個讀音假設。Cost 為負對數機率，0 表示確定。
+//
+// Syl 是核心讀音單位；注音的一個音節就是一個單位，日文的一個かな也是一個單位。
 type Hyp struct {
-	Syl  zhuyin.Syllable
+	Syl  reading.Unit
 	Cost float64
 	// Untoned：這個假設是沒打聲調的音節（#150）展開出來的其中一個聲調。解碼器據此裁切這些位置的弧數；
 	// 全部打了聲調時沒有這種假設。
@@ -32,11 +37,11 @@ func (Exact) Expand(syls []zhuyin.Syllable) Lattice {
 	for i, s := range syls {
 		if s.Untoned() {
 			for _, y := range s.Tones() {
-				lat[i] = append(lat[i], Hyp{Syl: y, Untoned: true})
+				lat[i] = append(lat[i], Hyp{Syl: reading.Unit(y), Untoned: true})
 			}
 			continue
 		}
-		lat[i] = []Hyp{{Syl: s}}
+		lat[i] = []Hyp{{Syl: reading.Unit(s)}}
 	}
 	return lat
 }

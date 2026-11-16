@@ -28,7 +28,7 @@ func newHabitSession(t *testing.T) (*Session, *personal.Model) {
 		{"改", "ㄍㄞˇ", 2e-4}, {"改成", "ㄍㄞˇ ㄔㄥˊ", 2e-2}, {"用", "ㄩㄥˋ", 1e-3}, {"寫", "ㄒㄧㄝˇ", 5e-4},
 		{"過", "ㄍㄨㄛˋ", 1e-3}, {"過程", "ㄍㄨㄛˋ ㄔㄥˊ", 3e-4}, {"看", "ㄎㄢˋ", 1e-3}, {"跑", "ㄆㄠˇ", 1e-3}, {"新", "ㄒㄧㄣ", 1e-3}, {"修", "ㄒㄧㄡ", 1e-3}, {"嗎", "ㄇㄚˇ", 1e-3}, {"碼", "ㄇㄚˇ", 1e-5}, {"程式碼", "ㄔㄥˊ ㄕˋ ㄇㄚˇ", 1e-5},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	sys.SetBi("的", "城市", 1.1e-3)

@@ -24,7 +24,7 @@ func englishVocabSession(t *testing.T, preview bool, words ...string) *Session {
 		{"孬", "ㄋㄠ", 1e-5}, {"腦", "ㄋㄠˇ", 2e-4}, {"居", "ㄐㄩ", 1e-4}, {"句", "ㄐㄩˋ", 1e-4},
 		{"我", "ㄨㄛˇ", 1e-2}, {"是", "ㄕˋ", 5e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	m := personal.NewModel(lex, sys)

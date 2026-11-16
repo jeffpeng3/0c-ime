@@ -23,7 +23,7 @@ func alnumSplitSession() *Session {
 		{"賺", "ㄓㄨㄢˋ", 2e-4}, {"萬", "ㄨㄢˋ", 5e-4}, {"補", "ㄅㄨˇ", 3e-4}, {"五", "ㄨˇ", 5e-4}, {"資", "ㄗ", 3e-4},
 		{"不", "ㄅㄨˋ", 6e-3}, {"物", "ㄨˋ", 2e-4}, {"一", "ㄧ", 2e-3}, {"戳", "ㄔㄨㄛ", 1e-5},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	s := New(personal.NewModel(lex, sys))

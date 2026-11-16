@@ -32,7 +32,7 @@ func numberContextSession() *Session {
 		{"八", "ㄅㄚ", 5e-4}, {"八個", "ㄅㄚ ㄍㄜˋ", 4e-5},
 		{"之", "ㄓ", 1e-3}, {"後", "ㄏㄡˋ", 1e-3}, {"之後", "ㄓ ㄏㄡˋ", 1e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		sys.SetUni(e.w, e.p)
 	}
 	for _, left := range numberLefts {

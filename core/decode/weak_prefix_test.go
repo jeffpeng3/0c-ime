@@ -21,7 +21,7 @@ func weakFixture() (*lexicon.Mem, bigramScore) {
 		{"禿", "ㄊㄨ", 4.29e-6}, {"突然", "ㄊㄨ ㄖㄢˊ", 1.4e-4},
 		{"電", "ㄉㄧㄢˋ", 2e-4}, {"店", "ㄉㄧㄢˋ", 1e-4}, {"電腦", "ㄉㄧㄢˋ ㄋㄠˇ", 3e-4},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		b.uni[e.w] = e.p
 	}
 	return lex, b

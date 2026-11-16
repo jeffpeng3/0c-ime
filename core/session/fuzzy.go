@@ -7,6 +7,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/decode"
 	"github.com/0c-biggo/0c-ime/core/fuzzy"
 	"github.com/0c-biggo/0c-ime/core/input"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -39,7 +40,7 @@ func (s *Session) nearOnly(all, exact []decode.Candidate, pos, length int) (item
 		have[c.Entry.Surface] = true
 	}
 	for _, c := range all {
-		key := zhuyin.Key(c.Entry.Reading)
+		key := zhuyin.Key(zhuyin.Syllables(c.Entry.Reading))
 		if key == typed || have[c.Entry.Surface] {
 			continue
 		}
@@ -133,8 +134,8 @@ func (s *Session) lockLattice(lat input.Lattice, skipFrom, skipTo int) input.Lat
 			continue
 		}
 		for i, syl := range matched {
-			if !slices.ContainsFunc(lat[at+i], func(h input.Hyp) bool { return h.Syl == syl }) {
-				lat[at+i] = append(lat[at+i], input.Hyp{Syl: syl})
+			if !slices.ContainsFunc(lat[at+i], func(h input.Hyp) bool { return zhuyin.Syllable(h.Syl) == syl }) {
+				lat[at+i] = append(lat[at+i], input.Hyp{Syl: readingpkg.Unit(syl)})
 			}
 		}
 	}

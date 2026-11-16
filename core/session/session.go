@@ -1622,7 +1622,7 @@ func (s *Session) accept() bool {
 			return false
 		}
 	}
-	s.syls = append(s.syls, g.Syls...)
+	s.syls = append(s.syls, zhuyin.Syllables(g.Syls)...)
 	s.locks[g.Start] = decode.Lock{Word: g.Word, Len: len(s.syls) - g.Start, Completion: true}
 	s.cursor = len(s.syls)
 	s.previewRewrite = false
@@ -1921,7 +1921,7 @@ func (s *Session) snapshot() proto.Snapshot {
 			if id < len(s.cand.matched) {
 				item.Note = nearNote(s.cand.matched[id]) // 原音項目是空字串
 			}
-			if e := s.cand.items[id].Entry; item.Note == "" && s.cand.kind == "" && len(e.Reading) > 0 && s.model.VocabReading(e.Surface, e.Reading) {
+			if e := s.cand.items[id].Entry; item.Note == "" && s.cand.kind == "" && len(e.Reading) > 0 && s.model.VocabReading(e.Surface, zhuyin.Syllables(e.Reading)) {
 				item.Note = "我的詞彙" // 讓人知道這是自己加的詞、按反悔鍵會刪掉（比照 Apple 注音標「常用」）
 			}
 			if s.cand.keyLiterals[id] != "" {

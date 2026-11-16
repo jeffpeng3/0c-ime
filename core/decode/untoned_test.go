@@ -16,7 +16,7 @@ func TestUntonedArcsAreCappedPerSpan(t *testing.T) {
 	tones := []string{"", "ˊ", "ˇ", "ˋ", "˙"}
 	for k := 0; k < 3*maxUntonedArcs; k++ {
 		w := string(rune(0x4e00 + k))
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading("ㄧ" + tones[k%5]), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧ" + tones[k%5])), PRW: 1})
 		score[w] = 1e-3 / float64(k+1)
 	}
 	d := &Decoder{Lex: lex, Score: score}
@@ -48,7 +48,7 @@ func TestUntonedArcsAreCappedPerSpan(t *testing.T) {
 func TestReadingResolvesUntonedSyllables(t *testing.T) {
 	lex := lexicon.NewMem()
 	for _, e := range []struct{ w, r string }{{"會議", "ㄏㄨㄟˋ ㄧˋ"}, {"回憶", "ㄏㄨㄟˊ ㄧˋ"}, {"行", "ㄒㄧㄥˊ"}, {"行", "ㄏㄤˊ"}} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 	}
 	lat := input.Exact{}.Expand([]zhuyin.Syllable{zhuyin.Untone("ㄏㄨㄟ"), zhuyin.Untone("ㄧ")})
 	for w, want := range map[string]string{"會議": "ㄏㄨㄟˋ ㄧˋ", "回憶": "ㄏㄨㄟˊ ㄧˋ"} {

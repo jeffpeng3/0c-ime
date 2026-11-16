@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/0c-biggo/0c-ime/core/binfmt"
+	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -14,8 +15,8 @@ import (
 // 在陣列中是連續的一段，所以精確查詢與前綴查詢都是二分搜尋。沒有指標、沒有每節點的 map，
 // 可以原樣寫進資料包（docs/19 的執行期資料）。
 type Compact struct {
-	syls   []zhuyin.Syllable // 音節 ID → 音節，依字串排序
-	ids    map[zhuyin.Syllable]uint16
+	syls   []reading.Unit // 單位 ID → 讀音單位，依字串排序
+	ids    map[reading.Unit]uint16
 	rd     []uint16 // 所有讀音串接
 	ent    []centry // 依讀音排序
 	strs   string   // 所有詞面串接
@@ -38,7 +39,7 @@ const (
 
 // Build 由詞條建出 Compact。相同（詞面, 讀音）的詞條保留 P(r|w) 較大者。
 func Build(entries []Entry) (*Compact, error) {
-	set := map[zhuyin.Syllable]bool{}
+	set := map[reading.Unit]bool{}
 	for _, e := range entries {
 		if len(e.Reading) == 0 || len(e.Reading) > 255 {
 			return nil, fmt.Errorf("%q 的讀音長度 %d 不合法", e.Surface, len(e.Reading))
@@ -128,7 +129,7 @@ func (c *Compact) measure() {
 func (c *Compact) LongestWord() int { return c.longest }
 
 func (c *Compact) index() {
-	c.ids = make(map[zhuyin.Syllable]uint16, len(c.syls))
+	c.ids = make(map[reading.Unit]uint16, len(c.syls))
 	for i, s := range c.syls {
 		c.ids[s] = uint16(i)
 	}
@@ -151,7 +152,7 @@ func (c *Compact) buildByText() {
 	})
 }
 
-func (c *Compact) encode(syls []zhuyin.Syllable) []uint16 {
+func (c *Compact) encode(syls reading.Sequence) []uint16 {
 	out := make([]uint16, len(syls))
 	for i, s := range syls {
 		out[i] = c.ids[s]
@@ -163,7 +164,7 @@ func (c *Compact) encode(syls []zhuyin.Syllable) []uint16 {
 func (c *Compact) lookupIDs(syls []zhuyin.Syllable) ([]uint16, bool) {
 	out := make([]uint16, len(syls))
 	for i, s := range syls {
-		id, ok := c.ids[s]
+		id, ok := c.ids[reading.Unit(s)]
 		if !ok {
 			return nil, false
 		}
@@ -192,7 +193,7 @@ func (c *Compact) surfaceAt(e *centry, strs string) string {
 
 func (c *Compact) entry(e *centry) Entry {
 	ids := c.reading(e)
-	r := make([]zhuyin.Syllable, len(ids))
+	r := make(reading.Sequence, len(ids))
 	for i, id := range ids {
 		r[i] = c.syls[id]
 	}
@@ -303,7 +304,7 @@ func Decode(b []byte) (*Compact, error) {
 	r := binfmt.NewReader(b, magic, version)
 	c := &Compact{}
 	for _, f := range strings.Fields(r.String()) {
-		c.syls = append(c.syls, zhuyin.Syllable(f))
+		c.syls = append(c.syls, reading.Unit(f))
 	}
 	c.rd = r.U16s()
 	rdOff, sfOff, sfLen := r.U32s(), r.U32s(), r.U16s()

@@ -5,6 +5,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/lexicon"
+	readingpkg "github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
 )
 
@@ -21,7 +22,7 @@ func fixture() *Decoder {
 	}{
 		{"因", "ㄧㄣ", 8e-4}, {"應", "ㄧㄥ", 4e-4}, {"該", "ㄍㄞ", 6e-4}, {"應該", "ㄧㄥ ㄍㄞ", 2e-3}, {"因為", "ㄧㄣ ㄨㄟˋ", 2e-3}, {"為", "ㄨㄟˋ", 2e-3},
 	} {
-		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ParseReading(e.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: e.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(e.r)), PRW: 1})
 		score[e.w] = e.p
 	}
 	return &Decoder{Lex: lex, Score: score}
@@ -42,7 +43,7 @@ func TestLatticeWithAlternatives(t *testing.T) {
 	fuzzy := func(syls ...string) input.Lattice {
 		lat := make(input.Lattice, len(syls))
 		for i, s := range syls {
-			lat[i] = []input.Hyp{{Syl: zhuyin.Syllable(s)}}
+			lat[i] = []input.Hyp{{Syl: readingpkg.Unit(s)}}
 			if s == "ㄧㄣ" {
 				lat[i] = append(lat[i], input.Hyp{Syl: "ㄧㄥ", Cost: 1.2}) // −ln 0.3
 			}
@@ -128,10 +129,10 @@ func TestMaxCandidatesKeepsTopPriorSurfaces(t *testing.T) {
 	lex := lexicon.NewMem()
 	score := uni{}
 	for i, w := range []string{"甲", "乙", "丙", "丁", "戊"} {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading("ㄧㄥ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄥ")), PRW: 1})
 		score[w] = float64(10-i) * 1e-4
 	}
-	lex.Add(lexicon.Entry{Surface: "甲", Reading: zhuyin.ParseReading("ㄧㄣ"), PRW: 1}) // 同詞面的另一個讀音
+	lex.Add(lexicon.Entry{Surface: "甲", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄣ")), PRW: 1}) // 同詞面的另一個讀音
 	d := &Decoder{Lex: lex, Score: score}
 	lat := input.Lattice{{{Syl: "ㄧㄥ"}, {Syl: "ㄧㄣ", Cost: 1.2}}}
 	full := d.Candidates(lat, 0, 1, "", nil)
@@ -159,10 +160,10 @@ func TestOnlyCostedSkipsTypedReadings(t *testing.T) {
 	lex := lexicon.NewMem()
 	score := uni{}
 	for i, w := range []string{"甲", "乙", "丙", "丁"} {
-		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading("ㄧㄥ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄥ")), PRW: 1})
 		score[w] = float64(10-i) * 1e-3 // 原音詞面的先驗都比近音高
 	}
-	lex.Add(lexicon.Entry{Surface: "戊", Reading: zhuyin.ParseReading("ㄧㄣ"), PRW: 1})
+	lex.Add(lexicon.Entry{Surface: "戊", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄣ")), PRW: 1})
 	score["戊"] = 1e-6
 	d := &Decoder{Lex: lex, Score: score}
 	lat := input.Lattice{{{Syl: "ㄧㄥ"}, {Syl: "ㄧㄣ", Cost: 1.2}}}
@@ -183,8 +184,8 @@ func TestOnlyCostedSkipsTypedReadings(t *testing.T) {
 func TestWindowAcceptBeforeBudgetAndOnContextFallback(t *testing.T) {
 	for _, brokenContext := range []bool{false, true} {
 		lex := lexicon.NewMem()
-		lex.Add(lexicon.Entry{Surface: "甲", Reading: zhuyin.ParseReading("ㄧ"), PRW: 1, Correction: true})
-		lex.Add(lexicon.Entry{Surface: "乙", Reading: zhuyin.ParseReading("ㄧ"), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: "甲", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧ")), PRW: 1, Correction: true})
+		lex.Add(lexicon.Entry{Surface: "乙", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧ")), PRW: 1})
 		d := &Decoder{Lex: lex, Score: uni{"甲": .9, "乙": .01}}
 		lat := input.Exact{}.Expand(zhuyin.ParseReading("ㄧ"))
 		if brokenContext {

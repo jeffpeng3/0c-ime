@@ -256,7 +256,7 @@ func Build(d *Data, o Options) *Result {
 	}
 	var entries []lexicon.Entry
 	for _, e := range all {
-		entries = append(entries, lexicon.Entry{Surface: e.word, Reading: e.reading, PRW: e.prw, Correction: e.correct, Rare: isRare(e.word)})
+		entries = append(entries, lexicon.Entry{Surface: e.word, Reading: zhuyin.ReadingUnits(e.reading), PRW: e.prw, Correction: e.correct, Rare: isRare(e.word)})
 	}
 	lex, err := lexicon.Build(entries)
 	if err != nil {

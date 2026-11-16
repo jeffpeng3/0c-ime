@@ -23,8 +23,8 @@ func TestBenefitDependsOnRemainingTyping(t *testing.T) {
 		{"麻婆豆腐", "ㄇㄚˊ ㄆㄛˊ ㄉㄡˋ ㄈㄨˇ", true},
 	} {
 		lex := lexicon.NewMem()
-		lex.Add(lexicon.Entry{Surface: "麻", Reading: zhuyin.ParseReading("ㄇㄚˊ"), PRW: 1})
-		lex.Add(lexicon.Entry{Surface: tc.word, Reading: zhuyin.ParseReading(tc.reading), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: "麻", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄇㄚˊ")), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: tc.word, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(tc.reading)), PRW: 1})
 		d := &decode.Decoder{Lex: lex, Score: score{"麻": 0.5, tc.word: 0.5}}
 		lat := input.Exact{}.Expand(zhuyin.ParseReading("ㄇㄚˊ"))
 		path := []decode.Seg{{Word: "麻", End: 1, Partial: true}}

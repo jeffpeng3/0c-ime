@@ -23,7 +23,7 @@ func TestCandidatesUseRightContextAndRespectOtherLocks(t *testing.T) {
 	for _, x := range []struct{ w, r string }{
 		{"在", "ㄗㄞˋ"}, {"再", "ㄗㄞˋ"}, {"見", "ㄐㄧㄢˋ"}, {"建", "ㄐㄧㄢˋ"},
 	} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 	}
 	d := &Decoder{Lex: lex, Score: contextScore{
 		{"<s>", "在"}: 0.6, {"<s>", "再"}: 0.4,
@@ -73,8 +73,8 @@ func TestCandidatesUseRightContextAndRespectOtherLocks(t *testing.T) {
 
 func TestCandidateDedupKeepsBestReadingPath(t *testing.T) {
 	lex := lexicon.NewMem()
-	lex.Add(lexicon.Entry{Surface: "應", Reading: zhuyin.ParseReading("ㄧㄣ"), PRW: 0.1})
-	lex.Add(lexicon.Entry{Surface: "應", Reading: zhuyin.ParseReading("ㄧㄥ"), PRW: 1})
+	lex.Add(lexicon.Entry{Surface: "應", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄣ")), PRW: 0.1})
+	lex.Add(lexicon.Entry{Surface: "應", Reading: zhuyin.ReadingUnits(zhuyin.ParseReading("ㄧㄥ")), PRW: 1})
 	d := &Decoder{Lex: lex, Score: uni{"應": 1}}
 	lat := input.Lattice{{{Syl: "ㄧㄣ"}, {Syl: "ㄧㄥ", Cost: 0.2}}}
 	cs := d.CandidatesInContext(lat, 0, 1, nil, nil)
@@ -88,7 +88,7 @@ func TestContextRetainsAlternativeLeftSegmentations(t *testing.T) {
 	for _, x := range []struct{ w, r string }{
 		{"甲", "ㄐㄧㄚˇ"}, {"假", "ㄐㄧㄚˇ"}, {"在", "ㄗㄞˋ"}, {"再", "ㄗㄞˋ"}, {"見", "ㄐㄧㄢˋ"},
 	} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 	}
 	d := &Decoder{Lex: lex, Score: contextScore{
 		{"<s>", "甲"}: .6, {"<s>", "假"}: .4,
@@ -128,7 +128,7 @@ func TestCandidatesScoreWordsThatContainThem(t *testing.T) {
 		{"空", "ㄎㄨㄥ"}, {"空氣", "ㄎㄨㄥ ㄑㄧˋ"}, {"氣", "ㄑㄧˋ"}, {"気", "ㄑㄧˋ"}, {"器", "ㄑㄧˋ"},
 		{"很", "ㄏㄣˇ"}, {"氣很", "ㄑㄧˋ ㄏㄣˇ"},
 	} {
-		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ParseReading(x.r), PRW: 1})
+		lex.Add(lexicon.Entry{Surface: x.w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(x.r)), PRW: 1})
 	}
 	d := &Decoder{Lex: lex, Score: contextScore{
 		{"<s>", "空"}: .5, {"<s>", "空氣"}: .3,

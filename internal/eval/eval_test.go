@@ -41,7 +41,7 @@ func TestAnnotateBreaksTies(t *testing.T) {
 	sys := lm.NewMem()
 	var entries []lexicon.Entry
 	add := func(w, r string, prw, p float64) {
-		entries = append(entries, lexicon.Entry{Surface: w, Reading: zhuyin.ParseReading(r), PRW: prw})
+		entries = append(entries, lexicon.Entry{Surface: w, Reading: zhuyin.ReadingUnits(zhuyin.ParseReading(r)), PRW: prw})
 		sys.SetUni(w, p)
 	}
 	add("麗", "ㄌㄧˊ", 0.1, 1e-4) // 來源沒有給主讀音：兩個讀音同分，ㄌㄧˊ 在詞庫順序排前面
