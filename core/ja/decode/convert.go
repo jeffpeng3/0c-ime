@@ -18,7 +18,7 @@ func (d *Decoder) Convert(seq reading.Sequence, ctx lang.Context) (lang.Result, 
 		return lang.Result{}, nil
 	}
 	k := 1
-	if d.Verifier != nil {
+	if d.Verifier != nil || d.Reranker != nil {
 		k = d.desiredNBest()
 	}
 	results := d.results(seq, ctx, k)
@@ -53,6 +53,11 @@ func (d *Decoder) results(seq reading.Sequence, ctx lang.Context, k int) []lang.
 		out = append(out, res)
 	}
 	sortResults(out)
+	if d.Reranker != nil && len(out) > 0 {
+		if reranked := d.Reranker.Rerank(seq, out, ctx); len(reranked) > 0 {
+			out = reranked
+		}
+	}
 	return out
 }
 

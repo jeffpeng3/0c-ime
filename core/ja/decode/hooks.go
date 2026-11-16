@@ -31,3 +31,11 @@ type NoVerifier struct{}
 
 // Score 永遠回傳 0。
 func (NoVerifier) Score(reading.Sequence, lang.Result, lang.Context) float64 { return 0 }
+
+// Reranker 是 T30 的 draft、verify 與限制式重搜鉤子。
+//
+// Rerank 收到統計轉換已排序的候選，回傳完整排序結果；實作必須保留讀音
+// 對應，且在任何錯誤或逾時時原樣回傳 drafts。沒有這個鉤子時行為完全不變。
+type Reranker interface {
+	Rerank(seq reading.Sequence, drafts []lang.Result, ctx lang.Context) []lang.Result
+}
