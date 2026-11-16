@@ -1,0 +1,15 @@
+diff --git a/src/llama-vocab.cpp b/src/llama-vocab.cpp
+index e90f1bd11..238e3d768 100644
+--- a/src/llama-vocab.cpp
++++ b/src/llama-vocab.cpp
+@@ -2670,6 +2670,10 @@ void llama_vocab::impl::load(llama_model_loader & ml, const LLM_KV & kv) {
+             } else if (
+                 tokenizer_pre == "megrez") {
+                 pre_type = LLAMA_VOCAB_PRE_TYPE_QWEN2;
++            } else if (
++                tokenizer_pre == "gpt2-small-japanese-char") {
++                // zenz-v3 GGUF metadata; the tokenizer splits like GPT-2 byte-level BPE.
++                pre_type = LLAMA_VOCAB_PRE_TYPE_GPT2;
+             } else if (
+                 tokenizer_pre == "gpt-4o" ||
+                 tokenizer_pre == "llama4" ||
