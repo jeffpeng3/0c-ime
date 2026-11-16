@@ -29,6 +29,7 @@ mod layout;
 mod log;
 mod msctf;
 mod privacy;
+mod profile;
 mod register;
 mod service;
 mod session;

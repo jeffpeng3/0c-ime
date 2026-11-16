@@ -5,6 +5,8 @@ use windows_core::GUID;
 pub const CLSID_ZUIN: GUID = GUID::from_u128(0x138c35d0_7f08_4cef_ba90_c34c16301528);
 /// 語言 profile：zh-TW 底下的「靈犀注音」。
 pub const GUID_PROFILE: GUID = GUID::from_u128(0xef62f743_9855_4c94_a658_1f0f98b7b840);
+/// 語言 profile：ja-JP 底下的「靈犀日本語」（T28）。與注音共用同一個 CLSID 與 DLL，profile 決定語言。
+pub const GUID_PROFILE_JA: GUID = GUID::from_u128(0x3d6a8b21_5c47_4f9e_b0d2_71e4a9c8f653);
 /// 組字區的顯示屬性（底線）。
 pub const GUID_DISPLAY_ATTR_INPUT: GUID = GUID::from_u128(0xa6ca2572_a961_4492_975f_29a4ebb7c312);
 
@@ -23,4 +25,7 @@ pub const GUID_DISPLAY_ATTR_CLAUSE_ACTIVE: GUID =
 
 /// zh-TW。
 pub const LANGID: u16 = 0x0404;
+/// ja-JP（T28）。
+pub const LANGID_JA: u16 = 0x0411;
 pub const DESCRIPTION: &str = "靈犀注音";
+pub const DESCRIPTION_JA: &str = "靈犀日本語";

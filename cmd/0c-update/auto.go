@@ -885,6 +885,10 @@ func statusMap(base, installed string, dial autoupdate.Dialer) map[string]any {
 	f.EngineService = true // 0.2.0 起一律常駐（#120）
 	f.EngineServiceState, f.EngineServiceUnit = engineServiceState()
 	out["features"] = f
+	// T28：Windows 的兩個 TSF profile（zh-TW 注音、ja-JP 日文）註冊狀態；其他平台沒有這個欄位。
+	if profiles := tsfProfilesStatus(); profiles != nil {
+		out["profiles"] = profiles
+	}
 	if err == nil {
 		st := r.Settings
 		fuzzyModes := map[string]string{}

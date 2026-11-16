@@ -1449,6 +1449,8 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
             // 開頭與結尾各記一行：宿主在 Activate 中途崩潰時，紀錄只有開頭（#89）。
             zlog!("activate 開始 exe={} tid={}{}", crate::log::exe_name(), tid, if crate::layout::IS_32BIT { " x86" } else { "" });
             let tm = ptim.ok()?.clone();
+            // T28：在把 thread manager 交給狀態之前先查目前啟動的 profile 語言。
+            let profile_language = crate::profile::active_language(&tm);
             let callback = CandidateWindow::new(self).ok();
             let mut opened = None;
             unsafe {
@@ -1506,6 +1508,11 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
                     .and_then(|tm| tm.cast::<ITfUIElementMgr>().ok())
                     .map(Elements::new);
                 st.ui.set_elements(elements);
+                // T28：Windows 替每個程式記住上次使用的 profile。以目前啟動的 profile 決定語言，
+                // 新 session 就從 zh 或 ja 開始；查不到（不是本輸入法的 profile）時照舊由引擎回報開始時的模式。
+                if let Some(language) = profile_language {
+                    st.session.set_language(language);
+                }
                 // 新開的程式從開始時的中英模式起（#160）：引擎已在執行就先問，中／英指示一開始就對；不為此啟動引擎。
                 st.session.learn_mode(false);
                 let english = st.session.english();

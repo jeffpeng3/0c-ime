@@ -6,32 +6,115 @@ import (
 	"strings"
 )
 
-// inputTip 是靈犀注音在 Windows 語言清單裡的識別：語言（zh-TW）、TSF 的 CLSID 與語言 profile，
-// 與 platforms/windows/tsf/src/guids.rs 的 LANGID、CLSID_ZUIN、GUID_PROFILE 相同。
-const inputTip = "0404:{138C35D0-7F08-4CEF-BA90-C34C16301528}{EF62F743-9855-4C94-A658-1F0F98B7B840}"
+// 靈犀在 Windows 語言清單裡的識別：語言（zh-TW／ja-JP）、TSF 的 CLSID 與語言 profile，
+// 與 platforms/windows/tsf/src/guids.rs 的 LANGID、LANGID_JA、CLSID_ZUIN、GUID_PROFILE、GUID_PROFILE_JA 相同。
+const (
+	inputTipZh = "0404:{138C35D0-7F08-4CEF-BA90-C34C16301528}{EF62F743-9855-4C94-A658-1F0F98B7B840}"
+	inputTipJa = "0411:{138C35D0-7F08-4CEF-BA90-C34C16301528}{3D6A8B21-5C47-4F9E-B0D2-71E4A9C8F653}"
 
-// inputListMarker 記下已替這個帳號把靈犀注音加入過語言清單（#191）。
+	// inputTip 是注音的識別，保留給既有呼叫端與測試；新程式碼走 inputTips。
+	inputTip = inputTipZh
+)
+
+// inputTips 是安裝時加入使用者語言清單的兩個 profile，順序固定（zh-TW 在前）。
+var inputTips = []string{inputTipZh, inputTipJa}
+
+// inputListMarker 記下已替這個帳號把哪些語言加入過清單（#191、T28）。內容一行一個 tip，標記分語言：
+// 其中一個加入失敗時另一個仍然記住，下一次只重試缺的那一個。
 func inputListMarker(base string) string { return filepath.Join(base, "update", "input-list") }
 
-// listInputMethodOnce 第一次安裝（或從還沒有這一步的舊版更新）時把靈犀注音加入這個帳號的輸入法清單，
-// 之後不再加：使用者自己從清單移除的，更新不會再放回去。add 失敗時不留記號，下次安裝或更新再試。
-// 先看記號再查身分（owns，見 ownsDesktop）：登入工作與每日檢查每次都會走到這裡，已加入過的帳號不必查 token 與帳號名稱
-// （網域電腦連不到網域控制站時查帳號可能要等很久，會拖慢引擎啟動）。owns 為 false 時不加入、不留記號。
-func listInputMethodOnce(base string, owns func() bool, add func() error) error {
+// readInputListMarker 讀回已記錄的 tip；檔案不存在時回傳空集合。
+func readInputListMarker(base string) (map[string]bool, error) {
+	recorded := map[string]bool{}
+	b, err := os.ReadFile(inputListMarker(base))
+	if os.IsNotExist(err) {
+		return recorded, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if tip := strings.TrimSpace(line); tip != "" {
+			recorded[tip] = true
+		}
+	}
+	return recorded, nil
+}
+
+// writeInputListMarker 依 inputTips 的固定順序重寫記號，內容穩定、方便測試與排查。
+func writeInputListMarker(base string, recorded map[string]bool) error {
 	marker := inputListMarker(base)
-	if _, err := os.Stat(marker); err == nil {
+	var lines []string
+	for _, tip := range inputTips {
+		if recorded[tip] {
+			lines = append(lines, tip)
+		}
+	}
+	if len(lines) == 0 {
+		if err := os.Remove(marker); err != nil && !os.IsNotExist(err) {
+			return err
+		}
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(marker), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(marker, []byte(strings.Join(lines, "\n")+"\n"), 0o600)
+}
+
+// listInputMethodOnce 第一次安裝（或從還沒有這一步的舊版更新）時把兩個語言加入這個帳號的輸入法清單，
+// 之後不再加：使用者自己從清單移除的，更新不會再放回去。add 失敗的語言不留記號，下次安裝或更新只重試它。
+// 先看記號再查身分（owns，見 ownsDesktop）：登入工作與每日檢查每次都會走到這裡，已加入過的帳號不必查 token 與
+// 帳號名稱（網域電腦連不到網域控制站時查帳號可能要等很久，會拖慢引擎啟動）。owns 為 false 時不加入、不留記號。
+func listInputMethodOnce(base string, owns func() bool, add func(tip string) error) error {
+	recorded, err := readInputListMarker(base)
+	if err != nil {
+		return err
+	}
+	var missing []string
+	for _, tip := range inputTips {
+		if !recorded[tip] {
+			missing = append(missing, tip)
+		}
+	}
+	if len(missing) == 0 {
 		return nil
 	}
 	if !owns() {
 		return nil
 	}
-	if err := add(); err != nil {
+	for _, tip := range missing {
+		if err := add(tip); err != nil {
+			return err
+		}
+		recorded[tip] = true
+		// 每加入一個就寫一次：另一個失敗時，已加入的不用重做。
+		if err := writeInputListMarker(base, recorded); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// forgetInputListTips 從記號移除指定的語言（回復到不支援它們的舊版時用）；其他語言保留。
+func forgetInputListTips(base string, tips ...string) error {
+	recorded, err := readInputListMarker(base)
+	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(marker), 0o700); err != nil {
-		return err
+	for _, tip := range tips {
+		delete(recorded, tip)
 	}
-	return os.WriteFile(marker, []byte(inputTip+"\n"), 0o600)
+	return writeInputListMarker(base, recorded)
+}
+
+// clearInputListMarker 在解除安裝時清掉記號，重新安裝才會再次加入兩個語言。
+func clearInputListMarker(base string) error {
+	err := os.Remove(inputListMarker(base))
+	if os.IsNotExist(err) {
+		return nil
+	}
+	return err
 }
 
 // account 是一個 Windows 帳號：SID 與「網域\帳號」名稱，查不到的留空字串。

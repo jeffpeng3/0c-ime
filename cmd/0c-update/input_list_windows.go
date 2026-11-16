@@ -30,7 +30,7 @@ func listInputMethod(base string) {
 		return
 	}
 	if err := listInputMethodOnce(base, listsOwnDesktop, addInputMethod); err != nil {
-		fmt.Fprintln(os.Stderr, "0c-update: 未能把靈犀注音加入輸入法清單（可在 Windows 語言設定的「中文（台灣）」新增「靈犀注音」鍵盤）：", err)
+		fmt.Fprintln(os.Stderr, "0c-update: 未能把靈犀注音與靈犀日本語加入輸入法清單（可在 Windows 語言設定新增對應鍵盤）：", err)
 	}
 }
 
@@ -173,20 +173,63 @@ func sessionProcessSID(session, pid uint32) string {
 	return ""
 }
 
-// addInputMethod 以 input.dll 的 InstallLayoutOrTip 把靈犀注音加入目前帳號的語言清單並啟用（小狼毫的安裝程式也這樣做）。
-// 旗標 0：不帶 ILOT_DEFPROFILE，不改預設輸入法，排在「中文（台灣）」原有的鍵盤後面；清單沒有中文（台灣）時一併加入這個語言，
-// 原有的語言與顯示語言不變。已在清單裡時不變動。
-func addInputMethod() error {
+// addInputMethod 以 input.dll 的 InstallLayoutOrTip 把一個靈犀 profile 加入目前帳號的語言清單並啟用
+// （小狼毫與 Mozc 的安裝程式也這樣做）。旗標 0：不帶 ILOT_DEFPROFILE，不改預設輸入法，排在該語言原有的鍵盤後面；
+// 清單沒有這個語言時一併加入這個語言，原有的語言與顯示語言不變。已在清單裡時不變動。
+func addInputMethod(tip string) error {
 	if err := procInstallLayoutOrTip.Find(); err != nil {
 		return err
 	}
-	tip, err := windows.UTF16PtrFromString(inputTip)
+	value, err := windows.UTF16PtrFromString(tip)
 	if err != nil {
 		return err
 	}
-	ok, _, callErr := procInstallLayoutOrTip.Call(uintptr(unsafe.Pointer(tip)), 0)
+	ok, _, callErr := procInstallLayoutOrTip.Call(uintptr(unsafe.Pointer(value)), 0)
 	if ok == 0 {
-		return fmt.Errorf("InstallLayoutOrTip 失敗：%v", callErr)
+		return fmt.Errorf("InstallLayoutOrTip(%s) 失敗：%v", tip, callErr)
 	}
 	return nil
+}
+
+// ILOT_UNINSTALL：InstallLayoutOrTip 的移除旗標（input.dll 沒有公開標頭，值與 Mozc 的 input_dll.h 相同）。
+const ilotUninstall = 0x00000001
+
+// removeInputMethod 把一個 profile 從目前帳號的語言清單移除。使用者已自己移除或項目本來就不存在時不算錯。
+func removeInputMethod(tip string) error {
+	if err := procInstallLayoutOrTip.Find(); err != nil {
+		return err
+	}
+	value, err := windows.UTF16PtrFromString(tip)
+	if err != nil {
+		return err
+	}
+	ok, _, callErr := procInstallLayoutOrTip.Call(uintptr(unsafe.Pointer(value)), ilotUninstall)
+	if ok == 0 {
+		return fmt.Errorf("InstallLayoutOrTip(%s, ILOT_UNINSTALL) 失敗：%v", tip, callErr)
+	}
+	return nil
+}
+
+// removeInputMethods 在解除安裝時移除兩個 profile，並清掉記號；重新安裝才會再次加入。
+// 失敗只提示：解除安裝仍要完成，使用者也可以在 Windows 語言設定自行移除。
+func removeInputMethods() {
+	for _, tip := range inputTips {
+		if err := removeInputMethod(tip); err != nil {
+			fmt.Fprintln(os.Stderr, "0c-update: 未能從輸入法清單移除靈犀：", err)
+		}
+	}
+	if err := clearInputListMarker(basePath()); err != nil {
+		fmt.Fprintln(os.Stderr, "0c-update: 未能清除輸入法清單記號：", err)
+	}
+}
+
+// removeInputMethodJa 在回復到舊版時只移除日文項目：舊版沒有 ja-JP profile，留著會切到不存在的語言。
+// 注音項目與記號保留，舊版仍可切換。
+func removeInputMethodJa() {
+	if err := removeInputMethod(inputTipJa); err != nil {
+		fmt.Fprintln(os.Stderr, "0c-update: 未能從輸入法清單移除靈犀日本語：", err)
+	}
+	if err := forgetInputListTips(basePath(), inputTipJa); err != nil {
+		fmt.Fprintln(os.Stderr, "0c-update: 未能更新輸入法清單記號：", err)
+	}
 }

@@ -551,8 +551,11 @@ func notifyWithAction(_ context.Context, n autoupdate.Notice) (string, error) {
 func setupInputMethod(string) error  { return nil }
 func inputSourcePending(string) bool { return false }
 
-// retryInputMethod：此平台登入時補做就是 addInputMethod，不分是不是背景排程（macOS 見 auto_darwin.go）。
-func retryInputMethod(bool) error { return addInputMethod() }
+// retryInputMethod：此平台登入時補做缺的語言，不分是不是背景排程（macOS 見 auto_darwin.go）。
+// 標記分語言，已加入過的（包含使用者自己移除的）不再放回。
+func retryInputMethod(bool) error {
+	return listInputMethodOnce(basePath(), listsOwnDesktop, addInputMethod)
+}
 
 // openScheduleSettings：只有 macOS 的排程可能在系統設定被關閉。
 func openScheduleSettings() error {
