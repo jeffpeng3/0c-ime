@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/0c-biggo/0c-ime/internal/compile"
 	"github.com/0c-biggo/0c-ime/internal/datadir"
@@ -42,7 +43,25 @@ func main() {
 	flag.StringVar(&o.Exclude, "exclude", o.Exclude, "排除的來源 ID（逗號分隔），供消融使用")
 	flag.StringVar(&o.Boost, "boost", o.Boost, "沒有詞頻的詞依來源給虛擬次數，如 moi-places=5")
 	seal := flag.String("seal", "", "只混淆既有資料包目錄中的字典檔（打包時使用），不編譯")
+	// 日文資料包與注音共用來源帳本與 -public 政策，但編譯流程分開。
+	lang := flag.String("lang", "zh", "資料包語言：zh（注音，預設）或 ja（日文）")
+	jaData := flag.String("ja-data", "", "日文來源目錄；空白為 <data>/ja")
+	jaConj := flag.Bool("ja-conjugate", false, "由辭書形展開日文活用形")
+	jaCostScale := flag.Float64("ja-mozc-scale", 1.0/1000.0, "Mozc 詞成本換算成 0c 相對成本的係數")
 	flag.Parse()
+
+	// 沒有指定 -out 時，日文包寫到 build/ja，避免覆蓋注音資料包。
+	if *lang == "ja" {
+		explicitOut := false
+		flag.Visit(func(f *flag.Flag) {
+			if f.Name == "out" {
+				explicitOut = true
+			}
+		})
+		if !explicitOut {
+			*out = "build/ja"
+		}
+	}
 
 	if *seal != "" {
 		if err := datadir.SealDir(*seal); err != nil {
@@ -53,6 +72,42 @@ func main() {
 			fmt.Fprintln(os.Stderr, "0c-compile: 混淆後無法載入：", err)
 			os.Exit(1)
 		}
+		return
+	}
+
+	if *lang != "zh" && *lang != "ja" {
+		fmt.Fprintf(os.Stderr, "0c-compile: 不支援的語言 %q（可用 zh、ja）\n", *lang)
+		os.Exit(2)
+	}
+	if *lang == "ja" {
+		dir := *jaData
+		if dir == "" {
+			dir = filepath.Join(*src, "ja")
+		}
+		d, errs, err := compile.LoadJAWithMozcScale(dir, *src, *jaCostScale)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "0c-compile:", err)
+			os.Exit(1)
+		}
+		jo := compile.DefaultJAOptions()
+		jo.Public = o.Public
+		jo.ExpandConjugations = *jaConj
+		jo.MozcCostScale = *jaCostScale
+		res := compile.BuildJA(d, jo)
+		res.Errors = append(errs, res.Errors...)
+		fmt.Print(res.Report.String())
+		if len(res.Errors) > 0 {
+			fmt.Fprintf(os.Stderr, "\n%d 個錯誤，不出版：\n", len(res.Errors))
+			for _, e := range res.Errors {
+				fmt.Fprintln(os.Stderr, "  "+e.Error())
+			}
+			os.Exit(1)
+		}
+		if err := res.Write(*out, filepath.Join(*src, "sources", "licenses"), jo); err != nil {
+			fmt.Fprintln(os.Stderr, "0c-compile:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("\n已寫入 %s\n", *out)
 		return
 	}
 

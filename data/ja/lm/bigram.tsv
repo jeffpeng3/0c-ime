@@ -1,0 +1,17 @@
+# 日文 bigram（curated）。左詞	右詞	P(右|左)	來源
+明日	届く	0.4	curated
+味	を	0.7	curated
+を	しめる	0.5	curated
+店	に	0.6	curated
+に	行く	0.5	curated
+目	が	0.7	curated
+が	離す	0.4	curated
+私	に	0.5	curated
+幸せ	が	0.6	curated
+問題	が	0.6	curated
+この	店	0.6	curated
+今日	は	0.7	curated
+とても	高い	0.6	curated
+日本語	を	0.7	curated
+確認する	ので	0.5	curated
+友達	と	0.6	curated
