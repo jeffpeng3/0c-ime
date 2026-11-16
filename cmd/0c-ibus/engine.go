@@ -44,6 +44,13 @@ const (
 	keyShiftR      = 0xffe2
 	keyCapsLock    = 0xffe5
 	keyDelete      = 0xffff
+	keyMuhenkan    = 0xff22 // 無変換
+	keyHenkan      = 0xff23 // 変換
+	keyF6          = 0xffc3
+	keyF7          = 0xffc4
+	keyF8          = 0xffc5
+	keyF9          = 0xffc6
+	keyF10         = 0xffc7
 	keyF11         = 0xffc8
 	keyISOLeftTab  = 0xfe20
 	keySpace       = 0x20
@@ -112,6 +119,30 @@ func toKey(keyval, state uint32) string {
 		return proto.KeypadPrefix + string(c)
 	}
 	return ""
+}
+
+// japaneseKey 把實體日文鍵轉成協定的具名鍵（T15）：変換、無変換與 F6 到 F10。
+// 不是這些鍵時回傳空字串，呼叫端照一般按鍵處理。
+func japaneseKey(keyval uint32) string {
+	switch keyval {
+	case keyHenkan:
+		return proto.KeyConvert
+	case keyMuhenkan:
+		return proto.KeyNonConvert
+	}
+	if keyval >= keyF6 && keyval <= keyF10 {
+		return "F" + strconv.Itoa(int(keyval-keyF6)+6)
+	}
+	return ""
+}
+
+// japaneseKeyFor 是送給核心的日文鍵：只有日文模式、引擎回報 japanese 與 convert_keys 才轉發，
+// 而且只處理沒有 Ctrl／Alt／Super 的按下（放開照舊交給應用程式）。舊引擎或注音／英文模式回傳空字串。
+func japaneseKeyFor(keyval, state uint32, japanese, convertKeys bool) string {
+	if !japanese || !convertKeys || state&modifiedMask != 0 || state&maskRelease != 0 {
+		return ""
+	}
+	return japaneseKey(keyval)
 }
 
 func styleKey(key string, shift bool, supported func() bool) string {
@@ -212,6 +243,10 @@ func preeditAttrs(style string, start, end uint32) []attribute {
 			{attrBackground, markedBackground, start, end}, {attrForeground, markedForeground, start, end}}
 	case proto.StyleReading: // 按空白會組成中文的數字（#162）：灰字加底線
 		return []attribute{{attrUnderline, underlineSingle, start, end}, {attrForeground, readingForeground, start, end}}
+	case proto.StyleClause: // 日文変換的一般文節（T15）：細底線
+		return []attribute{{attrUnderline, underlineSingle, start, end}}
+	case proto.StyleClauseActive: // 目前文節（T15）：粗底線，和一般文節分得出來
+		return []attribute{{attrUnderline, underlineDouble, start, end}}
 	}
 	return []attribute{{attrUnderline, underlineSingle, start, end}}
 }
@@ -257,6 +292,8 @@ type engine struct {
 	tableAt   int
 	ids       []int // 目前候選頁的候選 ID
 	english   bool
+	japanese  bool   // 快照是日文模式，而且引擎回報 japanese 能力（T15）
+	method    string // 日文輸入方式（input_method："romaji"、"kana"…）
 }
 
 func (e *engine) private() bool {
@@ -328,9 +365,25 @@ func (e *engine) processKey(keyval, keycode, state uint32) bool {
 	if release {
 		return false
 	}
+	// 日文實體鍵（変換／無変換、F6–F10，T15）：只有日文模式、引擎回報 japanese 與 convert_keys 才送；
+	// 舊引擎、注音／英文模式照舊交給應用程式。先看按鍵本身再問能力，一般按鍵不查引擎。
+	if e.session.japanese {
+		if k := japaneseKeyFor(keyval, state, true, e.session.convertKeys()); k != "" {
+			e.syncContext()
+			snap := e.session.key(k)
+			if snap.reconnected || !snap.Handled || !snap.ok {
+				e.context.clear()
+			}
+			if !snap.ok {
+				return false
+			}
+			e.render(snap)
+			return snap.Handled
+		}
+	}
 	// 用快捷鍵切換簡體字（#192）：設定開著（引擎回報 simplified_hotkey）時吃掉這個鍵，跟選單的「輸出簡體字」一樣即時切換：
-	// 組字不動、提示列顯示「已切換為…」、注／英指示跟著變，之後送出的字照新設定。設定關閉或舊引擎時照一般快捷鍵交給應用程式。
-	if simplifiedHotkey(keyval, state) && e.session.simplifiedHotkey() {
+	// 組字不動、提示列顯示「已切換為…」、注／英指示跟著變，之後送出的字照新設定。設定關閉、日文模式或舊引擎時照一般快捷鍵交給應用程式。
+	if simplifiedHotkey(keyval, state) && !e.session.japanese && e.session.simplifiedHotkey() {
 		e.session.toggled = false
 		e.toggleSimplified()
 		return true
@@ -344,7 +397,7 @@ func (e *engine) processKey(keyval, keycode, state uint32) bool {
 	}
 	lower := e.session.english && state&maskLock != 0 && e.session.styleCapsLower()
 	keyval = foldStyleCaps(keyval, state, e.session.english, lower)
-	if !e.session.english {
+	if !e.session.english && !e.session.japanese {
 		// Ctrl＋標點打全形（#168）：只在中文模式、引擎回報 ctrl_punctuation（認得鍵名而且設定開著）時送；
 		// 引擎沒處理（設定剛關掉、模式不同步）就照下面的一般快捷鍵先送出組字再交給應用程式。
 		if k := ctrlPunctKey(keyval, state); k != "" && e.session.ctrlPunct(k) {
@@ -358,8 +411,8 @@ func (e *engine) processKey(keyval, keycode, state uint32) bool {
 	}
 	key := toKey(keyval, state)
 	key = styleKey(key, state&maskShift != 0, e.session.styleShiftSpace)
-	// 按著 Shift 的 ←→、Delete、Backspace：引擎回報支援時送 0.2.0 的新鍵名（#123）。
-	key = vocabKey(key, state&maskShift != 0, e.session.vocabKeys)
+	// 按著 Shift 的 ←→、Delete、Backspace：引擎回報支援時送 0.2.0 的新鍵名（#123）；日文模式沿用原本的鍵。
+	key = vocabKey(key, state&maskShift != 0, func() bool { return !e.session.japanese && e.session.vocabKeys() })
 	if key == "" {
 		e.session.toggled = false // 交還應用程式的快捷鍵也算切換之後的操作（#90）
 		boundary := ""
@@ -500,6 +553,20 @@ func equalStrings(a, b []string) bool {
 	return true
 }
 
+// isClauseSegment 回報這一段是不是日文文節樣式（T15）。
+func isClauseSegment(seg proto.Segment) bool {
+	return seg.Style == proto.StyleClause || seg.Style == proto.StyleClauseActive
+}
+
+// clauseTitle 是目前文節的說明（「文節 2/3」）；沒有文節資訊時為空字串。核心給的文節索引從 0 起算，顯示時加一。
+func clauseTitle(snap snapshot) string {
+	if snap.ClauseCount <= 0 {
+		return ""
+	}
+	index := min(max(snap.ClauseIndex, 0)+1, snap.ClauseCount)
+	return "文節 " + strconv.Itoa(index) + "/" + strconv.Itoa(snap.ClauseCount)
+}
+
 func (e *engine) render(snap snapshot) {
 	if !snap.ok {
 		return
@@ -509,6 +576,16 @@ func (e *engine) render(snap snapshot) {
 	}
 	text := snap.Text()
 	cursor := uint32(min(max(snap.Cursor.Rune, 0), utf8.RuneCountInString(text)))
+	// 文節樣式只畫在引擎回報 clause_display 時（T15）；舊引擎送來相同的樣式名稱時照一般組字畫。
+	segs := snap.Preedit
+	if !e.session.clauseDisplay() && slices.ContainsFunc(segs, isClauseSegment) {
+		segs = slices.Clone(segs)
+		for i := range segs {
+			if isClauseSegment(segs[i]) {
+				segs[i].Style = proto.StyleNormal
+			}
+		}
+	}
 	downgraded := false // 提交前把組字模式降成 CLEAR；下面的重畫一定要送，才會回到 COMMIT
 	if snap.Commit != "" {
 		// 提交順序：組字模式降成 CLEAR（文字不變）→ CommitText → 下面的重畫（組字變空或剩下的組字，模式回 COMMIT）。
@@ -531,9 +608,9 @@ func (e *engine) render(snap snapshot) {
 		e.context.committed(before, snap.Commit, snap.ContextID)
 		e.emit("CommitText", newText(snap.Commit))
 	}
-	if downgraded || text != e.preedit || cursor != e.preCursor || !slices.Equal(snap.Preedit, e.preSegs) || snap.Bell != e.preBell {
-		e.emit("UpdatePreeditText", newText(text, preeditAttrList(snap.Preedit, snap.Bell)...), cursor, text != "", uint32(preeditCommit))
-		e.preedit, e.preCursor, e.preSegs, e.preBell = text, cursor, slices.Clone(snap.Preedit), snap.Bell
+	if downgraded || text != e.preedit || cursor != e.preCursor || !slices.Equal(segs, e.preSegs) || snap.Bell != e.preBell {
+		e.emit("UpdatePreeditText", newText(text, preeditAttrList(segs, snap.Bell)...), cursor, text != "", uint32(preeditCommit))
+		e.preedit, e.preCursor, e.preSegs, e.preBell = text, cursor, slices.Clone(segs), snap.Bell
 	}
 	// 通知（例如候選窗的 Shift＋Delete 之後「已從詞庫刪除：…」）是使用者剛做的動作的回饋，只出現在這一次快照，
 	// 優先於候選標題；標題在下一個按鍵就回來。兩者接在同一列會太長，GNOME 的提示列也不換行。
@@ -546,6 +623,11 @@ func (e *engine) render(snap snapshot) {
 	} else if snap.Suggestion != "" { // Tab 補全：在提示列顯示，不塞進應用程式的組字區
 		rest = "⇥ " + snap.Suggestion
 	}
+	// 日文変換中的文節位置（T15）：有候選時接在候選標題後面，沒有候選時就是提示列。
+	clause := ""
+	if e.session.clauseDisplay() {
+		clause = clauseTitle(snap)
+	}
 	var items, labels []string
 	var ids []int
 	highlight := 0
@@ -553,6 +635,7 @@ func (e *engine) render(snap snapshot) {
 		if snap.Candidates.Title != "" {
 			rest = snap.Candidates.Title
 		}
+		rest = joinAux(rest, clause)
 		if snap.Candidates.Pages > 1 {
 			page = strconv.Itoa(snap.Candidates.Page+1) + "/" + strconv.Itoa(snap.Candidates.Pages)
 		}
@@ -566,6 +649,8 @@ func (e *engine) render(snap snapshot) {
 			labels = append(labels, candidateLabel(it, i, snap.english()))
 		}
 		highlight = snap.Candidates.Highlight
+	} else if clause != "" {
+		rest = joinAux(rest, clause)
 	}
 	e.ids = ids
 	e.auxRest = joinAux(rest, page)
@@ -575,7 +660,7 @@ func (e *engine) render(snap snapshot) {
 	}
 	e.setAux(aux)
 	e.setTable(items, labels, highlight)
-	e.updateMode(snap.english())
+	e.updateMode(snap)
 	// 「輸出簡體字」在設定程式或別的外殼切換後（#169），下一個快照就跟上；只信回報即時切換的引擎（舊引擎沒有這一項）。
 	if e.session.simplifiedLive() {
 		e.svc.setSimplified(snap.OutputSimplified, true)
@@ -632,17 +717,39 @@ func candidateLabel(it proto.CandidateItem, i int, english bool) string {
 	return strconv.Itoa((i + 1) % 10)
 }
 
+// japaneseIndicator 是日文模式的指示字與輸入方式說明（T15）。未知或舊引擎沒送 input_method 時當成羅馬字。
+func japaneseIndicator(method string) (symbol, label string) {
+	switch method {
+	case "kana", "katakana":
+		return "カ", "かな"
+	case "half_width_kana", "halfwidth_kana":
+		return "ｶ", "半角カナ"
+	case "full_width_latin", "fullwidth_latin":
+		return "Ａ", "全角英數"
+	case "half_width_latin", "halfwidth_latin":
+		return "A", "半角英數"
+	default:
+		return "あ", "羅馬字"
+	}
+}
+
 func (e *engine) modeProperty() property {
-	// 說明目前的中英切換鍵（toggle-key，#117）；設為不用時只寫模式，點這一項切換。
-	hint := map[string]string{"": "右 Shift", "right": "右 Shift", "both": "Shift", "left": "左 Shift"}[e.session.toggleKey()]
 	p := property{key: propInputMode, typ: propNormal, sensitive: true, symbol: "注", label: "注音"}
-	if e.english {
+	switch {
+	case e.japanese:
+		// 日文模式：指示字照輸入方式顯示「あ」或「カ」，一看就知道打的是かな（T15）。
+		symbol, method := japaneseIndicator(e.method)
+		p.symbol, p.label = symbol, "日文・"+method
+		return p
+	case e.english:
 		p.symbol, p.label = "英", "英文"
-	} else if e.svc.simplified {
+	case e.svc.simplified:
 		// #169：送出時轉成簡體，誤開時從頂列看得出來。GNOME Shell 的頂列只採用不到 3 個字的 symbol（keyboard.js
 		// 的 _propertyUpdated），「注·簡」會被丟掉、照舊顯示「注」，所以用兩個字。
 		p.symbol, p.label = "注簡", "注音・簡體輸出"
 	}
+	// 說明目前的中英切換鍵（toggle-key，#117）；設為不用時只寫模式，點這一項切換。
+	hint := map[string]string{"": "右 Shift", "right": "右 Shift", "both": "Shift", "left": "左 Shift"}[e.session.toggleKey()]
 	if hint != "" {
 		other := "英文"
 		if e.english {
@@ -653,11 +760,19 @@ func (e *engine) modeProperty() property {
 	return p
 }
 
-func (e *engine) updateMode(english bool) {
-	if english == e.english {
+func (e *engine) updateMode(snap snapshot) {
+	japanese := snap.japanese() && e.session.japaneseSupported()
+	method := snap.InputMethod
+	if japanese && method == "" {
+		method = "romaji"
+	}
+	if !japanese {
+		method = ""
+	}
+	if snap.english() == e.english && japanese == e.japanese && method == e.method {
 		return
 	}
-	e.english = english
+	e.english, e.japanese, e.method = snap.english(), japanese, method
 	if e.svc.focused == e {
 		e.emit("UpdateProperty", e.modeProperty().variant())
 	}

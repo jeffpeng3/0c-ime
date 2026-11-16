@@ -141,6 +141,9 @@ type snapshot struct {
 
 func (s snapshot) english() bool { return s.Mode == proto.ModeEnglish }
 
+// japanese 回報快照是不是日文模式（T15）。引擎沒有回報 japanese 能力時由呼叫端再確認。
+func (s snapshot) japanese() bool { return s.Mode == proto.ModeJapanese }
+
 func (s snapshot) candidates() []proto.CandidateItem {
 	if s.Candidates == nil {
 		return nil
@@ -177,6 +180,7 @@ type session struct {
 	recovered      *proto.Snapshot // 重播結果與斷線前不同，等使用者確認
 
 	private, english, englishPending bool
+	japanese                         bool // 快照是日文模式而且引擎回報 japanese（T15）
 	capsLock                         bool // 引擎記得的 Caps Lock 狀態（快照的 caps_lock，#173）
 }
 
@@ -287,6 +291,24 @@ func (s *session) capsLockEnglish(spawn bool) bool {
 	return s.client.connect() && s.ensureOpen() && s.info["caps_lock_english"] == "true"
 }
 
+// japaneseSupported 回報引擎是否支援日文（open／health 的 japanese，T15）。只看目前這個 session 開啟時的回覆，
+// 不連線；還沒開 session 或連線已換過時為 false。舊引擎沒有這一項，行為照舊。
+func (s *session) japaneseSupported() bool {
+	return s.id != 0 && s.generation == s.client.generation && proto.Capability(s.info, proto.CapJapanese)
+}
+
+// convertKeys 回報引擎是否認得変換／無変換與 F6 到 F10（japanese 與 convert_keys，T15）。呼叫端只在日文模式時問；
+// 連線斷了或引擎重啟過就先重連、重開 session 再拿新的值。
+func (s *session) convertKeys() bool {
+	return s.client.connect() && s.ensureOpen() && proto.Capability(s.info, proto.CapJapanese) && proto.Capability(s.info, proto.CapConvertKeys)
+}
+
+// clauseDisplay 回報引擎是否回報文節樣式與目前文節（clause_display，T15）。沒有這一項時文節樣式照一般組字畫，
+// 也不顯示「文節 N/M」；不連線，只看目前 session 的回覆。
+func (s *session) clauseDisplay() bool {
+	return s.japaneseSupported() && proto.Capability(s.info, proto.CapClauseDisplay)
+}
+
 // simplifiedLive 回報引擎能即時切換「輸出簡體字」（open 回覆的 output_simplified_live，#169）。不連線，只看目前這個
 // session 開啟時的回覆；還沒開 session 或連線已換過時為 false。
 func (s *session) simplifiedLive() bool {
@@ -340,6 +362,10 @@ func (s *session) ensureOpen() bool {
 		return false
 	}
 	s.id, s.generation, s.info = reply.Session, s.client.generation, reply.Info
+	// 引擎換成不支援日文的舊版時，外殼不再送日文按鍵、也不顯示日文（T15）。
+	if !proto.Capability(s.info, proto.CapJapanese) {
+		s.japanese = false
+	}
 	// 原生候選窗支援方向提示但沒有格狀版面；保留明確橫排，其他格狀設定回直排。
 	if _, ok := reply.Info["candidate_layout"]; ok && reply.Info["candidate_layout"] != "horizontal" {
 		if _, ok := s.do(proto.Request{Type: proto.Display, Columns: 1}); !ok {
@@ -487,6 +513,7 @@ func (s *session) handle(req proto.Request) snapshot {
 			snap.Notices = []string{recoveryNotice}
 			s.view, s.shown = viewOf(snap), snap
 			s.english, s.englishPending, s.capsLock = snap.Mode == proto.ModeEnglish, snap.EnglishPending, snap.CapsLock
+			s.japanese = snap.Mode == proto.ModeJapanese && proto.Capability(s.info, proto.CapJapanese)
 			return snapshot{Snapshot: snap, ok: true, reconnected: true}
 		}
 		if req.Type == proto.Context && before != s.client.generation {
@@ -502,6 +529,7 @@ func (s *session) handle(req proto.Request) snapshot {
 		}
 		out := snapshot{Snapshot: *reply.Snapshot, ok: true, reconnected: before != s.client.generation}
 		s.english, s.englishPending, s.capsLock = out.english(), out.EnglishPending, out.CapsLock
+		s.japanese = out.japanese() && proto.Capability(s.info, proto.CapJapanese)
 		// 符號選單可以在空白組字區開啟，也必須重播才能保留選單與反白位置。
 		composing := len(out.Preedit) > 0 || len(out.candidates()) > 0
 		if out.Commit != "" || req.Type == proto.Cancel || !composing {
