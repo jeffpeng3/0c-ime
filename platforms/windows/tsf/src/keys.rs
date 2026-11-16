@@ -2,9 +2,9 @@
 //! 排列由核心解讀：只把可見的 ASCII 交給核心；具名鍵用協定名稱；帶 Ctrl／Alt 的組合鍵交還應用程式，
 //! 只有中文模式的 Ctrl＋標點（#168，見 [`ctrl_punct`]）例外。
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    GetAsyncKeyState, GetKeyState, GetKeyboardState, ToUnicode, VK_BACK, VK_CAPITAL, VK_CONTROL,
-    VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F1, VK_F10, VK_F11, VK_F12,
-    VK_HOME, VK_LCONTROL, VK_LEFT, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_MENU, VK_NEXT, VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RIGHT, VK_RMENU, VK_RSHIFT,
+    GetAsyncKeyState, GetKeyState, GetKeyboardState, ToUnicode, VK_BACK, VK_CAPITAL, VK_CONVERT, VK_CONTROL,
+    VK_DELETE, VK_DOWN, VK_END, VK_ESCAPE, VK_F1, VK_F10, VK_F11, VK_F12, VK_F6, VK_F7, VK_F8, VK_F9,
+    VK_HOME, VK_LCONTROL, VK_LEFT, VK_LMENU, VK_LSHIFT, VK_LWIN, VK_MENU, VK_NEXT, VK_NONCONVERT, VK_PRIOR, VK_RCONTROL, VK_RETURN, VK_RIGHT, VK_RMENU, VK_RSHIFT,
     VK_RWIN, VK_SHIFT, VK_SPACE, VK_TAB, VK_UP,
 };
 
@@ -87,6 +87,23 @@ pub fn named(vk: u32) -> Option<&'static str> {
         x if x == VK_HOME.0 => "Home",
         x if x == VK_END.0 => "End",
         x if x == VK_SPACE.0 => " ",
+        _ => return None,
+    })
+}
+
+/// 日文具名鍵（T15）：変換、無変換與 F6 到 F10（ひらがな、カタカナ、半角カナ、全角英数、半角英数）。
+/// 只有外殼確認引擎回報 japanese／convert_keys 後才送；舊引擎照舊交給應用程式。
+/// 回傳的鍵名就是協定名稱，核心不假設實體鍵碼。
+pub fn japanese_named(vk: u32) -> Option<&'static str> {
+    let v = vk as u16;
+    Some(match v {
+        x if x == VK_CONVERT.0 => "Convert",
+        x if x == VK_NONCONVERT.0 => "NonConvert",
+        x if x == VK_F6.0 => "F6",
+        x if x == VK_F7.0 => "F7",
+        x if x == VK_F8.0 => "F8",
+        x if x == VK_F9.0 => "F9",
+        x if x == VK_F10.0 => "F10",
         _ => return None,
     })
 }
@@ -987,6 +1004,29 @@ mod tests {
         assert_eq!(printable_with(0xbc, lp(0x33), &mut state(true, false, true), false).as_deref(), Some(","));
         assert_eq!(printable_with(0x31, lp(0x02), &mut state(true, true, true), false).as_deref(), Some("!"));
         assert_eq!(printable_with(0xbf, lp(0x35), &mut state(false, true, true), false).as_deref(), Some("?"));
+    }
+
+    #[test]
+    fn japanese_keys_use_the_contract_names() {
+        // T15：変換／無変換與 F6–F10 送核心認得的具名鍵，不是自行發明的鍵碼。
+        for (vk, want) in [
+            (VK_CONVERT.0, "Convert"),
+            (VK_NONCONVERT.0, "NonConvert"),
+            (VK_F6.0, "F6"),
+            (VK_F7.0, "F7"),
+            (VK_F8.0, "F8"),
+            (VK_F9.0, "F9"),
+            (VK_F10.0, "F10"),
+        ] {
+            assert_eq!(japanese_named(vk as u32), Some(want), "{vk:#x}");
+        }
+        // 其他鍵（含 F5、F11、英數）不是日文鍵，舊引擎照舊交給應用程式。
+        for vk in [VK_F1.0, VK_F5.0, VK_F11.0, 0x41, VK_SPACE.0, VK_RETURN.0] {
+            assert_eq!(japanese_named(vk as u32), None, "{vk:#x}");
+        }
+        // 注音的具名鍵與日文鍵不重疊：日文鍵不會被當成 Enter、空白或方向鍵。
+        assert_eq!(named(VK_CONVERT.0 as u32), None);
+        assert_eq!(named(VK_F6.0 as u32), None);
     }
 
     #[test]

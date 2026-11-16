@@ -55,6 +55,16 @@ pub struct Snapshot {
     /// 這一鍵被擋下（bell，#300 打錯注音時提示）：按了聲調但讀音沒有字，注音停在組字區。外殼用 MessageBeep 提示；
     /// 只在擋下的那次快照出現。舊引擎沒有這一項。
     pub bell: bool,
+    /// 日文模式（T15；mode 為 "japanese"）。舊引擎不會送。
+    pub japanese: bool,
+    /// 快照的語言與輸入方式（T15 的 language、input_method）："ja" 與 "romaji"／"kana"。
+    pub language: String,
+    pub input_method: String,
+    /// 日文変換中（T15）。
+    pub converting: bool,
+    /// 目前文節與文節總數（T15，0 起算）；沒有変換時都是 0。
+    pub clause_index: i64,
+    pub clause_count: i64,
 }
 
 impl Snapshot {
@@ -108,6 +118,26 @@ impl Snapshot {
     pub fn marking(&self) -> bool {
         self.preedit.iter().any(|s| s.style == "marked")
     }
+
+    /// 日文変換中目前文節的說明（「文節 2/3」）；沒有文節資訊時為空字串。候選窗標題用它對應文節（T15）。
+    /// clause_index 由核心給 0 起算的值，顯示時加一；超出範圍的防禦只在核心送壞值時生效。
+    pub fn clause_title(&self) -> String {
+        if self.clause_count <= 0 {
+            return String::new();
+        }
+        let index = (self.clause_index.max(0) + 1).min(self.clause_count);
+        format!("文節 {index}/{}", self.clause_count)
+    }
+
+    /// 候選窗的標題：核心的標題，加上日文文節位置。沒有候選標題時只顯示文節，沒有文節時不變。
+    pub fn candidate_title(&self) -> String {
+        let clause = self.clause_title();
+        match (self.candidate_title.is_empty(), clause.is_empty()) {
+            (true, _) => clause,
+            (false, true) => self.candidate_title.clone(),
+            (false, false) => format!("{}　{clause}", self.candidate_title),
+        }
+    }
 }
 
 pub struct Session {
@@ -147,6 +177,14 @@ pub struct Session {
     // 最近一次快照的 caps_english（#173），換欄位清掉 english_state 後仍保留：重開 session 還原模式時，
     // Caps Lock 帶來的英文以 caps_lock 還原（關掉 Caps Lock 才回得到注音），不當成使用者切的英文。
     caps_english: bool,
+    // 目前的日文模式（T15）：快照的 mode 為 japanese。只在引擎回報 japanese 能力後才成立。
+    japanese: bool,
+    // 引擎在 health／open 回報的日文能力旗標（T15）：japanese、convert_keys、clause_display、live_conversion。
+    // 缺少該項代表不支援；舊引擎一律 false，日文按鍵與文節樣式照舊交給應用程式。
+    japanese_cap: bool,
+    convert_keys_cap: bool,
+    clause_display_cap: bool,
+    live_conversion_cap: bool,
     // 「輸出簡體字」（#169）：引擎能即時切換（health／open 的 output_simplified_live），以及引擎目前的值
     // （health／open 的 output_simplified、之後每個快照的 output_simplified）。輸入指示器的「简」與選單打勾看這兩項；
     // 跟著 session 物件（這個程式的 TSF 執行緒），換欄位也沿用。
@@ -188,9 +226,26 @@ fn restore_requests(
     out
 }
 
-/// health 回報的新 session 開始時的模式（#160 的 initial_mode；全部共用時是目前共用的模式）。舊引擎沒有這一項時為 None。
+/// health 回報的新 session 開始時的模式（#160 的 initial_mode；T15 加上 japanese）。舊引擎沒有這一項時為 None。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Mode {
+    Chinese,
+    English,
+    Japanese,
+}
+
+fn initial_mode(info: &Value) -> Option<Mode> {
+    match info["initial_mode"].as_str()? {
+        "english" => Some(Mode::English),
+        "japanese" => Some(Mode::Japanese),
+        "zhuyin" => Some(Mode::Chinese),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
 fn initial_english(info: &Value) -> Option<bool> {
-    info["initial_mode"].as_str().map(|m| m == "english")
+    initial_mode(info).map(|mode| mode == Mode::English)
 }
 
 impl Session {
@@ -227,6 +282,11 @@ impl Session {
             caps_lock_english: false,
             caps_generation: 0,
             caps_english: false,
+            japanese: false,
+            japanese_cap: false,
+            convert_keys_cap: false,
+            clause_display_cap: false,
+            live_conversion_cap: false,
             simplified_live: false,
             simplified: false,
             simplified_at: None,
@@ -242,6 +302,20 @@ impl Session {
         self.simplified = self.simplified_live && info["output_simplified"] == "true";
         self.simplified_at = Some(Instant::now());
         before != (self.simplified_live, self.simplified)
+    }
+
+    /// 從 health／open 的 info 記下日文能力旗標（T15）。沒有 japanese 時日文模式一併關掉：
+    /// 引擎重啟後換成舊版時，外殼不再送日文按鍵、也不顯示日文。
+    fn learn_capabilities(&mut self, info: &Value, generation: u32) {
+        self.caps_lock_english = info["caps_lock_english"] == "true";
+        self.japanese_cap = info["japanese"] == "true";
+        self.convert_keys_cap = info["convert_keys"] == "true";
+        self.clause_display_cap = info["clause_display"] == "true";
+        self.live_conversion_cap = info["live_conversion"] == "true";
+        self.caps_generation = generation;
+        if !self.japanese_cap {
+            self.japanese = false;
+        }
     }
 
     /// 「輸出簡體字」目前的值；引擎不能即時切換（舊引擎）或還沒問過時為 None，選單改看 0c-update 的狀態。
@@ -306,15 +380,58 @@ impl Session {
         };
         self.mode_known = true;
         self.shared = reply["info"]["mode_memory"] == "shared";
-        self.caps_lock_english = reply["info"]["caps_lock_english"] == "true";
-        self.caps_generation = generation;
+        self.learn_capabilities(&reply["info"], generation);
         let simplified = self.learn_simplified(&reply["info"]);
-        let before = self.english;
-        if let Some(english) = initial_english(&reply["info"]) {
-            self.english = english;
+        let before = (self.english, self.japanese);
+        if let Some(mode) = initial_mode(&reply["info"]) {
+            self.english = mode == Mode::English;
+            self.japanese = mode == Mode::Japanese;
             self.caps_english = false; // 模式照引擎的（共用模式或開始時的）；Caps Lock 由下一個按鍵重新同步（#173）
         }
-        before != self.english || simplified
+        before != (self.english, self.japanese) || simplified
+    }
+
+    /// 測試：設定日文模式與能力（不經引擎）。
+    #[cfg(test)]
+    pub(crate) fn set_japanese_for_test(&mut self, japanese: bool, convert_keys: bool) {
+        self.japanese_cap = true;
+        self.convert_keys_cap = convert_keys;
+        self.clause_display_cap = convert_keys;
+        self.japanese = japanese;
+    }
+
+    /// 目前的日文模式（T15）。引擎沒有回報 japanese 能力時一律 false，舊引擎的注音／英文行為不變。
+    pub fn japanese(&self) -> bool {
+        self.japanese && self.japanese_cap
+    }
+
+    /// 目前的輸入方式（快照的 input_method，#T15）；日文模式沒有這一項時當成羅馬字（"romaji"）。
+    pub fn input_method(&self) -> &str {
+        match self.english_state.input_method.as_str() {
+            "" if self.japanese() => "romaji",
+            method => method,
+        }
+    }
+
+    /// 引擎是否支援日文（health／open 的 japanese，#T15）。
+    pub fn japanese_supported(&self) -> bool {
+        self.japanese_cap
+    }
+
+    /// 引擎是否認得変換／無変換與 F6 到 F10（convert_keys，#T15）。沒有的話照舊交給應用程式。
+    pub fn convert_keys(&self) -> bool {
+        self.japanese_supported() && self.convert_keys_cap
+    }
+
+    /// 引擎是否回報文節樣式與目前文節（clause_display，#T15）。
+    pub fn clause_display(&self) -> bool {
+        self.japanese_supported() && self.clause_display_cap
+    }
+
+    /// 引擎是否回報ライブ変換（live_conversion，#T15）；外殼目前只記錄能力，不改變按鍵處理。
+    #[allow(dead_code)] // T31 的介面；外殼現在不因它改變按鍵或畫面。
+    pub fn live_conversion(&self) -> bool {
+        self.japanese_supported() && self.live_conversion_cap
     }
 
     /// 目前的 session 是否可以送 #123 的新鍵名（Shift＋←／→、Shift＋Delete／Backspace）。
@@ -379,8 +496,7 @@ impl Session {
             self.client.release();
         }
         if let Some(reply) = reply.filter(|r| r["ok"] == true) {
-            self.caps_lock_english = reply["info"]["caps_lock_english"] == "true";
-            self.caps_generation = generation;
+            self.learn_capabilities(&reply["info"], generation);
         }
     }
 
@@ -488,10 +604,12 @@ impl Session {
         self.generation = self.client.generation();
         self.vocab_keys = reply["info"]["vocab_keys"] == "true";
         self.shared = reply["info"]["mode_memory"] == "shared";
-        self.caps_lock_english = reply["info"]["caps_lock_english"] == "true";
-        self.caps_generation = self.generation;
+        self.learn_capabilities(&reply["info"], self.generation);
         self.learn_simplified(&reply["info"]);
         let start_english = reply["info"]["start_mode"] == "english";
+        if reply["info"]["start_mode"] == "japanese" && self.japanese_cap && !self.english {
+            self.japanese = true;
+        }
         self.pending_context = None; // 新 session 不認得舊代號
         if self.context_enabled {
             // 宣告外殼能確認文件位置；引擎依使用者設定決定是否採用。失敗只是不用前文。
@@ -607,6 +725,8 @@ impl Session {
             }
             self.english = s.english;
             self.caps_english = s.caps_english;
+            self.japanese = s.japanese && self.japanese_cap;
+            apply_clause_capability(&mut s, self.clause_display());
             if self.simplified_live {
                 self.simplified = s.output_simplified; // 設定程式或別的程式切換後，下一個快照就跟上（#169）
                 self.simplified_at = Some(Instant::now());
@@ -702,6 +822,21 @@ fn downgrade_vocab_key(request: &mut Value) {
     }
 }
 
+/// 引擎沒有回報 clause_display 時，文節樣式退回一般組字（舊外殼的畫法），也不提供文節標題。
+/// 有回報時原樣保留；核心送來的 clause／clause_active 只在這項能力開啟時才畫。
+fn apply_clause_capability(s: &mut Snapshot, clause_display: bool) {
+    if clause_display {
+        return;
+    }
+    for segment in &mut s.preedit {
+        if segment.style == "clause" || segment.style == "clause_active" {
+            segment.style = "normal".to_string();
+        }
+    }
+    s.clause_index = 0;
+    s.clause_count = 0;
+}
+
 fn parse(reply: &Value) -> Snapshot {
     let mut s = Snapshot::default();
     let Some(j) = reply.get("snapshot") else {
@@ -713,6 +848,12 @@ fn parse(reply: &Value) -> Snapshot {
     s.context_id = j["context_id"].as_u64().unwrap_or(0);
     s.suggestion = j["suggestion"].as_str().unwrap_or("").to_string();
     s.english = j["mode"].as_str() == Some("english");
+    s.japanese = j["mode"].as_str() == Some("japanese");
+    s.language = j["language"].as_str().unwrap_or("").to_string();
+    s.input_method = j["input_method"].as_str().unwrap_or("").to_string();
+    s.converting = j["converting"].as_bool().unwrap_or(false);
+    s.clause_index = j["clause_index"].as_i64().unwrap_or(0);
+    s.clause_count = j["clause_count"].as_i64().unwrap_or(0);
     s.full_width = j["full_width"].as_bool().unwrap_or(false);
     s.english_autocomplete = j["english_autocomplete"].as_bool().unwrap_or(false);
     s.english_pending = j["english_pending"].as_bool().unwrap_or(false);
@@ -835,6 +976,10 @@ mod parse_tests {
         assert_eq!(restore_mode(false, false, true), None, "新開的程式還沒問過：照新 session 開始時的英文");
         assert_eq!(initial_english(&json!({"initial_mode": "english"})), Some(true));
         assert_eq!(initial_english(&json!({"initial_mode": "zhuyin"})), Some(false));
+        assert_eq!(initial_english(&json!({"initial_mode": "japanese"})), Some(false), "日文不是英文");
+        assert_eq!(initial_mode(&json!({"initial_mode": "japanese"})), Some(Mode::Japanese));
+        assert_eq!(initial_mode(&json!({"initial_mode": "zhuyin"})), Some(Mode::Chinese));
+        assert_eq!(initial_mode(&json!({"initial_mode": "future"})), None);
         assert_eq!(initial_english(&json!({"version": "old"})), None, "舊引擎沒有回報");
     }
 
@@ -921,6 +1066,83 @@ mod parse_tests {
         assert_eq!(s.preedit[0].style, "reading");
         let old = parse(&json!({"snapshot": {"handled": true}}));
         assert!(old.reading_hint.is_empty());
+    }
+
+    #[test]
+    fn japanese_snapshot_fields_are_parsed() {
+        // T15 fixture：文節樣式、目前文節、輸入方式與変換狀態；舊快照沒有這些欄位時全部是零值。
+        let s = parse(&json!({"snapshot": {
+            "handled": true, "mode": "japanese", "language": "ja", "input_method": "romaji",
+            "converting": true, "clause_index": 1, "clause_count": 2,
+            "preedit": [{"text": "今日", "style": "clause"}, {"text": "は", "style": "clause_active"}]
+        }}));
+        assert!(s.japanese && !s.english);
+        assert_eq!(s.language, "ja");
+        assert_eq!(s.input_method, "romaji");
+        assert!(s.converting);
+        assert_eq!((s.clause_index, s.clause_count), (1, 2));
+        assert_eq!(s.clause_title(), "文節 2/2");
+        assert_eq!(s.candidate_title(), "文節 2/2", "沒有候選標題時只顯示文節");
+        assert_eq!(s.preedit[0].style, "clause");
+        assert_eq!(s.preedit[1].style, "clause_active");
+        let old = parse(&json!({"snapshot": {"handled": true, "mode": "zhuyin"}}));
+        assert!(!old.japanese && !old.converting && old.clause_title().is_empty());
+        assert_eq!(old.candidate_title(), "");
+        // 語言是 ja 但 mode 是英文：照英文模式處理，日文指示不覆蓋「英」。
+        let english = parse(&json!({"snapshot": {"mode": "english", "language": "ja"}}));
+        assert!(!english.japanese && english.english);
+    }
+
+    #[test]
+    fn clause_title_combines_with_candidate_title_and_guards_bad_indexes() {
+        let mut s = parse(&json!({"snapshot": {"mode": "japanese", "candidate_title": "変換",
+            "clause_index": 0, "clause_count": 3, "candidates": {"items": []}}}));
+        assert_eq!(s.clause_title(), "文節 1/3");
+        assert_eq!(s.candidate_title(), "変換　文節 1/3");
+        s.clause_index = 9;
+        assert_eq!(s.clause_title(), "文節 3/3", "超出範圍時夾在最後一個文節");
+        s.clause_index = -1;
+        assert_eq!(s.clause_title(), "文節 1/3", "負值當成第一個");
+        s.clause_count = 0;
+        assert_eq!(s.candidate_title(), "変換");
+    }
+
+    #[test]
+    fn clause_styles_fall_back_when_the_engine_lacks_the_capability() {
+        // 舊引擎沒有 clause_display：即使核心送了新樣式也不畫文節底線、不顯示文節標題。
+        let mut s = parse(&json!({"snapshot": {"mode": "japanese", "clause_index": 1, "clause_count": 2,
+            "preedit": [{"text": "今日", "style": "clause"}, {"text": "は", "style": "clause_active"}]}}));
+        apply_clause_capability(&mut s, false);
+        assert!(s.preedit.iter().all(|g| g.style == "normal"));
+        assert_eq!((s.clause_index, s.clause_count), (0, 0));
+        assert!(s.clause_title().is_empty());
+        let mut supported = parse(&json!({"snapshot": {"mode": "japanese", "clause_index": 1,
+            "clause_count": 2, "preedit": [{"text": "は", "style": "clause_active"}]}}));
+        apply_clause_capability(&mut supported, true);
+        assert_eq!(supported.preedit[0].style, "clause_active");
+        assert_eq!(supported.clause_title(), "文節 2/2");
+    }
+
+    #[test]
+    fn japanese_capabilities_gate_the_new_keys() {
+        // T15：只有引擎回報 japanese 才啟用日文；変換鍵還要 convert_keys，文節樣式要 clause_display。
+        let mut s = Session::new();
+        s.learn_capabilities(&json!({}), 0);
+        assert!(!s.japanese_supported() && !s.convert_keys() && !s.clause_display());
+        s.learn_capabilities(
+            &json!({"japanese": "true", "convert_keys": "true", "clause_display": "true", "live_conversion": "true"}),
+            0,
+        );
+        assert!(s.japanese_supported() && s.convert_keys() && s.clause_display() && s.live_conversion());
+        s.japanese = true;
+        assert!(s.japanese());
+        // 引擎換成不支援日文的版本：能力收回，模式也關掉，不再送日文按鍵。
+        s.learn_capabilities(&json!({}), 0);
+        assert!(!s.japanese_supported() && !s.japanese() && !s.convert_keys() && !s.clause_display());
+        // japanese 有，但沒有 convert_keys／clause_display：模式顯示照舊，変換鍵與文節樣式不啟用。
+        s.learn_capabilities(&json!({"japanese": "true"}), 0);
+        s.japanese = true;
+        assert!(s.japanese() && !s.convert_keys() && !s.clause_display());
     }
 
     #[test]

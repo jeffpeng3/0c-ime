@@ -425,8 +425,12 @@ fn text_icon(text: &str) -> Option<HICON> {
     }
 }
 
-/// 輸入指示器的字（#169）：英文「英」；中文「中」，送出時轉成簡體的話是「简」（簡體字形，一眼看得出是簡體輸出）。
-pub fn indicator_text(english: bool, simplified: bool) -> &'static str {
+/// 輸入指示器的字（#169）：英文「英」；中文「中」，送出時轉成簡體的話是「简」（簡體字形，一眼看得出是簡體輸出）；
+/// 日文照輸入方式顯示「あ」（羅馬字）或「カ」（かな），T15。
+pub fn indicator_text(english: bool, simplified: bool, japanese: bool, input_method: &str) -> &'static str {
+    if japanese {
+        return japanese_symbol(input_method);
+    }
     match (english, simplified) {
         (true, _) => "英",
         (false, true) => "简",
@@ -434,17 +438,52 @@ pub fn indicator_text(english: bool, simplified: bool) -> &'static str {
     }
 }
 
+/// 日文模式的輸入指示：一看就知道打的是かな；未知或舊引擎沒送 input_method 時當成羅馬字。
+fn japanese_symbol(input_method: &str) -> &'static str {
+    match input_method {
+        "kana" | "katakana" => "カ",
+        "half_width_kana" | "halfwidth_kana" => "ｶ",
+        "full_width_latin" | "fullwidth_latin" => "Ａ",
+        "half_width_latin" | "halfwidth_latin" => "A",
+        _ => "あ",
+    }
+}
+
+/// 日文輸入方式的中文說明（滑鼠停留的提示）。
+fn japanese_method(input_method: &str) -> &'static str {
+    match input_method {
+        "kana" | "katakana" => "かな入力",
+        "half_width_kana" | "halfwidth_kana" => "半角カナ入力",
+        "full_width_latin" | "fullwidth_latin" => "全角英数入力",
+        "half_width_latin" | "halfwidth_latin" => "半角英数入力",
+        _ => "ローマ字入力",
+    }
+}
+
 /// 滑鼠停在輸入指示器上的說明。
-pub fn tooltip_text(english: bool, simplified: bool, attention: bool) -> String {
-    let mode = match (english, simplified) {
-        (true, _) => "英文",
-        (false, true) => "中・簡體輸出",
-        (false, false) => "中文",
+pub fn tooltip_text(
+    english: bool,
+    simplified: bool,
+    japanese: bool,
+    input_method: &str,
+    attention: bool,
+) -> String {
+    let (name, mode) = if japanese {
+        ("靈犀日本語", japanese_method(input_method).to_string())
+    } else {
+        (
+            "靈犀注音",
+            match (english, simplified) {
+                (true, _) => "英文".to_string(),
+                (false, true) => "中・簡體輸出".to_string(),
+                (false, false) => "中文".to_string(),
+            },
+        )
     };
     if attention {
-        format!("靈犀注音（{mode}）：有待辦，按右鍵查看")
+        format!("{name}（{mode}）：有待辦，按右鍵查看")
     } else {
-        format!("靈犀注音（{mode}）")
+        format!("{name}（{mode}）")
     }
 }
 
@@ -453,6 +492,10 @@ pub struct LangBarButton {
     english: Cell<bool>,
     /// 「輸出簡體字」（#169）：引擎能即時切換時是它目前的值（Some），否則 None（選單看 0c-update 的狀態）。
     simplified: Cell<Option<bool>>,
+    /// 日文模式（T15）：引擎回報 japanese 而且目前是日文模式時顯示「あ」／「カ」。
+    japanese: Cell<bool>,
+    /// 日文的輸入方式（T15 的 input_method）：決定指示器顯示「あ」還是「カ」。
+    input_method: RefCell<String>,
     status: Arc<Mutex<UpdateStatus>>,
     sink: RefCell<Option<ITfLangBarItemSink>>,
     toggle: Box<dyn Fn()>,
@@ -466,9 +509,12 @@ pub struct LangBarButton {
 }
 
 impl LangBarButton {
+    #[allow(clippy::too_many_arguments)]
     pub fn create(
         english: bool,
         simplified: Option<bool>,
+        japanese: bool,
+        input_method: String,
         toggle: Box<dyn Fn()>,
         simplify: Box<dyn Fn(bool) -> bool>,
         recheck: Box<dyn Fn()>,
@@ -479,6 +525,8 @@ impl LangBarButton {
         LangBarButton {
             english: Cell::new(english),
             simplified: Cell::new(simplified),
+            japanese: Cell::new(japanese),
+            input_method: RefCell::new(input_method),
             status,
             sink: RefCell::new(None),
             toggle,
@@ -496,14 +544,29 @@ impl Drop for LangBarButton {
     }
 }
 
-/// 中英狀態或「輸出簡體字」改變時更新圖示與文字（「中」／「简」／「英」，#169）。
-pub fn set_state(button: &ITfLangBarItemButton, english: bool, simplified: Option<bool>) {
+/// 中英／日文狀態或「輸出簡體字」改變時更新圖示與文字（「中」／「简」／「英」／「あ」／「カ」，#169、T15）。
+pub fn set_state(
+    button: &ITfLangBarItemButton,
+    english: bool,
+    simplified: Option<bool>,
+    japanese: bool,
+    input_method: &str,
+) {
     let this = unsafe { button.as_impl() };
-    let shown = |e: bool, s: Option<bool>| (e, e || s.unwrap_or(false));
-    let before = shown(this.english.get(), this.simplified.get());
+    let shown = |e: bool, s: Option<bool>, j: bool, m: &str| (e, e || s.unwrap_or(false), j, m.to_string());
+    let before = shown(
+        this.english.get(),
+        this.simplified.get(),
+        this.japanese.get(),
+        &this.input_method.borrow(),
+    );
     this.english.set(english);
     this.simplified.set(simplified);
-    if before != shown(english, simplified) {
+    this.japanese.set(japanese);
+    if let Ok(mut method) = this.input_method.try_borrow_mut() {
+        *method = input_method.to_string();
+    }
+    if before != shown(english, simplified, japanese, input_method) {
         // 先取出再通知：OnUpdate 期間宿主可能回頭呼叫 AdviseSink／UnadviseSink。
         let sink = this.sink.try_borrow().ok().and_then(|s| s.clone());
         if let Some(sink) = sink {
@@ -632,7 +695,13 @@ impl ITfLangBarItem_Impl for LangBarButton_Impl {
         crate::guarded("LangBar.GetTooltipString", || {
             let attention = needs_attention(&lock(&self.status));
             let simplified = self.simplified.get().unwrap_or(false);
-            Ok(BSTR::from(tooltip_text(self.english.get(), simplified, attention)))
+            Ok(BSTR::from(tooltip_text(
+                self.english.get(),
+                simplified,
+                self.japanese.get(),
+                &self.input_method.borrow(),
+                attention,
+            )))
         })
     }
 }
@@ -669,12 +738,23 @@ impl ITfLangBarItemButton_Impl for LangBarButton_Impl {
     }
     fn GetIcon(&self) -> windows_core::Result<HICON> {
         crate::guarded("LangBar.GetIcon", || {
-            text_icon(indicator_text(self.english.get(), self.simplified.get().unwrap_or(false))).ok_or_else(windows_core::Error::from_win32)
+            text_icon(indicator_text(
+                self.english.get(),
+                self.simplified.get().unwrap_or(false),
+                self.japanese.get(),
+                &self.input_method.borrow(),
+            ))
+            .ok_or_else(windows_core::Error::from_win32)
         })
     }
     fn GetText(&self) -> windows_core::Result<BSTR> {
         crate::guarded("LangBar.GetText", || {
-            Ok(BSTR::from(indicator_text(self.english.get(), self.simplified.get().unwrap_or(false))))
+            Ok(BSTR::from(indicator_text(
+                self.english.get(),
+                self.simplified.get().unwrap_or(false),
+                self.japanese.get(),
+                &self.input_method.borrow(),
+            )))
         })
     }
 }
@@ -843,13 +923,35 @@ mod tests {
 
     #[test]
     fn indicator_marks_simplified_output() {
-        assert_eq!(indicator_text(false, false), "中");
-        assert_eq!(indicator_text(false, true), "简");
-        assert_eq!(indicator_text(true, true), "英", "英文模式維持「英」");
-        assert_eq!(tooltip_text(false, true, false), "靈犀注音（中・簡體輸出）");
-        assert_eq!(tooltip_text(false, false, false), "靈犀注音（中文）");
-        assert_eq!(tooltip_text(true, true, false), "靈犀注音（英文）");
-        assert_eq!(tooltip_text(false, true, true), "靈犀注音（中・簡體輸出）：有待辦，按右鍵查看");
+        assert_eq!(indicator_text(false, false, false, ""), "中");
+        assert_eq!(indicator_text(false, true, false, ""), "简");
+        assert_eq!(indicator_text(true, true, false, ""), "英", "英文模式維持「英」");
+        assert_eq!(tooltip_text(false, true, false, "", false), "靈犀注音（中・簡體輸出）");
+        assert_eq!(tooltip_text(false, false, false, "", false), "靈犀注音（中文）");
+        assert_eq!(tooltip_text(true, true, false, "", false), "靈犀注音（英文）");
+        assert_eq!(
+            tooltip_text(false, true, false, "", true),
+            "靈犀注音（中・簡體輸出）：有待辦，按右鍵查看"
+        );
+    }
+
+    #[test]
+    fn japanese_indicator_follows_the_input_method() {
+        // T15：日文模式顯示輸入方式，不是「中」；舊引擎沒有 japanese 時呼叫端傳 false，維持原本的指示。
+        for (method, text, name) in [
+            ("romaji", "あ", "ローマ字入力"),
+            ("kana", "カ", "かな入力"),
+            ("half_width_kana", "ｶ", "半角カナ入力"),
+            ("full_width_latin", "Ａ", "全角英数入力"),
+            ("half_width_latin", "A", "半角英数入力"),
+            ("", "あ", "ローマ字入力"),
+        ] {
+            assert_eq!(indicator_text(false, false, true, method), text, "{method}");
+            assert_eq!(tooltip_text(false, false, true, method, false), format!("靈犀日本語（{name}）"), "{method}");
+        }
+        // 日文模式優先於英文與簡體標記；回到注音時指示照舊。
+        assert_eq!(indicator_text(true, true, true, "kana"), "カ");
+        assert_eq!(indicator_text(false, false, false, "kana"), "中");
     }
 
     #[test]

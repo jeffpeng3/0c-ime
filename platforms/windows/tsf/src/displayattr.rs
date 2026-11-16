@@ -14,8 +14,9 @@ use windows::Win32::UI::TextServices::{
 use windows_core::{implement, ComObject, BSTR, GUID};
 
 use crate::guids::{
-    GUID_DISPLAY_ATTR_CORRECTED, GUID_DISPLAY_ATTR_INPUT, GUID_DISPLAY_ATTR_LOCKED,
-    GUID_DISPLAY_ATTR_MARKED, GUID_DISPLAY_ATTR_READING,
+    GUID_DISPLAY_ATTR_CLAUSE, GUID_DISPLAY_ATTR_CLAUSE_ACTIVE, GUID_DISPLAY_ATTR_CORRECTED,
+    GUID_DISPLAY_ATTR_INPUT, GUID_DISPLAY_ATTR_LOCKED, GUID_DISPLAY_ATTR_MARKED,
+    GUID_DISPLAY_ATTR_READING,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,8 +28,20 @@ pub enum Kind {
     Marked,
     /// 中英混打時照字面顯示、按空白會組成中文的數字（核心樣式 reading，#162）。
     Reading,
+    /// 日文変換中的一般文節（核心樣式 clause，T15）。
+    Clause,
+    /// 日文変換中目前的文節（核心樣式 clause_active，T15）。
+    ClauseActive,
 }
-pub const KINDS: [Kind; 5] = [Kind::Input, Kind::Locked, Kind::Corrected, Kind::Marked, Kind::Reading];
+pub const KINDS: [Kind; 7] = [
+    Kind::Input,
+    Kind::Locked,
+    Kind::Corrected,
+    Kind::Marked,
+    Kind::Reading,
+    Kind::Clause,
+    Kind::ClauseActive,
+];
 impl Kind {
     pub fn guid(self) -> GUID {
         match self {
@@ -37,6 +50,8 @@ impl Kind {
             Self::Corrected => GUID_DISPLAY_ATTR_CORRECTED,
             Self::Marked => GUID_DISPLAY_ATTR_MARKED,
             Self::Reading => GUID_DISPLAY_ATTR_READING,
+            Self::Clause => GUID_DISPLAY_ATTR_CLAUSE,
+            Self::ClauseActive => GUID_DISPLAY_ATTR_CLAUSE_ACTIVE,
         }
     }
     pub fn index(self) -> usize {
@@ -49,6 +64,8 @@ impl Kind {
             Self::Corrected => "靈犀注音：自動修正",
             Self::Marked => "靈犀注音：加入詞庫的範圍",
             Self::Reading => "靈犀注音：按空白會變成中文的數字",
+            Self::Clause => "靈犀：日文文節",
+            Self::ClauseActive => "靈犀：目前的日文文節",
         }
     }
     fn attributes(self) -> TF_DISPLAYATTRIBUTE {
@@ -82,6 +99,21 @@ impl Kind {
                 lsStyle: TF_LS_DOT,
                 fBoldLine: true.into(),
                 bAttr: TF_ATTR_TARGET_CONVERTED,
+                ..Default::default()
+            };
+        }
+        if self == Self::Clause || self == Self::ClauseActive {
+            // 日文変換：一般文節細實線、目前文節粗實線。bAttr 用 TSF 的已変換／目前変換，
+            // 支援原生顯示的宿主（Word 等）也會畫出自己的文節樣式；只畫底線的宿主仍分得出來。
+            let active = self == Self::ClauseActive;
+            return TF_DISPLAYATTRIBUTE {
+                lsStyle: TF_LS_SOLID,
+                fBoldLine: active.into(),
+                bAttr: if active {
+                    TF_ATTR_TARGET_CONVERTED
+                } else {
+                    TF_ATTR_CONVERTED
+                },
                 ..Default::default()
             };
         }
@@ -121,6 +153,8 @@ pub fn style_ranges(segments: &[crate::session::Segment]) -> Option<Vec<StyledRa
                 "corrected" => Kind::Corrected,
                 "marked" => Kind::Marked,
                 "reading" => Kind::Reading,
+                "clause" => Kind::Clause,
+                "clause_active" => Kind::ClauseActive,
                 _ => Kind::Input,
             };
             ranges.push(StyledRange { start, end, kind });
@@ -276,6 +310,8 @@ mod tests {
             ("a", "future"),
             ("世傑", "marked"),
             ("20", "reading"),
+            ("今日", "clause"),
+            ("は", "clause_active"),
         ]
         .into_iter()
         .map(|(text, style)| Segment {
@@ -296,7 +332,9 @@ mod tests {
                 (4, 5, Kind::Input),
                 (5, 6, Kind::Input),
                 (6, 8, Kind::Marked),
-                (8, 10, Kind::Reading)
+                (8, 10, Kind::Reading),
+                (10, 12, Kind::Clause),
+                (12, 13, Kind::ClauseActive)
             ]
         );
         let marked = Kind::Marked.attributes();
@@ -317,6 +355,15 @@ mod tests {
         assert_eq!(reading.crText.r#type, TF_CT_COLORREF);
         assert_eq!(unsafe { reading.crText.Anonymous.cr.0 }, unsafe { GetSysColor(COLOR_GRAYTEXT) });
         assert_eq!(unsafe { reading.crLine.Anonymous.cr.0 }, unsafe { GetSysColor(COLOR_GRAYTEXT) });
+        // T15：日文変換的一般文節細實線、目前文節粗實線；bAttr 分別是已変換與目前変換。
+        let clause = Kind::Clause.attributes();
+        assert_eq!(clause.lsStyle, TF_LS_SOLID);
+        assert!(!clause.fBoldLine.as_bool());
+        assert_eq!(clause.bAttr, TF_ATTR_CONVERTED);
+        let active = Kind::ClauseActive.attributes();
+        assert_eq!(active.lsStyle, TF_LS_SOLID);
+        assert!(active.fBoldLine.as_bool());
+        assert_eq!(active.bAttr, TF_ATTR_TARGET_CONVERTED);
         // 各種屬性的 GUID 各不相同，索引就是在 KINDS 的位置（atom 陣列依此存取）。
         for (i, kind) in KINDS.into_iter().enumerate() {
             assert_eq!(kind.index(), i);
@@ -340,9 +387,9 @@ mod tests {
                 Kind::Input.guid()
             );
             let clone = list.Clone().unwrap();
-            let mut rest = [None, None, None, None, None];
+            let mut rest = [None, None, None, None, None, None, None];
             let _ = clone.Next(&mut rest, &mut fetched);
-            assert_eq!(fetched, 4);
+            assert_eq!(fetched, 6);
             assert_eq!(
                 rest[0].as_ref().unwrap().GetGUID().unwrap(),
                 Kind::Locked.guid()
@@ -359,13 +406,21 @@ mod tests {
                 rest[3].as_ref().unwrap().GetGUID().unwrap(),
                 Kind::Reading.guid()
             );
+            assert_eq!(
+                rest[4].as_ref().unwrap().GetGUID().unwrap(),
+                Kind::Clause.guid()
+            );
+            assert_eq!(
+                rest[5].as_ref().unwrap().GetGUID().unwrap(),
+                Kind::ClauseActive.guid()
+            );
             list.Next(&mut first, &mut fetched).unwrap();
             assert_eq!(
                 first[0].as_ref().unwrap().GetGUID().unwrap(),
                 Kind::Locked.guid()
             );
             list.Reset().unwrap();
-            let _ = list.Skip(6);
+            let _ = list.Skip(8);
             let _ = list.Next(&mut first, &mut fetched);
             assert_eq!(fetched, 0);
         }
@@ -402,30 +457,30 @@ mod tests {
 
     #[test]
     fn next_overwrites_uninitialized_outputs_without_releasing_them() {
-        // msctf（Outlook 啟動時）傳進來的 [out] 陣列沒有初始化（#89）。前五格放計數物件的指標
-        // 當垃圾值：Next 必須直接覆寫、不能 Release；超出 count 的第六格填 0xDD，必須原封不動。
+        // msctf（Outlook 啟動時）傳進來的 [out] 陣列沒有初始化（#89）。前七格放計數物件的指標
+        // 當垃圾值：Next 必須直接覆寫、不能 Release；超出 count 的第八格填 0xDD，必須原封不動。
         let sentinel = Sentinel {
             vtbl: &SENTINEL_VTBL,
             releases: AtomicU32::new(0),
         };
         let garbage = &sentinel as *const Sentinel as *mut c_void;
         let poison = usize::from_ne_bytes([0xDD; std::mem::size_of::<usize>()]) as *mut c_void;
-        let mut out = [garbage, garbage, garbage, garbage, garbage, poison];
+        let mut out = [garbage, garbage, garbage, garbage, garbage, garbage, garbage, poison];
         let mut fetched = 0xDDDD_DDDDu32;
         let list: IEnumTfDisplayAttributeInfo =
             ComObject::new(AttributeEnum::new()).into_interface();
         let hr = unsafe {
-            (Interface::vtable(&list).Next)(Interface::as_raw(&list), 5, out.as_mut_ptr(), &mut fetched)
+            (Interface::vtable(&list).Next)(Interface::as_raw(&list), 7, out.as_mut_ptr(), &mut fetched)
         };
         assert_eq!(hr, windows_core::HRESULT(0));
-        assert_eq!(fetched, 5);
+        assert_eq!(fetched, 7);
         assert_eq!(
             sentinel.releases.load(Ordering::SeqCst),
             0,
             "Next 把呼叫端的垃圾值當成介面 Release 了"
         );
-        assert_eq!(out[5], poison, "count 以外的格子不能動");
-        for (slot, kind) in out[..5].iter().zip(KINDS) {
+        assert_eq!(out[7], poison, "count 以外的格子不能動");
+        for (slot, kind) in out[..7].iter().zip(KINDS) {
             assert_ne!(*slot, garbage);
             let info = unsafe { ITfDisplayAttributeInfo::from_raw(*slot) };
             assert_eq!(unsafe { info.GetGUID() }.unwrap(), kind.guid());
