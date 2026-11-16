@@ -23,9 +23,18 @@ func TestNormalizeReading(t *testing.T) {
 			t.Errorf("NormalizeReading(%q) = %q，want %q", tc.in, got, tc.want)
 		}
 	}
-	for _, bad := range []string{"", "  ", "abc", "あ\tた"} {
+	for _, bad := range []string{"", "  ", "abc", "あ\tた", "、", "。", "！", "？", "・", "あ。た"} {
 		if _, err := NormalizeReading(bad); err == nil {
 			t.Errorf("NormalizeReading(%q) 應失敗", bad)
+		}
+	}
+	for _, punct := range []string{"、", "。", "！", "？", "・"} {
+		_, err := NormalizeReading(punct)
+		if err == nil {
+			continue
+		}
+		if !strings.Contains(err.Error(), "かな") {
+			t.Errorf("NormalizeReading(%q) 的錯誤應說明只接受かな：%v", punct, err)
 		}
 	}
 }

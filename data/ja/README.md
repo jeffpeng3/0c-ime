@@ -165,6 +165,8 @@ data/ja/
 
 讀音一律正規化成平假名單位：片假名轉平假名、空白忽略，長音符與小撮かな保留，所以讀音長度不必等於詞面字數。
 
+讀音只能使用かな。每個讀音單位都必須通過 `reading.Unit.Valid`，標點、記号、英數字與其他符號一律拒絕；`internal/jaimport.NormalizeReading` 在匯入時就報錯，`BuildJA` 出版前會再驗一次詞條。像 `、`、`。`、`！`、`？`、`・` 這類記号候選屬於 T22 的 `data/ja/symbols/`，由 `core/ja/rewrite.LoadSymbolsFS` 提供，不要放進語音詞典 `lexicon/words.tsv`。
+
 ### 資料包內容
 
 ```text
@@ -208,14 +210,14 @@ manifest v2 的固定欄位：
 
 ### 量測
 
-目前 repo 內的 curated 種子（142 詞條、82 連接成本、15 bigram）：
+目前 repo 內的 curated 種子（137 詞條、82 連接成本、15 bigram）：
 
 | 項目 | 數值 |
 |---|---:|
-| `lexicon.bin` | 8,597 bytes（約 60.5 bytes／詞條） |
-| `lm.bin` | 2,447 bytes |
-| `lexicon.tsv` | 4,074 bytes |
-| 解碼後常駐估計 | 54,856 bytes（約 0.05 MiB） |
+| `lexicon.bin` | 8,412 bytes（約 61.4 bytes／詞條） |
+| `lm.bin` | 2,387 bytes |
+| `lexicon.tsv` | 3,979 bytes |
+| 解碼後常駐估計 | 53,486 bytes（約 0.05 MiB） |
 
 `internal/jaimport` 另有 20,000 筆合成詞條的量測測試：`lexicon.bin` 1,107,733 bytes（55.39 bytes／詞條），解碼後 heap 約 5.25 MB，常駐估計 4.56 MB；`BenchmarkDecodeLexicon` 約 8 ms／次。實際 Mozc 全量詞典的數字待 T13 在具備 dictionary_oss 的環境重跑，格式與量測程式不變。
 
