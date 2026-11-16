@@ -9,10 +9,10 @@
 //   - 反悔（Undo）、忘記（Forget）、重置（Reset）與暫停學習（SetPaused）都只作用在
 //     這一份資料，注音學習檔一個位元組都不會變。
 //
-// core 不碰檔案系統：Store.Save/Load 使用 io.Writer/io.Reader，LoadFile 使用注入的
-// fs.FS。宿主負責以暫存檔加改名的方式寫 personal.ja.json；讀到 *CorruptError 時
-// 把原檔改名保留，再用空白 Store 繼續。檔名與路徑的共用慣例在 core/personal 的
-// JaFileName、JaPath。
+// LoadFile 使用注入的 fs.FS；存檔由宿主以「同目錄暫存檔 Sync、關閉後原子替換」實作，
+// 同一路徑的寫入要序列化，Windows 上遇到暫時的 sharing violation 要重試。讀到
+// *CorruptError 時把原檔改名保留，再用空白 Store 繼續。檔名與路徑的共用慣例在
+// core/personal 的 JaFileName、JaPath。
 //
 // 這個套件不讀時鐘、不碰 session：時間由呼叫端放進 Selection.At，
 // 宿主負責把選字、改文節與接受補全轉成 Learn... 呼叫。

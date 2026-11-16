@@ -8,6 +8,7 @@ import (
 
 	japersonal "github.com/0c-biggo/0c-ime/core/ja/personal"
 	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/internal/atomicfile"
 )
 
 func saveJa(t *testing.T, path string, st *japersonal.Store) {
@@ -16,7 +17,7 @@ func saveJa(t *testing.T, path string, st *japersonal.Store) {
 	if err := st.Save(&buf); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, buf.Bytes(), 0o600); err != nil {
+	if err := atomicfile.Write(path, buf.Bytes()); err != nil {
 		t.Fatal(err)
 	}
 }
