@@ -1,0 +1,51 @@
+{
+  "spike": "T03",
+  "frozen_at": "2026-11-17",
+  "llama_cpp": {
+    "repository": "https://github.com/ggml-org/llama.cpp",
+    "release": "v1.0.0",
+    "commit": "2d8a32502909ca065c41c4cf5f2fb1c427c047fc",
+    "patch": "patches/llama-gpt2-small-japanese-char.patch",
+    "patch_reason": "zenz-v3 GGUF declares tokenizer.ggml.pre=gpt2-small-japanese-char. Upstream rejects the name; the patch maps it to the existing GPT-2 byte-level BPE pre-tokenizer, which is the tokenizer zenz was trained with.",
+    "build": {
+      "cpu": "cmake -B build-cpu -DCMAKE_BUILD_TYPE=Release -DLLAMA_BUILD_TESTS=OFF",
+      "vulkan": "cmake -B build-vk -DCMAKE_BUILD_TYPE=Release -DGGML_VULKAN=ON -DLLAMA_BUILD_TESTS=OFF"
+    }
+  },
+  "model": {
+    "repository": "Miwa-Keita/zenz-v3.1-small-gguf",
+    "revision": "ddf6e44b2e05ab7ea9a3e31559c5e7948761365c",
+    "file": "ggml-model-Q5_K_M.gguf",
+    "size_bytes": 73871968,
+    "sha256": "4de930c06bef8c263aa1aa40684af206db4ce1b96375b3b8ed0ea508e0b14f6c",
+    "license": "CC-BY-SA-4.0",
+    "architecture": "gpt2",
+    "parameters": 95058432,
+    "context_length": 1024,
+    "vocab_size": 6000
+  },
+  "traditional_baseline": {
+    "engine": "Anthy",
+    "package": "anthy-9100h-62.fc45.x86_64",
+    "library": "libanthy 9100h",
+    "harness": "tools/anthy_top1.c",
+    "settings": "UTF-8, fresh context per line, candidate 0 of every segment, no commit and no learning"
+  },
+  "corpus": {
+    "name": "Anthy corpus.1.txt (calctrans)",
+    "license": "public domain, declared in the corpus.1.txt header",
+    "package": "anthy-9100h.tar.gz from anthy-9100h-62.fc45.src.rpm",
+    "files": {
+      "corpus.1.txt": "da187509c065ad294626d4241b08265aad2b898148cb857b8cbf7c4f1e2ad9db"
+    },
+    "sample": "fixtures/anthy_sample200.json",
+    "sample_seed": 20261117,
+    "sample_size": 200,
+    "excluded": {
+      "corpus.2.txt": "no license statement; must not be distributed",
+      "corpus.3.txt": "no license statement; must not be distributed",
+      "corpus.5.txt": "no license statement; must not be distributed",
+      "corpus.4.txt": "not gold data; records known bad conversions"
+    }
+  }
+}
