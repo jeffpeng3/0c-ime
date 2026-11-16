@@ -104,16 +104,19 @@ func newJaNeuralWiring(dataDir string, o jaNeuralOptions) (*jaNeuralWiring, erro
 	return w, nil
 }
 
-// Attach 把日文 profile 註冊到 session 並切換過去。回傳 false 表示沒有
-// 日文資料或 session 不接受這個 profile；注音 session 不受影響。
-func (w *jaNeuralWiring) Attach(s *session.Session) bool {
+// AttachProfile 把日文 profile 註冊到 session，不切換目前語言。注音 session
+// 仍然維持注音，之後要切到日文時同一個 profile 已經可用。
+func (w *jaNeuralWiring) AttachProfile(s *session.Session) bool {
 	if w == nil || w.profile == nil || s == nil {
 		return false
 	}
-	if !s.AddLanguageProfile(w.profile) {
-		return false
-	}
-	return s.SetLanguage(lang.Ja)
+	return s.AddLanguageProfile(w.profile)
+}
+
+// Attach 把日文 profile 註冊到 session 並切換過去。回傳 false 表示沒有
+// 日文資料或 session 不接受這個 profile；注音 session 不受影響。
+func (w *jaNeuralWiring) Attach(s *session.Session) bool {
+	return w.AttachProfile(s) && s.SetLanguage(lang.Ja)
 }
 
 // State 回報 worker 狀態。沒有模型時是 not_installed，模型檔存在但
