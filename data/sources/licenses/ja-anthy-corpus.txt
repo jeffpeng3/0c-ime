@@ -1,0 +1,11 @@
+Anthy corpus
+
+來源：https://github.com/fujiwarat/anthy-unicode/tree/fc2260cf60100bb868c20f7ca493e8c2e01dcf11/calctrans
+版本：commit fc2260cf60100bb868c20f7ca493e8c2e01dcf11（2026-09-10）
+
+範圍與授權結論：
+- calctrans/corpus.1.txt：檔案開頭明示「copying: public domain」，可散布，用於轉換評測。1,743 筆資料列。
+- calctrans/corpus.0.txt、corpus.2.txt、corpus.3.txt、corpus.4.txt、corpus.5.txt：沒有授權聲明；corpus.5.txt 另標示出處不明。不得散布，也不得當成 public domain。
+- Anthy 程式的 LGPL/GPL 授權不延伸到 corpus.1.txt；corpus.1.txt 以檔案內明示的 public domain 為準。
+
+出處：Anthy 與 Anthy Unicode project。corpus.1.txt 為一般轉換測試，內容是讀音與正解表記的配對。
