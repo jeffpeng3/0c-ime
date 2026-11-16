@@ -298,14 +298,22 @@ impl State {
     }
 
     fn vocab_keys(&self) -> bool {
-        self.session.vocab_keys() && !self.session.english()
+        self.session.vocab_keys() && !self.session.english() && !self.session.japanese()
+    }
+
+    /// 這一鍵是不是要交給引擎的日文実体鍵（T15）：変換、無変換與 F6 到 F10。只有日文模式、引擎可用而且
+    /// health／open 回報 japanese 與 convert_keys 時才吃；舊引擎或注音／英文模式照舊交給應用程式。
+    /// 先看按鍵本身，不是日文鍵就不查引擎；TestKeyDown 與 OnKeyDown 用同一個答案，組字中也不先送出組字。
+    fn japanese_key(&mut self, vk: u32) -> Option<&'static str> {
+        let key = keys::japanese_named(vk)?;
+        (self.session.japanese() && self.session.available() && self.session.convert_keys()).then_some(key)
     }
 
     /// 這一鍵是不是要交給引擎的 Ctrl＋標點（#168）：中文模式、引擎可用而且回報 ctrl_punctuation（認得鍵名、設定開著）。
     /// 先看按鍵本身，不是 Ctrl＋標點鍵就不問引擎；Ctrl+: ( )（#231）還要引擎的 ctrl_punctuation_keys 列了它。
     /// TestKeyDown 與 OnKeyDown 用同一個答案；是的話不先送出組字。
     fn ctrl_punct_key(&mut self, vk: u32, lparam: isize) -> Option<&'static str> {
-        if self.session.english() {
+        if self.session.english() || self.session.japanese() {
             return None;
         }
         let key = keys::ctrl_punct(vk, lparam)?;
@@ -316,7 +324,10 @@ impl State {
     /// （設定開著、能即時切換）。先看按鍵本身，不是這個鍵就不問引擎。是的話不先送出組字（同選單，組字不動）。
     /// TestKeyDown 問（test_simplified_hotkey），OnKeyDown 沿用同一個答案（key_simplified_hotkey）。
     fn simplified_hotkey(&mut self, vk: u32) -> bool {
-        keys::simplified_hotkey(vk) && self.session.available() && self.session.simplified_hotkey()
+        keys::simplified_hotkey(vk)
+            && !self.session.japanese()
+            && self.session.available()
+            && self.session.simplified_hotkey()
     }
 
     fn test_simplified_hotkey(&mut self, vk: u32) -> bool {
@@ -542,7 +553,13 @@ impl TextService_Impl {
     fn sync_langbar(&self) {
         let st = self.state.borrow();
         if let Some((_, button)) = st.langbar.as_ref() {
-            crate::langbar::set_state(button, st.session.english(), st.session.simplified());
+            crate::langbar::set_state(
+                button,
+                st.session.english(),
+                st.session.simplified(),
+                st.session.japanese(),
+                st.session.input_method(),
+            );
         }
     }
 
@@ -647,7 +664,7 @@ impl TextService_Impl {
             pages: snapshot.pages,
             columns: snapshot.columns,
             kind: snapshot.candidate_kind.clone(),
-            title: snapshot.candidate_title.clone(),
+            title: snapshot.candidate_title(),
             suggestion: snapshot.suggestion.clone(),
             notice,
             marking: snapshot.marking(),
@@ -1270,6 +1287,10 @@ impl TextService_Impl {
         if !self.state.borrow().composing {
             return false;
         }
+        // 日文実体鍵（変換／無変換、F6–F10）由核心處理，不先送出組字（T15）。
+        if self.state.borrow_mut().japanese_key(vk).is_some() {
+            return false;
+        }
         // 要交給引擎的 Ctrl＋標點插進組字區，不先送出組字（#168）。
         if keys::modifier_down() && self.state.borrow_mut().ctrl_punct_key(vk, lparam).is_some() {
             return false;
@@ -1375,21 +1396,34 @@ impl TextService_Impl {
         if !st.session.available() {
             return false;
         }
+        // 日文実体鍵（変換／無変換、F6–F10，T15）：日文模式而且引擎回報 convert_keys 才吃；
+        // 舊引擎、注音／英文模式照舊交給應用程式。
+        if st.japanese_key(vk).is_some() {
+            return true;
+        }
         // 組字中轉得成協定按鍵的鍵都問核心：Home／End／↑／PgUp／PgDn／Tab／Shift+Tab（BackTab）核心都回 handled，
         // 只有英文模式的 ↓ 回未處理；轉不成的鍵（F 鍵、Insert…）已由 commit_before_host_key 先送出組字（#106）。
         // 這裡的答案與 OnKeyDown 的結果一致，WPF 不會掉鍵。Shift＋←→ Delete Backspace 的新鍵名（#123）
         // 核心在組字中同樣都回 handled（沒有對應功能時就是原本的鍵）。
         let english = st.session.english();
+        let japanese = st.session.japanese();
         let style_key = st.styled_key(vk, lparam, false, english);
         if style_key.as_deref() == Some("ShiftSpace") { return true; }
         if style_key.as_ref().is_some_and(|k| st.session.english_state.full_width_extra_key(k)) { return true; }
         if st.composing {
-            let english = st.session.english();
             let vocab = st.vocab_keys();
             return keys::composing_wants(english, st.styled_key(vk, lparam, vocab, english).as_deref());
         }
-        if st.session.english() {
+        if english {
             return false;
+        }
+        if japanese {
+            // 日文沒在組字：可見 ASCII（羅馬字、かな直接輸入）開始組字；具名鍵與數字鍵盤交還應用程式，
+            // Enter、空白、方向鍵在送出或移動游標時不經過引擎。
+            if keys::is_keypad(vk) || keys::named(vk).is_some() {
+                return false;
+            }
+            return keys::printable(vk, lparam, false).is_some();
         }
         // 沒在組字：數字鍵盤全形時由核心打全形（#278），半形時交還應用程式（#75）；
         // 具名鍵、空白交還應用程式；可能產生可見 ASCII 的鍵（數字、字母、OEM 符號）才問核心
@@ -1476,6 +1510,8 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
                 st.session.learn_mode(false);
                 let english = st.session.english();
                 let simplified = st.session.simplified();
+                let japanese = st.session.japanese();
+                let input_method = st.session.input_method().to_string();
                 drop(st);
                 // 輸入指示器的中／英按鈕與選單（#13）。按鈕持有本服務的參考，Deactivate 時移除以解開循環。
                 let tm = self.state.borrow().thread_mgr.clone();
@@ -1486,6 +1522,8 @@ impl ITfTextInputProcessor_Impl for TextService_Impl {
                     let button = crate::langbar::LangBarButton::create(
                         english,
                         simplified,
+                        japanese,
+                        input_method,
                         Box::new(move || service.toggle_mode()),
                         Box::new(move |on| simplify.set_output_simplified(on)),
                         Box::new(move || recheck.recheck_simplified()),
@@ -1755,8 +1793,10 @@ impl ITfKeyEventSink_Impl for TextService_Impl {
             } else {
                 None
             };
-            let Some(key) = ctrl
+            let japanese = self.state.borrow_mut().japanese_key(vk);
+            let Some(key) = japanese
                 .map(str::to_string)
+                .or_else(|| ctrl.map(str::to_string))
                 .or_else(|| self.state.borrow_mut().styled_key(vk, lparam.0, vocab, english))
             else {
                 return Ok(false.into());
@@ -2227,6 +2267,78 @@ mod shift_tests {
         unsafe {
             let _ = DestroyWindow(view);
         }
+    }
+}
+
+#[cfg(test)]
+mod japanese_tests {
+    //! T15：日文実体鍵的轉發與能力旗標。需要引擎的整合測試在 session.rs；這裡只驗證外殼的決策，
+    //! 不連線、不讀鍵盤排列。
+    use super::*;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        VK_CONVERT, VK_F10, VK_F5, VK_F6, VK_NONCONVERT, VK_RETURN,
+    };
+
+    fn make_service(japanese: bool, convert_keys: bool) -> ComObject<TextService> {
+        let service = ComObject::new(TextService::new());
+        service
+            .state
+            .borrow_mut()
+            .session
+            .set_japanese_for_test(japanese, convert_keys);
+        service
+    }
+
+    #[test]
+    fn convert_keys_forward_only_in_japanese_mode_with_the_capability() {
+        let service = make_service(true, true);
+        let mut st = service.state.borrow_mut();
+        for (vk, want) in [
+            (VK_CONVERT.0 as u32, "Convert"),
+            (VK_NONCONVERT.0 as u32, "NonConvert"),
+            (VK_F6.0 as u32, "F6"),
+            (VK_F10.0 as u32, "F10"),
+        ] {
+            assert_eq!(st.japanese_key(vk), Some(want), "{vk:#x}");
+        }
+        // 其他鍵仍走原本的路徑。
+        for vk in [VK_RETURN.0 as u32, 0x41, VK_F5.0 as u32] {
+            assert_eq!(st.japanese_key(vk), None, "{vk:#x}");
+        }
+    }
+
+    #[test]
+    fn convert_keys_pass_through_without_japanese_mode_or_capability() {
+        for (japanese, convert) in [(false, true), (true, false), (false, false)] {
+            let service = make_service(japanese, convert);
+            let mut st = service.state.borrow_mut();
+            assert_eq!(st.japanese_key(VK_CONVERT.0 as u32), None, "japanese={japanese} convert={convert}");
+            assert_eq!(st.japanese_key(VK_F10.0 as u32), None, "japanese={japanese} convert={convert}");
+        }
+    }
+
+    #[test]
+    fn convert_keys_are_claimed_and_do_not_commit_the_composition() {
+        // 組字中按変換：TestKeyDown 要吃、OnKeyDown 交給核心；不能像一般 F 鍵先送出組字（#106）。
+        let service = make_service(true, true);
+        service.state.borrow_mut().composing = true;
+        assert!(service.wants_key(VK_CONVERT.0 as u32, 0));
+        assert!(!service.commit_before_host_key(None, VK_CONVERT.0 as u32, 0, false));
+        assert!(service.state.borrow().session.sent.is_empty(), "変換鍵不先送出組字");
+        // 沒在日文模式（注音／英文）或沒有 convert_keys：照舊交給應用程式。
+        for (japanese, convert) in [(false, true), (true, false)] {
+            let service = make_service(japanese, convert);
+            service.state.borrow_mut().composing = true;
+            assert!(!service.wants_key(VK_CONVERT.0 as u32, 0), "japanese={japanese} convert={convert}");
+        }
+    }
+
+    #[test]
+    fn japanese_mode_does_not_use_chinese_vocab_or_ctrl_punctuation() {
+        let service = make_service(true, true);
+        let mut st = service.state.borrow_mut();
+        assert!(!st.vocab_keys(), "日文模式不送注音的 Shift 加詞鍵名");
+        assert_eq!(st.ctrl_punct_key(0xbc, 0), None, "日文模式不攔 Ctrl＋標點");
     }
 }
 

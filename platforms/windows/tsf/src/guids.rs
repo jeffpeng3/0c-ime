@@ -15,6 +15,11 @@ pub const GUID_DISPLAY_ATTR_CORRECTED: GUID =
 pub const GUID_DISPLAY_ATTR_MARKED: GUID = GUID::from_u128(0x7f850af6_4e7a_4b41_a24f_baeca02ce683);
 /// 中英混打時按空白會組成中文的數字（#162）。
 pub const GUID_DISPLAY_ATTR_READING: GUID = GUID::from_u128(0xcbedd798_5d14_4f4d_9917_26b934dfa003);
+/// 日文変換中的一般文節（T15）。
+pub const GUID_DISPLAY_ATTR_CLAUSE: GUID = GUID::from_u128(0x08933a6a_3bfa_4550_9423_15da82013a11);
+/// 日文変換中目前的文節（T15）。
+pub const GUID_DISPLAY_ATTR_CLAUSE_ACTIVE: GUID =
+    GUID::from_u128(0x4f4e536f_ad3e_420b_9417_59e8bf791aa1);
 
 /// zh-TW。
 pub const LANGID: u16 = 0x0404;
