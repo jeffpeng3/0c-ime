@@ -125,3 +125,106 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 - [ja-files.tsv](../sources/ja-files.tsv)：Mozc 逐檔清單，以及 SudachiDict、UniDic、zenz、Anthy、AJIMEE、Wikipedia 的檔案層級結論。
 - [ledger.tsv](../sources/ledger.tsv)：已追加 `ja-*` 七列，既有列未改。
 - [sources/licenses/ja-*.txt](../sources/licenses/)：各來源的完整授權全文或聲明。
+
+## T13 編譯器與資料包
+
+T13 把日文詞典來源編成 `build/ja/` 的資料包。注音流程 `0c-compile`（`-lang zh`，預設）完全不變；日文走 `-lang ja` 分支。
+
+```sh
+# 開發包
+go run ./cmd/0c-compile -lang ja -out build/ja
+
+# 公開包（逐來源檢查帳本、可散布、授權全文）
+go run ./cmd/0c-compile -lang ja -public -out build/ja
+
+# 由辭書形展開五段、一段、サ変、カ変、形容詞、形容動詞的常見活用
+go run ./cmd/0c-compile -lang ja -ja-conjugate -out build/ja
+```
+
+沒有指定 `-out` 時，`-lang ja` 預設寫到 `build/ja`，避免覆蓋 `build/data` 的注音包。
+
+### 目錄與來源格式
+
+```text
+data/ja/
+  lexicon/words.tsv      curated 詞條（詞面、讀音、成本、詞性、來源、活用型）
+  import/<origin>.mozc.tsv      Mozc dictionary_oss TSV
+  import/<origin>.sudachi.csv   SudachiDict Core CSV
+  import/<origin>.id.def        Mozc id.def（可選，補沒有 comment 的詞性）
+  connection.tsv         詞性連接成本
+  lm/unigram.tsv         詞面次數（可選，用來估 unigram 成本）
+  lm/bigram.tsv          詞面 bigram 機率（可選）
+```
+
+`words.tsv` 的欄位是 `詞面<TAB>讀音<TAB>成本<TAB>詞性<TAB>來源<TAB>活用型`。來源可逗號分隔；活用型可用 `godan`、`ichidan`、`suru`、`kuru`、`i-adjective`、`na-adjective`，或 Mozc／UniDic 的日文名稱。詞性名稱與 `core/ja/lexicon.POS` 相同。
+
+`import/` 的檔名前綴就是來源 ID，必須在 `data/sources/ledger.tsv` 有紀錄：
+
+- `ja-mozc.mozc.tsv`：Mozc 的「讀音、左 ID、右 ID、成本、詞面、MeCab 詞性 CSV」。成本預設乘以 `1/1000`（`-ja-mozc-scale` 可改），與 curated 詞條的 1～3 同一尺度。
+- `ja-sudachidict.sudachi.csv`：SudachiDict Core 的 18 欄 CSV。Sudachi 沒有 IME 詞成本，編譯器用詞性與長度估成本；有 Wikipedia 詞頻時以詞頻為準。
+
+讀音一律正規化成平假名單位：片假名轉平假名、空白忽略，長音符與小撮かな保留，所以讀音長度不必等於詞面字數。
+
+### 資料包內容
+
+```text
+lexicon.bin    詞條、讀音 trie、詞面索引、詞性連接成本（二進位）
+lm.bin         unigram 與 bigram 成本（二進位）
+lexicon.tsv    core/ja/lexicon.Load 可直接載入的中介格式
+manifest.json  format 2、language、input_methods、output_variants、limits、雜湊
+NOTICE.txt     實際使用來源的授權與姓名標示全文
+report.txt     詞條數、連接數、檔案大小、常駐記憶體估計
+```
+
+manifest v2 的固定欄位：
+
+```json
+{
+  "format": 2,
+  "language": "ja",
+  "input_methods": ["romaji", "kana"],
+  "output_variants": ["ja"],
+  "limits": {"max_reading_units": 64, "max_word_units": 32, "max_candidates": 16},
+  "files": {},
+  "counts": {},
+  "sources": [],
+  "inputs": {},
+  "source_hash": "...",
+  "runtime_hint": {"encoded_bytes": 0, "estimated_bytes": 0}
+}
+```
+
+沒有 `language` 或 `format: 1` 一律視為注音包；`internal/compile.ManifestLanguage` 就是這個判斷。一個資料包只屬於一種語言。
+
+`lexicon.bin` 的格式：magic `0CJLEX01`、詞條（詞面、かな單位、成本、詞性、送り仮名長度、活用型）、詞面索引、讀音 trie、連接成本矩陣。所有整數用無號 varint，浮點數固定 little-endian float64；詞條、詞面、trie 子節點、連接成本都先排序。`lm.bin` 用 `0CJLM001`，同樣排序後輸出。解碼器在 `internal/jaimport.DecodeLexicon` 與 `DecodeLM`，T12 的 `core/ja/lexicon` 可直接接上，或先用 `lexicon.tsv` 的 `Load`。
+
+### 可重現建置
+
+- 不寫時間戳、主機名稱或絕對路徑；manifest 的 `inputs` 用相對 `data/` 路徑。
+- 詞條、詞面、bigram、連接成本全部排序，map 不直接影響輸出順序。
+- `source_hash` 只由輸入檔內容雜湊與大小組成，換目錄不變。
+- 同一份 `data/ja` 連跑兩次，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`manifest.json`、`NOTICE.txt`、`report.txt` 六個檔案的 SHA-256 相同；`internal/compile` 的測試會逐檔比對。
+- `-public` 在建立輸出前檢查：每個實際使用來源都在 `ledger.tsv`、可散布為 `yes`、名稱／網址／版本／授權／署名不缺、`data/sources/licenses/<ID>.txt` 存在且非空。失敗時不動既有資料包。
+
+### 量測
+
+目前 repo 內的 curated 種子（142 詞條、82 連接成本、15 bigram）：
+
+| 項目 | 數值 |
+|---|---:|
+| `lexicon.bin` | 8,597 bytes（約 60.5 bytes／詞條） |
+| `lm.bin` | 2,447 bytes |
+| `lexicon.tsv` | 4,074 bytes |
+| 解碼後常駐估計 | 54,856 bytes（約 0.05 MiB） |
+
+`internal/jaimport` 另有 20,000 筆合成詞條的量測測試：`lexicon.bin` 1,107,733 bytes（55.39 bytes／詞條），解碼後 heap 約 5.25 MB，常駐估計 4.56 MB；`BenchmarkDecodeLexicon` 約 8 ms／次。實際 Mozc 全量詞典的數字待 T13 在具備 dictionary_oss 的環境重跑，格式與量測程式不變。
+
+### 與 core/ja/lexicon 的介接
+
+T13 分支不含 T12 的 `core/ja/lexicon`，因此一般測試不 import 它。`internal/compile/ja_lexicon_integration_test.go` 用 `ja_lexicon` build tag 提供合併後的驗證：
+
+```sh
+go test -tags ja_lexicon ./internal/compile
+```
+
+它會把產出的 `lexicon.tsv` 交給真正的 `core/ja/lexicon.Load`，逐筆比對詞面、讀音與詞性。T12 的二進位解碼器接上後，同一測試可改讀 `lexicon.bin`。
