@@ -1,0 +1,9409 @@
+{
+ "name": "modern-500",
+ "license": "CC0-1.0. Original test data authored for 0c.",
+ "source": "Original templated modern Japanese sentences, not derived from any corpus.",
+ "notes": "Five templates, one hundred combinations each. Readings and bunsetsu boundaries are generated from the same slots, so they are mechanical reference values rather than expert annotation.",
+ "count": 500,
+ "items": [
+  {
+   "reading": "わたしはほんをよむ。",
+   "surface": "私は本を読む。",
+   "reading_segments": [
+    "わたしは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "私は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-001"
+  },
+  {
+   "reading": "わたしはしゃしんをみる。",
+   "surface": "私は写真を見る。",
+   "reading_segments": [
+    "わたしは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "私は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-002"
+  },
+  {
+   "reading": "わたしはおんがくをきく。",
+   "surface": "私は音楽を聞く。",
+   "reading_segments": [
+    "わたしは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "私は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-003"
+  },
+  {
+   "reading": "わたしはえいがをみる。",
+   "surface": "私は映画を見る。",
+   "reading_segments": [
+    "わたしは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "私は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-004"
+  },
+  {
+   "reading": "わたしはてがみをかく。",
+   "surface": "私は手紙を書く。",
+   "reading_segments": [
+    "わたしは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "私は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-005"
+  },
+  {
+   "reading": "わたしはごはんをたべる。",
+   "surface": "私はご飯を食べる。",
+   "reading_segments": [
+    "わたしは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "私は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-006"
+  },
+  {
+   "reading": "わたしはおちゃをのむ。",
+   "surface": "私はお茶を飲む。",
+   "reading_segments": [
+    "わたしは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "私は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-007"
+  },
+  {
+   "reading": "わたしははなをかう。",
+   "surface": "私は花を買う。",
+   "reading_segments": [
+    "わたしは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "私は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-008"
+  },
+  {
+   "reading": "わたしはくるまをあらう。",
+   "surface": "私は車を洗う。",
+   "reading_segments": [
+    "わたしは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "私は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-009"
+  },
+  {
+   "reading": "わたしはかさをもつ。",
+   "surface": "私は傘を持つ。",
+   "reading_segments": [
+    "わたしは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "私は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-010"
+  },
+  {
+   "reading": "あなたはほんをよむ。",
+   "surface": "あなたは本を読む。",
+   "reading_segments": [
+    "あなたは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "あなたは",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-011"
+  },
+  {
+   "reading": "あなたはしゃしんをみる。",
+   "surface": "あなたは写真を見る。",
+   "reading_segments": [
+    "あなたは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "あなたは",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-012"
+  },
+  {
+   "reading": "あなたはおんがくをきく。",
+   "surface": "あなたは音楽を聞く。",
+   "reading_segments": [
+    "あなたは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "あなたは",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-013"
+  },
+  {
+   "reading": "あなたはえいがをみる。",
+   "surface": "あなたは映画を見る。",
+   "reading_segments": [
+    "あなたは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "あなたは",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-014"
+  },
+  {
+   "reading": "あなたはてがみをかく。",
+   "surface": "あなたは手紙を書く。",
+   "reading_segments": [
+    "あなたは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "あなたは",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-015"
+  },
+  {
+   "reading": "あなたはごはんをたべる。",
+   "surface": "あなたはご飯を食べる。",
+   "reading_segments": [
+    "あなたは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "あなたは",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-016"
+  },
+  {
+   "reading": "あなたはおちゃをのむ。",
+   "surface": "あなたはお茶を飲む。",
+   "reading_segments": [
+    "あなたは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "あなたは",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-017"
+  },
+  {
+   "reading": "あなたははなをかう。",
+   "surface": "あなたは花を買う。",
+   "reading_segments": [
+    "あなたは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "あなたは",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-018"
+  },
+  {
+   "reading": "あなたはくるまをあらう。",
+   "surface": "あなたは車を洗う。",
+   "reading_segments": [
+    "あなたは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "あなたは",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-019"
+  },
+  {
+   "reading": "あなたはかさをもつ。",
+   "surface": "あなたは傘を持つ。",
+   "reading_segments": [
+    "あなたは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "あなたは",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-020"
+  },
+  {
+   "reading": "かれはほんをよむ。",
+   "surface": "彼は本を読む。",
+   "reading_segments": [
+    "かれは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "彼は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-021"
+  },
+  {
+   "reading": "かれはしゃしんをみる。",
+   "surface": "彼は写真を見る。",
+   "reading_segments": [
+    "かれは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "彼は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-022"
+  },
+  {
+   "reading": "かれはおんがくをきく。",
+   "surface": "彼は音楽を聞く。",
+   "reading_segments": [
+    "かれは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "彼は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-023"
+  },
+  {
+   "reading": "かれはえいがをみる。",
+   "surface": "彼は映画を見る。",
+   "reading_segments": [
+    "かれは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "彼は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-024"
+  },
+  {
+   "reading": "かれはてがみをかく。",
+   "surface": "彼は手紙を書く。",
+   "reading_segments": [
+    "かれは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "彼は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-025"
+  },
+  {
+   "reading": "かれはごはんをたべる。",
+   "surface": "彼はご飯を食べる。",
+   "reading_segments": [
+    "かれは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "彼は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-026"
+  },
+  {
+   "reading": "かれはおちゃをのむ。",
+   "surface": "彼はお茶を飲む。",
+   "reading_segments": [
+    "かれは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "彼は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-027"
+  },
+  {
+   "reading": "かれははなをかう。",
+   "surface": "彼は花を買う。",
+   "reading_segments": [
+    "かれは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "彼は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-028"
+  },
+  {
+   "reading": "かれはくるまをあらう。",
+   "surface": "彼は車を洗う。",
+   "reading_segments": [
+    "かれは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "彼は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-029"
+  },
+  {
+   "reading": "かれはかさをもつ。",
+   "surface": "彼は傘を持つ。",
+   "reading_segments": [
+    "かれは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "彼は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-030"
+  },
+  {
+   "reading": "かのじょはほんをよむ。",
+   "surface": "彼女は本を読む。",
+   "reading_segments": [
+    "かのじょは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "彼女は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-031"
+  },
+  {
+   "reading": "かのじょはしゃしんをみる。",
+   "surface": "彼女は写真を見る。",
+   "reading_segments": [
+    "かのじょは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "彼女は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-032"
+  },
+  {
+   "reading": "かのじょはおんがくをきく。",
+   "surface": "彼女は音楽を聞く。",
+   "reading_segments": [
+    "かのじょは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "彼女は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-033"
+  },
+  {
+   "reading": "かのじょはえいがをみる。",
+   "surface": "彼女は映画を見る。",
+   "reading_segments": [
+    "かのじょは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "彼女は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-034"
+  },
+  {
+   "reading": "かのじょはてがみをかく。",
+   "surface": "彼女は手紙を書く。",
+   "reading_segments": [
+    "かのじょは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "彼女は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-035"
+  },
+  {
+   "reading": "かのじょはごはんをたべる。",
+   "surface": "彼女はご飯を食べる。",
+   "reading_segments": [
+    "かのじょは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "彼女は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-036"
+  },
+  {
+   "reading": "かのじょはおちゃをのむ。",
+   "surface": "彼女はお茶を飲む。",
+   "reading_segments": [
+    "かのじょは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "彼女は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-037"
+  },
+  {
+   "reading": "かのじょははなをかう。",
+   "surface": "彼女は花を買う。",
+   "reading_segments": [
+    "かのじょは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "彼女は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-038"
+  },
+  {
+   "reading": "かのじょはくるまをあらう。",
+   "surface": "彼女は車を洗う。",
+   "reading_segments": [
+    "かのじょは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "彼女は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-039"
+  },
+  {
+   "reading": "かのじょはかさをもつ。",
+   "surface": "彼女は傘を持つ。",
+   "reading_segments": [
+    "かのじょは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "彼女は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-040"
+  },
+  {
+   "reading": "せんせいはほんをよむ。",
+   "surface": "先生は本を読む。",
+   "reading_segments": [
+    "せんせいは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "先生は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-041"
+  },
+  {
+   "reading": "せんせいはしゃしんをみる。",
+   "surface": "先生は写真を見る。",
+   "reading_segments": [
+    "せんせいは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "先生は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-042"
+  },
+  {
+   "reading": "せんせいはおんがくをきく。",
+   "surface": "先生は音楽を聞く。",
+   "reading_segments": [
+    "せんせいは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "先生は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-043"
+  },
+  {
+   "reading": "せんせいはえいがをみる。",
+   "surface": "先生は映画を見る。",
+   "reading_segments": [
+    "せんせいは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "先生は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-044"
+  },
+  {
+   "reading": "せんせいはてがみをかく。",
+   "surface": "先生は手紙を書く。",
+   "reading_segments": [
+    "せんせいは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "先生は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-045"
+  },
+  {
+   "reading": "せんせいはごはんをたべる。",
+   "surface": "先生はご飯を食べる。",
+   "reading_segments": [
+    "せんせいは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "先生は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-046"
+  },
+  {
+   "reading": "せんせいはおちゃをのむ。",
+   "surface": "先生はお茶を飲む。",
+   "reading_segments": [
+    "せんせいは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "先生は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-047"
+  },
+  {
+   "reading": "せんせいははなをかう。",
+   "surface": "先生は花を買う。",
+   "reading_segments": [
+    "せんせいは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "先生は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-048"
+  },
+  {
+   "reading": "せんせいはくるまをあらう。",
+   "surface": "先生は車を洗う。",
+   "reading_segments": [
+    "せんせいは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "先生は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-049"
+  },
+  {
+   "reading": "せんせいはかさをもつ。",
+   "surface": "先生は傘を持つ。",
+   "reading_segments": [
+    "せんせいは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "先生は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-050"
+  },
+  {
+   "reading": "がくせいはほんをよむ。",
+   "surface": "学生は本を読む。",
+   "reading_segments": [
+    "がくせいは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "学生は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-051"
+  },
+  {
+   "reading": "がくせいはしゃしんをみる。",
+   "surface": "学生は写真を見る。",
+   "reading_segments": [
+    "がくせいは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "学生は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-052"
+  },
+  {
+   "reading": "がくせいはおんがくをきく。",
+   "surface": "学生は音楽を聞く。",
+   "reading_segments": [
+    "がくせいは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "学生は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-053"
+  },
+  {
+   "reading": "がくせいはえいがをみる。",
+   "surface": "学生は映画を見る。",
+   "reading_segments": [
+    "がくせいは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "学生は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-054"
+  },
+  {
+   "reading": "がくせいはてがみをかく。",
+   "surface": "学生は手紙を書く。",
+   "reading_segments": [
+    "がくせいは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "学生は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-055"
+  },
+  {
+   "reading": "がくせいはごはんをたべる。",
+   "surface": "学生はご飯を食べる。",
+   "reading_segments": [
+    "がくせいは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "学生は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-056"
+  },
+  {
+   "reading": "がくせいはおちゃをのむ。",
+   "surface": "学生はお茶を飲む。",
+   "reading_segments": [
+    "がくせいは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "学生は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-057"
+  },
+  {
+   "reading": "がくせいははなをかう。",
+   "surface": "学生は花を買う。",
+   "reading_segments": [
+    "がくせいは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "学生は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-058"
+  },
+  {
+   "reading": "がくせいはくるまをあらう。",
+   "surface": "学生は車を洗う。",
+   "reading_segments": [
+    "がくせいは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "学生は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-059"
+  },
+  {
+   "reading": "がくせいはかさをもつ。",
+   "surface": "学生は傘を持つ。",
+   "reading_segments": [
+    "がくせいは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "学生は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-060"
+  },
+  {
+   "reading": "ともだちはほんをよむ。",
+   "surface": "友達は本を読む。",
+   "reading_segments": [
+    "ともだちは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "友達は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-061"
+  },
+  {
+   "reading": "ともだちはしゃしんをみる。",
+   "surface": "友達は写真を見る。",
+   "reading_segments": [
+    "ともだちは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "友達は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-062"
+  },
+  {
+   "reading": "ともだちはおんがくをきく。",
+   "surface": "友達は音楽を聞く。",
+   "reading_segments": [
+    "ともだちは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "友達は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-063"
+  },
+  {
+   "reading": "ともだちはえいがをみる。",
+   "surface": "友達は映画を見る。",
+   "reading_segments": [
+    "ともだちは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "友達は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-064"
+  },
+  {
+   "reading": "ともだちはてがみをかく。",
+   "surface": "友達は手紙を書く。",
+   "reading_segments": [
+    "ともだちは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "友達は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-065"
+  },
+  {
+   "reading": "ともだちはごはんをたべる。",
+   "surface": "友達はご飯を食べる。",
+   "reading_segments": [
+    "ともだちは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "友達は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-066"
+  },
+  {
+   "reading": "ともだちはおちゃをのむ。",
+   "surface": "友達はお茶を飲む。",
+   "reading_segments": [
+    "ともだちは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "友達は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-067"
+  },
+  {
+   "reading": "ともだちははなをかう。",
+   "surface": "友達は花を買う。",
+   "reading_segments": [
+    "ともだちは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "友達は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-068"
+  },
+  {
+   "reading": "ともだちはくるまをあらう。",
+   "surface": "友達は車を洗う。",
+   "reading_segments": [
+    "ともだちは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "友達は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-069"
+  },
+  {
+   "reading": "ともだちはかさをもつ。",
+   "surface": "友達は傘を持つ。",
+   "reading_segments": [
+    "ともだちは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "友達は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-070"
+  },
+  {
+   "reading": "かぞくはほんをよむ。",
+   "surface": "家族は本を読む。",
+   "reading_segments": [
+    "かぞくは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "家族は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-071"
+  },
+  {
+   "reading": "かぞくはしゃしんをみる。",
+   "surface": "家族は写真を見る。",
+   "reading_segments": [
+    "かぞくは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "家族は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-072"
+  },
+  {
+   "reading": "かぞくはおんがくをきく。",
+   "surface": "家族は音楽を聞く。",
+   "reading_segments": [
+    "かぞくは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "家族は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-073"
+  },
+  {
+   "reading": "かぞくはえいがをみる。",
+   "surface": "家族は映画を見る。",
+   "reading_segments": [
+    "かぞくは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "家族は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-074"
+  },
+  {
+   "reading": "かぞくはてがみをかく。",
+   "surface": "家族は手紙を書く。",
+   "reading_segments": [
+    "かぞくは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "家族は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-075"
+  },
+  {
+   "reading": "かぞくはごはんをたべる。",
+   "surface": "家族はご飯を食べる。",
+   "reading_segments": [
+    "かぞくは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "家族は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-076"
+  },
+  {
+   "reading": "かぞくはおちゃをのむ。",
+   "surface": "家族はお茶を飲む。",
+   "reading_segments": [
+    "かぞくは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "家族は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-077"
+  },
+  {
+   "reading": "かぞくははなをかう。",
+   "surface": "家族は花を買う。",
+   "reading_segments": [
+    "かぞくは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "家族は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-078"
+  },
+  {
+   "reading": "かぞくはくるまをあらう。",
+   "surface": "家族は車を洗う。",
+   "reading_segments": [
+    "かぞくは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "家族は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-079"
+  },
+  {
+   "reading": "かぞくはかさをもつ。",
+   "surface": "家族は傘を持つ。",
+   "reading_segments": [
+    "かぞくは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "家族は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-080"
+  },
+  {
+   "reading": "こどもはほんをよむ。",
+   "surface": "子供は本を読む。",
+   "reading_segments": [
+    "こどもは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "子供は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-081"
+  },
+  {
+   "reading": "こどもはしゃしんをみる。",
+   "surface": "子供は写真を見る。",
+   "reading_segments": [
+    "こどもは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "子供は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-082"
+  },
+  {
+   "reading": "こどもはおんがくをきく。",
+   "surface": "子供は音楽を聞く。",
+   "reading_segments": [
+    "こどもは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "子供は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-083"
+  },
+  {
+   "reading": "こどもはえいがをみる。",
+   "surface": "子供は映画を見る。",
+   "reading_segments": [
+    "こどもは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "子供は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-084"
+  },
+  {
+   "reading": "こどもはてがみをかく。",
+   "surface": "子供は手紙を書く。",
+   "reading_segments": [
+    "こどもは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "子供は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-085"
+  },
+  {
+   "reading": "こどもはごはんをたべる。",
+   "surface": "子供はご飯を食べる。",
+   "reading_segments": [
+    "こどもは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "子供は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-086"
+  },
+  {
+   "reading": "こどもはおちゃをのむ。",
+   "surface": "子供はお茶を飲む。",
+   "reading_segments": [
+    "こどもは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "子供は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-087"
+  },
+  {
+   "reading": "こどもははなをかう。",
+   "surface": "子供は花を買う。",
+   "reading_segments": [
+    "こどもは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "子供は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-088"
+  },
+  {
+   "reading": "こどもはくるまをあらう。",
+   "surface": "子供は車を洗う。",
+   "reading_segments": [
+    "こどもは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "子供は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-089"
+  },
+  {
+   "reading": "こどもはかさをもつ。",
+   "surface": "子供は傘を持つ。",
+   "reading_segments": [
+    "こどもは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "子供は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-090"
+  },
+  {
+   "reading": "はははほんをよむ。",
+   "surface": "母は本を読む。",
+   "reading_segments": [
+    "ははは",
+    "ほんを",
+    "よむ。"
+   ],
+   "segments": [
+    "母は",
+    "本を",
+    "読む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-091"
+  },
+  {
+   "reading": "はははしゃしんをみる。",
+   "surface": "母は写真を見る。",
+   "reading_segments": [
+    "ははは",
+    "しゃしんを",
+    "みる。"
+   ],
+   "segments": [
+    "母は",
+    "写真を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-092"
+  },
+  {
+   "reading": "はははおんがくをきく。",
+   "surface": "母は音楽を聞く。",
+   "reading_segments": [
+    "ははは",
+    "おんがくを",
+    "きく。"
+   ],
+   "segments": [
+    "母は",
+    "音楽を",
+    "聞く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-093"
+  },
+  {
+   "reading": "はははえいがをみる。",
+   "surface": "母は映画を見る。",
+   "reading_segments": [
+    "ははは",
+    "えいがを",
+    "みる。"
+   ],
+   "segments": [
+    "母は",
+    "映画を",
+    "見る。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-094"
+  },
+  {
+   "reading": "はははてがみをかく。",
+   "surface": "母は手紙を書く。",
+   "reading_segments": [
+    "ははは",
+    "てがみを",
+    "かく。"
+   ],
+   "segments": [
+    "母は",
+    "手紙を",
+    "書く。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-095"
+  },
+  {
+   "reading": "はははごはんをたべる。",
+   "surface": "母はご飯を食べる。",
+   "reading_segments": [
+    "ははは",
+    "ごはんを",
+    "たべる。"
+   ],
+   "segments": [
+    "母は",
+    "ご飯を",
+    "食べる。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-096"
+  },
+  {
+   "reading": "はははおちゃをのむ。",
+   "surface": "母はお茶を飲む。",
+   "reading_segments": [
+    "ははは",
+    "おちゃを",
+    "のむ。"
+   ],
+   "segments": [
+    "母は",
+    "お茶を",
+    "飲む。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-097"
+  },
+  {
+   "reading": "ははははなをかう。",
+   "surface": "母は花を買う。",
+   "reading_segments": [
+    "ははは",
+    "はなを",
+    "かう。"
+   ],
+   "segments": [
+    "母は",
+    "花を",
+    "買う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-098"
+  },
+  {
+   "reading": "はははくるまをあらう。",
+   "surface": "母は車を洗う。",
+   "reading_segments": [
+    "ははは",
+    "くるまを",
+    "あらう。"
+   ],
+   "segments": [
+    "母は",
+    "車を",
+    "洗う。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-099"
+  },
+  {
+   "reading": "はははかさをもつ。",
+   "surface": "母は傘を持つ。",
+   "reading_segments": [
+    "ははは",
+    "かさを",
+    "もつ。"
+   ],
+   "segments": [
+    "母は",
+    "傘を",
+    "持つ。"
+   ],
+   "tags": [
+    "person-object-verb"
+   ],
+   "id": "modern-100"
+  },
+  {
+   "reading": "わたしはがっこうにじてんしゃでいく。",
+   "surface": "私は学校に自転車で行く。",
+   "reading_segments": [
+    "わたしは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-101"
+  },
+  {
+   "reading": "わたしはかいしゃにでんしゃでいく。",
+   "surface": "私は会社に電車で行く。",
+   "reading_segments": [
+    "わたしは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-102"
+  },
+  {
+   "reading": "わたしはえきにとほでいく。",
+   "surface": "私は駅に徒歩で行く。",
+   "reading_segments": [
+    "わたしは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-103"
+  },
+  {
+   "reading": "わたしはとうきょうにしんかんせんでいく。",
+   "surface": "私は東京に新幹線で行く。",
+   "reading_segments": [
+    "わたしは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-104"
+  },
+  {
+   "reading": "わたしはおおさかにひこうきでいく。",
+   "surface": "私は大阪に飛行機で行く。",
+   "reading_segments": [
+    "わたしは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-105"
+  },
+  {
+   "reading": "わたしはみせにじてんしゃでいく。",
+   "surface": "私は店に自転車で行く。",
+   "reading_segments": [
+    "わたしは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-106"
+  },
+  {
+   "reading": "わたしはいえにくるまでいく。",
+   "surface": "私は家に車で行く。",
+   "reading_segments": [
+    "わたしは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-107"
+  },
+  {
+   "reading": "わたしはこうえんにとほでいく。",
+   "surface": "私は公園に徒歩で行く。",
+   "reading_segments": [
+    "わたしは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-108"
+  },
+  {
+   "reading": "わたしはとしょかんにばすでいく。",
+   "surface": "私は図書館にバスで行く。",
+   "reading_segments": [
+    "わたしは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-109"
+  },
+  {
+   "reading": "わたしはびょういんにたくしーでいく。",
+   "surface": "私は病院にタクシーで行く。",
+   "reading_segments": [
+    "わたしは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-110"
+  },
+  {
+   "reading": "あなたはがっこうにじてんしゃでいく。",
+   "surface": "あなたは学校に自転車で行く。",
+   "reading_segments": [
+    "あなたは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-111"
+  },
+  {
+   "reading": "あなたはかいしゃにでんしゃでいく。",
+   "surface": "あなたは会社に電車で行く。",
+   "reading_segments": [
+    "あなたは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-112"
+  },
+  {
+   "reading": "あなたはえきにとほでいく。",
+   "surface": "あなたは駅に徒歩で行く。",
+   "reading_segments": [
+    "あなたは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-113"
+  },
+  {
+   "reading": "あなたはとうきょうにしんかんせんでいく。",
+   "surface": "あなたは東京に新幹線で行く。",
+   "reading_segments": [
+    "あなたは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-114"
+  },
+  {
+   "reading": "あなたはおおさかにひこうきでいく。",
+   "surface": "あなたは大阪に飛行機で行く。",
+   "reading_segments": [
+    "あなたは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-115"
+  },
+  {
+   "reading": "あなたはみせにじてんしゃでいく。",
+   "surface": "あなたは店に自転車で行く。",
+   "reading_segments": [
+    "あなたは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-116"
+  },
+  {
+   "reading": "あなたはいえにくるまでいく。",
+   "surface": "あなたは家に車で行く。",
+   "reading_segments": [
+    "あなたは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-117"
+  },
+  {
+   "reading": "あなたはこうえんにとほでいく。",
+   "surface": "あなたは公園に徒歩で行く。",
+   "reading_segments": [
+    "あなたは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-118"
+  },
+  {
+   "reading": "あなたはとしょかんにばすでいく。",
+   "surface": "あなたは図書館にバスで行く。",
+   "reading_segments": [
+    "あなたは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-119"
+  },
+  {
+   "reading": "あなたはびょういんにたくしーでいく。",
+   "surface": "あなたは病院にタクシーで行く。",
+   "reading_segments": [
+    "あなたは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-120"
+  },
+  {
+   "reading": "かれはがっこうにじてんしゃでいく。",
+   "surface": "彼は学校に自転車で行く。",
+   "reading_segments": [
+    "かれは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-121"
+  },
+  {
+   "reading": "かれはかいしゃにでんしゃでいく。",
+   "surface": "彼は会社に電車で行く。",
+   "reading_segments": [
+    "かれは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-122"
+  },
+  {
+   "reading": "かれはえきにとほでいく。",
+   "surface": "彼は駅に徒歩で行く。",
+   "reading_segments": [
+    "かれは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-123"
+  },
+  {
+   "reading": "かれはとうきょうにしんかんせんでいく。",
+   "surface": "彼は東京に新幹線で行く。",
+   "reading_segments": [
+    "かれは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-124"
+  },
+  {
+   "reading": "かれはおおさかにひこうきでいく。",
+   "surface": "彼は大阪に飛行機で行く。",
+   "reading_segments": [
+    "かれは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-125"
+  },
+  {
+   "reading": "かれはみせにじてんしゃでいく。",
+   "surface": "彼は店に自転車で行く。",
+   "reading_segments": [
+    "かれは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-126"
+  },
+  {
+   "reading": "かれはいえにくるまでいく。",
+   "surface": "彼は家に車で行く。",
+   "reading_segments": [
+    "かれは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-127"
+  },
+  {
+   "reading": "かれはこうえんにとほでいく。",
+   "surface": "彼は公園に徒歩で行く。",
+   "reading_segments": [
+    "かれは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-128"
+  },
+  {
+   "reading": "かれはとしょかんにばすでいく。",
+   "surface": "彼は図書館にバスで行く。",
+   "reading_segments": [
+    "かれは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-129"
+  },
+  {
+   "reading": "かれはびょういんにたくしーでいく。",
+   "surface": "彼は病院にタクシーで行く。",
+   "reading_segments": [
+    "かれは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-130"
+  },
+  {
+   "reading": "かのじょはがっこうにじてんしゃでいく。",
+   "surface": "彼女は学校に自転車で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-131"
+  },
+  {
+   "reading": "かのじょはかいしゃにでんしゃでいく。",
+   "surface": "彼女は会社に電車で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-132"
+  },
+  {
+   "reading": "かのじょはえきにとほでいく。",
+   "surface": "彼女は駅に徒歩で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-133"
+  },
+  {
+   "reading": "かのじょはとうきょうにしんかんせんでいく。",
+   "surface": "彼女は東京に新幹線で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-134"
+  },
+  {
+   "reading": "かのじょはおおさかにひこうきでいく。",
+   "surface": "彼女は大阪に飛行機で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-135"
+  },
+  {
+   "reading": "かのじょはみせにじてんしゃでいく。",
+   "surface": "彼女は店に自転車で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-136"
+  },
+  {
+   "reading": "かのじょはいえにくるまでいく。",
+   "surface": "彼女は家に車で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-137"
+  },
+  {
+   "reading": "かのじょはこうえんにとほでいく。",
+   "surface": "彼女は公園に徒歩で行く。",
+   "reading_segments": [
+    "かのじょは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-138"
+  },
+  {
+   "reading": "かのじょはとしょかんにばすでいく。",
+   "surface": "彼女は図書館にバスで行く。",
+   "reading_segments": [
+    "かのじょは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-139"
+  },
+  {
+   "reading": "かのじょはびょういんにたくしーでいく。",
+   "surface": "彼女は病院にタクシーで行く。",
+   "reading_segments": [
+    "かのじょは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-140"
+  },
+  {
+   "reading": "せんせいはがっこうにじてんしゃでいく。",
+   "surface": "先生は学校に自転車で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-141"
+  },
+  {
+   "reading": "せんせいはかいしゃにでんしゃでいく。",
+   "surface": "先生は会社に電車で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-142"
+  },
+  {
+   "reading": "せんせいはえきにとほでいく。",
+   "surface": "先生は駅に徒歩で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-143"
+  },
+  {
+   "reading": "せんせいはとうきょうにしんかんせんでいく。",
+   "surface": "先生は東京に新幹線で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-144"
+  },
+  {
+   "reading": "せんせいはおおさかにひこうきでいく。",
+   "surface": "先生は大阪に飛行機で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-145"
+  },
+  {
+   "reading": "せんせいはみせにじてんしゃでいく。",
+   "surface": "先生は店に自転車で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-146"
+  },
+  {
+   "reading": "せんせいはいえにくるまでいく。",
+   "surface": "先生は家に車で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-147"
+  },
+  {
+   "reading": "せんせいはこうえんにとほでいく。",
+   "surface": "先生は公園に徒歩で行く。",
+   "reading_segments": [
+    "せんせいは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-148"
+  },
+  {
+   "reading": "せんせいはとしょかんにばすでいく。",
+   "surface": "先生は図書館にバスで行く。",
+   "reading_segments": [
+    "せんせいは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-149"
+  },
+  {
+   "reading": "せんせいはびょういんにたくしーでいく。",
+   "surface": "先生は病院にタクシーで行く。",
+   "reading_segments": [
+    "せんせいは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-150"
+  },
+  {
+   "reading": "がくせいはがっこうにじてんしゃでいく。",
+   "surface": "学生は学校に自転車で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-151"
+  },
+  {
+   "reading": "がくせいはかいしゃにでんしゃでいく。",
+   "surface": "学生は会社に電車で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-152"
+  },
+  {
+   "reading": "がくせいはえきにとほでいく。",
+   "surface": "学生は駅に徒歩で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-153"
+  },
+  {
+   "reading": "がくせいはとうきょうにしんかんせんでいく。",
+   "surface": "学生は東京に新幹線で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-154"
+  },
+  {
+   "reading": "がくせいはおおさかにひこうきでいく。",
+   "surface": "学生は大阪に飛行機で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-155"
+  },
+  {
+   "reading": "がくせいはみせにじてんしゃでいく。",
+   "surface": "学生は店に自転車で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-156"
+  },
+  {
+   "reading": "がくせいはいえにくるまでいく。",
+   "surface": "学生は家に車で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-157"
+  },
+  {
+   "reading": "がくせいはこうえんにとほでいく。",
+   "surface": "学生は公園に徒歩で行く。",
+   "reading_segments": [
+    "がくせいは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-158"
+  },
+  {
+   "reading": "がくせいはとしょかんにばすでいく。",
+   "surface": "学生は図書館にバスで行く。",
+   "reading_segments": [
+    "がくせいは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-159"
+  },
+  {
+   "reading": "がくせいはびょういんにたくしーでいく。",
+   "surface": "学生は病院にタクシーで行く。",
+   "reading_segments": [
+    "がくせいは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-160"
+  },
+  {
+   "reading": "ともだちはがっこうにじてんしゃでいく。",
+   "surface": "友達は学校に自転車で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-161"
+  },
+  {
+   "reading": "ともだちはかいしゃにでんしゃでいく。",
+   "surface": "友達は会社に電車で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-162"
+  },
+  {
+   "reading": "ともだちはえきにとほでいく。",
+   "surface": "友達は駅に徒歩で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-163"
+  },
+  {
+   "reading": "ともだちはとうきょうにしんかんせんでいく。",
+   "surface": "友達は東京に新幹線で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-164"
+  },
+  {
+   "reading": "ともだちはおおさかにひこうきでいく。",
+   "surface": "友達は大阪に飛行機で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-165"
+  },
+  {
+   "reading": "ともだちはみせにじてんしゃでいく。",
+   "surface": "友達は店に自転車で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-166"
+  },
+  {
+   "reading": "ともだちはいえにくるまでいく。",
+   "surface": "友達は家に車で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-167"
+  },
+  {
+   "reading": "ともだちはこうえんにとほでいく。",
+   "surface": "友達は公園に徒歩で行く。",
+   "reading_segments": [
+    "ともだちは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-168"
+  },
+  {
+   "reading": "ともだちはとしょかんにばすでいく。",
+   "surface": "友達は図書館にバスで行く。",
+   "reading_segments": [
+    "ともだちは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-169"
+  },
+  {
+   "reading": "ともだちはびょういんにたくしーでいく。",
+   "surface": "友達は病院にタクシーで行く。",
+   "reading_segments": [
+    "ともだちは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-170"
+  },
+  {
+   "reading": "かぞくはがっこうにじてんしゃでいく。",
+   "surface": "家族は学校に自転車で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-171"
+  },
+  {
+   "reading": "かぞくはかいしゃにでんしゃでいく。",
+   "surface": "家族は会社に電車で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-172"
+  },
+  {
+   "reading": "かぞくはえきにとほでいく。",
+   "surface": "家族は駅に徒歩で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-173"
+  },
+  {
+   "reading": "かぞくはとうきょうにしんかんせんでいく。",
+   "surface": "家族は東京に新幹線で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-174"
+  },
+  {
+   "reading": "かぞくはおおさかにひこうきでいく。",
+   "surface": "家族は大阪に飛行機で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-175"
+  },
+  {
+   "reading": "かぞくはみせにじてんしゃでいく。",
+   "surface": "家族は店に自転車で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-176"
+  },
+  {
+   "reading": "かぞくはいえにくるまでいく。",
+   "surface": "家族は家に車で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-177"
+  },
+  {
+   "reading": "かぞくはこうえんにとほでいく。",
+   "surface": "家族は公園に徒歩で行く。",
+   "reading_segments": [
+    "かぞくは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-178"
+  },
+  {
+   "reading": "かぞくはとしょかんにばすでいく。",
+   "surface": "家族は図書館にバスで行く。",
+   "reading_segments": [
+    "かぞくは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-179"
+  },
+  {
+   "reading": "かぞくはびょういんにたくしーでいく。",
+   "surface": "家族は病院にタクシーで行く。",
+   "reading_segments": [
+    "かぞくは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-180"
+  },
+  {
+   "reading": "こどもはがっこうにじてんしゃでいく。",
+   "surface": "子供は学校に自転車で行く。",
+   "reading_segments": [
+    "こどもは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-181"
+  },
+  {
+   "reading": "こどもはかいしゃにでんしゃでいく。",
+   "surface": "子供は会社に電車で行く。",
+   "reading_segments": [
+    "こどもは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-182"
+  },
+  {
+   "reading": "こどもはえきにとほでいく。",
+   "surface": "子供は駅に徒歩で行く。",
+   "reading_segments": [
+    "こどもは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-183"
+  },
+  {
+   "reading": "こどもはとうきょうにしんかんせんでいく。",
+   "surface": "子供は東京に新幹線で行く。",
+   "reading_segments": [
+    "こどもは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-184"
+  },
+  {
+   "reading": "こどもはおおさかにひこうきでいく。",
+   "surface": "子供は大阪に飛行機で行く。",
+   "reading_segments": [
+    "こどもは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-185"
+  },
+  {
+   "reading": "こどもはみせにじてんしゃでいく。",
+   "surface": "子供は店に自転車で行く。",
+   "reading_segments": [
+    "こどもは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-186"
+  },
+  {
+   "reading": "こどもはいえにくるまでいく。",
+   "surface": "子供は家に車で行く。",
+   "reading_segments": [
+    "こどもは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-187"
+  },
+  {
+   "reading": "こどもはこうえんにとほでいく。",
+   "surface": "子供は公園に徒歩で行く。",
+   "reading_segments": [
+    "こどもは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-188"
+  },
+  {
+   "reading": "こどもはとしょかんにばすでいく。",
+   "surface": "子供は図書館にバスで行く。",
+   "reading_segments": [
+    "こどもは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-189"
+  },
+  {
+   "reading": "こどもはびょういんにたくしーでいく。",
+   "surface": "子供は病院にタクシーで行く。",
+   "reading_segments": [
+    "こどもは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-190"
+  },
+  {
+   "reading": "はははがっこうにじてんしゃでいく。",
+   "surface": "母は学校に自転車で行く。",
+   "reading_segments": [
+    "ははは",
+    "がっこうに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "学校に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-191"
+  },
+  {
+   "reading": "はははかいしゃにでんしゃでいく。",
+   "surface": "母は会社に電車で行く。",
+   "reading_segments": [
+    "ははは",
+    "かいしゃに",
+    "でんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "会社に",
+    "電車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-192"
+  },
+  {
+   "reading": "はははえきにとほでいく。",
+   "surface": "母は駅に徒歩で行く。",
+   "reading_segments": [
+    "ははは",
+    "えきに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "駅に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-193"
+  },
+  {
+   "reading": "はははとうきょうにしんかんせんでいく。",
+   "surface": "母は東京に新幹線で行く。",
+   "reading_segments": [
+    "ははは",
+    "とうきょうに",
+    "しんかんせんで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "東京に",
+    "新幹線で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-194"
+  },
+  {
+   "reading": "はははおおさかにひこうきでいく。",
+   "surface": "母は大阪に飛行機で行く。",
+   "reading_segments": [
+    "ははは",
+    "おおさかに",
+    "ひこうきで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "大阪に",
+    "飛行機で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-195"
+  },
+  {
+   "reading": "はははみせにじてんしゃでいく。",
+   "surface": "母は店に自転車で行く。",
+   "reading_segments": [
+    "ははは",
+    "みせに",
+    "じてんしゃで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "店に",
+    "自転車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-196"
+  },
+  {
+   "reading": "はははいえにくるまでいく。",
+   "surface": "母は家に車で行く。",
+   "reading_segments": [
+    "ははは",
+    "いえに",
+    "くるまで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "家に",
+    "車で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-197"
+  },
+  {
+   "reading": "はははこうえんにとほでいく。",
+   "surface": "母は公園に徒歩で行く。",
+   "reading_segments": [
+    "ははは",
+    "こうえんに",
+    "とほで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "公園に",
+    "徒歩で",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-198"
+  },
+  {
+   "reading": "はははとしょかんにばすでいく。",
+   "surface": "母は図書館にバスで行く。",
+   "reading_segments": [
+    "ははは",
+    "としょかんに",
+    "ばすで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "図書館に",
+    "バスで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-199"
+  },
+  {
+   "reading": "はははびょういんにたくしーでいく。",
+   "surface": "母は病院にタクシーで行く。",
+   "reading_segments": [
+    "ははは",
+    "びょういんに",
+    "たくしーで",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "病院に",
+    "タクシーで",
+    "行く。"
+   ],
+   "tags": [
+    "person-place-transport"
+   ],
+   "id": "modern-200"
+  },
+  {
+   "reading": "わたしはきょうにがっこうへいく。",
+   "surface": "私は今日に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-201"
+  },
+  {
+   "reading": "わたしはあしたにがっこうへいく。",
+   "surface": "私は明日に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-202"
+  },
+  {
+   "reading": "わたしはあさにがっこうへいく。",
+   "surface": "私は朝に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-203"
+  },
+  {
+   "reading": "わたしはひるにがっこうへいく。",
+   "surface": "私は昼に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-204"
+  },
+  {
+   "reading": "わたしはよるにがっこうへいく。",
+   "surface": "私は夜に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-205"
+  },
+  {
+   "reading": "わたしはしゅうまつにがっこうへいく。",
+   "surface": "私は週末に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-206"
+  },
+  {
+   "reading": "わたしはげつようびにがっこうへいく。",
+   "surface": "私は月曜日に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-207"
+  },
+  {
+   "reading": "わたしはきんようびにがっこうへいく。",
+   "surface": "私は金曜日に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-208"
+  },
+  {
+   "reading": "わたしはらいしゅうにがっこうへいく。",
+   "surface": "私は来週に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-209"
+  },
+  {
+   "reading": "わたしはまいにちにがっこうへいく。",
+   "surface": "私は毎日に学校へ行く。",
+   "reading_segments": [
+    "わたしは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "私は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-210"
+  },
+  {
+   "reading": "あなたはきょうにがっこうへいく。",
+   "surface": "あなたは今日に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-211"
+  },
+  {
+   "reading": "あなたはあしたにがっこうへいく。",
+   "surface": "あなたは明日に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-212"
+  },
+  {
+   "reading": "あなたはあさにがっこうへいく。",
+   "surface": "あなたは朝に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-213"
+  },
+  {
+   "reading": "あなたはひるにがっこうへいく。",
+   "surface": "あなたは昼に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-214"
+  },
+  {
+   "reading": "あなたはよるにがっこうへいく。",
+   "surface": "あなたは夜に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-215"
+  },
+  {
+   "reading": "あなたはしゅうまつにがっこうへいく。",
+   "surface": "あなたは週末に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-216"
+  },
+  {
+   "reading": "あなたはげつようびにがっこうへいく。",
+   "surface": "あなたは月曜日に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-217"
+  },
+  {
+   "reading": "あなたはきんようびにがっこうへいく。",
+   "surface": "あなたは金曜日に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-218"
+  },
+  {
+   "reading": "あなたはらいしゅうにがっこうへいく。",
+   "surface": "あなたは来週に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-219"
+  },
+  {
+   "reading": "あなたはまいにちにがっこうへいく。",
+   "surface": "あなたは毎日に学校へ行く。",
+   "reading_segments": [
+    "あなたは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "あなたは",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-220"
+  },
+  {
+   "reading": "かれはきょうにがっこうへいく。",
+   "surface": "彼は今日に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-221"
+  },
+  {
+   "reading": "かれはあしたにがっこうへいく。",
+   "surface": "彼は明日に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-222"
+  },
+  {
+   "reading": "かれはあさにがっこうへいく。",
+   "surface": "彼は朝に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-223"
+  },
+  {
+   "reading": "かれはひるにがっこうへいく。",
+   "surface": "彼は昼に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-224"
+  },
+  {
+   "reading": "かれはよるにがっこうへいく。",
+   "surface": "彼は夜に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-225"
+  },
+  {
+   "reading": "かれはしゅうまつにがっこうへいく。",
+   "surface": "彼は週末に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-226"
+  },
+  {
+   "reading": "かれはげつようびにがっこうへいく。",
+   "surface": "彼は月曜日に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-227"
+  },
+  {
+   "reading": "かれはきんようびにがっこうへいく。",
+   "surface": "彼は金曜日に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-228"
+  },
+  {
+   "reading": "かれはらいしゅうにがっこうへいく。",
+   "surface": "彼は来週に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-229"
+  },
+  {
+   "reading": "かれはまいにちにがっこうへいく。",
+   "surface": "彼は毎日に学校へ行く。",
+   "reading_segments": [
+    "かれは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-230"
+  },
+  {
+   "reading": "かのじょはきょうにがっこうへいく。",
+   "surface": "彼女は今日に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-231"
+  },
+  {
+   "reading": "かのじょはあしたにがっこうへいく。",
+   "surface": "彼女は明日に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-232"
+  },
+  {
+   "reading": "かのじょはあさにがっこうへいく。",
+   "surface": "彼女は朝に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-233"
+  },
+  {
+   "reading": "かのじょはひるにがっこうへいく。",
+   "surface": "彼女は昼に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-234"
+  },
+  {
+   "reading": "かのじょはよるにがっこうへいく。",
+   "surface": "彼女は夜に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-235"
+  },
+  {
+   "reading": "かのじょはしゅうまつにがっこうへいく。",
+   "surface": "彼女は週末に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-236"
+  },
+  {
+   "reading": "かのじょはげつようびにがっこうへいく。",
+   "surface": "彼女は月曜日に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-237"
+  },
+  {
+   "reading": "かのじょはきんようびにがっこうへいく。",
+   "surface": "彼女は金曜日に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-238"
+  },
+  {
+   "reading": "かのじょはらいしゅうにがっこうへいく。",
+   "surface": "彼女は来週に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-239"
+  },
+  {
+   "reading": "かのじょはまいにちにがっこうへいく。",
+   "surface": "彼女は毎日に学校へ行く。",
+   "reading_segments": [
+    "かのじょは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "彼女は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-240"
+  },
+  {
+   "reading": "せんせいはきょうにがっこうへいく。",
+   "surface": "先生は今日に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-241"
+  },
+  {
+   "reading": "せんせいはあしたにがっこうへいく。",
+   "surface": "先生は明日に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-242"
+  },
+  {
+   "reading": "せんせいはあさにがっこうへいく。",
+   "surface": "先生は朝に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-243"
+  },
+  {
+   "reading": "せんせいはひるにがっこうへいく。",
+   "surface": "先生は昼に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-244"
+  },
+  {
+   "reading": "せんせいはよるにがっこうへいく。",
+   "surface": "先生は夜に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-245"
+  },
+  {
+   "reading": "せんせいはしゅうまつにがっこうへいく。",
+   "surface": "先生は週末に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-246"
+  },
+  {
+   "reading": "せんせいはげつようびにがっこうへいく。",
+   "surface": "先生は月曜日に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-247"
+  },
+  {
+   "reading": "せんせいはきんようびにがっこうへいく。",
+   "surface": "先生は金曜日に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-248"
+  },
+  {
+   "reading": "せんせいはらいしゅうにがっこうへいく。",
+   "surface": "先生は来週に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-249"
+  },
+  {
+   "reading": "せんせいはまいにちにがっこうへいく。",
+   "surface": "先生は毎日に学校へ行く。",
+   "reading_segments": [
+    "せんせいは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "先生は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-250"
+  },
+  {
+   "reading": "がくせいはきょうにがっこうへいく。",
+   "surface": "学生は今日に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-251"
+  },
+  {
+   "reading": "がくせいはあしたにがっこうへいく。",
+   "surface": "学生は明日に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-252"
+  },
+  {
+   "reading": "がくせいはあさにがっこうへいく。",
+   "surface": "学生は朝に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-253"
+  },
+  {
+   "reading": "がくせいはひるにがっこうへいく。",
+   "surface": "学生は昼に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-254"
+  },
+  {
+   "reading": "がくせいはよるにがっこうへいく。",
+   "surface": "学生は夜に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-255"
+  },
+  {
+   "reading": "がくせいはしゅうまつにがっこうへいく。",
+   "surface": "学生は週末に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-256"
+  },
+  {
+   "reading": "がくせいはげつようびにがっこうへいく。",
+   "surface": "学生は月曜日に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-257"
+  },
+  {
+   "reading": "がくせいはきんようびにがっこうへいく。",
+   "surface": "学生は金曜日に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-258"
+  },
+  {
+   "reading": "がくせいはらいしゅうにがっこうへいく。",
+   "surface": "学生は来週に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-259"
+  },
+  {
+   "reading": "がくせいはまいにちにがっこうへいく。",
+   "surface": "学生は毎日に学校へ行く。",
+   "reading_segments": [
+    "がくせいは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "学生は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-260"
+  },
+  {
+   "reading": "ともだちはきょうにがっこうへいく。",
+   "surface": "友達は今日に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-261"
+  },
+  {
+   "reading": "ともだちはあしたにがっこうへいく。",
+   "surface": "友達は明日に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-262"
+  },
+  {
+   "reading": "ともだちはあさにがっこうへいく。",
+   "surface": "友達は朝に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-263"
+  },
+  {
+   "reading": "ともだちはひるにがっこうへいく。",
+   "surface": "友達は昼に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-264"
+  },
+  {
+   "reading": "ともだちはよるにがっこうへいく。",
+   "surface": "友達は夜に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-265"
+  },
+  {
+   "reading": "ともだちはしゅうまつにがっこうへいく。",
+   "surface": "友達は週末に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-266"
+  },
+  {
+   "reading": "ともだちはげつようびにがっこうへいく。",
+   "surface": "友達は月曜日に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-267"
+  },
+  {
+   "reading": "ともだちはきんようびにがっこうへいく。",
+   "surface": "友達は金曜日に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-268"
+  },
+  {
+   "reading": "ともだちはらいしゅうにがっこうへいく。",
+   "surface": "友達は来週に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-269"
+  },
+  {
+   "reading": "ともだちはまいにちにがっこうへいく。",
+   "surface": "友達は毎日に学校へ行く。",
+   "reading_segments": [
+    "ともだちは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "友達は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-270"
+  },
+  {
+   "reading": "かぞくはきょうにがっこうへいく。",
+   "surface": "家族は今日に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-271"
+  },
+  {
+   "reading": "かぞくはあしたにがっこうへいく。",
+   "surface": "家族は明日に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-272"
+  },
+  {
+   "reading": "かぞくはあさにがっこうへいく。",
+   "surface": "家族は朝に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-273"
+  },
+  {
+   "reading": "かぞくはひるにがっこうへいく。",
+   "surface": "家族は昼に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-274"
+  },
+  {
+   "reading": "かぞくはよるにがっこうへいく。",
+   "surface": "家族は夜に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-275"
+  },
+  {
+   "reading": "かぞくはしゅうまつにがっこうへいく。",
+   "surface": "家族は週末に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-276"
+  },
+  {
+   "reading": "かぞくはげつようびにがっこうへいく。",
+   "surface": "家族は月曜日に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-277"
+  },
+  {
+   "reading": "かぞくはきんようびにがっこうへいく。",
+   "surface": "家族は金曜日に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-278"
+  },
+  {
+   "reading": "かぞくはらいしゅうにがっこうへいく。",
+   "surface": "家族は来週に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-279"
+  },
+  {
+   "reading": "かぞくはまいにちにがっこうへいく。",
+   "surface": "家族は毎日に学校へ行く。",
+   "reading_segments": [
+    "かぞくは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "家族は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-280"
+  },
+  {
+   "reading": "こどもはきょうにがっこうへいく。",
+   "surface": "子供は今日に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-281"
+  },
+  {
+   "reading": "こどもはあしたにがっこうへいく。",
+   "surface": "子供は明日に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-282"
+  },
+  {
+   "reading": "こどもはあさにがっこうへいく。",
+   "surface": "子供は朝に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-283"
+  },
+  {
+   "reading": "こどもはひるにがっこうへいく。",
+   "surface": "子供は昼に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-284"
+  },
+  {
+   "reading": "こどもはよるにがっこうへいく。",
+   "surface": "子供は夜に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-285"
+  },
+  {
+   "reading": "こどもはしゅうまつにがっこうへいく。",
+   "surface": "子供は週末に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-286"
+  },
+  {
+   "reading": "こどもはげつようびにがっこうへいく。",
+   "surface": "子供は月曜日に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-287"
+  },
+  {
+   "reading": "こどもはきんようびにがっこうへいく。",
+   "surface": "子供は金曜日に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-288"
+  },
+  {
+   "reading": "こどもはらいしゅうにがっこうへいく。",
+   "surface": "子供は来週に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-289"
+  },
+  {
+   "reading": "こどもはまいにちにがっこうへいく。",
+   "surface": "子供は毎日に学校へ行く。",
+   "reading_segments": [
+    "こどもは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "子供は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-290"
+  },
+  {
+   "reading": "はははきょうにがっこうへいく。",
+   "surface": "母は今日に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "きょうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "今日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-291"
+  },
+  {
+   "reading": "はははあしたにがっこうへいく。",
+   "surface": "母は明日に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "あしたに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "明日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-292"
+  },
+  {
+   "reading": "はははあさにがっこうへいく。",
+   "surface": "母は朝に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "あさに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "朝に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-293"
+  },
+  {
+   "reading": "はははひるにがっこうへいく。",
+   "surface": "母は昼に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "ひるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "昼に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-294"
+  },
+  {
+   "reading": "はははよるにがっこうへいく。",
+   "surface": "母は夜に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "よるに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "夜に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-295"
+  },
+  {
+   "reading": "はははしゅうまつにがっこうへいく。",
+   "surface": "母は週末に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "しゅうまつに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "週末に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-296"
+  },
+  {
+   "reading": "はははげつようびにがっこうへいく。",
+   "surface": "母は月曜日に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "げつようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "月曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-297"
+  },
+  {
+   "reading": "はははきんようびにがっこうへいく。",
+   "surface": "母は金曜日に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "きんようびに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "金曜日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-298"
+  },
+  {
+   "reading": "はははらいしゅうにがっこうへいく。",
+   "surface": "母は来週に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "らいしゅうに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "来週に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-299"
+  },
+  {
+   "reading": "はははまいにちにがっこうへいく。",
+   "surface": "母は毎日に学校へ行く。",
+   "reading_segments": [
+    "ははは",
+    "まいにちに",
+    "がっこうへ",
+    "いく。"
+   ],
+   "segments": [
+    "母は",
+    "毎日に",
+    "学校へ",
+    "行く。"
+   ],
+   "tags": [
+    "person-time-place"
+   ],
+   "id": "modern-300"
+  },
+  {
+   "reading": "ほんについてがっこうではなす。",
+   "surface": "本について学校で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-301"
+  },
+  {
+   "reading": "ほんについてかいしゃではなす。",
+   "surface": "本について会社で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-302"
+  },
+  {
+   "reading": "ほんについてえきではなす。",
+   "surface": "本について駅で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-303"
+  },
+  {
+   "reading": "ほんについてとうきょうではなす。",
+   "surface": "本について東京で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-304"
+  },
+  {
+   "reading": "ほんについておおさかではなす。",
+   "surface": "本について大阪で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-305"
+  },
+  {
+   "reading": "ほんについてみせではなす。",
+   "surface": "本について店で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-306"
+  },
+  {
+   "reading": "ほんについていえではなす。",
+   "surface": "本について家で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-307"
+  },
+  {
+   "reading": "ほんについてこうえんではなす。",
+   "surface": "本について公園で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-308"
+  },
+  {
+   "reading": "ほんについてとしょかんではなす。",
+   "surface": "本について図書館で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-309"
+  },
+  {
+   "reading": "ほんについてびょういんではなす。",
+   "surface": "本について病院で話す。",
+   "reading_segments": [
+    "ほんについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "本について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-310"
+  },
+  {
+   "reading": "しゃしんについてがっこうではなす。",
+   "surface": "写真について学校で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-311"
+  },
+  {
+   "reading": "しゃしんについてかいしゃではなす。",
+   "surface": "写真について会社で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-312"
+  },
+  {
+   "reading": "しゃしんについてえきではなす。",
+   "surface": "写真について駅で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-313"
+  },
+  {
+   "reading": "しゃしんについてとうきょうではなす。",
+   "surface": "写真について東京で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-314"
+  },
+  {
+   "reading": "しゃしんについておおさかではなす。",
+   "surface": "写真について大阪で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-315"
+  },
+  {
+   "reading": "しゃしんについてみせではなす。",
+   "surface": "写真について店で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-316"
+  },
+  {
+   "reading": "しゃしんについていえではなす。",
+   "surface": "写真について家で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-317"
+  },
+  {
+   "reading": "しゃしんについてこうえんではなす。",
+   "surface": "写真について公園で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-318"
+  },
+  {
+   "reading": "しゃしんについてとしょかんではなす。",
+   "surface": "写真について図書館で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-319"
+  },
+  {
+   "reading": "しゃしんについてびょういんではなす。",
+   "surface": "写真について病院で話す。",
+   "reading_segments": [
+    "しゃしんについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "写真について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-320"
+  },
+  {
+   "reading": "おんがくについてがっこうではなす。",
+   "surface": "音楽について学校で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-321"
+  },
+  {
+   "reading": "おんがくについてかいしゃではなす。",
+   "surface": "音楽について会社で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-322"
+  },
+  {
+   "reading": "おんがくについてえきではなす。",
+   "surface": "音楽について駅で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-323"
+  },
+  {
+   "reading": "おんがくについてとうきょうではなす。",
+   "surface": "音楽について東京で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-324"
+  },
+  {
+   "reading": "おんがくについておおさかではなす。",
+   "surface": "音楽について大阪で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-325"
+  },
+  {
+   "reading": "おんがくについてみせではなす。",
+   "surface": "音楽について店で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-326"
+  },
+  {
+   "reading": "おんがくについていえではなす。",
+   "surface": "音楽について家で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-327"
+  },
+  {
+   "reading": "おんがくについてこうえんではなす。",
+   "surface": "音楽について公園で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-328"
+  },
+  {
+   "reading": "おんがくについてとしょかんではなす。",
+   "surface": "音楽について図書館で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-329"
+  },
+  {
+   "reading": "おんがくについてびょういんではなす。",
+   "surface": "音楽について病院で話す。",
+   "reading_segments": [
+    "おんがくについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "音楽について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-330"
+  },
+  {
+   "reading": "えいがについてがっこうではなす。",
+   "surface": "映画について学校で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-331"
+  },
+  {
+   "reading": "えいがについてかいしゃではなす。",
+   "surface": "映画について会社で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-332"
+  },
+  {
+   "reading": "えいがについてえきではなす。",
+   "surface": "映画について駅で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-333"
+  },
+  {
+   "reading": "えいがについてとうきょうではなす。",
+   "surface": "映画について東京で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-334"
+  },
+  {
+   "reading": "えいがについておおさかではなす。",
+   "surface": "映画について大阪で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-335"
+  },
+  {
+   "reading": "えいがについてみせではなす。",
+   "surface": "映画について店で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-336"
+  },
+  {
+   "reading": "えいがについていえではなす。",
+   "surface": "映画について家で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-337"
+  },
+  {
+   "reading": "えいがについてこうえんではなす。",
+   "surface": "映画について公園で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-338"
+  },
+  {
+   "reading": "えいがについてとしょかんではなす。",
+   "surface": "映画について図書館で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-339"
+  },
+  {
+   "reading": "えいがについてびょういんではなす。",
+   "surface": "映画について病院で話す。",
+   "reading_segments": [
+    "えいがについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "映画について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-340"
+  },
+  {
+   "reading": "てがみについてがっこうではなす。",
+   "surface": "手紙について学校で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-341"
+  },
+  {
+   "reading": "てがみについてかいしゃではなす。",
+   "surface": "手紙について会社で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-342"
+  },
+  {
+   "reading": "てがみについてえきではなす。",
+   "surface": "手紙について駅で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-343"
+  },
+  {
+   "reading": "てがみについてとうきょうではなす。",
+   "surface": "手紙について東京で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-344"
+  },
+  {
+   "reading": "てがみについておおさかではなす。",
+   "surface": "手紙について大阪で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-345"
+  },
+  {
+   "reading": "てがみについてみせではなす。",
+   "surface": "手紙について店で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-346"
+  },
+  {
+   "reading": "てがみについていえではなす。",
+   "surface": "手紙について家で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-347"
+  },
+  {
+   "reading": "てがみについてこうえんではなす。",
+   "surface": "手紙について公園で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-348"
+  },
+  {
+   "reading": "てがみについてとしょかんではなす。",
+   "surface": "手紙について図書館で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-349"
+  },
+  {
+   "reading": "てがみについてびょういんではなす。",
+   "surface": "手紙について病院で話す。",
+   "reading_segments": [
+    "てがみについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "手紙について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-350"
+  },
+  {
+   "reading": "ごはんについてがっこうではなす。",
+   "surface": "ご飯について学校で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-351"
+  },
+  {
+   "reading": "ごはんについてかいしゃではなす。",
+   "surface": "ご飯について会社で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-352"
+  },
+  {
+   "reading": "ごはんについてえきではなす。",
+   "surface": "ご飯について駅で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-353"
+  },
+  {
+   "reading": "ごはんについてとうきょうではなす。",
+   "surface": "ご飯について東京で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-354"
+  },
+  {
+   "reading": "ごはんについておおさかではなす。",
+   "surface": "ご飯について大阪で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-355"
+  },
+  {
+   "reading": "ごはんについてみせではなす。",
+   "surface": "ご飯について店で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-356"
+  },
+  {
+   "reading": "ごはんについていえではなす。",
+   "surface": "ご飯について家で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-357"
+  },
+  {
+   "reading": "ごはんについてこうえんではなす。",
+   "surface": "ご飯について公園で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-358"
+  },
+  {
+   "reading": "ごはんについてとしょかんではなす。",
+   "surface": "ご飯について図書館で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-359"
+  },
+  {
+   "reading": "ごはんについてびょういんではなす。",
+   "surface": "ご飯について病院で話す。",
+   "reading_segments": [
+    "ごはんについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "ご飯について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-360"
+  },
+  {
+   "reading": "おちゃについてがっこうではなす。",
+   "surface": "お茶について学校で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-361"
+  },
+  {
+   "reading": "おちゃについてかいしゃではなす。",
+   "surface": "お茶について会社で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-362"
+  },
+  {
+   "reading": "おちゃについてえきではなす。",
+   "surface": "お茶について駅で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-363"
+  },
+  {
+   "reading": "おちゃについてとうきょうではなす。",
+   "surface": "お茶について東京で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-364"
+  },
+  {
+   "reading": "おちゃについておおさかではなす。",
+   "surface": "お茶について大阪で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-365"
+  },
+  {
+   "reading": "おちゃについてみせではなす。",
+   "surface": "お茶について店で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-366"
+  },
+  {
+   "reading": "おちゃについていえではなす。",
+   "surface": "お茶について家で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-367"
+  },
+  {
+   "reading": "おちゃについてこうえんではなす。",
+   "surface": "お茶について公園で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-368"
+  },
+  {
+   "reading": "おちゃについてとしょかんではなす。",
+   "surface": "お茶について図書館で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-369"
+  },
+  {
+   "reading": "おちゃについてびょういんではなす。",
+   "surface": "お茶について病院で話す。",
+   "reading_segments": [
+    "おちゃについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "お茶について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-370"
+  },
+  {
+   "reading": "はなについてがっこうではなす。",
+   "surface": "花について学校で話す。",
+   "reading_segments": [
+    "はなについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-371"
+  },
+  {
+   "reading": "はなについてかいしゃではなす。",
+   "surface": "花について会社で話す。",
+   "reading_segments": [
+    "はなについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-372"
+  },
+  {
+   "reading": "はなについてえきではなす。",
+   "surface": "花について駅で話す。",
+   "reading_segments": [
+    "はなについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-373"
+  },
+  {
+   "reading": "はなについてとうきょうではなす。",
+   "surface": "花について東京で話す。",
+   "reading_segments": [
+    "はなについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-374"
+  },
+  {
+   "reading": "はなについておおさかではなす。",
+   "surface": "花について大阪で話す。",
+   "reading_segments": [
+    "はなについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-375"
+  },
+  {
+   "reading": "はなについてみせではなす。",
+   "surface": "花について店で話す。",
+   "reading_segments": [
+    "はなについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-376"
+  },
+  {
+   "reading": "はなについていえではなす。",
+   "surface": "花について家で話す。",
+   "reading_segments": [
+    "はなについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-377"
+  },
+  {
+   "reading": "はなについてこうえんではなす。",
+   "surface": "花について公園で話す。",
+   "reading_segments": [
+    "はなについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-378"
+  },
+  {
+   "reading": "はなについてとしょかんではなす。",
+   "surface": "花について図書館で話す。",
+   "reading_segments": [
+    "はなについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-379"
+  },
+  {
+   "reading": "はなについてびょういんではなす。",
+   "surface": "花について病院で話す。",
+   "reading_segments": [
+    "はなについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "花について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-380"
+  },
+  {
+   "reading": "くるまについてがっこうではなす。",
+   "surface": "車について学校で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-381"
+  },
+  {
+   "reading": "くるまについてかいしゃではなす。",
+   "surface": "車について会社で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-382"
+  },
+  {
+   "reading": "くるまについてえきではなす。",
+   "surface": "車について駅で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-383"
+  },
+  {
+   "reading": "くるまについてとうきょうではなす。",
+   "surface": "車について東京で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-384"
+  },
+  {
+   "reading": "くるまについておおさかではなす。",
+   "surface": "車について大阪で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-385"
+  },
+  {
+   "reading": "くるまについてみせではなす。",
+   "surface": "車について店で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-386"
+  },
+  {
+   "reading": "くるまについていえではなす。",
+   "surface": "車について家で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-387"
+  },
+  {
+   "reading": "くるまについてこうえんではなす。",
+   "surface": "車について公園で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-388"
+  },
+  {
+   "reading": "くるまについてとしょかんではなす。",
+   "surface": "車について図書館で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-389"
+  },
+  {
+   "reading": "くるまについてびょういんではなす。",
+   "surface": "車について病院で話す。",
+   "reading_segments": [
+    "くるまについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "車について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-390"
+  },
+  {
+   "reading": "かさについてがっこうではなす。",
+   "surface": "傘について学校で話す。",
+   "reading_segments": [
+    "かさについて",
+    "がっこうで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "学校で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-391"
+  },
+  {
+   "reading": "かさについてかいしゃではなす。",
+   "surface": "傘について会社で話す。",
+   "reading_segments": [
+    "かさについて",
+    "かいしゃで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "会社で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-392"
+  },
+  {
+   "reading": "かさについてえきではなす。",
+   "surface": "傘について駅で話す。",
+   "reading_segments": [
+    "かさについて",
+    "えきで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "駅で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-393"
+  },
+  {
+   "reading": "かさについてとうきょうではなす。",
+   "surface": "傘について東京で話す。",
+   "reading_segments": [
+    "かさについて",
+    "とうきょうで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "東京で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-394"
+  },
+  {
+   "reading": "かさについておおさかではなす。",
+   "surface": "傘について大阪で話す。",
+   "reading_segments": [
+    "かさについて",
+    "おおさかで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "大阪で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-395"
+  },
+  {
+   "reading": "かさについてみせではなす。",
+   "surface": "傘について店で話す。",
+   "reading_segments": [
+    "かさについて",
+    "みせで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "店で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-396"
+  },
+  {
+   "reading": "かさについていえではなす。",
+   "surface": "傘について家で話す。",
+   "reading_segments": [
+    "かさについて",
+    "いえで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "家で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-397"
+  },
+  {
+   "reading": "かさについてこうえんではなす。",
+   "surface": "傘について公園で話す。",
+   "reading_segments": [
+    "かさについて",
+    "こうえんで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "公園で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-398"
+  },
+  {
+   "reading": "かさについてとしょかんではなす。",
+   "surface": "傘について図書館で話す。",
+   "reading_segments": [
+    "かさについて",
+    "としょかんで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "図書館で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-399"
+  },
+  {
+   "reading": "かさについてびょういんではなす。",
+   "surface": "傘について病院で話す。",
+   "reading_segments": [
+    "かさについて",
+    "びょういんで",
+    "はなす。"
+   ],
+   "segments": [
+    "傘について",
+    "病院で",
+    "話す。"
+   ],
+   "tags": [
+    "object-place-topic"
+   ],
+   "id": "modern-400"
+  },
+  {
+   "reading": "きょうはてんきがいい。",
+   "surface": "今日は天気がいい。",
+   "reading_segments": [
+    "きょうは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "今日は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-401"
+  },
+  {
+   "reading": "きょうはてんきがわるい。",
+   "surface": "今日は天気が悪い。",
+   "reading_segments": [
+    "きょうは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "今日は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-402"
+  },
+  {
+   "reading": "きょうはあめがつよい。",
+   "surface": "今日は雨が強い。",
+   "reading_segments": [
+    "きょうは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "今日は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-403"
+  },
+  {
+   "reading": "きょうはあめがよわい。",
+   "surface": "今日は雨が弱い。",
+   "reading_segments": [
+    "きょうは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "今日は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-404"
+  },
+  {
+   "reading": "きょうはゆきがおおい。",
+   "surface": "今日は雪が多い。",
+   "reading_segments": [
+    "きょうは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "今日は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-405"
+  },
+  {
+   "reading": "きょうはゆきがすくない。",
+   "surface": "今日は雪が少ない。",
+   "reading_segments": [
+    "きょうは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "今日は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-406"
+  },
+  {
+   "reading": "きょうはかぜがつめたい。",
+   "surface": "今日は風が冷たい。",
+   "reading_segments": [
+    "きょうは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "今日は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-407"
+  },
+  {
+   "reading": "きょうはかぜがつよい。",
+   "surface": "今日は風が強い。",
+   "reading_segments": [
+    "きょうは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "今日は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-408"
+  },
+  {
+   "reading": "きょうはきおんがたかい。",
+   "surface": "今日は気温が高い。",
+   "reading_segments": [
+    "きょうは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "今日は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-409"
+  },
+  {
+   "reading": "きょうはきおんがひくい。",
+   "surface": "今日は気温が低い。",
+   "reading_segments": [
+    "きょうは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "今日は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-410"
+  },
+  {
+   "reading": "あしたはてんきがいい。",
+   "surface": "明日は天気がいい。",
+   "reading_segments": [
+    "あしたは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "明日は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-411"
+  },
+  {
+   "reading": "あしたはてんきがわるい。",
+   "surface": "明日は天気が悪い。",
+   "reading_segments": [
+    "あしたは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "明日は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-412"
+  },
+  {
+   "reading": "あしたはあめがつよい。",
+   "surface": "明日は雨が強い。",
+   "reading_segments": [
+    "あしたは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "明日は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-413"
+  },
+  {
+   "reading": "あしたはあめがよわい。",
+   "surface": "明日は雨が弱い。",
+   "reading_segments": [
+    "あしたは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "明日は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-414"
+  },
+  {
+   "reading": "あしたはゆきがおおい。",
+   "surface": "明日は雪が多い。",
+   "reading_segments": [
+    "あしたは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "明日は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-415"
+  },
+  {
+   "reading": "あしたはゆきがすくない。",
+   "surface": "明日は雪が少ない。",
+   "reading_segments": [
+    "あしたは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "明日は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-416"
+  },
+  {
+   "reading": "あしたはかぜがつめたい。",
+   "surface": "明日は風が冷たい。",
+   "reading_segments": [
+    "あしたは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "明日は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-417"
+  },
+  {
+   "reading": "あしたはかぜがつよい。",
+   "surface": "明日は風が強い。",
+   "reading_segments": [
+    "あしたは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "明日は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-418"
+  },
+  {
+   "reading": "あしたはきおんがたかい。",
+   "surface": "明日は気温が高い。",
+   "reading_segments": [
+    "あしたは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "明日は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-419"
+  },
+  {
+   "reading": "あしたはきおんがひくい。",
+   "surface": "明日は気温が低い。",
+   "reading_segments": [
+    "あしたは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "明日は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-420"
+  },
+  {
+   "reading": "あさはてんきがいい。",
+   "surface": "朝は天気がいい。",
+   "reading_segments": [
+    "あさは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "朝は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-421"
+  },
+  {
+   "reading": "あさはてんきがわるい。",
+   "surface": "朝は天気が悪い。",
+   "reading_segments": [
+    "あさは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "朝は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-422"
+  },
+  {
+   "reading": "あさはあめがつよい。",
+   "surface": "朝は雨が強い。",
+   "reading_segments": [
+    "あさは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "朝は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-423"
+  },
+  {
+   "reading": "あさはあめがよわい。",
+   "surface": "朝は雨が弱い。",
+   "reading_segments": [
+    "あさは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "朝は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-424"
+  },
+  {
+   "reading": "あさはゆきがおおい。",
+   "surface": "朝は雪が多い。",
+   "reading_segments": [
+    "あさは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "朝は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-425"
+  },
+  {
+   "reading": "あさはゆきがすくない。",
+   "surface": "朝は雪が少ない。",
+   "reading_segments": [
+    "あさは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "朝は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-426"
+  },
+  {
+   "reading": "あさはかぜがつめたい。",
+   "surface": "朝は風が冷たい。",
+   "reading_segments": [
+    "あさは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "朝は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-427"
+  },
+  {
+   "reading": "あさはかぜがつよい。",
+   "surface": "朝は風が強い。",
+   "reading_segments": [
+    "あさは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "朝は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-428"
+  },
+  {
+   "reading": "あさはきおんがたかい。",
+   "surface": "朝は気温が高い。",
+   "reading_segments": [
+    "あさは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "朝は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-429"
+  },
+  {
+   "reading": "あさはきおんがひくい。",
+   "surface": "朝は気温が低い。",
+   "reading_segments": [
+    "あさは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "朝は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-430"
+  },
+  {
+   "reading": "ひるはてんきがいい。",
+   "surface": "昼は天気がいい。",
+   "reading_segments": [
+    "ひるは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "昼は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-431"
+  },
+  {
+   "reading": "ひるはてんきがわるい。",
+   "surface": "昼は天気が悪い。",
+   "reading_segments": [
+    "ひるは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "昼は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-432"
+  },
+  {
+   "reading": "ひるはあめがつよい。",
+   "surface": "昼は雨が強い。",
+   "reading_segments": [
+    "ひるは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "昼は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-433"
+  },
+  {
+   "reading": "ひるはあめがよわい。",
+   "surface": "昼は雨が弱い。",
+   "reading_segments": [
+    "ひるは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "昼は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-434"
+  },
+  {
+   "reading": "ひるはゆきがおおい。",
+   "surface": "昼は雪が多い。",
+   "reading_segments": [
+    "ひるは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "昼は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-435"
+  },
+  {
+   "reading": "ひるはゆきがすくない。",
+   "surface": "昼は雪が少ない。",
+   "reading_segments": [
+    "ひるは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "昼は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-436"
+  },
+  {
+   "reading": "ひるはかぜがつめたい。",
+   "surface": "昼は風が冷たい。",
+   "reading_segments": [
+    "ひるは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "昼は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-437"
+  },
+  {
+   "reading": "ひるはかぜがつよい。",
+   "surface": "昼は風が強い。",
+   "reading_segments": [
+    "ひるは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "昼は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-438"
+  },
+  {
+   "reading": "ひるはきおんがたかい。",
+   "surface": "昼は気温が高い。",
+   "reading_segments": [
+    "ひるは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "昼は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-439"
+  },
+  {
+   "reading": "ひるはきおんがひくい。",
+   "surface": "昼は気温が低い。",
+   "reading_segments": [
+    "ひるは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "昼は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-440"
+  },
+  {
+   "reading": "よるはてんきがいい。",
+   "surface": "夜は天気がいい。",
+   "reading_segments": [
+    "よるは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "夜は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-441"
+  },
+  {
+   "reading": "よるはてんきがわるい。",
+   "surface": "夜は天気が悪い。",
+   "reading_segments": [
+    "よるは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "夜は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-442"
+  },
+  {
+   "reading": "よるはあめがつよい。",
+   "surface": "夜は雨が強い。",
+   "reading_segments": [
+    "よるは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "夜は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-443"
+  },
+  {
+   "reading": "よるはあめがよわい。",
+   "surface": "夜は雨が弱い。",
+   "reading_segments": [
+    "よるは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "夜は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-444"
+  },
+  {
+   "reading": "よるはゆきがおおい。",
+   "surface": "夜は雪が多い。",
+   "reading_segments": [
+    "よるは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "夜は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-445"
+  },
+  {
+   "reading": "よるはゆきがすくない。",
+   "surface": "夜は雪が少ない。",
+   "reading_segments": [
+    "よるは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "夜は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-446"
+  },
+  {
+   "reading": "よるはかぜがつめたい。",
+   "surface": "夜は風が冷たい。",
+   "reading_segments": [
+    "よるは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "夜は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-447"
+  },
+  {
+   "reading": "よるはかぜがつよい。",
+   "surface": "夜は風が強い。",
+   "reading_segments": [
+    "よるは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "夜は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-448"
+  },
+  {
+   "reading": "よるはきおんがたかい。",
+   "surface": "夜は気温が高い。",
+   "reading_segments": [
+    "よるは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "夜は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-449"
+  },
+  {
+   "reading": "よるはきおんがひくい。",
+   "surface": "夜は気温が低い。",
+   "reading_segments": [
+    "よるは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "夜は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-450"
+  },
+  {
+   "reading": "しゅうまつはてんきがいい。",
+   "surface": "週末は天気がいい。",
+   "reading_segments": [
+    "しゅうまつは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "週末は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-451"
+  },
+  {
+   "reading": "しゅうまつはてんきがわるい。",
+   "surface": "週末は天気が悪い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "週末は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-452"
+  },
+  {
+   "reading": "しゅうまつはあめがつよい。",
+   "surface": "週末は雨が強い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "週末は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-453"
+  },
+  {
+   "reading": "しゅうまつはあめがよわい。",
+   "surface": "週末は雨が弱い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "週末は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-454"
+  },
+  {
+   "reading": "しゅうまつはゆきがおおい。",
+   "surface": "週末は雪が多い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "週末は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-455"
+  },
+  {
+   "reading": "しゅうまつはゆきがすくない。",
+   "surface": "週末は雪が少ない。",
+   "reading_segments": [
+    "しゅうまつは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "週末は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-456"
+  },
+  {
+   "reading": "しゅうまつはかぜがつめたい。",
+   "surface": "週末は風が冷たい。",
+   "reading_segments": [
+    "しゅうまつは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "週末は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-457"
+  },
+  {
+   "reading": "しゅうまつはかぜがつよい。",
+   "surface": "週末は風が強い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "週末は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-458"
+  },
+  {
+   "reading": "しゅうまつはきおんがたかい。",
+   "surface": "週末は気温が高い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "週末は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-459"
+  },
+  {
+   "reading": "しゅうまつはきおんがひくい。",
+   "surface": "週末は気温が低い。",
+   "reading_segments": [
+    "しゅうまつは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "週末は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-460"
+  },
+  {
+   "reading": "げつようびはてんきがいい。",
+   "surface": "月曜日は天気がいい。",
+   "reading_segments": [
+    "げつようびは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-461"
+  },
+  {
+   "reading": "げつようびはてんきがわるい。",
+   "surface": "月曜日は天気が悪い。",
+   "reading_segments": [
+    "げつようびは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-462"
+  },
+  {
+   "reading": "げつようびはあめがつよい。",
+   "surface": "月曜日は雨が強い。",
+   "reading_segments": [
+    "げつようびは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-463"
+  },
+  {
+   "reading": "げつようびはあめがよわい。",
+   "surface": "月曜日は雨が弱い。",
+   "reading_segments": [
+    "げつようびは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-464"
+  },
+  {
+   "reading": "げつようびはゆきがおおい。",
+   "surface": "月曜日は雪が多い。",
+   "reading_segments": [
+    "げつようびは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-465"
+  },
+  {
+   "reading": "げつようびはゆきがすくない。",
+   "surface": "月曜日は雪が少ない。",
+   "reading_segments": [
+    "げつようびは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "月曜日は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-466"
+  },
+  {
+   "reading": "げつようびはかぜがつめたい。",
+   "surface": "月曜日は風が冷たい。",
+   "reading_segments": [
+    "げつようびは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-467"
+  },
+  {
+   "reading": "げつようびはかぜがつよい。",
+   "surface": "月曜日は風が強い。",
+   "reading_segments": [
+    "げつようびは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-468"
+  },
+  {
+   "reading": "げつようびはきおんがたかい。",
+   "surface": "月曜日は気温が高い。",
+   "reading_segments": [
+    "げつようびは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-469"
+  },
+  {
+   "reading": "げつようびはきおんがひくい。",
+   "surface": "月曜日は気温が低い。",
+   "reading_segments": [
+    "げつようびは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "月曜日は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-470"
+  },
+  {
+   "reading": "きんようびはてんきがいい。",
+   "surface": "金曜日は天気がいい。",
+   "reading_segments": [
+    "きんようびは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-471"
+  },
+  {
+   "reading": "きんようびはてんきがわるい。",
+   "surface": "金曜日は天気が悪い。",
+   "reading_segments": [
+    "きんようびは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-472"
+  },
+  {
+   "reading": "きんようびはあめがつよい。",
+   "surface": "金曜日は雨が強い。",
+   "reading_segments": [
+    "きんようびは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-473"
+  },
+  {
+   "reading": "きんようびはあめがよわい。",
+   "surface": "金曜日は雨が弱い。",
+   "reading_segments": [
+    "きんようびは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-474"
+  },
+  {
+   "reading": "きんようびはゆきがおおい。",
+   "surface": "金曜日は雪が多い。",
+   "reading_segments": [
+    "きんようびは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-475"
+  },
+  {
+   "reading": "きんようびはゆきがすくない。",
+   "surface": "金曜日は雪が少ない。",
+   "reading_segments": [
+    "きんようびは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "金曜日は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-476"
+  },
+  {
+   "reading": "きんようびはかぜがつめたい。",
+   "surface": "金曜日は風が冷たい。",
+   "reading_segments": [
+    "きんようびは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-477"
+  },
+  {
+   "reading": "きんようびはかぜがつよい。",
+   "surface": "金曜日は風が強い。",
+   "reading_segments": [
+    "きんようびは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-478"
+  },
+  {
+   "reading": "きんようびはきおんがたかい。",
+   "surface": "金曜日は気温が高い。",
+   "reading_segments": [
+    "きんようびは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-479"
+  },
+  {
+   "reading": "きんようびはきおんがひくい。",
+   "surface": "金曜日は気温が低い。",
+   "reading_segments": [
+    "きんようびは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "金曜日は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-480"
+  },
+  {
+   "reading": "らいしゅうはてんきがいい。",
+   "surface": "来週は天気がいい。",
+   "reading_segments": [
+    "らいしゅうは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "来週は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-481"
+  },
+  {
+   "reading": "らいしゅうはてんきがわるい。",
+   "surface": "来週は天気が悪い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "来週は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-482"
+  },
+  {
+   "reading": "らいしゅうはあめがつよい。",
+   "surface": "来週は雨が強い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "来週は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-483"
+  },
+  {
+   "reading": "らいしゅうはあめがよわい。",
+   "surface": "来週は雨が弱い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "来週は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-484"
+  },
+  {
+   "reading": "らいしゅうはゆきがおおい。",
+   "surface": "来週は雪が多い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "来週は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-485"
+  },
+  {
+   "reading": "らいしゅうはゆきがすくない。",
+   "surface": "来週は雪が少ない。",
+   "reading_segments": [
+    "らいしゅうは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "来週は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-486"
+  },
+  {
+   "reading": "らいしゅうはかぜがつめたい。",
+   "surface": "来週は風が冷たい。",
+   "reading_segments": [
+    "らいしゅうは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "来週は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-487"
+  },
+  {
+   "reading": "らいしゅうはかぜがつよい。",
+   "surface": "来週は風が強い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "来週は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-488"
+  },
+  {
+   "reading": "らいしゅうはきおんがたかい。",
+   "surface": "来週は気温が高い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "来週は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-489"
+  },
+  {
+   "reading": "らいしゅうはきおんがひくい。",
+   "surface": "来週は気温が低い。",
+   "reading_segments": [
+    "らいしゅうは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "来週は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-490"
+  },
+  {
+   "reading": "まいにちはてんきがいい。",
+   "surface": "毎日は天気がいい。",
+   "reading_segments": [
+    "まいにちは",
+    "てんきが",
+    "いい。"
+   ],
+   "segments": [
+    "毎日は",
+    "天気が",
+    "いい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-491"
+  },
+  {
+   "reading": "まいにちはてんきがわるい。",
+   "surface": "毎日は天気が悪い。",
+   "reading_segments": [
+    "まいにちは",
+    "てんきが",
+    "わるい。"
+   ],
+   "segments": [
+    "毎日は",
+    "天気が",
+    "悪い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-492"
+  },
+  {
+   "reading": "まいにちはあめがつよい。",
+   "surface": "毎日は雨が強い。",
+   "reading_segments": [
+    "まいにちは",
+    "あめが",
+    "つよい。"
+   ],
+   "segments": [
+    "毎日は",
+    "雨が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-493"
+  },
+  {
+   "reading": "まいにちはあめがよわい。",
+   "surface": "毎日は雨が弱い。",
+   "reading_segments": [
+    "まいにちは",
+    "あめが",
+    "よわい。"
+   ],
+   "segments": [
+    "毎日は",
+    "雨が",
+    "弱い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-494"
+  },
+  {
+   "reading": "まいにちはゆきがおおい。",
+   "surface": "毎日は雪が多い。",
+   "reading_segments": [
+    "まいにちは",
+    "ゆきが",
+    "おおい。"
+   ],
+   "segments": [
+    "毎日は",
+    "雪が",
+    "多い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-495"
+  },
+  {
+   "reading": "まいにちはゆきがすくない。",
+   "surface": "毎日は雪が少ない。",
+   "reading_segments": [
+    "まいにちは",
+    "ゆきが",
+    "すくない。"
+   ],
+   "segments": [
+    "毎日は",
+    "雪が",
+    "少ない。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-496"
+  },
+  {
+   "reading": "まいにちはかぜがつめたい。",
+   "surface": "毎日は風が冷たい。",
+   "reading_segments": [
+    "まいにちは",
+    "かぜが",
+    "つめたい。"
+   ],
+   "segments": [
+    "毎日は",
+    "風が",
+    "冷たい。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-497"
+  },
+  {
+   "reading": "まいにちはかぜがつよい。",
+   "surface": "毎日は風が強い。",
+   "reading_segments": [
+    "まいにちは",
+    "かぜが",
+    "つよい。"
+   ],
+   "segments": [
+    "毎日は",
+    "風が",
+    "強い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-498"
+  },
+  {
+   "reading": "まいにちはきおんがたかい。",
+   "surface": "毎日は気温が高い。",
+   "reading_segments": [
+    "まいにちは",
+    "きおんが",
+    "たかい。"
+   ],
+   "segments": [
+    "毎日は",
+    "気温が",
+    "高い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-499"
+  },
+  {
+   "reading": "まいにちはきおんがひくい。",
+   "surface": "毎日は気温が低い。",
+   "reading_segments": [
+    "まいにちは",
+    "きおんが",
+    "ひくい。"
+   ],
+   "segments": [
+    "毎日は",
+    "気温が",
+    "低い。"
+   ],
+   "tags": [
+    "time-weather-adjective"
+   ],
+   "id": "modern-500"
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "schema": 1,
+ "version": "ja-eval-rules/1",
+ "frozen_at": "2026-11-17",
+ "engine": "stats",
+ "top_n": 5,
+ "timeout_ms": 100,
+ "corpora": {
+  "anthy-corpus1": {
+   "file": "anthy_corpus1.json",
+   "sha256": "62397d61cc232cf873e3a90fa96606e19600b48a524b67336b01723f221b986a",
+   "count": 200,
+   "boundary_cases": 199,
+   "license": "Public Domain. The corpus.1.txt header says 'copying: public domain'.",
+   "source": "Anthy 9100h calctrans/corpus.1.txt"
+  },
+  "hard-cases": {
+   "file": "hard_cases.json",
+   "sha256": "e303dce1c4a4764f28d2caa3e91983ebb75e1df6a06ae648264ddce100aa0435",
+   "count": 35,
+   "boundary_cases": 35,
+   "license": "CC0-1.0. Original test data authored for 0c.",
+   "source": "Original homophone and bunsetsu-boundary cases, not derived from any corpus."
+  },
+  "modern-500": {
+   "file": "modern_500.json",
+   "sha256": "3040bea6c5c994abd9cc2bca50692b96e1d17ed6c13c75e2c6fbd6883351bf42",
+   "count": 500,
+   "boundary_cases": 500,
+   "license": "CC0-1.0. Original test data authored for 0c.",
+   "source": "Original templated modern Japanese sentences, not derived from any corpus."
+  },
+  "ajimee-200": {
+   "file": "ajimee_200.json",
+   "sha256": "057b7bdcbfc0486e8fc78c010e186c28b766b280a95aa2a159fc0e910f43c107",
+   "count": 200,
+   "boundary_cases": 0,
+   "license": "CC-BY-SA-3.0. Evaluation data from AJIMEE-Bench JWTD_v2/v1, azooKey Project; derived from 日本語Wikipedia入力誤りデータセット v2 and Wikipedia contributors. See LICENSE-ajimee.txt.",
+   "source": "https://github.com/azooKey/AJIMEE-Bench commit 401666cd56d1a570c2021798b64b6da4396bfd45 JWTD_v2/v1/evaluation_items.json"
+  }
+ },
+ "metric_definitions": {
+  "top1_rate": "Output of Convert/NBest rank 1 equals the primary reference surface or one of its accepted alternatives, divided by n.",
+  "top5_rate": "A top-5 distinct NBest result equals the primary reference surface or one of its accepted alternatives, divided by n.",
+  "boundary_exact_rate": "Set of bunsetsu boundary offsets in the rank-1 output equals the reference set, divided by boundary_n. The final offset is not a boundary.",
+  "boundary_precision": "Micro-averaged true boundary offsets divided by predicted boundary offsets.",
+  "boundary_recall": "Micro-averaged true boundary offsets divided by reference boundary offsets.",
+  "boundary_f1": "Harmonic mean of boundary_precision and boundary_recall.",
+  "latency_p50_ms": "Nearest-rank 50th percentile of one NBest(top_n) call per item, in milliseconds.",
+  "latency_p95_ms": "Nearest-rank 95th percentile of one NBest(top_n) call per item, in milliseconds.",
+  "timeout_rate": "Items whose one conversion call exceeded timeout_ms, divided by n. This is a threshold count, not cancellation."
+ },
+ "gate": {
+  "max_top1_drop": 0,
+  "max_top5_drop": 0,
+  "max_boundary_exact_drop": 0,
+  "max_boundary_f1_drop": 0
+ }
+}
