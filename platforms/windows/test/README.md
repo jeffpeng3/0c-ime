@@ -43,6 +43,61 @@ cd <repo>\platforms\windows\test
 
 不要直接對日常引擎執行 `ja-*.ps1`；它們要求 `-ResultDir` 與 `-ExpectedDLL`，沒有隔離引擎時會失敗而不是退回日常資料。
 
+## 從 WSL 跑非互動檢查（T29b）
+
+上面整段需要互動桌面與系統管理員；`run-from-wsl.ps1` 只跑不需要桌面的前置檢查，讓 Linux／WSL 這邊用一條指令確認腳本可剖析、`Add-Type` interop 可編譯、profile 註冊狀態與主機能力。它**不**安裝任何東西、**不**寫登錄、**不**註冊 TSF、**不**建立排程工作，也不需要管理員。
+
+```bash
+cd <repo>/platforms/windows/test
+/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe \
+  -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+  -File "$(wslpath -w run-from-wsl.ps1)"
+```
+
+預設寫到 `/mnt/e/freerun/0c-wincheck`（Windows 路徑 `E:\freerun\0c-wincheck`），可用 `-ResultRoot` 改位置；路徑可以給 `/mnt/e/...` 或 `E:\...`。加上 `-RepoRevision "$(git rev-parse HEAD)"` 會把 commit 記進 summary。
+
+腳本會：
+
+1. 把 `ja-*.ps1`、`acceptance-test.ps1` 複製到 `<ResultRoot>\scripts`，並記下每個檔案的 SHA-256。`verify-profiles.ps1` 另外複製成 UTF-8 BOM 版本：Windows PowerShell 5.1 在非 UTF-8 ACP 的機器上會把沒有 BOM 的中文 `.ps1` 當成 ANSI 而剖析失敗，來源檔不動。
+2. 以 Windows PowerShell 5.1 逐項執行並各自記錄 stdout、stderr、exit code：
+   - **parser**：用 `Parser::ParseFile` 剖析所有 `ja-*.ps1`、`acceptance-test.ps1` 與本腳本；失敗時列出 `檔案:行:欄: 訊息`。
+   - **interop**：dot-source 複本 `ja-common.ps1`、呼叫 `Initialize-JaProbe`，再查前景視窗與視窗類別，證明 `Add-Type` 在 5.1 可編譯；不送按鍵。
+   - **profiles**：執行 `verify-profiles.ps1`。兩個 profile 都註冊為 `pass`；0C 未安裝且兩者都未註冊為 `info`（不算失敗）；已安裝卻缺 profile 為 `fail`。
+   - **capabilities**：是否為管理員、0C 是否已安裝、Windows 版本，以及 Go、Rust、MSBuild、signtool 是否在 PATH 或標準路徑；另外記錄 dotnet 與 git。
+   - **artifact**：若 `<ResultRoot>\artifact`（或 `-ArtifactDir`）有 `0c-server.exe`，找它旁邊的 `data`（需有 `manifest.json` 或 `lexicon.tsv`）並執行 `0c-server.exe -check-data -data <data>`；沒有資料包時只執行 `-h` 確認執行檔可啟動，記為 `skip`。也可用 `-DataDir` 指定測試資料包。這一步不註冊 TSF、不寫 HKLM、不碰個人詞庫。
+3. 寫出 `summary.json`、`summary.md` 與 `run.log`。
+
+CI 有 Windows binary artifact 時，可先在 Linux 下載，runner 會自動使用 `E:\freerun\0c-wincheck\artifact`：
+
+```bash
+gh run download <run-id> -n windows-binaries -D /mnt/e/freerun/0c-wincheck/artifact
+```
+
+artifact 沒附資料包時，可用 repo 的 toy 資料包確認 `-check-data` 路徑：
+
+```bash
+... -File "$(wslpath -w run-from-wsl.ps1)" \
+  -DataDir "$(wslpath -w ../../../testdata/toy)"
+```
+
+結果格式：
+
+```text
+E:\freerun\0c-wincheck\
+  scripts\                          ja-*.ps1、acceptance-test.ps1、verify-profiles.ps1、manifest.json
+  results\20261117-140000-ab12cd34\
+    summary.json
+    summary.md
+    run.log
+    checks\parser\                  stdout.txt、stderr.txt、exit-code.txt、command.txt、result.json
+    checks\interop\                 同上
+    checks\profiles\                同上，另有 profiles.json
+    checks\capabilities\            同上
+    checks\artifact\                同上，另有 check-data.* 或 exe-probe.*
+```
+
+結束碼：`0` 表示沒有 `fail`（`info`／`skip` 不算失敗）、`1` 有檢查失敗、`2` 參數或環境錯誤、`3` runner 本身例外。互動桌面與 TSF 註冊仍照上面「執行」一節由使用者手動驗收；T28 的 Win＋Space、rollback／uninstall 檢查也仍要人工執行。
+
 ## 結果
 
 每個 suite 一個目錄，例如：
