@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/internal/atomicfile"
 )
 
 func units(rs ...string) reading.Sequence {
@@ -21,31 +22,14 @@ func units(rs ...string) reading.Sequence {
 	return out
 }
 
-// writeStoreFile 在測試裡模擬宿主存檔：先寫暫存檔、落盤，再改名。
-// core 不碰檔案系統，正式存檔由宿主用同樣的協定實作。
+// writeStoreFile 走和宿主相同的存檔協定：暫存檔、落盤、關閉、原子替換。
+// internal/atomicfile 會序列化同一路徑的寫入，並在 Windows 重試暫時的 sharing violation。
 func writeStoreFile(dir, name string, st *Store) error {
-	var buf bytes.Buffer
-	if err := st.Save(&buf); err != nil {
-		return err
-	}
-	f, err := os.CreateTemp(dir, ".personal-ja-*")
+	b, err := st.encode()
 	if err != nil {
 		return err
 	}
-	tmp := f.Name()
-	defer os.Remove(tmp)
-	if _, err := f.Write(buf.Bytes()); err != nil {
-		f.Close()
-		return err
-	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		return err
-	}
-	if err := f.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmp, filepath.Join(dir, name))
+	return atomicfile.Write(filepath.Join(dir, name), b)
 }
 
 func TestKeyUsesReadingAndNormalizedLeftContext(t *testing.T) {
@@ -169,6 +153,48 @@ func TestSaveLoadRoundTripIsStable(t *testing.T) {
 	}
 	if leftovers, _ := filepath.Glob(filepath.Join(dir, ".personal-ja-*")); len(leftovers) != 0 {
 		t.Fatalf("改名後不該留下暫存檔：%v", leftovers)
+	}
+}
+
+func TestSaveFileReplacesWholeFileAndCleansTemp(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, FileName)
+	if err := os.WriteFile(path, []byte("舊內容"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := NewStore()
+	st.Record(Selection{Reading: units("き", "ょ", "う"), Surface: "今日"})
+	if err := writeStoreFile(dir, FileName, st); err != nil {
+		t.Fatal(err)
+	}
+	got, err := LoadFile(os.DirFS(dir), FileName)
+	if err != nil || got.Len() != 1 {
+		t.Fatalf("取代後 = %v, %v", got, err)
+	}
+	if forLater, _ := filepath.Glob(filepath.Join(dir, ".personal-ja-*")); len(forLater) != 0 {
+		t.Fatalf("成功改名後不該留下暫存檔：%v", forLater)
+	}
+}
+
+func TestSaveFileFailureKeepsOriginalAndCleansTemp(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "target")
+	if err := os.Mkdir(path, 0o700); err != nil { // 目的地是非空目錄：改名必定失敗
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(path, "keep"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	st := NewStore()
+	st.Record(Selection{Reading: units("あ"), Surface: "亜"})
+	if err := writeStoreFile(dir, "target", st); err == nil {
+		t.Fatal("對目錄改名應失敗")
+	}
+	if _, err := os.Stat(filepath.Join(path, "keep")); err != nil {
+		t.Fatal("原本的內容不應被動到")
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, ".target-*")); len(left) != 0 {
+		t.Fatalf("失敗時應刪掉暫存檔：%v", left)
 	}
 }
 
@@ -397,6 +423,9 @@ func TestConcurrentWritersLeaveCompleteFile(t *testing.T) {
 	}
 	if got.Len() != each {
 		t.Fatalf("條目數 = %d, want %d（每個寫入者都有 %d 筆）", got.Len(), each, each)
+	}
+	if left, _ := filepath.Glob(filepath.Join(dir, ".personal-ja-*")); len(left) != 0 {
+		t.Fatalf("並行存檔後不該留下暫存檔：%v", left)
 	}
 }
 
