@@ -25,9 +25,10 @@ type Decoder struct {
 	// MaxCandidates 是 Candidates 一次最多列出的候選數；0 使用 lang.DefaultLimits。
 	MaxCandidates int
 
-	// Learning 與 Verifier 是 T21、T30 的掛鉤；nil 表示不做任何調整。
+	// Learning、Verifier 與 Reranker 是 T21、T30 的掛鉤；nil 表示不做任何調整。
 	Learning Learning
 	Verifier Verifier
+	Reranker Reranker
 }
 
 // hypothesis 是在某個（位置, 詞性）狀態上的一條部分路徑。
