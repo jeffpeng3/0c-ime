@@ -69,6 +69,13 @@ func serve() string {
 	neuralWorker := flag.String("neural-worker", "", "worker 腳本路徑（encoder_runtime.py 或 sequence_runtime.py）")
 	neuralTimeout := flag.Duration("neural-timeout", 100*time.Millisecond, "模型決策期限，上限 100ms；逾時保留原排序")
 	neuralThreads := flag.Int("neural-threads", neural.DefaultThreads(), "模型 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
+	jaNeuralPackage := flag.String("ja-neural-package", "", "日文神經驗證套件（models/ja）；未指定時找資料包旁的 models/ja")
+	jaNeuralPython := flag.String("ja-neural-python", "python3", "日文驗證 worker 的 Python 路徑")
+	jaNeuralScript := flag.String("ja-neural-script", "", "日文驗證 worker 腳本（ja_runtime.py）；未指定時自動找")
+	jaNeuralServer := flag.String("ja-neural-server", "", "llama-server 路徑；未指定時找 PATH，找不到就退回統計轉換")
+	jaNeuralTimeout := flag.Duration("ja-neural-timeout", jaNeuralDefaultTimeout, "日文驗證單次與單次轉換預算，上限 100ms；逾時保留統計結果")
+	jaNeuralThreads := flag.Int("ja-neural-threads", neural.DefaultThreads(), "日文模型 CPU threads（1–8）")
+	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
 	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
 	punctTimeout := flag.Duration("punct-timeout", 150*time.Millisecond, "補標點期限，上限 500ms；逾時照原文提交")
@@ -329,6 +336,29 @@ func serve() string {
 			lg.Printf("補標點已啟用：%s", filepath.Base(*punctPackage))
 		}
 	}
+	// 日文神經重排（T30b）：模型檔存在才建立共享 worker，第一次日文轉換
+	// 才啟動；模型缺失、載入失敗或逾時都保留 T30 的統計結果。worker 由所有
+	// 日文 session 共用，結束時一起收掉。
+	jaPackage := findJaNeuralPackage(*data, *jaNeuralPackage)
+	jaWiring, jaErr := newJaNeuralWiring(*data, jaNeuralOptions{
+		Enabled: true,
+		Package: jaPackage,
+		Python:  *jaNeuralPython,
+		Script:  findJaNeuralScript(*data, jaPackage, *jaNeuralScript),
+		Server:  findJaNeuralServer(*jaNeuralServer),
+		Threads: *jaNeuralThreads,
+		Timeout: *jaNeuralTimeout,
+	})
+	if jaErr != nil {
+		lg.Printf("日文轉換資料未接上（不影響注音）：%v", jaErr)
+		jaWiring = nil
+	}
+	if jaWiring != nil {
+		defer func() {
+			jaWiring.Close()
+			lg.Printf("日文神經驗證統計（無文字）：%+v", jaWiring.Stats())
+		}()
+	}
 	lg.Printf("已載入 %s（%v）", *data, time.Since(start).Round(time.Millisecond))
 
 	// 存檔共用一把鎖；自訂詞彙要在本機 API 開始服務前就能存（#196），所以先定義。
@@ -419,6 +449,22 @@ func serve() string {
 	srv := &ipc.Server{Engine: eng, Log: lg, VocabDisabled: vocabDisabled, OnVocab: func() { vocabEdited() },
 		OnCommit: func() { schedule.changed(time.Now(), false); remind.markCommitted() },
 		OnForget: func() { schedule.changed(time.Now(), true) }}
+	// 每個新 session 都註冊日文 profile；-language ja 時直接切到日文。
+	// 模型缺失只影響 rerank，profile 仍用統計轉換；沒有日文資料時 Attach
+	// 回 false，session 保持注音。
+	if jaWiring != nil {
+		srv.OnOpenSession = func(id uint64) {
+			s := eng.Session(id)
+			if s == nil {
+				return
+			}
+			if *jaLanguage == "ja" {
+				jaWiring.Attach(s)
+				return
+			}
+			jaWiring.AttachProfile(s)
+		}
+	}
 	// 設定程式的「清除學習紀錄」（#301）：清空記憶體裡的個人資料並立刻存檔，不重啟引擎。
 	srv.ResetPersonal = personalReset{mu: &saveMu, eng: eng, path: *user, writable: writable, state: &personalState, schedule: schedule}.run
 	srv.BeforeDrain = func() error {
@@ -534,6 +580,19 @@ func serve() string {
 		}
 		if punctuationState == "fallback" && punctuationWorker != nil && punctuationWorker.Reason() != "" {
 			info["punctuation_reason"] = punctuationWorker.Reason()
+		}
+		jaState := jaNeuralStateMissing
+		if jaWiring != nil {
+			jaState = jaWiring.State()
+		}
+		info["ja_neural_state"] = jaState
+		if jaWiring != nil && jaWiring.Reason() != "" {
+			info["ja_neural_reason"] = jaWiring.Reason()
+		}
+		if jaWiring != nil {
+			rs := jaWiring.RerankerStats()
+			info["ja_rerank_calls"] = fmt.Sprint(rs.Calls)
+			info["ja_rerank_verified"] = fmt.Sprint(rs.Verified)
 		}
 		return info
 	}

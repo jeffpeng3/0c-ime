@@ -26,6 +26,10 @@ type Server struct {
 	Info     map[string]string
 	// RuntimeInfo 提供會改變的運作狀態；須可並行查詢且不能包含個人文字。
 	RuntimeInfo func() map[string]string
+	// OnOpenSession 在 Engine.OpenSession 建立 session 後、回覆 open 之前呼叫。
+	// 宿主可在這裡註冊語言 profile 或套用初始語言；id 是剛建立的 session。
+	// 回呼不含文字，也不應保存 session 指標（連線關閉後 session 會失效）。
+	OnOpenSession func(id uint64)
 	// OnDrained 在交接條件成立、BeforeDrain 成功並斷開所有連線後呼叫；宿主應結束服務。
 	OnDrained func()
 	// BeforeDrain runs after active requests finish, while endpoints still belong
@@ -294,6 +298,9 @@ func (s *Server) do(env Envelope, sessions map[uint64]bool, startDrain *bool) Re
 		}
 		id := s.Engine.OpenSession()
 		sessions[id] = true
+		if s.OnOpenSession != nil {
+			s.OnOpenSession(id)
+		}
 		return Reply{OK: true, Session: id, Info: s.info()}
 	case OpClose:
 		if sessions[env.Session] {
