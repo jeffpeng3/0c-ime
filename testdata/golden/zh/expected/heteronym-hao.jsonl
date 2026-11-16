@@ -1,0 +1,6 @@
+# case: heteronym-hao
+# note: 破音字：好 ㄏㄠˋ（愛好）只在這個聲調有詞條
+# step 01 syllables ㄏㄠˋ
+{"revision":3,"handled":true,"preedit":[{"text":"好","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":4,"handled":true,"commit":"好","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

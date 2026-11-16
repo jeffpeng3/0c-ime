@@ -1,0 +1,30 @@
+# case: long-sentence-5
+# note: 長句 5：學習新的語言需要時間和耐心
+# step 01 syllables ㄒㄩㄝˊ
+{"revision":4,"handled":true,"preedit":[{"text":"學","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄒㄧˊ
+{"revision":7,"handled":true,"preedit":[{"text":"學習","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄒㄧㄣ
+{"revision":11,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄉㄜ˙
+{"revision":14,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄩˇ
+{"revision":16,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"ㄩ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 06 syllables ㄧㄢˊ
+{"revision":19,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄒㄩ
+{"revision":22,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"ㄒ","style":"normal"},{"text":"ㄩ","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 08 syllables ㄧㄠˋ
+{"revision":25,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄕˊ
+{"revision":27,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"},{"text":"ㄕ","style":"normal"},{"text":"ˊ","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 10 syllables ㄐㄧㄢ
+{"revision":31,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"},{"text":"時間","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄏㄜˊ
+{"revision":34,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"},{"text":"時間","style":"normal"},{"text":"和","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄋㄞˋ
+{"revision":37,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"},{"text":"時間","style":"normal"},{"text":"和","style":"normal"},{"text":"ㄋ","style":"normal"},{"text":"ㄞ","style":"normal"},{"text":"ˋ","style":"normal"}],"cursor":{"rune":14,"utf16":14},"mode":"zhuyin"}
+# step 13 syllables ㄒㄧㄣ
+{"revision":41,"handled":true,"preedit":[{"text":"學習","style":"normal"},{"text":"新","style":"normal"},{"text":"的","style":"normal"},{"text":"語言","style":"normal"},{"text":"需要","style":"normal"},{"text":"時間","style":"normal"},{"text":"和","style":"normal"},{"text":"耐心","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":42,"handled":true,"commit":"學習新的語言需要時間和耐心","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

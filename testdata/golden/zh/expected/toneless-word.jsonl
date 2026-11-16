@@ -1,0 +1,6 @@
+# case: toneless-word
+# note: 聲調選填：不打聲調，完整音節遇到接不上的聲母就自己收尾
+# step 01 bare ㄨㄛㄒㄧㄤ
+{"revision":5,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"ㄒㄧㄤ","style":"pending"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":6,"handled":true,"commit":"我想","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

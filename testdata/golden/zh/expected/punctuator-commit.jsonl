@@ -1,0 +1,12 @@
+# case: punctuator-commit
+# note: 補標點：固定替身標點器只在漢字之間插入，驗證 Edit 驗證與套用
+# step 01 syllables ㄐㄧㄣ
+{"revision":4,"handled":true,"preedit":[{"text":"今","style":"partial"}],"cursor":{"rune":1,"utf16":1},"suggestion":"天","mode":"zhuyin"}
+# step 02 syllables ㄊㄧㄢ
+{"revision":8,"handled":true,"preedit":[{"text":"今天","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Enter
+{"revision":9,"handled":true,"commit":"今，天","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 04 syllables ㄨㄛˇ
+{"revision":12,"handled":true,"preedit":[{"text":"我","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 05 key Enter
+{"revision":13,"handled":true,"commit":"我","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

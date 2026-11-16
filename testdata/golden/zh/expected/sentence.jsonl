@@ -1,0 +1,16 @@
+# case: sentence
+# note: 整句：詞與詞的切分
+# step 01 syllables ㄐㄧㄣ
+{"revision":4,"handled":true,"preedit":[{"text":"今","style":"partial"}],"cursor":{"rune":1,"utf16":1},"suggestion":"天","mode":"zhuyin"}
+# step 02 syllables ㄊㄧㄢ
+{"revision":8,"handled":true,"preedit":[{"text":"今天","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄊㄧㄢ
+{"revision":12,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄑㄧˋ
+{"revision":15,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄏㄣˇ
+{"revision":18,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄏㄠˇ
+{"revision":21,"handled":true,"preedit":[{"text":"今天","style":"normal"},{"text":"天氣","style":"normal"},{"text":"很好","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 key Enter
+{"revision":22,"handled":true,"commit":"今天天氣很好","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

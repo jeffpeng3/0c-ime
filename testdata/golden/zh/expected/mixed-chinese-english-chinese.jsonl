@@ -1,0 +1,6 @@
+# case: mixed-chinese-english-chinese
+# note: 中英混打：我hello吃，英文自成一個詞，不進注音學習
+# step 01 keys ji3hellot 
+{"revision":10,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"h","style":"normal"},{"text":"e","style":"normal"},{"text":"l","style":"normal"},{"text":"l","style":"normal"},{"text":"o","style":"normal"},{"text":"吃","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":11,"handled":true,"commit":"我hello吃","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

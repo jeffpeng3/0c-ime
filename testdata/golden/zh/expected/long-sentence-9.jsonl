@@ -1,0 +1,28 @@
+# case: long-sentence-9
+# note: 長句 9：這件事情對我來說非常重要
+# step 01 syllables ㄓㄜˋ
+{"revision":3,"handled":true,"preedit":[{"text":"這","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄐㄧㄢˋ
+{"revision":7,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄕˋ
+{"revision":9,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"是","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄑㄧㄥˊ
+{"revision":13,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄉㄨㄟˋ
+{"revision":17,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄨㄛˇ
+{"revision":20,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄌㄞˊ
+{"revision":23,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄕㄨㄛ
+{"revision":27,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來說","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄈㄟ
+{"revision":30,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來說","style":"normal"},{"text":"ㄈ","style":"normal"},{"text":"ㄟ","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 10 syllables ㄔㄤˊ
+{"revision":33,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來說","style":"normal"},{"text":"非常","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄓㄨㄥˋ
+{"revision":37,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來說","style":"normal"},{"text":"非常","style":"normal"},{"text":"重","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄧㄠˋ
+{"revision":40,"handled":true,"preedit":[{"text":"這","style":"normal"},{"text":"件","style":"normal"},{"text":"事情","style":"normal"},{"text":"對","style":"normal"},{"text":"我","style":"normal"},{"text":"來說","style":"normal"},{"text":"非常","style":"normal"},{"text":"重要","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 key Enter
+{"revision":41,"handled":true,"commit":"這件事情對我來說非常重要","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

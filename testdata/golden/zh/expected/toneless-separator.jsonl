@@ -1,0 +1,6 @@
+# case: toneless-separator
+# note: 聲調選填：' 切開音節，ㄒㄧ｜ㄢ 是西安
+# step 01 bare ㄒㄧ'ㄢ
+{"revision":4,"handled":true,"preedit":[{"text":"西","style":"normal"},{"text":"ㄢ","style":"pending"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 02 key Enter
+{"revision":5,"handled":true,"commit":"西安","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

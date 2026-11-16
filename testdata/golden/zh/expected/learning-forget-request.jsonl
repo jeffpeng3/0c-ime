@@ -1,0 +1,16 @@
+# case: learning-forget-request
+# note: 忘記：手選學到的井經 Forget 撤銷，排序回到系統詞頻
+# step 01 syllables ㄐㄧㄥˇ
+{"revision":4,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Down
+{"revision":5,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"景","label":"common","key":"1"},{"id":1,"text":"井","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":0,"title":"修改「景」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 03 key Down
+{"revision":6,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"景","label":"common","key":"1"},{"id":1,"text":"井","label":"common","key":"2"},{"id":2,"text":"警","label":"common","key":"3"},{"id":3,"text":"ㄐㄧㄥˇ","key":"4"}],"page":0,"pages":1,"start":0,"length":1,"highlight":1,"title":"修改「景」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 04 key Enter
+{"revision":7,"handled":true,"preedit":[{"text":"井","style":"locked"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 05 key Enter
+{"revision":8,"handled":true,"commit":"井","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 06 request forget
+{"revision":9,"handled":true,"cursor":{"rune":0,"utf16":0},"notices":["已撤銷與「井」有關的學習"],"mode":"zhuyin"}
+# step 07 syllables ㄐㄧㄥˇ
+{"revision":13,"handled":true,"preedit":[{"text":"景","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}

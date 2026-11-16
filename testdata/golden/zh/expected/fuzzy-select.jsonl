@@ -1,0 +1,10 @@
+# case: fuzzy-select
+# note: 模糊音：打 ㄗㄨㄥ，近音候選附上詞庫讀音 ㄓㄨㄥ
+# step 01 syllables ㄗㄨㄥ
+{"revision":4,"handled":true,"preedit":[{"text":"宗","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Down
+{"revision":5,"handled":true,"preedit":[{"text":"宗","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"宗","key":"1"},{"id":1,"text":"中","note":"近音 ㄓㄨㄥ","key":"2"},{"id":2,"text":"ㄗㄨㄥ","key":"3"}],"page":0,"pages":1,"start":0,"length":1,"highlight":0,"title":"修改「宗」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 03 request select
+{"revision":6,"handled":true,"preedit":[{"text":"中","style":"locked"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 04 key Enter
+{"revision":7,"handled":true,"commit":"中","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

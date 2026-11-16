@@ -1,0 +1,8 @@
+# case: tab-completion
+# note: Tab 補全：打完 ㄇㄚˊ 建議麻煩，Tab 接受後送出
+# step 01 syllables ㄇㄚˊ
+{"revision":3,"handled":true,"preedit":[{"text":"麻","style":"partial"}],"cursor":{"rune":1,"utf16":1},"suggestion":"煩","mode":"zhuyin"}
+# step 02 key Tab
+{"revision":4,"handled":true,"preedit":[{"text":"麻煩","style":"locked"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Enter
+{"revision":5,"handled":true,"commit":"麻煩","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

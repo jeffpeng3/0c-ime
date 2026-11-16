@@ -1,0 +1,8 @@
+# case: english-completion
+# note: 英文自動補字：hellp 以 Tab 補成 hello，不污染中文學習
+# step 01 keys ji3hellp
+{"english_autocomplete":true,"revision":8,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"hellp","style":"pending"}],"cursor":{"rune":6,"utf16":6},"suggestion":"hellp → hello","suggestion_edit":{"start":1,"length":5,"text":"hello"},"mode":"zhuyin"}
+# step 02 key Tab
+{"english_autocomplete":true,"revision":9,"handled":true,"preedit":[{"text":"我","style":"normal"},{"text":"hello","style":"pending"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 03 key Enter
+{"english_autocomplete":true,"revision":10,"handled":true,"commit":"我hello","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

@@ -1,0 +1,6 @@
+# case: simplified-commit
+# note: 簡繁轉換：組字是繁體，送出的字是簡體
+# step 01 syllables ㄌㄨㄥˊ
+{"revision":4,"handled":true,"preedit":[{"text":"龍","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin","output_simplified":true}
+# step 02 key Enter
+{"revision":5,"handled":true,"commit":"龙","cursor":{"rune":0,"utf16":0},"mode":"zhuyin","output_simplified":true}

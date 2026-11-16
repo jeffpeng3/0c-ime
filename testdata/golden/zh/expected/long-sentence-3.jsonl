@@ -1,0 +1,30 @@
+# case: long-sentence-3
+# note: 長句 3：他每天早上都會喝一杯熱咖啡
+# step 01 syllables ㄊㄚ
+{"revision":3,"handled":true,"preedit":[{"text":"他","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄇㄟˇ
+{"revision":6,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄊㄧㄢ
+{"revision":10,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄗㄠˇ
+{"revision":13,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄕㄤˋ
+{"revision":16,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄉㄡ
+{"revision":19,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄏㄨㄟˋ
+{"revision":23,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄏㄜ
+{"revision":26,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄧ
+{"revision":28,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"},{"text":"一","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄅㄟ
+{"revision":31,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"},{"text":"一杯","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄖㄜˋ
+{"revision":34,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"},{"text":"一杯","style":"normal"},{"text":"熱","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄎㄚ
+{"revision":37,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"},{"text":"一杯","style":"normal"},{"text":"熱","style":"normal"},{"text":"ㄎ","style":"normal"},{"text":"ㄚ","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 13 syllables ㄈㄟ
+{"revision":40,"handled":true,"preedit":[{"text":"他","style":"normal"},{"text":"每天","style":"normal"},{"text":"早上","style":"normal"},{"text":"都","style":"normal"},{"text":"會","style":"normal"},{"text":"喝","style":"normal"},{"text":"一杯","style":"normal"},{"text":"熱","style":"normal"},{"text":"咖啡","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":41,"handled":true,"commit":"他每天早上都會喝一杯熱咖啡","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

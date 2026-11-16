@@ -1,0 +1,6 @@
+# case: candidates-first-tone
+# note: 候選：打完一聲音節後按 ↓ 開候選窗
+# step 01 syllables ㄐㄧ
+{"revision":3,"handled":true,"preedit":[{"text":"機","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 key Down
+{"revision":4,"handled":true,"preedit":[{"text":"機","style":"normal"}],"cursor":{"rune":1,"utf16":1},"candidates":{"items":[{"id":0,"text":"機","label":"common","key":"1"},{"id":1,"text":"基","label":"common","key":"2"},{"id":2,"text":"積","label":"common","key":"3"},{"id":3,"text":"雞","label":"common","key":"4"},{"id":4,"text":"肌","label":"common","key":"5"},{"id":5,"text":"飢","label":"common","key":"6"},{"id":6,"text":"姬","key":"7"},{"id":7,"text":"譏","key":"8"},{"id":8,"text":"畸","key":"9"},{"id":9,"text":"稽","key":"0"}],"page":0,"pages":2,"start":0,"length":1,"highlight":0,"title":"修改「機」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}

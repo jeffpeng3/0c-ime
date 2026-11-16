@@ -1,0 +1,28 @@
+# case: long-sentence-10
+# note: 長句 10：大家一起努力完成這個工作
+# step 01 syllables ㄉㄚˋ
+{"revision":3,"handled":true,"preedit":[{"text":"ㄉ","style":"normal"},{"text":"ㄚ","style":"normal"},{"text":"ˋ","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 02 syllables ㄐㄧㄚ
+{"revision":7,"handled":true,"preedit":[{"text":"大家","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄧ
+{"revision":9,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄑㄧˇ
+{"revision":12,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"}],"cursor":{"rune":4,"utf16":4},"mode":"zhuyin"}
+# step 05 syllables ㄋㄨˇ
+{"revision":15,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"ㄋ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 06 syllables ㄌㄧˋ
+{"revision":18,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄨㄢˊ
+{"revision":21,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄢ","style":"normal"},{"text":"ˊ","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 08 syllables ㄔㄥˊ
+{"revision":24,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"完成","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄓㄜˋ
+{"revision":27,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"完成","style":"normal"},{"text":"這","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄍㄜ˙
+{"revision":30,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"完成","style":"normal"},{"text":"這個","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄍㄨㄥ
+{"revision":34,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"完成","style":"normal"},{"text":"這個","style":"normal"},{"text":"ㄍ","style":"normal"},{"text":"ㄨ","style":"normal"},{"text":"ㄥ","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 12 syllables ㄗㄨㄛˋ
+{"revision":38,"handled":true,"preedit":[{"text":"大家","style":"normal"},{"text":"一起","style":"normal"},{"text":"努力","style":"normal"},{"text":"完成","style":"normal"},{"text":"這個","style":"normal"},{"text":"工作","style":"normal"}],"cursor":{"rune":12,"utf16":12},"mode":"zhuyin"}
+# step 13 key Enter
+{"revision":39,"handled":true,"commit":"大家一起努力完成這個工作","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

@@ -1,0 +1,12 @@
+# case: neutral-tone
+# note: 輕聲：ㄇㄣ˙ 是固定的輕聲音節
+# step 01 syllables ㄨㄛˇ
+{"revision":3,"handled":true,"preedit":[{"text":"我","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄇㄣ˙
+{"revision":6,"handled":true,"preedit":[{"text":"我們","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Enter
+{"revision":7,"handled":true,"commit":"我們","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
+# step 04 syllables ㄉㄜ˙
+{"revision":10,"handled":true,"preedit":[{"text":"的","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 05 key Enter
+{"revision":11,"handled":true,"commit":"的","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}

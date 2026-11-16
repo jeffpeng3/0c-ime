@@ -1,0 +1,10 @@
+# case: undo-custom-word
+# note: 反悔鍵：候選窗的 Shift+Backspace 刪除自訂詞，可從設定程式復原
+# step 01 syllables ㄕˋ
+{"revision":2,"handled":true,"preedit":[{"text":"是","style":"normal"}],"cursor":{"rune":1,"utf16":1},"mode":"zhuyin"}
+# step 02 syllables ㄐㄧㄝˊ
+{"revision":6,"handled":true,"preedit":[{"text":"世傑","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 key Down
+{"revision":7,"handled":true,"preedit":[{"text":"世傑","style":"normal"}],"cursor":{"rune":2,"utf16":2},"candidates":{"items":[{"id":0,"text":"世傑","note":"我的詞彙","key":"1"},{"id":1,"text":"ㄐㄧㄝˊ","key":"2"}],"page":0,"pages":1,"start":0,"length":2,"highlight":0,"title":"修改「世傑」 · Tab 切換詞長","step_keys":true},"mode":"zhuyin"}
+# step 04 key ShiftBackspace
+{"vocab_changed":true,"revision":8,"handled":true,"preedit":[{"text":"ㄕˋ","style":"pending"},{"text":"ㄐㄧㄝˊ","style":"pending"}],"cursor":{"rune":6,"utf16":6},"candidates":{"items":[{"id":0,"text":"ㄐㄧㄝˊ","key":"1"}],"page":0,"pages":1,"start":1,"length":1,"highlight":0,"title":"修改「ㄐㄧㄝˊ」 · Tab 切換詞長","step_keys":true},"notices":["已從詞庫刪除：世傑（可在設定程式復原）"],"mode":"zhuyin"}

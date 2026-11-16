@@ -1,0 +1,30 @@
+# case: long-sentence-6
+# note: 長句 6：台灣的夜市有很多好吃的小吃
+# step 01 syllables ㄊㄞˊ
+{"revision":3,"handled":true,"preedit":[{"text":"ㄊ","style":"normal"},{"text":"ㄞ","style":"normal"},{"text":"ˊ","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 02 syllables ㄨㄢ
+{"revision":6,"handled":true,"preedit":[{"text":"台灣","style":"normal"}],"cursor":{"rune":2,"utf16":2},"mode":"zhuyin"}
+# step 03 syllables ㄉㄜ˙
+{"revision":9,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":3,"utf16":3},"mode":"zhuyin"}
+# step 04 syllables ㄧㄝˋ
+{"revision":12,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"ㄧ","style":"normal"},{"text":"ㄝ","style":"normal"},{"text":"ˋ","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 05 syllables ㄕˋ
+{"revision":14,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"}],"cursor":{"rune":5,"utf16":5},"mode":"zhuyin"}
+# step 06 syllables ㄧㄡˇ
+{"revision":17,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"}],"cursor":{"rune":6,"utf16":6},"mode":"zhuyin"}
+# step 07 syllables ㄏㄣˇ
+{"revision":20,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"}],"cursor":{"rune":7,"utf16":7},"mode":"zhuyin"}
+# step 08 syllables ㄉㄨㄛ
+{"revision":24,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"}],"cursor":{"rune":8,"utf16":8},"mode":"zhuyin"}
+# step 09 syllables ㄏㄠˇ
+{"revision":27,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"},{"text":"好","style":"normal"}],"cursor":{"rune":9,"utf16":9},"mode":"zhuyin"}
+# step 10 syllables ㄔ
+{"revision":29,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"},{"text":"好吃","style":"normal"}],"cursor":{"rune":10,"utf16":10},"mode":"zhuyin"}
+# step 11 syllables ㄉㄜ˙
+{"revision":32,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"},{"text":"好吃","style":"normal"},{"text":"的","style":"normal"}],"cursor":{"rune":11,"utf16":11},"mode":"zhuyin"}
+# step 12 syllables ㄒㄧㄠˇ
+{"revision":36,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"},{"text":"好吃","style":"normal"},{"text":"的","style":"normal"},{"text":"ㄒ","style":"normal"},{"text":"ㄧ","style":"normal"},{"text":"ㄠ","style":"normal"},{"text":"ˇ","style":"normal"}],"cursor":{"rune":15,"utf16":15},"mode":"zhuyin"}
+# step 13 syllables ㄔ
+{"revision":38,"handled":true,"preedit":[{"text":"台灣","style":"normal"},{"text":"的","style":"normal"},{"text":"夜市","style":"normal"},{"text":"有","style":"normal"},{"text":"很","style":"normal"},{"text":"多","style":"normal"},{"text":"好吃","style":"normal"},{"text":"的","style":"normal"},{"text":"小吃","style":"normal"}],"cursor":{"rune":13,"utf16":13},"mode":"zhuyin"}
+# step 14 key Enter
+{"revision":39,"handled":true,"commit":"台灣的夜市有很多好吃的小吃","cursor":{"rune":0,"utf16":0},"mode":"zhuyin"}
