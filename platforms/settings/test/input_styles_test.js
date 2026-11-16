@@ -175,3 +175,18 @@ test('儲存期間不可重複提交，失敗保留草稿與可讀錯誤', async
   assert.equal(ui.find('style-name').attrs.value, '保留這個名稱');
   assert.match(text(ui.root()), /設定已由其他程式修改/);
 });
+
+// T27：語言選項與日文專屬項目靠 item.languages 篩選；注音專屬項目在日文模式收起。
+test('語言模式依 item.languages 收起注音專屬選項，舊版沒有欄位時照舊全部顯示', () => {
+  require('../ui/language.js');
+  const language = window.ZcLanguage;
+  const items = [
+    { key: 'keyboard-layout', languages: ['zh'] },
+    { key: 'toneless', languages: ['zh'] },
+    { key: 'ja-input-method', languages: ['ja'] },
+    { key: 'selection' },
+  ];
+  assert.deepEqual(language.visible(items, 'ja').map((item) => item.key), ['ja-input-method', 'selection']);
+  assert.deepEqual(language.visible(items, 'zh').map((item) => item.key), ['keyboard-layout', 'toneless', 'selection']);
+  assert.equal(language.applies({ key: 'unknown-old-item' }, 'ja'), true, '舊版 0c-update 的項目沒有 languages');
+});

@@ -121,7 +121,8 @@
   const SHELL_RETIRING_HELP = '新版已安裝，鎖定螢幕或離開電腦時換上，不必登出；在那之前照常可以打字。';
   const SHELL_RETIRING_NOTE = '不必登出，在那之前照常可以打字。';
   const OLD_SHELL_HELP = '新版已安裝，但系統仍開著更新前留下的舊版輸入法。請先儲存工作，登出再登入一次就會改用新版；如果之後仍看到這則訊息，請到「問題排解」匯出狀態摘要回報。';
-  const VALUE = { neural: '神經選字', statistical: '統計引擎', off: '關閉', select: '僅供選字', auto: '自動修正（實驗）', vertical: '直排', grid: '多排', before: '游標前方', after: '游標後方', standard: '標準', eten: '倚天 41 鍵', hsu: '許氏' };
+  const VALUE = { neural: '神經選字', statistical: '統計引擎', off: '關閉', select: '僅供選字', auto: '自動修正（實驗）', vertical: '直排', grid: '多排', before: '游標前方', after: '游標後方', standard: '標準', eten: '倚天 41 鍵', hsu: '許氏',
+    zh: '注音', ja: '日文', field: '每個輸入框記住', global: '全部共用同一個語言', romaji: '羅馬字', kana: '直接かな' };
   const ERROR = {
     read_only: '設定檔來自較新版本的靈犀注音，這個版本只能查看，不能修改。',
     corrupt: '設定檔無法解析。可到「總覽」修復。',
@@ -479,14 +480,29 @@
       control(item, locked));
   }
 
-  // ---- 中英切換、選字、鍵盤與符號（#207：原本的「輸入設定」一頁 19 項，拆成三頁、不摺疊） ----
+  // T27：設定程式支援的日文能力旗標。引擎在 health／open 回報同名旗標才實際生效；舊引擎沒有 japanese 時
+  // 外殼不送日文按鍵，設定檔的值照樣保留。這裡只顯示設定程式這一側的旗標，不假裝是引擎目前的能力。
+  function capabilityCard() {
+    const caps = window.ZcLanguage.CAPABILITIES;
+    return h('div', { class: 'card', id: 'language-capabilities' },
+      row(labelBlock('日文能力旗標', '設定程式支援下列旗標，值與引擎 health／open 回報的相同；引擎沒有 japanese 時外殼不送日文按鍵，舊引擎照舊只有注音。'),
+        h('div', { class: 'value' }, '設定程式支援')),
+      h('dl', { class: 'facts' }, ...caps.flatMap((cap) => [
+        h('dt', { class: 'mono' }, cap.id),
+        h('dd', {}, h('span', { class: 'status-ok' }, '支援'), ' · ' + cap.label),
+      ])));
+  }
+
+  // ---- 語言、中英切換、選字、鍵盤與符號（#207：原本的「輸入設定」一頁 19 項，拆成三頁、不摺疊） ----
   // 各頁依這裡的順序畫（也是 Tab 順序）。不在任何一頁的新項目（較新的 0c-update 才有的設定）放在「選字」最後，
   // 所以契約新增設定時畫面不必先改；要放別頁再加進 keys。輸出設定的兩項在 output()。
+  // T27：語言選擇與日文選項放在第一頁最上面；日文模式只留通用項目與日文選項（item.languages）。
   const SAVE_NOTE = '改動會立即儲存，並在沒有組字時讓輸入法套用。';
   const INPUT_PAGES = {
     mode: {
-      title: '中英切換', lead: '用哪個鍵切換注音和英文、換程式後回到哪個模式，以及在注音中直接打英文。',
-      keys: ['toggle-key', 'start-mode', 'mode-memory', 'mixed-input', 'english-autocomplete', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
+      title: '語言與中英切換', lead: '選擇注音或日文、日文輸入方式，以及中英切換鍵與換程式後回到哪個模式。切換語言後下一個按鍵生效。',
+      keys: ['language', 'language-memory', 'language-hotkey', 'ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
+        'toggle-key', 'start-mode', 'mode-memory', 'mixed-input', 'english-autocomplete', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
     },
     candidates: {
       title: '選字', lead: '候選字怎麼排、怎麼選，以及要不要列出近音的字（模糊音）。',
@@ -544,12 +560,15 @@
       root.append(h('div', { class: 'notice info' }, h('p', {}, '部分設定' + profileLockLabel() + '，不能直接修改。點一下想改的項目，可以複製成自訂後修改；不相容的功能仍會停用。'),
         h('button', { type: 'button', class: 'secondary', 'data-focus': 'style-settings', onclick: () => show('styles') }, '選用風格／複製成自訂')));
     }
+    // T27：日文模式收起注音專屬的項目（item.languages）；日文選項只在日文模式出現。
+    const language = window.ZcLanguage.activeLanguage(settings);
     const emoji = items.find((item) => item.key === 'emoji-shortcut');
     const equalsFirst = items.find((item) => item.key === 'emoji-equals-first');
     const order = (item) => (spec.keys.includes(item.key) ? spec.keys.indexOf(item.key) : spec.keys.length);
-    const mine = items.filter((item) => pageOfKey(item.key) === name && !item.key.startsWith('fuzzy-') && !(emoji && item === equalsFirst))
+    const mine = items.filter((item) => window.ZcLanguage.applies(item, language) && pageOfKey(item.key) === name &&
+      !item.key.startsWith('fuzzy-') && !(emoji && item === equalsFirst))
       .map((item, i) => [order(item), i, item]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([, , item]) => item);
-    const rows = mine.map((item) => {
+    const rows = (list) => list.map((item) => {
       const parent = itemRow(item, locked ||
         (item.key === 'emoji-shortcut' && state.busy.has('emoji-equals-first')));
       if (item.key !== 'emoji-shortcut' || !equalsFirst) return parent;
@@ -557,8 +576,21 @@
       child.classList.add('suboption');
       return h('div', { class: 'setting-group', role: 'group', 'aria-labelledby': 'label-' + item.key }, parent, child);
     });
-    if (rows.length) root.append(h('div', { class: 'card' }, ...rows));
-    const fuzzy = name === 'candidates' ? items.filter((item) => item.key.startsWith('fuzzy-')) : [];
+    if (name === 'mode') {
+      // 語言選項不在 settings.items：0c-update 從 profiles.language 帶過來（見 ui/language.js）。
+      const languageItems = window.ZcLanguage.languageItems(settings).filter((item) => window.ZcLanguage.applies(item, language));
+      const rest = mine.filter((item) => !window.ZcLanguage.isLanguagePageItem(item));
+      if (languageItems.length) {
+        root.append(h('h2', {}, '語言'), h('div', { class: 'card' }, ...rows(languageItems)));
+        root.append(capabilityCard());
+      }
+      if (rest.length) root.append(h('h2', {}, '中英切換'), h('div', { class: 'card' }, ...rows(rest)));
+    } else if (mine.length) {
+      root.append(h('div', { class: 'card' }, ...rows(mine)));
+    } else if (language === 'ja') {
+      root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用這一頁的注音設定；切回注音就會出現。')));
+    }
+    const fuzzy = name === 'candidates' && language === 'zh' ? items.filter((item) => item.key.startsWith('fuzzy-')) : [];
     if (fuzzy.length) {
       const enabled = fuzzy.some((item) => item.value !== 'off');
       const label = h('span', {}, '模糊音');
@@ -696,8 +728,13 @@
     const settings = state.settings;
     root.append(...fileNotices(settings));
     // 「用快捷鍵切換簡體字」（#192）排在「輸出簡體字」下面；說明由 0c-update 依平台寫出快捷鍵。
-    const items = ['output-simplified', 'simplified-hotkey'].map((key) => (settings.items || []).find((item) => item.key === key)).filter(Boolean);
+    // T27：簡繁轉換是注音專屬選項，日文模式不顯示。
+    const language = window.ZcLanguage.activeLanguage(settings);
+    const items = ['output-simplified', 'simplified-hotkey']
+      .map((key) => (settings.items || []).find((item) => item.key === key))
+      .filter((item) => item && window.ZcLanguage.applies(item, language));
     if (items.length) root.append(h('div', { class: 'card' }, ...items.map((item) => itemRow(item, settings.file.read_only))));
+    else if (language === 'ja') root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用簡繁轉換；切回注音就會出現。')));
   }
 
   const RENDER = {

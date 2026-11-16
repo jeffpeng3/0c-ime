@@ -613,8 +613,10 @@ def main():
     if argv[:1] in (['status'], ['settings']) and ('-json' in argv or '--json' in argv):
         import subprocess
         out = json.loads(subprocess.run([real] + argv, capture_output=True, text=True).stdout)
-        if load().get('old_updater'):  # 舊版 0c-update 沒有 features 欄位
+        if load().get('old_updater'):  # 舊版 0c-update 沒有 features 欄位，也沒有 profiles.language（T27）
             out.pop('features', None)
+            if isinstance(out.get('profiles'), dict):
+                out['profiles'].pop('language', None)
         if argv[0] == 'settings':
             print(json.dumps(out, ensure_ascii=False))
             return 0

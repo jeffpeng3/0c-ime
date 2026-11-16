@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/0c-biggo/0c-ime/core/fuzzy"
+	"github.com/0c-biggo/0c-ime/core/proto"
 )
 
 const (
@@ -34,6 +35,24 @@ const (
 	LayoutStandard = "standard" // 標準（大千）注音鍵盤排列
 	LayoutETen     = "eten"     // 倚天 41 鍵（#83）
 	LayoutHsu      = "hsu"      // 許氏（#183）
+)
+
+// 輸入語言（T27）；值與 core/lang.ID 相同，設定檔、資料包與個人學習檔共用。
+const (
+	LanguageZh = "zh" // 注音（預設）
+	LanguageJa = "ja" // 日文
+)
+
+// 切換輸入框後的語言（T27）。
+const (
+	LanguageMemoryField  = "field"  // 每個輸入框記住（預設）
+	LanguageMemoryGlobal = "global" // 全部共用
+)
+
+// 日文輸入方式（T27）；值與 lang.InputMethod.ID 相同。
+const (
+	JaInputRomaji = "romaji" // 羅馬字（預設）
+	JaInputKana   = "kana"   // 直接かな
 )
 
 // 讀取結果的檔案狀態。
@@ -116,6 +135,28 @@ type Settings struct {
 	// 中英混打的自動判斷停用（與混打二選一），已儲存的 mixed_input 不動，關掉這一項就照舊。
 	Toneless bool  `json:"toneless"`
 	Fuzzy    Fuzzy `json:"fuzzy,omitzero"`
+
+	// Language 是預設的輸入語言（T27）：zh（注音，預設，舊檔沒有這個欄位時也是）或 ja（日文）。
+	// 這只是設定程式送出的偏好與切換請求；每個輸入框實際使用的語言由引擎工作階段記住，
+	// 設定程式只送請求並顯示快照。切換後下一個按鍵生效。
+	Language string `json:"language"`
+	// LanguageMemory 是切換輸入框後的語言（T27）：field（預設，每個輸入框記住）或 global（全部共用）。
+	LanguageMemory string `json:"language_memory"`
+	// LanguageHotkey：按 LanguageHotkeyLabel 的快捷鍵在注音與日文之間切換（T27）。預設 true。
+	// 外殼攔這個鍵；關閉時照舊交給應用程式。
+	LanguageHotkey bool `json:"language_hotkey"`
+	// JaInputMethod 是日文的輸入方式（T27）：romaji（預設，羅馬字）或 kana（直接かな）。
+	JaInputMethod string `json:"ja_input_method"`
+	// JaLiveConversion：ライブ変換（T27）。預設 false：按変換才轉換；開啟時輸入中即時轉換。
+	// 需要引擎回報 live_conversion 能力，舊引擎照舊只有変換。
+	JaLiveConversion bool `json:"ja_live_conversion"`
+	// JaSymbols：日文轉換候選列出記号與顔文字（T27）。預設 true。
+	JaSymbols bool `json:"ja_symbols"`
+	// JaLearning：日文選字寫入日文個人詞庫（T27）。預設 true；注音與日文的學習分開，不會互相合併。
+	JaLearning bool `json:"ja_learning"`
+	// JaModel：日文候選使用神經模型重排（T27）。預設 true；關閉時只用統計轉換。
+	JaModel bool `json:"ja_model"`
+
 	// 0.2.0 開發期間的內部開關 preview_0_2（#128）已拿掉：自訂詞彙、加詞按鍵、「我的片語」、本機 API 等
 	// 入口 0.2.0 起所有人都有。舊檔裡的 preview_0_2 不論值為何都忽略，存檔時移除（retiredKeys）。
 
@@ -257,7 +298,9 @@ func (s Settings) FuzzyConfig() fuzzy.Config {
 
 func Default() Settings {
 	s := Settings{Selection: Neural, Punctuation: false, DocumentContext: true, CandidateCursor: defaultCandidateCursor(runtime.GOOS), CandidateLayout: "vertical", EmojiShortcut: "equals", EmojiEqualsFirst: true, EscClear: true, SpaceSelects: true, KeyboardLayout: LayoutStandard, SelectionKeys: SelectDigits, CtrlPunctuation: true, ZhuyinErrorHint: true,
-		ToggleKey: defaultToggleKey(runtime.GOOS), ModeMemory: defaultModeMemory(runtime.GOOS), StartMode: StartZhuyin}
+		ToggleKey: defaultToggleKey(runtime.GOOS), ModeMemory: defaultModeMemory(runtime.GOOS), StartMode: StartZhuyin,
+		Language: LanguageZh, LanguageMemory: LanguageMemoryField, LanguageHotkey: true,
+		JaInputMethod: JaInputRomaji, JaLiveConversion: false, JaSymbols: true, JaLearning: true, JaModel: true}
 	s.LeftShift = s.TogglesLeft() // 舊欄位跟著切換鍵：Windows 預設左右 Shift 時是 true（#206）
 	return s
 }
@@ -376,7 +419,7 @@ func (s *Settings) UnmarshalJSON(b []byte) error {
 	for _, field := range []struct {
 		key string
 		dst *bool
-	}{{"punctuation", &s.Punctuation}, {"document_context", &s.DocumentContext}, {"mixed_input", &s.MixedInput}, {"english_autocomplete", &s.EnglishAutocomplete}, {"left_shift", &s.LeftShift}, {"esc_clear", &s.EscClear}, {"space_selects", &s.SpaceSelects}, {"advance_after_select", &s.AdvanceAfterSelect}, {"emoji_equals_first", &s.EmojiEqualsFirst}, {"output_simplified", &s.OutputSimplified}, {"simplified_hotkey", &s.SimplifiedHotkey}, {"ctrl_punctuation", &s.CtrlPunctuation}, {"shift_symbol_halfwidth", &s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", &s.AllSymbolsHalfwidth}, {"cjk_latin_space", &s.CJKLatinSpace}, {"zhuyin_error_hint", &s.ZhuyinErrorHint}, {"caps_lock_english", &s.CapsLockEnglish}, {"toneless", &s.Toneless}} {
+	}{{"punctuation", &s.Punctuation}, {"document_context", &s.DocumentContext}, {"mixed_input", &s.MixedInput}, {"english_autocomplete", &s.EnglishAutocomplete}, {"left_shift", &s.LeftShift}, {"esc_clear", &s.EscClear}, {"space_selects", &s.SpaceSelects}, {"advance_after_select", &s.AdvanceAfterSelect}, {"emoji_equals_first", &s.EmojiEqualsFirst}, {"output_simplified", &s.OutputSimplified}, {"simplified_hotkey", &s.SimplifiedHotkey}, {"ctrl_punctuation", &s.CtrlPunctuation}, {"shift_symbol_halfwidth", &s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", &s.AllSymbolsHalfwidth}, {"cjk_latin_space", &s.CJKLatinSpace}, {"zhuyin_error_hint", &s.ZhuyinErrorHint}, {"caps_lock_english", &s.CapsLockEnglish}, {"toneless", &s.Toneless}, {"language_hotkey", &s.LanguageHotkey}, {"ja_live_conversion", &s.JaLiveConversion}, {"ja_symbols", &s.JaSymbols}, {"ja_learning", &s.JaLearning}, {"ja_model", &s.JaModel}} {
 		if raw, ok := take(field.key); ok {
 			var v bool
 			if json.Unmarshal(raw, &v) == nil {
@@ -408,6 +451,9 @@ func (s *Settings) UnmarshalJSON(b []byte) error {
 		{"toggle_key", &s.ToggleKey, []string{ToggleRight, ToggleBoth, ToggleLeft, ToggleNone}},
 		{"mode_memory", &s.ModeMemory, []string{ModeNative, ModeShared}},
 		{"start_mode", &s.StartMode, []string{StartZhuyin, StartEnglish}},
+		{"language", &s.Language, []string{LanguageZh, LanguageJa}},
+		{"language_memory", &s.LanguageMemory, []string{LanguageMemoryField, LanguageMemoryGlobal}},
+		{"ja_input_method", &s.JaInputMethod, []string{JaInputRomaji, JaInputKana}},
 	} {
 		if raw, ok := take(field.key); ok {
 			var value string
@@ -481,7 +527,7 @@ func (s Settings) MarshalJSON() ([]byte, error) {
 	for _, field := range []struct {
 		key   string
 		value any
-	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_simplified", s.OutputSimplified}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}} {
+	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_simplified", s.OutputSimplified}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}, {"language", s.Language}, {"language_memory", s.LanguageMemory}, {"language_hotkey", s.LanguageHotkey}, {"ja_input_method", s.JaInputMethod}, {"ja_live_conversion", s.JaLiveConversion}, {"ja_symbols", s.JaSymbols}, {"ja_learning", s.JaLearning}, {"ja_model", s.JaModel}} {
 		if err := typed(field.key, field.value); err != nil {
 			return nil, err
 		}
@@ -536,7 +582,7 @@ func (s Settings) notes() []string {
 	if s.extra != "" {
 		_ = json.Unmarshal([]byte(s.extra), &kept)
 	}
-	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_simplified", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless"} {
+	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_simplified", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless", "language", "language_memory", "language_hotkey", "ja_input_method", "ja_live_conversion", "ja_symbols", "ja_learning", "ja_model"} {
 		if raw, ok := kept[key]; ok {
 			out = append(out, fmt.Sprintf("%s：本版不認得 %s，暫用預設值，存檔時保留原值", strings.ReplaceAll(key, "_", "-"), raw))
 			delete(kept, key)
@@ -748,6 +794,12 @@ func (s Settings) valueLabels(key string) map[string]string {
 		return map[string]string{LayoutStandard: "標準", LayoutETen: "倚天 41 鍵", LayoutHsu: "許氏"}
 	case "shift-symbol-halfwidth":
 		return map[string]string{"off": "全形標點", "on": "Shift＋符號打半形", "all": "所有符號鍵打半形"}
+	case "language":
+		return map[string]string{LanguageZh: "注音", LanguageJa: "日文"}
+	case "language-memory":
+		return map[string]string{LanguageMemoryField: "每個輸入框記住", LanguageMemoryGlobal: "全部共用同一個語言"}
+	case "ja-input-method":
+		return map[string]string{JaInputRomaji: "羅馬字", JaInputKana: "直接かな"}
 	}
 	return nil
 }
@@ -943,6 +995,30 @@ func specs() []spec {
 	return out
 }
 
+// languageSpecs 是語言選擇與日文選項（T27）。它們不列進 Items：0c-update 的 settings 文字清單由
+// 另一個套件逐項寫死，新增項目會讓那份清單與 CLI 說明不同步。語言選項改由 ProfileView.Language
+// 帶給設定程式（0c-update 原樣轉送），Set／Value 照常可用，舊版 0c-update 不會看到也不需要它們。
+func languageSpecs() []spec {
+	return []spec{
+		{"language", "輸入語言", "預設的輸入語言。切換後下一個按鍵生效；每個輸入框實際使用的語言由引擎的輸入工作階段記住，這裡送的是切換請求與下次開始的預設。", LanguageZh, []string{LanguageZh, LanguageJa},
+			func(s Settings) string { return s.Language }},
+		{"language-memory", "切換輸入框後的語言", "換到別的程式或輸入框時，語言要不要跟著那個輸入框；「每個輸入框記住」讓中文程式維持注音、日文程式維持日文。", LanguageMemoryField, []string{LanguageMemoryField, LanguageMemoryGlobal},
+			func(s Settings) string { return s.LanguageMemory }},
+		{"language-hotkey", "全域切換熱鍵", "按 " + LanguageHotkeyLabel(runtime.GOOS) + " 在注音與日文之間切換；關閉時這個鍵交給應用程式。", "on", []string{"on", "off"},
+			func(s Settings) string { return onOff(s.LanguageHotkey) }},
+		{"ja-input-method", "日文輸入方式", "羅馬字逐鍵輸入（ka 打成か），或直接用かな輸入（かな鍵盤、觸控）；不影響注音。", JaInputRomaji, []string{JaInputRomaji, JaInputKana},
+			func(s Settings) string { return s.JaInputMethod }},
+		{"ja-live-conversion", "ライブ変換", "輸入的同時即時轉換成漢字；關閉時按変換或空白才轉換。需要引擎支援ライブ変換，舊引擎照舊只有変換。", "off", []string{"on", "off"},
+			func(s Settings) string { return onOff(s.JaLiveConversion) }},
+		{"ja-symbols", "記号與顔文字", "日文変換候選列出記号與顔文字；關閉時只列詞語。", "on", []string{"on", "off"},
+			func(s Settings) string { return onOff(s.JaSymbols) }},
+		{"ja-learning", "日文學習", "選過的日文詞會記到日文個人詞庫，下次排在前面；注音與日文的學習分開。私人欄位不記。", "on", []string{"on", "off"},
+			func(s Settings) string { return onOff(s.JaLearning) }},
+		{"ja-model", "日文神經模型", "用神經模型重排日文候選；關閉時只用統計轉換。模型缺少或載入失敗時照舊退回統計轉換。", "on", []string{"on", "off"},
+			func(s Settings) string { return onOff(s.JaModel) }},
+	}
+}
+
 // tonelessDescription 是「不打聲調也能選字」（#150）的說明：怎麼切音節、空白還是一聲、混打停用。
 const tonelessDescription = "聲調可打可不打：ㄋㄧㄏㄠ 就是「你好」，沒打聲調的字依前後文決定，有打聲調的字照聲調；少打聲調時選字比較容易錯，拿不定的字可以補聲調。" +
 	"接不上前一個音節的注音會開始新的字；ㄒㄧㄢ 是一個字，要「西安」請打 ㄒㄧ'ㄢ（組字中的 ' 用來切字，頓號改按 \\）或在 ㄒㄧ 後面補聲調。" +
@@ -961,6 +1037,48 @@ func SimplifiedHotkeyLabel(goos string) string {
 		return "⌃⇧F11"
 	}
 	return "Ctrl＋Shift＋F11"
+}
+
+// LanguageHotkeyLabel 是切換注音／日文的快捷鍵（T27）。Windows 由 TSF 外殼攔截，其他平台由各自的
+// 外殼處理；設定程式只寫設定，不自己攔鍵。
+func LanguageHotkeyLabel(goos string) string {
+	if goos == "darwin" {
+		return "⌃⇧F9"
+	}
+	return "Ctrl＋Shift＋F9"
+}
+
+// Japanese 回報預設語言是不是日文。未設定或讀不懂時一律當成注音，舊設定檔行為不變。
+func (s Settings) Japanese() bool { return s.Language == LanguageJa }
+
+// itemLanguages 回報設定項目適用的語言（T27）；nil 表示不分語言。
+// 日文模式只留下通用的輸入行為與日文選項，注音專屬的排列、模糊音、聲調與簡繁轉換都收起來。
+func itemLanguages(key string) []string {
+	switch {
+	case strings.HasPrefix(key, "ja-"):
+		return []string{LanguageJa}
+	case strings.HasPrefix(key, "fuzzy-"), strings.HasPrefix(key, "style-"):
+		return []string{LanguageZh}
+	}
+	switch key {
+	case "keyboard-layout", "toneless", "zhuyin-error-hint", "output-simplified", "simplified-hotkey",
+		"ctrl-punctuation", "shift-symbol-halfwidth", "mixed-input", "english-autocomplete",
+		"caps-lock-english", "emoji-shortcut", "emoji-equals-first", "space-selects", "punctuation":
+		return []string{LanguageZh}
+	}
+	return nil
+}
+
+// itemCapabilities 回報這一項需要的引擎能力旗標（值與 core/proto 的 Cap* 相同）。
+// 設定程式用它標示日文選項；引擎沒有 japanese 時外殼不送日文按鍵，這裡的值照樣保留。
+func itemCapabilities(key string) []string {
+	switch key {
+	case "language", "ja-input-method", "ja-symbols", "ja-learning", "ja-model":
+		return []string{proto.CapJapanese}
+	case "ja-live-conversion":
+		return []string{proto.CapJapanese, proto.CapLiveConversion}
+	}
+	return nil
 }
 
 // simplifiedHotkeyDescription：說明快捷鍵、會占用哪個鍵、組字中按的效果（#192）。
@@ -1082,7 +1200,7 @@ func hiddenSpecs() []spec {
 }
 
 func lookup(key string) (spec, bool) {
-	for _, sp := range append(specs(), hiddenSpecs()...) {
+	for _, sp := range append(append(specs(), languageSpecs()...), hiddenSpecs()...) {
 		if sp.key == key {
 			return sp, true
 		}
@@ -1093,7 +1211,7 @@ func lookup(key string) (spec, bool) {
 // Keys 列出可用 Set 修改的項目與允許值，供命令列說明使用。
 func Keys() map[string]string {
 	keys := map[string]string{}
-	for _, sp := range specs() {
+	for _, sp := range append(specs(), languageSpecs()...) {
 		keys[sp.key] = strings.Join(sp.values, "|")
 	}
 	return keys
@@ -1121,6 +1239,44 @@ type Item struct {
 	Effective string `json:"effective,omitempty"`
 	// ValueLabels 是選項的顯示名稱（例如 native 在 Windows 是「每個程式各自記住」）；舊版介面忽略，照自己的對照表。
 	ValueLabels map[string]string `json:"value_labels,omitempty"`
+	// Languages 是這一項適用的語言（T27）：["zh"]、["ja"]，沒有時表示不分語言。設定程式在日文模式
+	// 收起注音專屬的排列、模糊音、聲調與簡繁轉換，只留下通用項目與日文選項；設定檔的值不動。
+	// 舊版介面忽略這個欄位。
+	Languages []string `json:"languages,omitempty"`
+	// Capabilities 是這一項需要的引擎能力旗標（T27，值與 core/proto 的 Cap* 相同）。設定程式在
+	// 「語言」區塊顯示這些旗標；舊引擎沒有 japanese 時外殼不送日文按鍵，設定值照樣保留。舊版介面忽略。
+	Capabilities []string `json:"capabilities,omitempty"`
+}
+
+// buildItem 依 spec 與目前設定產生一個契約項目。
+func (s Settings) buildItem(sp spec) Item {
+	reason := s.disabledReason(sp.key)
+	value, effective := sp.value(s), ""
+	if sp.key == "start-mode" && reason != "" && value != StartZhuyin {
+		effective = StartZhuyin
+	}
+	// #282：Ctrl＋標點固定開啟、聲調選填暫停。設定程式把停用的開關畫成關閉，固定開啟的要帶 effective 才畫成開，
+	// 設定檔本來就是 on 時也要帶。
+	if reason == allSymbolsCtrlReason {
+		effective = "on"
+	}
+	if reason == allSymbolsTonelessReason {
+		effective = "off"
+	}
+	it := Item{Key: sp.key, Type: "choice", Values: sp.values, Default: sp.def, Value: value, Label: sp.label, Description: sp.description,
+		Disabled: reason != "", DisabledReason: reason, DisabledBy: disabledBy(reason), Effective: effective, ValueLabels: s.valueLabels(sp.key),
+		Languages: itemLanguages(sp.key), Capabilities: itemCapabilities(sp.key)}
+	if rule, ok := lookupRule(it.Key); ok {
+		it.ValueLabels = rule.labels
+	}
+	if it.Key == "candidate-layout" {
+		it.ValueLabels = map[string]string{"vertical": "直排", "grid": "多排", "horizontal": "橫排"}
+	}
+	if s.profileLocked(it.Key) {
+		it.Locked = true
+		it.LockedReason = "此項由選用的輸入習慣固定；請先複製成自訂"
+	}
+	return it
 }
 
 // Items 依固定順序列出所有可修改的設定。
@@ -1128,33 +1284,18 @@ func (s Settings) Items() []Item {
 	list := specs()
 	out := make([]Item, 0, len(list))
 	for _, sp := range list {
-		reason := s.disabledReason(sp.key)
-		value, effective := sp.value(s), ""
-		if sp.key == "start-mode" && reason != "" && value != StartZhuyin {
-			effective = StartZhuyin
-		}
-		// #282：Ctrl＋標點固定開啟、聲調選填暫停。設定程式把停用的開關畫成關閉，固定開啟的要帶 effective 才畫成開，
-		// 設定檔本來就是 on 時也要帶。
-		if reason == allSymbolsCtrlReason {
-			effective = "on"
-		}
-		if reason == allSymbolsTonelessReason {
-			effective = "off"
-		}
-		out = append(out, Item{Key: sp.key, Type: "choice", Values: sp.values, Default: sp.def, Value: value, Label: sp.label, Description: sp.description,
-			Disabled: reason != "", DisabledReason: reason, DisabledBy: disabledBy(reason), Effective: effective, ValueLabels: s.valueLabels(sp.key)})
+		out = append(out, s.buildItem(sp))
 	}
-	for i := range out {
-		if sp, ok := lookupRule(out[i].Key); ok {
-			out[i].ValueLabels = sp.labels
-		}
-		if out[i].Key == "candidate-layout" {
-			out[i].ValueLabels = map[string]string{"vertical": "直排", "grid": "多排", "horizontal": "橫排"}
-		}
-		if s.profileLocked(out[i].Key) {
-			out[i].Locked = true
-			out[i].LockedReason = "此項由選用的輸入習慣固定；請先複製成自訂"
-		}
+	return out
+}
+
+// LanguageItems 是語言選擇與日文選項（T27）。0c-update 的 settings 文件把它放在 profiles.language，
+// 設定程式只從那裡讀；Items 維持原本的引擎設定清單，舊版 CLI 的文字輸出不必跟著改。
+func (s Settings) LanguageItems() []Item {
+	list := languageSpecs()
+	out := make([]Item, 0, len(list))
+	for _, sp := range list {
+		out = append(out, s.buildItem(sp))
 	}
 	return out
 }
@@ -1284,6 +1425,30 @@ func (s *Settings) set(key, value string) error {
 	case "toneless":
 		s.Toneless = value == "on"
 		s.forget("toneless")
+	case "language":
+		s.Language = value
+		s.forget("language")
+	case "language-memory":
+		s.LanguageMemory = value
+		s.forget("language_memory")
+	case "language-hotkey":
+		s.LanguageHotkey = value == "on"
+		s.forget("language_hotkey")
+	case "ja-input-method":
+		s.JaInputMethod = value
+		s.forget("ja_input_method")
+	case "ja-live-conversion":
+		s.JaLiveConversion = value == "on"
+		s.forget("ja_live_conversion")
+	case "ja-symbols":
+		s.JaSymbols = value == "on"
+		s.forget("ja_symbols")
+	case "ja-learning":
+		s.JaLearning = value == "on"
+		s.forget("ja_learning")
+	case "ja-model":
+		s.JaModel = value == "on"
+		s.forget("ja_model")
 	case "mixed-input":
 		s.MixedInput = value == "on"
 		s.forget("mixed_input")
