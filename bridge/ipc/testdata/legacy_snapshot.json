@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "snapshot": {
+    "revision": 7,
+    "handled": true,
+    "preedit": [
+      {
+        "text": "麻婆",
+        "style": "normal"
+      },
+      {
+        "text": "ㄉㄡˋ",
+        "style": "pending"
+      }
+    ],
+    "cursor": {
+      "rune": 6,
+      "utf16": 6
+    },
+    "mode": "zhuyin"
+  },
+  "engine_us": 42
+}

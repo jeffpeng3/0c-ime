@@ -40,6 +40,10 @@ type Server struct {
 	// ResetPersonal 處理 reset_personal（#301）：宿主在存檔鎖內清空個人資料（Engine.ResetPersonal）並立刻寫檔，
 	// 失敗時回錯誤。nil 表示不支援，health 不回報 personal_reset。
 	ResetPersonal func() error
+	// Capabilities 是引擎支援的日文能力旗標（T15）：proto.CapJapanese、CapConvertKeys、CapClauseDisplay、
+	// CapLiveConversion。列出的項目在 health 與 open 的 info 回報 "true"；沒有列出的項目不出現，
+	// 舊外殼據此照舊運作。宿主啟動後不應再改這個欄位。
+	Capabilities []string
 
 	mu              sync.Mutex
 	conns           map[net.Conn]bool
@@ -84,6 +88,11 @@ func (s *Server) info() map[string]string {
 	if s.RuntimeInfo != nil {
 		for k, v := range s.RuntimeInfo() {
 			info[k] = v
+		}
+	}
+	for _, cap := range s.Capabilities {
+		if cap != "" {
+			info[cap] = "true"
 		}
 	}
 	return info

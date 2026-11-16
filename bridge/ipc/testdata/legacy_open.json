@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "session": 7,
+  "info": {
+    "version": "0.2.12",
+    "protocol": "0",
+    "initial_mode": "zhuyin",
+    "vocab_keys": "true"
+  }
+}

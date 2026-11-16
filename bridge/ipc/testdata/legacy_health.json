@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "info": {
+    "version": "0.2.12",
+    "protocol": "0",
+    "sessions": "0",
+    "composing": "0",
+    "pid": "4242",
+    "vocab_keys": "true"
+  }
+}

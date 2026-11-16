@@ -1,0 +1,12 @@
+{
+  "ok": true,
+  "session": 3,
+  "info": {
+    "version": "0.3.0",
+    "protocol": "0",
+    "japanese": "true",
+    "convert_keys": "true",
+    "clause_display": "true",
+    "live_conversion": "true"
+  }
+}

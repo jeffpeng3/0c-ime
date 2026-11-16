@@ -41,8 +41,9 @@ const (
 
 // 輸入模式。
 const (
-	ModeZhuyin  = "zhuyin"
-	ModeEnglish = "english"
+	ModeZhuyin   = "zhuyin"
+	ModeEnglish  = "english"
+	ModeJapanese = "japanese"
 )
 
 // 具名鍵。
@@ -67,6 +68,17 @@ const (
 	KeyShiftRight     = "ShiftRight"     // 組字中往右標示
 	KeyShiftDelete    = "ShiftDelete"    // 候選窗的反悔鍵：刪除自訂詞或忘記學到的詞
 	KeyShiftBackspace = "ShiftBackspace" // 同上（Mac 筆電沒有獨立的 Delete 鍵）
+)
+
+// 日文具名鍵（T15）。外殼轉發實體鍵，核心不假設鍵碼；舊外殼不送這些鍵時行為不變。
+const (
+	KeyConvert        = "Convert"
+	KeyNonConvert     = "NonConvert"
+	KeyHiragana       = "F6"
+	KeyKatakana       = "F7"
+	KeyHalfWidthKana  = "F8"
+	KeyFullWidthLatin = "F9"
+	KeyHalfWidthLatin = "F10"
 )
 
 // Ctrl＋標點（#168）：中文模式按 Ctrl＋, 打「，」等全形標點。Key 為 CtrlPrefix 加上不按 Ctrl 時這一鍵產生的字元
@@ -118,6 +130,20 @@ func KeypadChar(k string) (rune, bool) {
 	return r[0], true
 }
 
+// 引擎能力旗標（T15）：在 health 與 open 的 info 以 "true" 回報；缺少該項代表不支援。
+// 新外殼送日文模式或日文按鍵前必須先確認 japanese；舊引擎沒有這些項目，行為照舊。
+const (
+	CapJapanese       = "japanese"
+	CapConvertKeys    = "convert_keys"
+	CapClauseDisplay  = "clause_display"
+	CapLiveConversion = "live_conversion"
+)
+
+// Capability 回報 info 是否開啟 name；缺少或不是 "true" 都代表不支援。
+func Capability(info map[string]string, name string) bool {
+	return info[name] == "true"
+}
+
 type Request struct {
 	ContextEnabled bool   `json:"context_enabled,omitempty"` // 外殼具備文件位置確認能力
 	ContextID      uint64 `json:"context_id,omitempty"`
@@ -147,6 +173,10 @@ const (
 	// StyleReading 是中英混打時照字面顯示、按空白會組成中文的數字按鍵（#162，見 ReadingHint）。
 	// 外殼以低調的樣式（灰字、點線）畫；舊外殼不認得時當一般組字。
 	StyleReading = "reading"
+	// StyleClause 是日文変換中的一般文節；StyleClauseActive 是目前文節（T15）。
+	// 外殼只負責畫，不知道文節邊界以外的事。
+	StyleClause       = "clause"
+	StyleClauseActive = "clause_active"
 )
 
 type Segment struct {
@@ -247,6 +277,12 @@ type Snapshot struct {
 	// 沒有統一的提示音，把這個快照裡 pending 的那一段畫成醒目樣式。只出現在擋下按鍵的那一次請求的快照，下一個快照
 	// 就沒有。舊外殼不認得這一項時不提示，聲調照樣被擋（注音停住，再按一次同一個聲調照舊收下）。
 	Bell bool `json:"bell,omitempty"`
+	// 以下為日文契約（T15）的可選欄位，全部 omitempty。舊外殼忽略未知欄位；舊引擎不送，新外殼據此退回注音行為。
+	Language    string `json:"language,omitempty"`     // "zh"、"ja"
+	InputMethod string `json:"input_method,omitempty"` // "zhuyin"、"romaji"、"kana"
+	Converting  bool   `json:"converting,omitempty"`   // 日文変換中
+	ClauseIndex int    `json:"clause_index,omitempty"` // 目前文節
+	ClauseCount int    `json:"clause_count,omitempty"` // 文節總數
 }
 
 // SuggestedText 回傳按 Tab 接受後預覽的完整組字；無建議或範圍不合法時為空。
