@@ -188,6 +188,13 @@ bool Session::simplifiedLive() const {
     return id_ != 0 && gen_ == client_.generation() && value != serverInfo_.end() && value->is_string() && value->get<std::string>() == "true";
 }
 
+// capability 讀 open 回覆的能力旗標（T15）。只看這一代連線：引擎重啟後要以新 session 的 open 為準。
+bool Session::capability(const std::string &name) const {
+    auto value = serverInfo_.find(name);
+    return id_ != 0 && gen_ == client_.generation() && value != serverInfo_.end() && value->is_string() &&
+           value->get<std::string>() == "true";
+}
+
 bool Session::simplifiedAtOpen() const {
     auto value = serverInfo_.find("output_simplified");
     return value != serverInfo_.end() && value->is_string() && value->get<std::string>() == "true";
@@ -385,6 +392,12 @@ Snapshot Session::parse(const nlohmann::json &reply) {
     s.suggestion = j.value("suggestion", "");
     s.english = j.value("mode", "") == "english";
     s.englishPending = j.value("english_pending", false);
+    s.japanese = j.value("mode", "") == "japanese";
+    s.language = j.value("language", "");
+    s.inputMethod = j.value("input_method", "");
+    s.converting = j.value("converting", false);
+    s.clauseIndex = j.value("clause_index", 0);
+    s.clauseCount = j.value("clause_count", 0);
     s.capsLock = j.value("caps_lock", false);
     s.outputSimplified = j.value("output_simplified", false);
     s.bell = j.value("bell", false);
@@ -417,6 +430,9 @@ Snapshot Session::parse(const nlohmann::json &reply) {
             s.notices.push_back(n.get<std::string>());
         }
     }
+    japanese_ = s.japanese;
+    if (!s.language.empty()) { language_ = s.language; }
+    if (!s.inputMethod.empty()) { inputMethod_ = s.inputMethod; }
     return s;
 }
 

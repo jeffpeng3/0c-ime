@@ -68,4 +68,31 @@ inline bool simplifiedHotkey(uint32_t sym, bool ctrl, bool shift, bool otherModi
     return sym == keyF11 && ctrl && shift && !otherModifier;
 }
 
+// 日文具名鍵（T15）的 X keysym。使用數字而不是 FcitxKey_*，讓按鍵轉換可以脫離 Fcitx 標頭測試；
+// 協定鍵名照 core/proto（Convert、NonConvert、F6–F10），外殼不自創。
+constexpr uint32_t keyMuhenkan = 0xff22; // 無変換
+constexpr uint32_t keyHenkan = 0xff23;   // 変換
+constexpr uint32_t keyF6 = 0xffc3;       // ひらがな
+constexpr uint32_t keyF7 = 0xffc4;       // カタカナ
+constexpr uint32_t keyF8 = 0xffc5;       // 半角カナ
+constexpr uint32_t keyF9 = 0xffc6;       // 全角英數
+constexpr uint32_t keyF10 = 0xffc7;      // 半角英數
+
+// japaneseKey：把實體変換／無変換鍵與 F6–F10 換成協定鍵名（T23）。supported 要同時是引擎回報 japanese 與
+// convert_keys；舊引擎沒有這兩項，按鍵照舊交還應用程式。按著 Shift 的 F 鍵與変換鍵是應用程式快捷鍵，不接手；
+// Ctrl／Alt／Super 由呼叫端先排除。其他鍵回傳空字串。
+inline std::string japaneseKey(uint32_t sym, bool shift, bool supported) {
+    if (!supported || shift) { return ""; }
+    switch (sym) {
+    case keyHenkan: return "Convert";
+    case keyMuhenkan: return "NonConvert";
+    case keyF6: return "F6";
+    case keyF7: return "F7";
+    case keyF8: return "F8";
+    case keyF9: return "F9";
+    case keyF10: return "F10";
+    default: return "";
+    }
+}
+
 } // namespace zuin
