@@ -90,6 +90,13 @@ C 執行階段靜態連結（`.cargo/config.toml` 的 `+crt-static`，x64 與 i6
 
 ## 測試
 
+- Phase 2 Mixed profile 的 VM 驗收（P2-44）：在 Linux 以 SSH／SCP 操作 Windows 10/11 x64 VM，上傳 bundle、在互動桌面跑 `acceptance-test.ps1` 與 `p2-mixed` suite，抓回日誌與截圖；包含單一 Mixed profile、候選無語言標籤、逐片段候選、長詞單一候選與英文直接輸入。用法與結果格式見 [test/vm/README.md](test/vm/README.md)：
+
+  ```sh
+  python3 platforms/windows/test/vm/p2vm.py selftest
+  python3 platforms/windows/test/vm/p2vm.py run --host <VM> --user <admin> --key <key> --bundle <windows-x64.zip>
+  ```
+
 - 新套件先執行 `test\package-test.ps1 -BundleDir <解壓目錄>`，檢查 Go、Rust 與獨立管道。它不安裝、不使用日常詞庫，參數見該測試腳本。
 
 - `cargo test --release`：`session.rs` 對真的 `0c-server` 做協定整合測試（打字／提交、放行未處理鍵、斷線重播）。先在另一個管道啟動 server，再設 `ZUIN_TEST_PIPE`；沒有設定就略過，不讀日常個人詞庫：
