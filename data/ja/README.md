@@ -159,6 +159,14 @@ data/ja/
 
 讀音只能使用かな。每個讀音單位都必須通過 `reading.Unit.Valid`，標點、記号、英數字與其他符號一律拒絕；`internal/jaimport.NormalizeReading` 在匯入時就報錯，`BuildJA` 出版前會再驗一次詞條。像 `、`、`。`、`！`、`？`、`・` 這類記号候選屬於 T22 的 `data/ja/symbols/`，由 `core/ja/rewrite.LoadSymbolsFS` 提供，不要放進語音詞典 `lexicon/words.tsv`。
 
+### 0c-jadic 匯入契約
+
+P2-22E 固定了 `internal/jadic` 的讀音與排序契約，完整量測與成本建議見 plan 的 `P2-22E-contracts.md`。
+
+- 讀音：`jadic.Load`／`Parse` 只接受平假名與長音符 `ー`。片假名、片假名與平假名混用、以及其他字元會讓載入失敗，不會留到 `Convert` 才正規化。manifest 的 `reading_script` 可以記錄建置來源，但產品匯入路徑要求 hiragana。
+- 同 surface 排序：成本（換算後，升冪）、讀音、詞性、活用型、活用形。五欄完全相同時保留 pack 內的原始順序。同一份 pack 的 `words.tsv` 因此位元組固定。
+- 成本：目前仍是 `max(0, cost) * 0.001`，114 筆負成本飽和成 0。P2-22E 只完成量測與建議，生產換算規則尚未切換；負成本與 offset 方案需要另外改 `core/ja/lexicon` 與 `internal/compile` 的非負檢查。
+
 ### 資料包內容
 
 ```text
