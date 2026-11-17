@@ -192,8 +192,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # package_windows.py 需要 x.y.z 形式的版本；CI 版本用 0.0.0-ci.<sha> 避免與正式版混淆。
-          version="0.0.0-ci.$(git rev-parse --short=12 HEAD)"
+          # package_windows.py 需要 x.y.z 形式的版本；CI 版本用 0.2.0-ci.<sha>，且必須 >= update.FixedSince
+          # （0.1.0-dev.62），否則 TSF DLL 註冊會走舊的版本目錄路徑。
+          version="0.2.0-ci.$(git rev-parse --short=12 HEAD)"
           echo "VERSION=$version" >> "$GITHUB_ENV"
           python scripts/package_windows.py --preview --data assets/data --ja-data build/ja \
             --release-docs build/preview-docs --version "$version" --out build/release
