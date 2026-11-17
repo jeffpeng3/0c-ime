@@ -22,7 +22,7 @@ use windows::Win32::Storage::FileSystem::{DELETE, FILE_GENERIC_EXECUTE, FILE_GEN
 use windows_core::PWSTR;
 use windows::Win32::UI::Input::KeyboardAndMouse::HKL;
 use windows::Win32::UI::TextServices::{
-    ITfCategoryMgr, ITfInputProcessorProfileMgr, ITfInputProcessorProfiles, CLSID_TF_CategoryMgr,
+    ITfCategoryMgr, ITfInputProcessorProfileMgr, ITfInputProcessorProfiles, ITfInputProcessorProfilesEx, CLSID_TF_CategoryMgr,
     CLSID_TF_InputProcessorProfiles, GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER, GUID_TFCAT_TIPCAP_COMLESS,
     GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT, GUID_TFCAT_TIPCAP_SYSTRAYSUPPORT, GUID_TFCAT_TIPCAP_UIELEMENTENABLED,
     GUID_TFCAT_TIP_KEYBOARD, TF_INPUTPROCESSORPROFILE, TF_PROFILETYPE_INPUTPROCESSOR,
@@ -32,7 +32,7 @@ use zuin_win_common::wide;
 
 use crate::guids::{CLSID_ZUIN, DESCRIPTION};
 use crate::log::zlog;
-use crate::profile::{self, PROFILES};
+use crate::profile::{self, LEGACY_PROFILES, PROFILES};
 
 // UIELEMENTENABLED：候選清單以 ITfCandidateListUIElement 提供（uielement.rs）。自行繪製候選的宿主
 // （例如英雄聯盟遊戲內聊天）以 TF_TMAE_UIELEMENTENABLEDONLY 啟用，只載入有這個類別的輸入法（#86）。
@@ -273,14 +273,28 @@ fn register_profiles() -> windows_core::Result<()> {
             None => dll_path()?,
         });
         let manager: Option<ITfInputProcessorProfileMgr> = profiles.cast().ok();
+        // P2-40：舊版的 ja-JP profile 不再註冊；升級時先移除，語言清單只留 Mixed。
+        for (langid, guid) in LEGACY_PROFILES {
+            zlog!("register: 移除舊版 profile {:#06x} {:?}", langid, guid);
+            let _ = profiles.RemoveLanguageProfile(&CLSID_ZUIN, langid, &guid);
+        }
+        let display: Option<ITfInputProcessorProfilesEx> = profiles.cast().ok();
         for profile in PROFILES {
             // msctf 把這兩個字串當 NUL 結尾讀（不只看長度）：wide 會補 NUL。
             let desc = wide(profile.description);
             if manager.as_ref().is_some_and(|m| profile_listed(m, &profile)) {
-                zlog!("register: profile {} 已存在，保留既有設定", profile.language);
+                // 既有使用者留著同一個 profile；把顯示名稱改成 Mixed（舊版是「靈犀注音」）。
+                let renamed = display.as_ref().map(|d| {
+                    d.SetLanguageProfileDisplayName(&CLSID_ZUIN, profile.langid, &profile.guid, &desc, 0)
+                });
+                match renamed {
+                    Some(Ok(())) => zlog!("register: profile {} 已存在，名稱已更新", profile.description),
+                    Some(Err(e)) => zlog!("register: profile {} 已存在，更新名稱失敗：{}", profile.description, e),
+                    None => zlog!("register: profile {} 已存在，這個系統無法更新名稱", profile.description),
+                }
                 continue;
             }
-            zlog!("register: language profile {} ({:#06x})", profile.language, profile.langid);
+            zlog!("register: language profile {} ({:#06x})", profile.description, profile.langid);
             profiles.AddLanguageProfile(&CLSID_ZUIN, profile.langid, &profile.guid, &desc, &icon, 0)?;
         }
         zlog!("register: categories");
@@ -302,11 +316,15 @@ fn unregister_profiles() -> windows_core::Result<()> {
             }
         }
         let profiles: ITfInputProcessorProfiles = CoCreateInstance(&CLSID_TF_InputProcessorProfiles, None, CLSCTX_INPROC_SERVER)?;
-        // 明確移除兩個 profile；移除本來就不存在的 profile 不算錯。最後的 Unregister 再清掉其他殘留
-        // （例如舊版只認得 zh-TW 時留下的資料）。
+        // 明確移除 Mixed 與舊版的 ja-JP profile；移除本來就不存在的 profile 不算錯。最後的 Unregister
+        // 再清掉其他殘留（例如更舊版本留下的資料）。
         for profile in PROFILES {
-            zlog!("unregister: language profile {} ({:#06x})", profile.language, profile.langid);
+            zlog!("unregister: language profile {} ({:#06x})", profile.description, profile.langid);
             let _ = profiles.RemoveLanguageProfile(&CLSID_ZUIN, profile.langid, &profile.guid);
+        }
+        for (langid, guid) in LEGACY_PROFILES {
+            zlog!("unregister: legacy profile {:#06x} {:?}", langid, guid);
+            let _ = profiles.RemoveLanguageProfile(&CLSID_ZUIN, langid, &guid);
         }
         profiles.Unregister(&CLSID_ZUIN)?;
     }
@@ -381,17 +399,21 @@ mod tests {
     use super::*;
 
     #[test]
-    fn registers_both_language_profiles() {
-        // T28：語言列要同時有注音與日文；取消註冊也走同一份清單。
-        assert_eq!(PROFILES.len(), 2);
+    fn registers_exactly_one_mixed_profile() {
+        // P2-40：Windows 只有一個 Mixed profile；沒有英文或日文專用 profile。
+        assert_eq!(PROFILES.len(), 1);
+        assert_eq!(PROFILES[0].description, "Mixed");
         assert_eq!(PROFILES[0].langid, 0x0404);
         assert_eq!(PROFILES[0].guid, crate::guids::GUID_PROFILE);
-        assert_eq!(PROFILES[1].langid, 0x0411);
-        assert_eq!(PROFILES[1].guid, crate::guids::GUID_PROFILE_JA);
-        assert_ne!(PROFILES[0].guid, PROFILES[1].guid);
-        // 同一個 CLSID 與 DLL，只有 profile 與語言不同。
-        assert_eq!(PROFILES[0].language, "zh");
-        assert_eq!(PROFILES[1].language, "ja");
+        assert!(!PROFILES.iter().any(|p| p.guid == crate::guids::GUID_PROFILE_JA));
+    }
+
+    #[test]
+    fn upgrades_remove_the_legacy_japanese_profile() {
+        // 舊版（T28）的 ja-JP profile 只在註冊與解除安裝時移除，不會再被加入。
+        assert_eq!(LEGACY_PROFILES.len(), 1);
+        assert_eq!(LEGACY_PROFILES[0], (0x0411, crate::guids::GUID_PROFILE_JA));
+        assert!(PROFILES.iter().all(|p| p.guid != LEGACY_PROFILES[0].1));
     }
 
     #[test]

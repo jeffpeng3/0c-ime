@@ -177,8 +177,6 @@ pub struct Session {
     // 最近一次快照的 caps_english（#173），換欄位清掉 english_state 後仍保留：重開 session 還原模式時，
     // Caps Lock 帶來的英文以 caps_lock 還原（關掉 Caps Lock 才回得到注音），不當成使用者切的英文。
     caps_english: bool,
-    // T28：這個程式目前啟動的 Windows 語言 profile（"zh"／"ja"）。空字串表示還沒查過，照引擎開始時的模式。
-    language: String,
     // 目前的日文模式（T15）：快照的 mode 為 japanese。只在引擎回報 japanese 能力後才成立。
     japanese: bool,
     // 引擎在 health／open 回報的日文能力旗標（T15）：japanese、convert_keys、clause_display、live_conversion。
@@ -250,6 +248,12 @@ fn initial_english(info: &Value) -> Option<bool> {
     initial_mode(info).map(|mode| mode == Mode::English)
 }
 
+/// 開 session 的請求。P2-40：引擎 API profile-free，這裡不帶語言；同一個 session 直接接受
+/// 注音、日文與英文。舊引擎本來就只認得 op 與 version，所以不需要相容 shim。
+fn open_request() -> Value {
+    json!({"op": "open", "version": PROTOCOL_VERSION})
+}
+
 impl Session {
     pub fn new() -> Session {
         Session::with_client(Client::new())
@@ -284,7 +288,6 @@ impl Session {
             caps_lock_english: false,
             caps_generation: 0,
             caps_english: false,
-            language: String::new(),
             japanese: false,
             japanese_cap: false,
             convert_keys_cap: false,
@@ -360,36 +363,6 @@ impl Session {
             return Snapshot::default();
         }
         self.handle(json!({"type": "output_simplified", "on": on}))
-    }
-
-    /// 設定這個程式目前的 Windows 語言 profile（T28）。Windows 的 per-app 記憶讓使用者在不同程式
-    /// 使用不同 profile；TSF 每次 Activate 都依 GetActiveProfile 呼叫這裡。
-    /// 換 profile 等於換語言：舊 session 不再沿用（引擎可能不認得中途換語言），下一次 open 帶新語言。
-    pub fn set_language(&mut self, language: &str) {
-        if language.is_empty() || self.language == language {
-            return;
-        }
-        if self.id != 0 && self.client.connected() {
-            let _ = self
-                .client
-                .call(&json!({"op": "close", "session": self.id}));
-        }
-        self.language = language.to_string();
-        self.id = 0;
-        self.mode_known = false;
-        self.english = false;
-        self.log.clear();
-        self.cleared = None;
-        self.pending_context = None;
-        self.english_state = Snapshot::default();
-        // 新的程式／profile 先照 profile 顯示語言指示；引擎回報能力後 japanese() 會再確認。
-        self.japanese = language == "ja";
-    }
-
-    /// 這個程式目前的 Windows 語言 profile（"zh"／"ja"）；尚未查詢時為空字串。
-    #[allow(dead_code)] // 診斷與測試用；外殼只透過 open 帶給引擎。
-    pub fn language(&self) -> &str {
-        &self.language
     }
 
     /// 還不知道這個程式（TSF 執行緒）的中英模式時，向引擎查新 session 開始時的模式（#160）。
@@ -621,13 +594,9 @@ impl Session {
         if self.id != 0 && self.generation == self.client.generation() {
             return true;
         }
-        // T28：open 帶上這個程式的 profile 語言。支援的引擎直接以該語言開 session；
-        // 舊引擎忽略未知欄位，照原本的開始模式走。
-        let mut open = json!({"op": "open", "version": PROTOCOL_VERSION});
-        if !self.language.is_empty() {
-            open["language"] = Value::String(self.language.clone());
-        }
-        let reply = self.client.call(&open);
+        // P2-40：open 不帶語言。引擎自己決定開始模式，session 直接進混合模式；
+        // 舊引擎忽略未知欄位，這份請求對兩者都有效。
+        let reply = self.client.call(&open_request());
         let Some(reply) = reply else {
             self.id = 0;
             return false;
@@ -1003,24 +972,14 @@ mod parse_tests {
         assert!(!legacy.english_pending && !legacy.english_wants_key("a"));
     }
 
-    // T28：Windows 的 profile 決定語言；換 profile 要讓下一次 open 帶新語言，不沿用舊 session 的狀態。
+    // P2-40：引擎 API profile-free；開 session 不帶語言，也不需要相容 shim。
     #[test]
-    fn switching_profile_starts_the_next_session_in_that_language() {
-        let mut s = Session::new();
-        s.id = 7;
-        s.mode_known = true;
-        s.english = true;
-        s.set_language("ja");
-        assert_eq!(s.language(), "ja");
-        assert_eq!(s.id, 0, "舊 session 不能沿用");
-        assert!(!s.mode_known, "新語言要重新問開始時的模式");
-        assert!(!s.english);
-        assert!(s.japanese, "等引擎確認日文能力，指示器先照 profile");
-        let id = s.id;
-        s.set_language("ja");
-        assert_eq!(s.id, id, "同一個 profile 不重開 session");
-        s.set_language("");
-        assert_eq!(s.language(), "ja", "空字串不覆蓋已查到的 profile");
+    fn open_request_is_profile_free() {
+        let open = open_request();
+        assert_eq!(open["op"], "open");
+        assert_eq!(open["version"], PROTOCOL_VERSION);
+        assert!(open.get("language").is_none(), "open 不能帶語言：{open}");
+        assert_eq!(open.as_object().unwrap().len(), 2, "open 只有 op 與 version：{open}");
     }
 
     // #160：重開 session 時只在記得的模式跟新 session 開始時的模式不同才還原；還沒問過模式就照新 session 的。

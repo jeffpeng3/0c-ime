@@ -42,6 +42,12 @@ import (
 // buildVersion 由打包工具以 -ldflags "-X main.buildVersion=<版本>" 寫入；開發建置為 dev。
 var buildVersion = "dev"
 
+// mixedInputEnabled 回報這個平台的新 session 是否直接從混打模式開始（P2-40）。
+// Windows 只有 Mixed profile；其他平台保留設定檔的 mixed_input。
+func mixedInputEnabled(goos string, configured bool) bool {
+	return configured || goos == "windows"
+}
+
 func main() {
 	// 系統安裝的升級交接（#181）：serve 存完檔、放開端點與個人資料鎖、關掉 worker 之後才換成新的執行檔。
 	if next := serve(); next != "" {
@@ -72,7 +78,9 @@ func serve() string {
 	neuralThreads := flag.Int("neural-threads", neural.DefaultThreads(), "模型 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
 	modelMode := flag.String("model-mode", string(neural.ModeAuto), "模型常駐模式：auto（主要語言先載入，其他語言延遲）、all、primary、none")
 	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja")
-	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
+	// 內部相容（P2-40）：Windows 的 Mixed profile 由引擎的混打模式服務，外殼的 open 不帶語言。
+	// 這個旗標只留給舊版設定流程與日文轉換的單獨驗證；P2-42 的設定程式接手後移除。
+	jaLanguage := flag.String("language", "zh", "（內部相容）新 session 的初始語言：zh 或 ja；Mixed profile 不需要")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
 	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
 	punctTimeout := flag.Duration("punct-timeout", 150*time.Millisecond, "補標點期限，上限 500ms；逾時照原文提交")
@@ -154,8 +162,10 @@ func serve() string {
 	eng.DocumentContextOff = !config.DocumentContext
 	eng.Fuzzy = config.FuzzyConfig()
 	eng.InputStyle = config.ProfileRules()
-	eng.MixedInput = config.MixedInput
-	eng.Toneless = config.EffectiveToneless() // #150：開啟時 session 停用混打的自動判斷；health 的 mixed_input 照設定檔回報。所有符號鍵打半形時暫停（#282）
+	// P2-40：Windows 只有一個 Mixed profile，英文直接在 Mixed 內打，不必切換模式。
+	// 其他平台仍照設定檔（舊外殼的 mixed_input 選項）。
+	eng.MixedInput = mixedInputEnabled(runtime.GOOS, config.MixedInput)
+	eng.Toneless = config.EffectiveToneless() // #150：開啟時 session 停用混打的自動判斷；health 的 mixed_input 照引擎實際值回報。所有符號鍵打半形時暫停（#282）
 	eng.EnglishAutocomplete = config.EnglishAutocomplete
 	eng.CandidateBeforeCursor = config.CandidateCursor == "before"
 	eng.EmojiShortcut = config.EmojiShortcut
@@ -511,7 +521,7 @@ func serve() string {
 		"input_profile": config.ActiveProfile().ID, "input_profile_fingerprint": config.ProfileFingerprint(),
 		"input_style_shift_space": config.ProfileRules().ShiftSpace, "input_style_shift_letter": config.ProfileRules().ShiftLetter, "input_style_caps_letter": config.ProfileRules().CapsLetter,
 		"selection_setting": config.Selection, "punctuation": fmt.Sprint(eng.Punct != nil), "document_context": fmt.Sprint(config.DocumentContext),
-		"fuzzy": eng.Fuzzy.Key(), "mixed_input": fmt.Sprint(config.MixedInput), "english_autocomplete": fmt.Sprint(config.EnglishAutocomplete), "left_shift": fmt.Sprint(config.TogglesLeft()), "right_shift": fmt.Sprint(config.TogglesRight()), "toggle_key": config.ToggleKey, "shift_tap_ms": "300", "mode_memory": config.ModeMemory, "start_mode": config.EffectiveStartMode(), "esc_clear": fmt.Sprint(config.EscClear), "space_selects": fmt.Sprint(config.SpaceSelects), "advance_after_select": fmt.Sprint(config.AdvanceAfterSelect),
+		"fuzzy": eng.Fuzzy.Key(), "mixed_input": fmt.Sprint(eng.MixedInput), "english_autocomplete": fmt.Sprint(config.EnglishAutocomplete), "left_shift": fmt.Sprint(config.TogglesLeft()), "right_shift": fmt.Sprint(config.TogglesRight()), "toggle_key": config.ToggleKey, "shift_tap_ms": "300", "mode_memory": config.ModeMemory, "start_mode": config.EffectiveStartMode(), "esc_clear": fmt.Sprint(config.EscClear), "space_selects": fmt.Sprint(config.SpaceSelects), "advance_after_select": fmt.Sprint(config.AdvanceAfterSelect),
 		"selection_keys": config.SelectionKeys, "candidate_cursor": config.CandidateCursor, "candidate_layout": config.CandidateLayout, "emoji_shortcut": config.EmojiShortcut, "emoji_equals_first": fmt.Sprint(config.EmojiEqualsFirst),
 		"keyboard_layout": config.KeyboardLayout, "preview_0_2": fmt.Sprint(eng.Preview02), "vocab_state": vocabState,
 		// #123：外殼據此決定要不要把組字中的 Shift＋←／→、候選窗的 Shift＋Delete／⌫ 送給引擎。
