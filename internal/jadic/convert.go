@@ -1,0 +1,159 @@
+package jadic
+
+import (
+	"bufio"
+	"fmt"
+	"io"
+	"math"
+	"sort"
+	"strconv"
+	"strings"
+
+	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/internal/jaimport"
+)
+
+const (
+	// DefaultOrigin 是匯入詞條寫進 words.tsv 的來源 ID。它不在 data/sources/ledger.tsv，
+	// 因此 0c-compile -public 之前仍需補帳本與 NOTICE；匯入流程不擅自改 checked-in 資料。
+	DefaultOrigin = "ja-jadic-public-core"
+	// DefaultCostScale 把 pack 的 MeCab 成本換算成產品的相對成本，與 jaimport 的
+	// Mozc 預設換算一致。
+	DefaultCostScale = 1.0 / 1000.0
+)
+
+// CostRule 說明 pack 成本如何轉成產品成本。產品詞典不接受負成本，
+// 因此負值飽和到 0；原本越小的成本仍然越優先。
+const CostRule = "max(0, cost) * scale；scale 預設 0.001"
+
+// ConvertOptions 控制 pack → words.tsv 的轉換。
+type ConvertOptions struct {
+	// Origin 寫進第五欄；空白時使用 DefaultOrigin。
+	Origin string
+	// CostScale 是詞成本換算係數；0 使用 DefaultCostScale。
+	CostScale float64
+	// MaxReadingUnits 大於 0 時，超過上限的詞條視為錯誤；產品限制是 64。
+	MaxReadingUnits int
+}
+
+// ConvertStats 是轉換結果統計。
+type ConvertStats struct {
+	Entries             int
+	Surfaces            int
+	NegativeCostClamped int
+	UnknownPOS          int
+	UnknownConj         int
+	POSCounts           map[string]int
+	MaxReadingUnits     int
+}
+
+// Convert 把 pack 串流寫成產品 data/ja 的中介格式：
+// 詞面、空白分隔讀音、產品成本、產品詞性、來源、活用型。
+func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
+	stats := ConvertStats{POSCounts: map[string]int{}}
+	if opt.Origin == "" {
+		opt.Origin = DefaultOrigin
+	}
+	if strings.ContainsAny(opt.Origin, "\t\r\n") {
+		return stats, fmt.Errorf("jadic: 來源 ID %q 含非法字元", opt.Origin)
+	}
+	if opt.CostScale == 0 {
+		opt.CostScale = DefaultCostScale
+	}
+	if math.IsNaN(opt.CostScale) || math.IsInf(opt.CostScale, 0) || opt.CostScale < 0 {
+		return stats, fmt.Errorf("jadic: 成本換算係數 %v 不合法", opt.CostScale)
+	}
+
+	bw := bufio.NewWriterSize(w, 1<<20)
+	if _, err := fmt.Fprintln(bw, "# 由 0c-jadic pack 匯入；詞面\t讀音\t成本\t詞性\t來源\t活用型"); err != nil {
+		return stats, err
+	}
+	prevSurface := ""
+	index := 0
+	err := p.ForEach(func(e Entry) error {
+		if err := convertCheckEntry(e, opt); err != nil {
+			return fmt.Errorf("第 %d 筆 %q：%w", index, e.Surface, err)
+		}
+		index++
+		reading, err := jaimport.NormalizeReading(e.Reading)
+		if err != nil {
+			return fmt.Errorf("第 %d 筆 %q 的讀音：%w", index, e.Surface, err)
+		}
+		pos := jaimport.MapPOS(e.POS)
+		if pos == jaimport.POSOther {
+			stats.UnknownPOS++
+		}
+		conj := jaimport.MapConjugation(e.ConjType)
+		if conj == jaimport.ConjUnknown {
+			stats.UnknownConj++
+		}
+		if e.Cost < 0 {
+			stats.NegativeCostClamped++
+		}
+		cost := float64(e.Cost)
+		if cost < 0 {
+			cost = 0
+		}
+		cost *= opt.CostScale
+		if e.Surface != prevSurface {
+			stats.Surfaces++
+			prevSurface = e.Surface
+		}
+		if n := len(reading); n > stats.MaxReadingUnits {
+			stats.MaxReadingUnits = n
+		}
+		stats.Entries++
+		stats.POSCounts[string(pos)]++
+		_, err = fmt.Fprintf(bw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			e.Surface, readingTSV(reading), formatCost(cost), pos, opt.Origin, conj)
+		return err
+	})
+	if err != nil {
+		return stats, fmt.Errorf("jadic: %w", err)
+	}
+	if stats.Entries != p.EntryCount() {
+		return stats, fmt.Errorf("jadic: 轉換詞條數 %d 與 pack 的 %d 不符", stats.Entries, p.EntryCount())
+	}
+	if stats.Surfaces != p.SurfaceCount() {
+		return stats, fmt.Errorf("jadic: 轉換 surface 數 %d 與 pack 的 %d 不符", stats.Surfaces, p.SurfaceCount())
+	}
+	if err := bw.Flush(); err != nil {
+		return stats, err
+	}
+	return stats, nil
+}
+
+func convertCheckEntry(e Entry, opt ConvertOptions) error {
+	if len([]rune(e.Reading)) == 0 {
+		return fmt.Errorf("讀音不可為空")
+	}
+	if opt.MaxReadingUnits > 0 && len([]rune(e.Reading)) > opt.MaxReadingUnits {
+		return fmt.Errorf("讀音 %d 單位超過上限 %d", len([]rune(e.Reading)), opt.MaxReadingUnits)
+	}
+	if strings.ContainsAny(e.Surface, "\t\r\n") {
+		return fmt.Errorf("詞面含 tab 或換行")
+	}
+	return nil
+}
+
+func readingTSV(seq reading.Sequence) string {
+	parts := make([]string, len(seq))
+	for i, u := range seq {
+		parts[i] = string(u)
+	}
+	return strings.Join(parts, " ")
+}
+
+func formatCost(c float64) string {
+	return strings.TrimRight(strings.TrimRight(strconv.FormatFloat(c, 'f', 4, 64), "0"), ".")
+}
+
+// SortedPOS 回傳 POS 統計，依詞性名稱排序。
+func (s ConvertStats) SortedPOS() []string {
+	out := make([]string, 0, len(s.POSCounts))
+	for p := range s.POSCounts {
+		out = append(out, p)
+	}
+	sort.Strings(out)
+	return out
+}
