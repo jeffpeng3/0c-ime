@@ -1609,6 +1609,9 @@ func (s *Session) mixedKey(k string) bool {
 		return true
 	}
 	s.mixed.raw += k
+	// P2-17：注音組不成、但可以完整組成羅馬字時，整段待定按鍵改由日文 runtime
+	// 接手；合法的注音序列與英文詞前綴不受影響。
+	s.maybeJapanese()
 	return true
 }
 
