@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "name": "mixed-scenario-a",
+  "scenario": "A",
+  "primary_language": "ja",
+  "license": "CC0-1.0",
+  "source": "0c phase2 P2-16 hand-written fixture",
+  "notes": "情境 A：主要語言日文。羅馬字、注音與英文在同一段輸入內混合，不切換模式。",
+  "count": 2,
+  "cases": [
+    {
+      "id": "a-canonical",
+      "notes": "phase2-requirements 的規格範例；英文片段保留原文，片段之間的空格屬於英文片段。",
+      "input": [
+        {
+          "script": "latin",
+          "text": "watashiwa",
+          "reading": ["わ", "た", "し", "は"],
+          "language_hint": "ja"
+        },
+        {
+          "script": "zhuyin",
+          "text": "ㄉㄚˋㄐㄧㄅㄚ",
+          "reading": ["ㄉㄚˋ", "ㄐㄧ", "ㄅㄚ"],
+          "language_hint": "zh"
+        },
+        {
+          "script": "latin",
+          "text": "desu",
+          "reading": ["で", "す"],
+          "language_hint": "ja"
+        },
+        {
+          "script": "latin",
+          "text": "is a good sentence",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "私わ",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 1,
+          "surface": "大雞巴",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 2,
+          "surface": "です",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 3,
+          "surface": " is a good sentence",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "a-kana-zh-en",
+      "notes": "かな是強訊號，注音片段走中文，英文片段保留原文。",
+      "input": [
+        {
+          "script": "kana",
+          "text": "すし",
+          "reading": ["す", "し"],
+          "language_hint": "ja"
+        },
+        {
+          "script": "zhuyin",
+          "text": "ㄏㄠˇ",
+          "reading": ["ㄏㄠˇ"],
+          "language_hint": "zh"
+        },
+        {
+          "script": "latin",
+          "text": " API",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "すし",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 1,
+          "surface": "好",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 2,
+          "surface": " API",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    }
+  ]
+}
