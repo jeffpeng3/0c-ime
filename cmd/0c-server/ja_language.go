@@ -25,16 +25,18 @@ var errJaDataMissing = errors.New("japanese conversion data is not installed")
 // 輸入狀態，可同時服務多個 session。
 type jaLanguage struct {
 	profile lang.Profile
+	lex     jalexicon.Source
+	conn    *jalexicon.Matrix
 }
 
 // newJaLanguage 載入日文詞典並建立 profile。日文資料不在資料包內時回傳
 // errJaDataMissing，呼叫端不需要視為錯誤；其他錯誤（詞典損壞）照常回報。
 func newJaLanguage(dataDir string) (*jaLanguage, error) {
-	dec, err := loadJaDecoder(dataDir)
+	dec, lex, conn, err := loadJaDecoder(dataDir)
 	if err != nil {
 		return nil, err
 	}
-	return &jaLanguage{profile: jaProfile{dec: dec}}, nil
+	return &jaLanguage{profile: jaProfile{dec: dec}, lex: lex, conn: conn}, nil
 }
 
 // Available 回報日文 profile 是否已載入。
@@ -42,13 +44,14 @@ func (w *jaLanguage) Available() bool {
 	return w != nil && w.profile != nil
 }
 
-// AttachProfile 把日文 profile 註冊到 session，不切換目前語言。注音 session
-// 仍然維持注音，之後要切到日文時同一個 profile 已經可用。
+// AttachProfile 把日文混打 runtime 註冊到 session，不切換目前語言。注音
+// session 仍然維持注音；羅馬字按鍵會依按鍵推斷自動進入日文片段（P2-17），
+// 不需要 SetLanguage 或語言模式。
 func (w *jaLanguage) AttachProfile(s *session.Session) bool {
 	if !w.Available() || s == nil {
 		return false
 	}
-	return s.AddLanguageProfile(w.profile)
+	return s.EnableJapanese(w.lex, w.conn)
 }
 
 // Attach 把日文 profile 註冊到 session 並切換過去。回傳 false 表示沒有
@@ -86,30 +89,30 @@ func (p jaProfile) NewConverter() lang.Converter { return p.dec }
 
 func (p jaProfile) NewPunctuator() lang.Punctuator { return nil }
 
-func loadJaDecoder(dataDir string) (*jadecode.Decoder, error) {
+func loadJaDecoder(dataDir string) (*jadecode.Decoder, *jalexicon.Mem, *jalexicon.Matrix, error) {
 	words, conns, ok := jaDataFiles(dataDir)
 	if !ok {
-		return nil, errJaDataMissing
+		return nil, nil, nil, errJaDataMissing
 	}
 	wf, err := os.Open(words)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer wf.Close()
 	lex, err := jalexicon.Load(wf)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	cf, err := os.Open(conns)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	defer cf.Close()
 	conn, err := jalexicon.LoadConnections(cf)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	return &jadecode.Decoder{Lex: lex, Conn: conn}, nil
+	return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
 }
 
 func jaDataFiles(dataDir string) (words, conns string, ok bool) {

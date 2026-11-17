@@ -17,6 +17,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/input"
 	"github.com/0c-biggo/0c-ime/core/inputstyle"
 	"github.com/0c-biggo/0c-ime/core/lang"
+	jlang "github.com/0c-biggo/0c-ime/core/lang/ja"
 	"github.com/0c-biggo/0c-ime/core/layout"
 	"github.com/0c-biggo/0c-ime/core/personal"
 	"github.com/0c-biggo/0c-ime/core/proto"
@@ -224,6 +225,11 @@ type Session struct {
 	languages  map[lang.ID]lang.Profile
 	languageID lang.ID
 	runtimes   map[lang.ID]*languageRuntime
+	// P2-17：日文混打的按鍵推斷。japaneseOn 由 EnableJapanese 開啟；japaneseRun
+	// 表示目前這段日文是依按鍵自動開始的，送出或取消後回到注音。
+	japaneseOn  bool
+	japaneseRun bool
+	japaneseCfg jlang.Config
 	// lastLanguage 是上一次送出的最後一個片段語言（P2-15）。選字時用它判斷跨語言偏好：
 	// 句首或被清掉後是空字串，代表沒有前文語言。
 	lastLanguage lang.ID
@@ -268,7 +274,7 @@ type Session struct {
 }
 
 func New(m *personal.Model) *Session {
-	return &Session{
+	s := &Session{
 		model:            m,
 		dec:              &decode.Decoder{Lex: m.Source(), Score: m},
 		front:            input.Exact{},
@@ -282,6 +288,11 @@ func New(m *personal.Model) *Session {
 		languageID:       lang.Zh,
 		runtimes:         map[lang.ID]*languageRuntime{},
 	}
+	// P2-17：profile-free session 內建日文混打 runtime。沒有詞典時仍可把羅馬字
+	// 組成かな；宿主用 EnableJapanese 換上 0c-jadic 詞典並開啟按鍵推斷後就有
+	// 漢字候選。推斷預設關閉，避免改變既有中英混打的取捨。
+	s.installJapanese(nil, nil)
+	return s
 }
 
 // SetLayout 由宿主在第一次 Handle 前設定鍵盤排列；nil 為標準排列（#83）。
@@ -598,6 +609,8 @@ func (s *Session) CapsLockOn() bool { return s.capsLock }
 func (s *Session) EnglishMode() bool { return s.english }
 
 func (s *Session) key(k string) (handled bool, commit string) {
+	// 日文 runtime 已經沒有組字時先回到注音，下一個按鍵重新依按鍵推斷語言。
+	s.leaveEmptyJapanese()
 	if handled, commit, ok := s.languageKey(k); ok {
 		return handled, commit
 	}

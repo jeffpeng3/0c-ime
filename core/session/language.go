@@ -287,6 +287,7 @@ func (s *Session) languageKey(k string) (handled bool, commit string, ok bool) {
 			r.endConversion()
 		} else {
 			r.reset()
+			s.finishJapaneseRun()
 		}
 		return true, "", true
 	case lang.ActionSelect:
@@ -530,6 +531,7 @@ func (s *Session) languageCommit() string {
 	s.flushLanguageSelections(!s.paused && !s.private && !s.learningCleared)
 	s.noteCommittedLanguage()
 	r.reset()
+	s.finishJapaneseRun()
 	return text
 }
 
