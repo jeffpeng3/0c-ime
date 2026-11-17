@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/punct"
 	"github.com/0c-biggo/0c-ime/core/rerank"
+	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
 // syntheticONNX 產生極小的 protobuf 外框：ir_version、producer、graph、opset_import。
@@ -234,6 +236,30 @@ func TestParseMode(t *testing.T) {
 	}
 	if _, err := ParseMode("sometimes"); err == nil {
 		t.Fatal("unknown mode accepted")
+	}
+}
+
+func TestParseBackend(t *testing.T) {
+	for _, value := range []string{"python", "native", " NATIVE "} {
+		if _, err := ParseBackend(value); err != nil {
+			t.Fatalf("%q: %v", value, err)
+		}
+	}
+	if _, err := ParseBackend("rust"); err == nil {
+		t.Fatal("unknown backend accepted")
+	}
+}
+
+func TestLoadModelNativeUnavailable(t *testing.T) {
+	if NativeAvailable() {
+		t.Skip("native backend is built")
+	}
+	p := writeSyntheticPackage(t, t.TempDir(), "native-select", RoleSelect, rerank.SequenceSchemaV1, strings.Repeat("d", 64), 7)
+	p.spec.Backend = BackendNative
+	if _, err := LoadModel(context.Background(), p.spec, nil); err == nil {
+		t.Fatal("native backend unexpectedly available")
+	} else if !errors.Is(err, native.ErrNativeUnavailable) {
+		t.Fatalf("err = %v, want ErrNativeUnavailable", err)
 	}
 }
 

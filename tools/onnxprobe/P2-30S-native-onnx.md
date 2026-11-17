@@ -4,6 +4,10 @@
 分支：`p2/T30s-native-onnx`（基於 `main`，基準 commit `ccd4e18`）。
 本 spike 沒有改動正式 runtime 路徑；`cmd/0c-server` 與產品建置完全不引用新增的程式。
 
+> P2-30N 後續：`spm/` 已移到 `internal/spm`，probe 改 import 該 package；產品仍預設
+> Python，native 由 `-neural-backend native` opt-in。見 `platforms/neural/P2-30N-native-backend.md`。
+
+
 ## 1. 結論
 
 **GO。** 一個沒有 Python 的 Go 程式可以載入 pip wheel 內的 `libonnxruntime`、跑

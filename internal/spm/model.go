@@ -1,8 +1,12 @@
-// Package spm is an experimental pure-Go SentencePiece unigram encoder.
+// Package spm is a pure-Go SentencePiece unigram encoder.
 //
 // It implements only what the 0c-ja public-core tokenizer actually uses:
-// a unigram model with an identity normalizer and byte fallback. It is a
-// measurement aid for the P2-30S spike and is not wired into the product.
+// a unigram model with an identity normalizer and byte fallback. Models with a
+// precompiled charsmap are rejected instead of being encoded incorrectly.
+//
+// The package has no CGO or external dependencies, so CGO_ENABLED=0 builds
+// still compile. It is used by the opt-in native ONNX backend and by the
+// P2-30S measurement probe.
 package spm
 
 import (

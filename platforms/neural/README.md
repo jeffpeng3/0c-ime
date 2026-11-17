@@ -47,6 +47,8 @@ worker 必須以 `-I -B -X utf8` 執行；安裝後檔案不得在執行時改�
 - `-model-mode all`：所有模型背景載入，仍不阻塞第一個按鍵。
 - `-model-mode primary`：只常駐 `-primary-language` 指定的語言。
 - `-model-mode none`：不載入模型，只用統計引擎。
+- `-neural-backend python`（預設）：sequence 選字走 Python worker。
+- `-neural-backend native`：sequence 選字改走 Go 原生 ONNX；需 `CGO_ENABLED=1 -tags onnxruntime` 建置與 ORT 共享函式庫（`-neural-ort-lib` 或 `ZUIN_ORT_LIBRARY`）。補標點尚未移植，仍走 Python。細節與 parity 見 [P2-30N](P2-30N-native-backend.md)。
 - 模型缺失、manifest 版本或字典配對不符、檔案雜湊不符、ONNX 內容損壞、Python 或 onnxruntime 不可用時，按鍵與提交照統計結果繼續；health 的 `selection_state`、`punctuation_state` 與 `*_reason` 會回報狀態。
 - `model_resident_bytes`、`model_peak_bytes`、`model_in_flight`、`model_residency` 由 health 回報，供記憶體量測；不含輸入文字。
 - manifest 帶 `placeholder: true` 時，health 另回報 `model_placeholder=true`，啟動紀錄也會標明 PLACEHOLDER；placeholder 模型不得當成已訓練模型或進入正式安裝包。

@@ -22,7 +22,7 @@ import (
 
 	ort "github.com/yalue/onnxruntime_go"
 
-	"github.com/0c-biggo/0c-ime/tools/onnxprobe/spm"
+	"github.com/0c-biggo/0c-ime/internal/spm"
 )
 
 // processStart is set as early as Go allows, so cold-start numbers include

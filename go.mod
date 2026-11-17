@@ -8,4 +8,7 @@ require (
 	golang.org/x/sys v0.10.0
 )
 
-require github.com/clipperhouse/uax29/v2 v2.7.0
+require (
+	github.com/clipperhouse/uax29/v2 v2.7.0
+	github.com/yalue/onnxruntime_go v1.38.0
+)
