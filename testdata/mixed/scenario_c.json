@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "name": "mixed-scenario-c",
+  "scenario": "C",
+  "primary_language": "en",
+  "license": "CC0-1.0",
+  "source": "0c phase2 P2-16 hand-written fixture",
+  "notes": "情境 C：專有名詞。英文詞典或個人詞彙直接保留原文，不拆成注音或かな。",
+  "count": 2,
+  "cases": [
+    {
+      "id": "c-cli-tools",
+      "notes": "命令列工具名稱保持原樣；分隔空白附在前一個片段，避免另立 symbol 語言標籤。",
+      "input": [
+        {
+          "script": "latin",
+          "text": "kubectl ",
+          "language_hint": "en"
+        },
+        {
+          "script": "latin",
+          "text": "pCloud ",
+          "language_hint": "en"
+        },
+        {
+          "script": "latin",
+          "text": "GitHub",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "kubectl ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 1,
+          "surface": "pCloud ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 2,
+          "surface": "GitHub",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "c-personal-vocab",
+      "notes": "0cime 是個人詞彙示意：加入後下次優先輸出 0c-ime，不改動鄰近英文。",
+      "input": [
+        {
+          "script": "latin",
+          "text": "my ",
+          "language_hint": "en"
+        },
+        {
+          "script": "latin",
+          "text": "0cime",
+          "language_hint": "en"
+        },
+        {
+          "script": "latin",
+          "text": " workspace",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "my ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 1,
+          "surface": "0c-ime",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 2,
+          "surface": " workspace",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    }
+  ]
+}

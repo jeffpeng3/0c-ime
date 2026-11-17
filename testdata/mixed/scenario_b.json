@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "name": "mixed-scenario-b",
+  "scenario": "B",
+  "primary_language": "zh",
+  "license": "CC0-1.0",
+  "source": "0c phase2 P2-16 hand-written fixture",
+  "notes": "情境 B：主要語言中文。注音片段優先中文，羅馬字仍可產生日文候選，英文詞典仍可保留原文。",
+  "count": 2,
+  "cases": [
+    {
+      "id": "b-zh-primary",
+      "notes": "主要語言是中文，但 Latin 片段 sushi 仍走日文，不被中文 prior 擋掉。",
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄐㄧㄣㄊㄧㄢ",
+          "reading": ["ㄐㄧㄣ", "ㄊㄧㄢ"],
+          "language_hint": "zh"
+        },
+        {
+          "script": "latin",
+          "text": "sushi",
+          "reading": ["す", "し"],
+          "language_hint": "ja"
+        },
+        {
+          "script": "latin",
+          "text": " API",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "今天",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "すし",
+          "accept": ["寿司"],
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 2,
+          "surface": " API",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "b-roman-ja",
+      "notes": "中文主要語言下，Latin 羅馬字片段仍可選到日文詞；英文片段獨立保留。",
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄨㄛˇㄇㄣ˙",
+          "reading": ["ㄨㄛˇ", "ㄇㄣ˙"],
+          "language_hint": "zh"
+        },
+        {
+          "script": "latin",
+          "text": "kaisha",
+          "reading": ["か", "い", "し", "ゃ"],
+          "language_hint": "ja"
+        },
+        {
+          "script": "latin",
+          "text": " code",
+          "language_hint": "en"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "我們",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "会社",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 2,
+          "surface": " code",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    }
+  ]
+}
