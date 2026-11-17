@@ -120,3 +120,88 @@ jobs:
             build/windows/0c-server.exe
           if-no-files-found: warn
           retention-days: 14
+
+  # 未簽章的 Windows 預覽包，供人工驗收下載；不安裝、不註冊、不上傳 Release，也不需要 secret。
+  preview-bundle:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    env:
+      # 字典取自已發佈的原始碼 tarball。工作目錄沒有 release tag，所以明確指定版本；
+      # 變更 data/dictionary.lock.json 時要同步改成相符的 release。
+      DICTIONARY_RELEASE: v0.2.12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install Rust and the Windows targets
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup default stable
+          rustup target add x86_64-pc-windows-msvc i686-pc-windows-msvc
+      - name: Cache Cargo
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            platforms/windows/target
+          key: ${{ runner.os }}-cargo-preview-${{ hashFiles('platforms/windows/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      # 只取已發佈的注音字典，不從 data/lm 重建中文 bigram。
+      - name: Fetch the released Chinese dictionary
+        run: python scripts/fetch_assets.py --release $env:DICTIONARY_RELEASE --no-models
+      - name: Compile the Japanese seed pack
+        run: go run ./cmd/0c-compile -lang ja -public -out build/ja
+      - name: Prepare minimal release docs
+        shell: bash
+        run: |
+          mkdir -p build/preview-docs
+          printf '%s\n' 'CI 預覽包：解壓後依 PACKAGING.md 的說明執行 install.ps1。' > build/preview-docs/INSTALL.md
+          printf '%s\n' 'CI 預覽包不含使用者資料，執行時也不會上傳任何資料。' > build/preview-docs/PRIVACY.md
+          printf '%s\n' 'CI 預覽包以整包替換更新，不提供就地升級。' > build/preview-docs/UPDATING.md
+      - name: Build the unsigned preview bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          # package_windows.py 需要 x.y.z 形式的版本；CI 版本用 0.0.0-ci.<sha> 避免與正式版混淆。
+          version="0.0.0-ci.$(git rev-parse --short=12 HEAD)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          python scripts/package_windows.py --preview --data assets/data --ja-data build/ja \
+            --release-docs build/preview-docs --version "$version" --out build/release
+      - name: Verify the preview bundle
+        shell: bash
+        run: |
+          python - <<'PY'
+          import glob, hashlib, sys, zipfile
+          archive, = glob.glob("build/release/*.zip")
+          required = [
+              "0c-server.exe", "0c-update.exe", "0c-ui.exe", "0c_tsf.dll",
+              "x86/0c_tsf.dll", "data/manifest.json", "data/ja/manifest.json",
+              "install.ps1", "release.json",
+          ]
+          with zipfile.ZipFile(archive) as bundle:
+              names = bundle.namelist()
+              (top,) = {name.split("/", 1)[0] for name in names}
+              entries = {name.split("/", 1)[1] for name in names if "/" in name}
+              missing = [path for path in required if path not in entries]
+              if missing:
+                  sys.exit(f"preview bundle is missing: {', '.join(missing)}")
+          digest = hashlib.sha256(open(archive, "rb").read()).hexdigest()
+          print(f"{archive}: {len(entries)} files in {top}/")
+          print(f"SHA-256 {digest}")
+          PY
+      - name: Upload the preview bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-preview-bundle
+          path: |
+            build/release/*.zip
+            build/release/*.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
