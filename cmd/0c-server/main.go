@@ -78,6 +78,8 @@ func serve() string {
 	modelSetLock := flag.String("model-set-lock", "models/pairing.lock.json", "日文模型組清單（P2-27）")
 	modelSetRoot := flag.String("model-set-root", "", "已安裝模型組的根目錄（P2-27）；空值時使用個人目錄下的 models")
 	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
+	neuralBackend := flag.String("neural-backend", string(neural.BackendPython), "模型執行後端：python（預設）或 native（實驗，需 CGO＋onnxruntime build tag 與 ORT 共享函式庫）")
+	neuralORTLib := flag.String("neural-ort-lib", os.Getenv("ZUIN_ORT_LIBRARY"), "native 後端使用的 ONNX Runtime 共享函式庫（.so／.dll）；空值用平台預設")
 	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
 	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
@@ -309,6 +311,14 @@ func serve() string {
 		lg.Printf("未知的模型常駐模式 %q，改用 auto：%v", modeValue, modeErr)
 		mode = neural.ModeAuto
 	}
+	backend, backendErr := neural.ParseBackend(*neuralBackend)
+	if backendErr != nil {
+		lg.Printf("未知的模型後端 %q，改用 python：%v", *neuralBackend, backendErr)
+		backend = neural.BackendPython
+	}
+	if backend == neural.BackendNative && !neural.NativeAvailable() {
+		lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
+	}
 	primary := config.PrimaryLanguage
 	if explicit["primary-language"] {
 		primary = *primaryLanguage
@@ -325,6 +335,7 @@ func serve() string {
 	var specs []neural.ModelSpec
 	if *neuralPackage != "" {
 		specs = append(specs, neural.ModelSpec{Name: "zh-select", Language: "zh", Role: neural.RoleSelect,
+			Backend: backend, ORTLibrary: *neuralORTLib,
 			Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage, DictionarySHA256: dictionarySHA,
 			Threads: *neuralThreads, Timeout: *neuralTimeout, Preload: true})
 	}
@@ -562,7 +573,9 @@ func serve() string {
 		closeAll()
 	}
 	srv.Info = map[string]string{"version": buildVersion, "protocol": fmt.Sprint(proto.Version),
-		"neural_startup_state": neuralState, "personal_store": personalState, "personal_lock": lockState,
+		"neural_startup_state": neuralState, "neural_backend": string(backend),
+		"neural_native_available": fmt.Sprint(neural.NativeAvailable()),
+		"personal_store":          personalState, "personal_lock": lockState,
 		"input_profile": config.ActiveProfile().ID, "input_profile_fingerprint": config.ProfileFingerprint(),
 		"input_style_shift_space": config.ProfileRules().ShiftSpace, "input_style_shift_letter": config.ProfileRules().ShiftLetter, "input_style_caps_letter": config.ProfileRules().CapsLetter,
 		"selection_setting": config.Selection, "punctuation": fmt.Sprint(eng.Punct != nil), "document_context": fmt.Sprint(config.DocumentContext),

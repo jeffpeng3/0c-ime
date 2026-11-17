@@ -15,7 +15,30 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/punct"
 	"github.com/0c-biggo/0c-ime/core/rerank"
+	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
+
+// Backend selects how a model package is executed. python is the default;
+// native is opt-in until parity has been proven on the target model.
+type Backend string
+
+const (
+	BackendPython Backend = "python"
+	BackendNative Backend = "native"
+)
+
+// ParseBackend parses the -neural-backend value.
+func ParseBackend(value string) (Backend, error) {
+	switch backend := Backend(strings.ToLower(strings.TrimSpace(value))); backend {
+	case BackendPython, BackendNative:
+		return backend, nil
+	}
+	return "", fmt.Errorf("unknown neural backend %q", value)
+}
+
+// NativeAvailable reports whether this binary contains the native ONNX
+// backend. Default CGO-disabled builds return false.
+func NativeAvailable() bool { return native.Available() }
 
 // Mode 是模型常駐策略（P2-30 / FR-9）。
 //
@@ -101,6 +124,7 @@ type ModelSpec struct {
 	Name             string
 	Language         string
 	Role             Role
+	Backend          Backend
 	Python           string
 	Script           string
 	Package          string
@@ -109,6 +133,9 @@ type ModelSpec struct {
 	Timeout          time.Duration
 	Preload          bool
 	ValidateONNX     bool
+	// ORTLibrary overrides the ONNX Runtime shared library used by the native
+	// backend. Empty uses the platform default (onnxruntime.so/.dll).
+	ORTLibrary string
 }
 
 // Prepared 是同步核對過的套件 metadata。Bytes 只計算 manifest 列出的模型與字表檔案。
@@ -330,6 +357,9 @@ func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded
 	}
 	switch spec.Role {
 	case RoleSelect, RoleRerank:
+		if spec.Backend == BackendNative {
+			return loadNative(spec, prepared)
+		}
 		w, err := openPreparedSupervisedAsync(Config{Python: spec.Python, Script: spec.Script, Package: spec.Package,
 			DictionarySHA256: spec.DictionarySHA256, Threads: spec.Threads, Timeout: spec.Timeout}, prepared.Manifest)
 		if err != nil {
@@ -352,6 +382,43 @@ func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded
 			Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats}, nil
 	}
 	return nil, &ModelError{Reason: ReasonFailed, Err: fmt.Errorf("unsupported role %q", spec.Role)}
+}
+
+// loadNative uses the same manifest and vocab.json as the Python worker; only
+// the executor changes. Native is only implemented for sequence/reranker
+// roles; punctuation stays on the Python path for now.
+func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
+	b, err := native.Open(native.Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
+		Threads: spec.Threads, Timeout: spec.Timeout, LibraryPath: spec.ORTLibrary})
+	if err != nil {
+		return nil, wrapNativeError(err)
+	}
+	return &Loaded{Scorer: b, Options: prepared.Options, ResidentBytes: prepared.Bytes,
+		Placeholder: prepared.Placeholder, Quality: prepared.Quality,
+		Close: b.Close, State: b.State, Reason: b.Reason,
+		Stats: func() Stats {
+			st := b.Stats()
+			return Stats{Calls: st.Calls, Scored: st.Scored, Timeouts: st.Timeouts, Errors: st.Errors,
+				Unavailable: st.Unavailable, TotalUS: st.TotalUS}
+		},
+		Restarts: func() int { return 0 }}, nil
+}
+
+func wrapNativeError(err error) error {
+	reason := ReasonFailed
+	switch {
+	case errors.Is(err, os.ErrNotExist):
+		reason = ReasonMissing
+	case errors.Is(err, native.ErrPackageHash):
+		reason = ReasonHashMismatch
+	case errors.Is(err, native.ErrPackageContract):
+		reason = ReasonVersionMismatch
+	case errors.Is(err, native.ErrPackageCorrupt):
+		reason = ReasonCorrupt
+	case errors.Is(err, native.ErrRuntimeMissing):
+		reason = ReasonRuntimeMissing
+	}
+	return &ModelError{Reason: reason, Err: err}
 }
 
 func prepareModel(spec ModelSpec) (*Prepared, error) {
