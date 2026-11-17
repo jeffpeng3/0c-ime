@@ -38,7 +38,7 @@ tar -xJf 0c-ime-models-<版本>.tar.xz   # 選用：神經選字與補標點
 | `make assets LANG=all` | 同時處理注音與日文 |
 | `make assets LANG=ja JA_OUT=<目錄>` | 指定日文包輸出位置 |
 
-日文包沒有另附模型 tarball。zenz GGUF 由使用者自行提供，放進 `models/ja/` 並依 [日文神經驗證 runtime](platforms/neural/ja/README.md) 的 manifest 驗證；不進 Git、不進 Release、不隨安裝包出貨。
+日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。
 
 日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。編譯器不寫時間戳，同一份 `data/ja` 連跑兩次得到相同雜湊。
 

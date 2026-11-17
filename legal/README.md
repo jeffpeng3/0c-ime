@@ -29,7 +29,7 @@ AGPL-3.0 允許研究、個人及商業使用。若需要以不符合 AGPL 條�
 - 詞庫與詞頻：原始碼中的 `data/sources/ledger.tsv` 與 `data/sources/licenses/`；編譯後資料包中的 `data/NOTICE.txt`。
 - 英文詞表：原始碼中的 `data/english/LICENSE.txt`；編譯後資料包中的 `data/english/NOTICE.txt`。
 - 日文資料包：`data/ja/` 的詞條、連接成本與詞頻採 CC BY-SA 4.0，記号與顔文字辭典採 AGPL-3.0-only；編譯後的 `data/ja/NOTICE.txt` 逐來源列出授權與姓名標示。日後匯入 Mozc、SudachiDict 或 Wikipedia 時維持各自的混合授權，不整體改標。來源判斷見 [data/ja/README.md](../data/ja/README.md)。
-- 神經模型：各模型套件隨附的 `LICENSE`；目前選字與補標點的固定 D512 模型採 MIT。日文 zenz GGUF 不隨安裝包出貨；使用者自行提供時依 CC BY-SA 4.0 使用 `models/ja/NOTICE.txt` 與模型卡。
+- 神經模型：各模型套件隨附的 `LICENSE`；目前選字與補標點的固定 D512 模型採 MIT。日文目前沒有隨附神經模型：P2-01 起正式產品只用統計詞典，沒有 llama.cpp、GGUF、zenz 路徑。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時隨模型套件附上對應 `LICENSE` 與姓名標示。
 - Unicode：[授權聲明](UNICODE-NOTICE.txt)。
 - 其他隨安裝包出貨的元件：`THIRD_PARTY_NOTICES.txt`。
 

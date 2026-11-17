@@ -68,7 +68,7 @@ AJIMEE 的分數很低，這是冷啟動數字，不是轉換器上限。T13 換
 延遲不穩定。品質門檻的允許跌幅全部是 0：任何一個題庫的 top-1、top-5、邊界 exact
 或邊界 F1 下降，`go test ./internal/eval` 就會失敗。
 
-T03 spike 另有兩個外部參考數字，不由這個 harness 產生，也不進 gate：
+T03 spike 另有兩個外部參考數字，不由這個 harness 產生，也不進 gate（T03 是非正式 spike，不是產品路徑）：
 
 | 引擎 | 資料 | top1 |
 |---|---|---:|
@@ -139,5 +139,5 @@ python3 cmd/0c-eval-ja/tools/build_hard_fixture.py --out testdata/ja/hard_cases.
 ## 環境與對照
 
 這次沒有 Mozc 或 Zenzai 可執行環境，所以沒有跑即時對照；T03 的 Anthy 與 zenz
-數字已保存在上面。`-data` 可以指向任何具有 `lexicon/words.tsv` 與 `connection.tsv`
-的資料包，T14/T30 接上神經重排後可用同一份題庫比較，不需要改評分規則。
+數字已保存在上面（T03 spike，非正式產品路徑）。`-data` 可以指向任何具有 `lexicon/words.tsv` 與 `connection.tsv`
+的資料包，P2-30 接上 ONNX 重排後可用同一份題庫比較，不需要改評分規則。
