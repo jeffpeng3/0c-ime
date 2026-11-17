@@ -1,7 +1,9 @@
-// Package lattice 定義多語言 lattice 的邊與候選資料形狀。
+// Package lattice 定義多語言 lattice 的邊與候選資料形狀，並實作跨語言
+// Viterbi 與 N-best 路徑搜尋。
 //
 // lattice 的邊一律帶語言標籤與輸出變體，路徑可以跨語言；這裡不安裝任何
-// 「目前語言」狀態，也不決定 Viterbi 權重。實際 path search 由 P2-12 實作。
+// 「目前語言」狀態。語言切換成本、主要語言先驗與長詞跨片段合併都在 Build、
+// BuildFrom 與 NBest 中處理，使用者設定只影響成本，不會阻擋其他語言。
 package lattice
 
 import (
