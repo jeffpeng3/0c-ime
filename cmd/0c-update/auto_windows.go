@@ -40,7 +40,8 @@ func dialEngine(timeout time.Duration) (net.Conn, error) { return winio.DialPipe
 func refreshPathUpdater(string) { ensureSettingsEntry(); syncUninstallEntry() }
 
 func coreLayout() (autoupdate.CoreLayout, bool) {
-	return autoupdate.CoreLayout{Server: "0c-server.exe", Update: "0c-update.exe", Settings: "0c-settings.exe", MCP: "0c-mcp.exe", Launcher: launcherName}, true
+	return autoupdate.CoreLayout{Server: "0c-server.exe", Update: "0c-update.exe", Settings: "0c-settings.exe", MCP: "0c-mcp.exe", Launcher: launcherName,
+		Runtime: []string{"onnxruntime.dll", "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "msvcp140_1.dll"}}, true
 }
 
 // 外殼更新要改 TSF 註冊，需要系統管理員；排程以一般權限執行，所以要使用者確認。

@@ -56,7 +56,10 @@ const (
 
 type modelsRuntime struct {
 	OK      bool     `json:"ok"`
-	Python  string   `json:"python"`
+	Backend string   `json:"backend"`
+	Library string   `json:"library,omitempty"`
+	Reason  string   `json:"reason,omitempty"`
+	Python  string   `json:"python,omitempty"`
 	Missing []string `json:"missing"`
 }
 
@@ -293,18 +296,29 @@ func manifestModelSHA(dir string) string {
 	return ""
 }
 
-// runtime：內附 Python 不必檢查；Linux 用系統的 python3，缺什麼列出 Debian 的套件名。
+// runtime：Windows 產品不內建 Python；有原生 ONNX Runtime 就報 native，沒有時照實說會用統計轉換。
+// Linux 系統安裝仍用系統的 python3，缺什麼列出 Debian 的套件名。
 func (e modelsEnv) runtime(b neural.Bundled) modelsRuntime {
 	r := modelsRuntime{Missing: []string{}}
 	switch {
+	case b.Native || (e.goos == "windows" && b.NativeLibrary != ""):
+		r.OK, r.Backend, r.Library = true, "native", b.NativeLibrary
 	case b.PythonSource == neural.SourceBundled:
-		r.OK, r.Python = true, b.Python
+		r.OK, r.Backend, r.Python = true, "python", b.Python
 	case e.goos != "linux":
+		r.Backend = "statistical"
+		if b.NativeBuilt {
+			r.Reason = "native_runtime_missing"
+		} else {
+			r.Reason = "native_unavailable"
+		}
 	case b.PythonSource == neural.SourceSystem:
+		r.Backend = "python"
 		r.Python = b.Python
 		r.Missing = e.runtimeCheck(b.Python)
 		r.OK = len(r.Missing) == 0
 	default: // 沒有 python3
+		r.Backend = "python"
 		r.Missing = []string{"python3", "python3-numpy", "python3-onnxruntime"}
 	}
 	return r

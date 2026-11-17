@@ -12,7 +12,8 @@ import (
 func Available() bool { return false }
 
 // Backend is the build-tag stub used when CGO or the onnxruntime tag is off.
-// The default product build therefore stays CGO-free and keeps using Python.
+// The Windows product does not use this build; it reports unavailable and the
+// server keeps the statistical engine instead of starting Python.
 type Backend struct{}
 
 func Open(Config) (*Backend, error) { return nil, ErrNativeUnavailable }

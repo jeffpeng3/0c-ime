@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -35,6 +36,9 @@ type CoreLayout struct {
 	// Launcher 是 Windows 排程與通知按鈕執行的無主控台啟動器 0c-updatew（選用，#289）；切換後由新版換上
 	// bin\0c-updatew.exe 的穩定副本。舊版更新器同樣略過它。
 	Launcher string
+	// Runtime 是原生 ONNX Runtime 的 DLL（P2-43，Windows）。核心更新必須與引擎一起換，否則新版引擎
+	// 旁的 onnxruntime.dll 版本不符或不存在，只能退回統計轉換。
+	Runtime []string
 }
 
 // PrepareCore 從已核對雜湊的壓縮包準備核心版本目錄 versions/<版本>-c-<雜湊>：引擎、配對字典與神經模型。
@@ -91,7 +95,9 @@ func PrepareCore(base, scratch, archive string, t Target, goos, arch string, lay
 			target = filepath.Base(layout.MCP)
 		case layout.Launcher != "" && name == layout.Launcher:
 			target = filepath.Base(layout.Launcher)
-		case strings.HasPrefix(name, "data/"), strings.HasPrefix(name, "neural/"):
+		case slices.Contains(layout.Runtime, name):
+			target = name
+		case strings.HasPrefix(name, "data/"), strings.HasPrefix(name, "neural/"), strings.HasPrefix(name, "models/"):
 			target = name
 		default:
 			continue

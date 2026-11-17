@@ -1,24 +1,24 @@
-# P2-30N：原生 ONNX 後端（flag，Python 仍是預設）
+# P2-30N：原生 ONNX 後端（Windows 產品預設）
 
-狀態：實作完成，native 需明確 opt-in；Python worker 仍是預設後端，打包流程未改。
+狀態：實作完成。Windows 產品由 P2-43 改為預設 native 並出貨固定 runtime；Linux／macOS 沒有原生後端時仍保留 Python worker。
 分支：`p2/T30n-native-backend`（基於 `p2/T30s-native-onnx`）。
 
 ## 1. 怎麼用
 
 ```sh
-# 預設：Python worker（行為與 P2-30 相同）
+# 預設：有原生 runtime 就用 native，否則退回統計（不會啟動 Python）
 0c-server ...
 
-# 明確啟用原生後端
-0c-server -neural-backend native \
-  -neural-ort-lib /path/to/libonnxruntime.so.1.32.0
+# 明確指定（開發／診斷）
+0c-server -neural-backend native -neural-ort-lib /path/to/libonnxruntime.so.1.32.0
+0c-server -neural-backend python
 ```
 
-- `-neural-backend`：`python`（預設）或 `native`。未知值會記錄警告並回到 `python`。
-- `-neural-ort-lib`：ORT 共享函式庫路徑；空值用平台預設名稱，也可用 `ZUIN_ORT_LIBRARY`。
-- native 只接到 sequence／reranker 角色。補標點尚未移植，仍走 Python；`-punct-*` 不受影響。
-- 預設建置（`CGO_ENABLED=0`）不編譯 ORT binding，`native` 會回報不可用並回退統計引擎。
-- native 建置：`CGO_ENABLED=1 go build -tags onnxruntime ./...`。
+- `-neural-backend`：`auto`（預設）、`native` 或 `python`。未知值會記錄警告並回到 `auto`。
+- `-neural-ort-lib`：ORT 共享函式庫路徑；空值先找執行檔旁的 `onnxruntime.dll`／`onnxruntime.so` 與 `runtime/` 子目錄，也可用 `ZUIN_ORT_LIBRARY`。
+- native 只接到 sequence／reranker 角色。補標點尚未移植；native 模式不啟動 Python，提交時保留原文。
+- 預設建置（`CGO_ENABLED=0`）不編譯 ORT binding；Windows 的 `auto` 會回報 `native_unavailable` 並退回統計引擎。
+- native 建置：`CGO_ENABLED=1 go build -tags onnxruntime ./...`；Windows 需要 mingw 的 gcc。
 
 residency manager 對同一個 manifest 可選任一後端：`ModelSpec.Backend` 決定 `LoadModel`
 走 `Supervisor`（Python）或 `native.Backend`。manifest、`vocab.json`、字典 SHA-256、
@@ -110,21 +110,16 @@ CGO_ENABLED=1 go test -tags onnxruntime ./internal/neural/native -run TestParity
 go test ./core/... ./internal/neural/... ./cmd/0c-server
 ```
 
-## 6. Python 移除前仍待完成
+## 6. Windows 打包（P2-43 已完成）與尚未移植的功能
 
-1. **Windows MSVC runtime**：`onnxruntime.dll` 匯入 `MSVCP140.dll`、`MSVCP140_1.dll`、
-   `VCRUNTIME140.dll`、`VCRUNTIME140_1.dll`。目前 `msvcp140*` 由
-   `scripts/prepare_neural.py` 的 `crt` 條目提供，`vcruntime140*` 由 embeddable CPython
-   附帶。刪 Python 前要改成直接從同一個 `msvc_runtime` wheel 取這 4 個 DLL，並更新
-   `scripts/package_windows.py` 的 `NEURAL_CRT` 檢查。
-2. **ORT 共享函式庫出貨**：Windows `onnxruntime.dll` 21.6 MiB、`onnxruntime_providers_shared.dll`；
-   Linux `libonnxruntime.so.1.32.0` 33.2 MiB。要固定版本與 sha256、放 release assets
-   （不進 Git）、進 `pairing.lock`／等價清單、走 `0c-update`，並補 ORT 的 MIT 授權與
-   `THIRD_PARTY_NOTICES.txt`。
-3. **CI 的 mingw**：native 需要 CGO。`windows-2022` 要 `choco install mingw`，
-   `ubuntu-24.04` cross-build 要 `apt-get install mingw-w64`；現有兩個 job 都是
-   `CGO_ENABLED=0`，要新增 native job。若要維持無 CGO，需先做 purego 動態載入 ORT C API
-   的 spike，這仍未驗證。
+1. **Windows MSVC runtime（已完成）**：`models/runtime.lock.json` 固定從 `msvc_runtime`
+   wheel 取 `MSVCP140.dll`、`MSVCP140_1.dll`、`VCRUNTIME140.dll`、`VCRUNTIME140_1.dll`，
+   與 `onnxruntime.dll` 一起放在 `0c-server.exe` 旁；`scripts/prepare_windows_runtime.py`
+   取出，`scripts/package_windows.py` 逐檔核對 SHA-256。
+2. **ORT 共享函式庫出貨（已完成）**：`onnxruntime.dll` 取自固定 `onnxruntime` 1.30.0
+   wheel；大小、SHA-256、授權與 `THIRD_PARTY_NOTICES.txt` 由 runtime lock 與打包流程處理。
+3. **CI 的 mingw（已完成）**：`windows-2022` 的 `windows-cgo-native` job 安裝 mingw、
+   以 `CGO_ENABLED=1 -tags onnxruntime` 建置並跑測試；`CGO_ENABLED=0` 的純 Go job 保留。
 4. **尚未移植的 worker 功能**：
    - 補標點 `punct_runtime.py` 完全沒有 native 版，`-neural-backend native` 只影響選字。
    - `ZUIN_ORT_PROVIDERS` GPU provider 選擇（CUDA／CoreML 等）尚未移植。

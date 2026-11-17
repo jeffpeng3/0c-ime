@@ -38,6 +38,11 @@ htmlcov/
 /models/select/
 /models/punct/
 *.onnx
+# Native runtime, wheels and installer binaries never enter Git (P2-43).
+*.dll
+*.whl
+/platforms/windows/installer/0c-installer.exe
+/platforms/windows/installer/payload.zip
 /models/ja-public-core/
 /models/ja-cc-by-sa/
 /models/active.json

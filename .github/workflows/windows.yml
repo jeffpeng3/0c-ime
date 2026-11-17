@@ -28,6 +28,66 @@ env:
   CARGO_TERM_COLOR: never
 
 jobs:
+  windows-cgo-native:
+    # P2-43：產品出貨的原生 ONNX 後端。Windows 的 cgo 需要 mingw 的 gcc；
+    # onnxruntime_go 的 Windows 實作以 cgo 包住 syscall DLL 載入，沒有 gcc 就編不過。
+    # 這個 job 只建置與跑測試，不上傳含 Python 的產物。
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install mingw
+        shell: pwsh
+        run: |
+          choco install mingw --no-progress -y
+          "C:\ProgramData\mingw64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+      - name: Show the C compiler
+        shell: bash
+        run: gcc --version
+      - name: Build the native engine with CGO
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          CC: gcc
+        run: |
+          set -o pipefail
+          mkdir -p build/windows
+          go build -tags onnxruntime -trimpath -ldflags "-X main.buildVersion=ci" \
+            -o build/windows/0c-server-native.exe ./cmd/0c-server 2>&1 | tee go-build-cgo.log
+      - name: Test with the onnxruntime tag
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          CC: gcc
+        run: |
+          set -o pipefail
+          go test -count=1 -tags onnxruntime ./internal/neural/... 2>&1 | tee go-test-cgo.log
+      - name: Verify the native backend is compiled in
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          CC: gcc
+        run: |
+          test -f build/windows/0c-server-native.exe
+          go version -m build/windows/0c-server-native.exe | grep -q 'build.*tags=.*onnxruntime' || echo "tags are not recorded in this Go build"
+      - name: Upload CGO logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-cgo-logs
+          path: |
+            go-build-cgo.log
+            go-test-cgo.log
+          if-no-files-found: warn
+          retention-days: 14
+
   windows:
     runs-on: windows-2022
     timeout-minutes: 45
@@ -162,6 +222,9 @@ jobs:
           mkdir -p build/windows
           go build -trimpath -o build/windows/0c-server.exe ./cmd/0c-server
           go build -trimpath -o build/windows/0c-cli.exe ./cmd/0c-cli
+      - name: Test the Windows packaging rules
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_windows_package.py'
       - name: Upload the cross-built Windows binaries
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

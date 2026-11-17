@@ -43,10 +43,14 @@ func TestInputTipMatchesTSFRegistration(t *testing.T) {
 		}
 	}
 	if inputTip != inputTipZh {
-		t.Fatalf("inputTip 應保留為 zh-TW 的識別，得到 %s", inputTip)
+		t.Fatalf("inputTip 應保留為 Mixed 的識別，得到 %s", inputTip)
 	}
-	if len(inputTips) != 2 || inputTips[0] != inputTipZh || inputTips[1] != inputTipJa {
-		t.Fatalf("inputTips 應固定為 zh-TW、ja-JP 兩個：%v", inputTips)
+	// P2-40：語言清單只有一個 Mixed profile；ja-JP 只留作舊版清除。
+	if len(inputTips) != 1 || inputTips[0] != inputTipZh {
+		t.Fatalf("inputTips 應只有一個 Mixed：%v", inputTips)
+	}
+	if len(legacyInputTips) != 1 || legacyInputTips[0] != inputTipJa {
+		t.Fatalf("legacyInputTips 應只有舊版 ja-JP：%v", legacyInputTips)
 	}
 }
 
@@ -69,8 +73,8 @@ func TestListInputMethodOnce(t *testing.T) {
 	if _, err := os.Stat(inputListMarker(base)); !os.IsNotExist(err) {
 		t.Fatal("加入失敗不能留下記號，否則之後不會再試")
 	}
-	if err := listInputMethodOnce(base, yes, add); err != nil || len(calls) != 3 {
-		t.Fatalf("下一次安裝要重試兩個語言：err=%v calls=%v", err, calls)
+	if err := listInputMethodOnce(base, yes, add); err != nil || len(calls) != 2 {
+		t.Fatalf("下一次安裝要重試：err=%v calls=%v", err, calls)
 	}
 	want := strings.Join(inputTips, "\n") + "\n"
 	if b, err := os.ReadFile(inputListMarker(base)); err != nil || string(b) != want {
@@ -81,50 +85,46 @@ func TestListInputMethodOnce(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if len(calls) != 3 {
+	if len(calls) != 2 {
 		t.Fatalf("加入過之後不能再改使用者的清單，呼叫了 %v", calls)
 	}
 }
 
-// T28：標記分語言。一個語言加入失敗時，已加入的另一個要記住，下次只重試缺的那一個。
-func TestListInputMethodOnceTracksEachLanguage(t *testing.T) {
+// P2-40：清單只有一個 Mixed。舊版留下的 ja-JP 項目與記號要移除，之後不再加入。
+func TestMigrateLegacyInputListRemovesJapanese(t *testing.T) {
 	base := t.TempDir()
-	yes := func() bool { return true }
-	jaErr := errors.New("ja 失敗")
-	add := func(tip string) error {
-		if tip == inputTipJa {
-			return jaErr
-		}
-		return nil
-	}
-	if err := listInputMethodOnce(base, yes, add); !errors.Is(err, jaErr) {
-		t.Fatalf("ja 失敗應回報，得到 %v", err)
-	}
-	recorded, err := readInputListMarker(base)
-	if err != nil {
+	marker := inputListMarker(base)
+	if err := os.MkdirAll(filepath.Dir(marker), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if !recorded[inputTipZh] || recorded[inputTipJa] {
-		t.Fatalf("只應記住已加入的 zh：%v", recorded)
+	if err := os.WriteFile(marker, []byte(inputTipZh+"\n"+inputTipJa+"\n"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	var retried []string
-	if err := listInputMethodOnce(base, yes, func(tip string) error {
-		retried = append(retried, tip)
+	var removed []string
+	if err := migrateLegacyInputList(base, func(tip string) error {
+		removed = append(removed, tip)
 		return nil
 	}); err != nil {
 		t.Fatal(err)
 	}
-	if len(retried) != 1 || retried[0] != inputTipJa {
-		t.Fatalf("下次只重試 ja，得到 %v", retried)
+	if len(removed) != 1 || removed[0] != inputTipJa {
+		t.Fatalf("只移除舊版 ja-JP，得到 %v", removed)
 	}
-	recorded, err = readInputListMarker(base)
-	if err != nil || !recorded[inputTipZh] || !recorded[inputTipJa] {
-		t.Fatalf("兩個語言都要記住：%v %v", recorded, err)
+	recorded, err := readInputListMarker(base)
+	if err != nil || !recorded[inputTipZh] || recorded[inputTipJa] {
+		t.Fatalf("記號只留 Mixed：%v %v", recorded, err)
+	}
+	var added []string
+	if err := listInputMethodOnce(base, func() bool { return true }, func(tip string) error {
+		added = append(added, tip)
+		return nil
+	}); err != nil || len(added) != 0 {
+		t.Fatalf("Mixed 已在清單，不應再加：%v %v", added, err)
 	}
 }
 
-// T28：舊版留下只含 zh 的記號時，更新要補上 ja；使用者自己移除的 ja 之後不會被加回。
-func TestListInputMethodOnceUpgradesLegacyMarker(t *testing.T) {
+// P2-40：舊版只寫了 zh 記號時，升級不必再加任何語言；使用者自己移除的 Mixed 也不會被加回。
+func TestListInputMethodOnceDoesNotReAddMixed(t *testing.T) {
 	base := t.TempDir()
 	marker := inputListMarker(base)
 	if err := os.MkdirAll(filepath.Dir(marker), 0o700); err != nil {
@@ -138,18 +138,12 @@ func TestListInputMethodOnceUpgradesLegacyMarker(t *testing.T) {
 	if err := listInputMethodOnce(base, func() bool { return true }, add); err != nil {
 		t.Fatal(err)
 	}
-	if len(added) != 1 || added[0] != inputTipJa {
-		t.Fatalf("舊記號只缺 ja，得到 %v", added)
-	}
-	if err := listInputMethodOnce(base, func() bool { return true }, add); err != nil {
-		t.Fatal(err)
-	}
-	if len(added) != 1 {
-		t.Fatalf("之後的更新不能再加回使用者移除的語言：%v", added)
+	if len(added) != 0 {
+		t.Fatalf("已有記號時不能再加：%v", added)
 	}
 }
 
-// T28：回復舊版只留 zh 記號；解除安裝清掉記號，重新安裝才會再加兩個語言。
+// P2-40：回復或解除安裝只會處理舊版 ja-JP；Mixed 記號保留，重新安裝才再檢查。
 func TestInputListMarkerForgetAndClear(t *testing.T) {
 	base := t.TempDir()
 	if err := writeInputListMarker(base, map[string]bool{inputTipZh: true, inputTipJa: true}); err != nil {
@@ -160,7 +154,7 @@ func TestInputListMarkerForgetAndClear(t *testing.T) {
 	}
 	recorded, err := readInputListMarker(base)
 	if err != nil || !recorded[inputTipZh] || recorded[inputTipJa] {
-		t.Fatalf("回復舊版後只留 zh：%v %v", recorded, err)
+		t.Fatalf("舊 ja 記號不能留：%v %v", recorded, err)
 	}
 	if err := clearInputListMarker(base); err != nil {
 		t.Fatal(err)

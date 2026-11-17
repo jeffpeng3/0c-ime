@@ -30,7 +30,7 @@ const (
 // ParseBackend parses the -neural-backend value.
 func ParseBackend(value string) (Backend, error) {
 	switch backend := Backend(strings.ToLower(strings.TrimSpace(value))); backend {
-	case BackendPython, BackendNative:
+	case BackendAuto, BackendPython, BackendNative:
 		return backend, nil
 	}
 	return "", fmt.Errorf("unknown neural backend %q", value)
@@ -39,6 +39,10 @@ func ParseBackend(value string) (Backend, error) {
 // NativeAvailable reports whether this binary contains the native ONNX
 // backend. Default CGO-disabled builds return false.
 func NativeAvailable() bool { return native.Available() }
+
+// NativeRuntimeLibrary is the ONNX Runtime shared library installed next to
+// this executable, or "" when it is absent.
+func NativeRuntimeLibrary() string { return native.RuntimeLibrary() }
 
 // Mode 是模型常駐策略（P2-30 / FR-9）。
 //
@@ -417,6 +421,10 @@ func wrapNativeError(err error) error {
 		reason = ReasonCorrupt
 	case errors.Is(err, native.ErrRuntimeMissing):
 		reason = ReasonRuntimeMissing
+	case errors.Is(err, native.ErrNativeUnavailable):
+		reason = ReasonNativeUnavailable
+	case errors.Is(err, native.ErrUnsupportedModel):
+		reason = ReasonUnsupportedModel
 	}
 	return &ModelError{Reason: reason, Err: err}
 }

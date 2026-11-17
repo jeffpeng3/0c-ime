@@ -84,8 +84,8 @@ func serve() string {
 	modelSetLock := flag.String("model-set-lock", "models/pairing.lock.json", "日文模型組清單（P2-27）")
 	modelSetRoot := flag.String("model-set-root", "", "已安裝模型組的根目錄（P2-27）；空值時使用個人目錄下的 models")
 	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
-	neuralBackend := flag.String("neural-backend", string(neural.BackendPython), "模型執行後端：python（預設）或 native（實驗，需 CGO＋onnxruntime build tag 與 ORT 共享函式庫）")
-	neuralORTLib := flag.String("neural-ort-lib", os.Getenv("ZUIN_ORT_LIBRARY"), "native 後端使用的 ONNX Runtime 共享函式庫（.so／.dll）；空值用平台預設")
+	neuralBackend := flag.String("neural-backend", string(neural.BackendAuto), "模型執行後端：auto（預設；有原生 ONNX Runtime 就用 native，否則退回統計）、native、python（僅開發／Linux）")
+	neuralORTLib := flag.String("neural-ort-lib", os.Getenv("ZUIN_ORT_LIBRARY"), "native 後端使用的 ONNX Runtime 共享函式庫（.so／.dll）；空值用執行檔旁的 onnxruntime.dll／onnxruntime.so 或 runtime/ 子目錄")
 	// 內部相容（P2-40）：Windows 的 Mixed profile 由引擎的混打模式服務，外殼的 open 不帶語言。
 	// 這個旗標只留給舊版設定流程與日文轉換的單獨驗證；P2-42 的設定程式接手後移除。
 	jaLanguage := flag.String("language", "zh", "（內部相容）新 session 的初始語言：zh 或 ja；Mixed profile 不需要")
@@ -289,11 +289,43 @@ func serve() string {
 		remind = newModelRemind(filepath.Dir(*user), dictionarySHA, lg)
 	}
 	neuralState := "disabled_by_setting"
+	neuralBackendReason := ""
+	backend, backendErr := neural.ParseBackend(*neuralBackend)
+	if backendErr != nil {
+		lg.Printf("未知的模型後端 %q，改用 auto：%v", *neuralBackend, backendErr)
+		backend = neural.BackendAuto
+	}
+	if backend == neural.BackendAuto {
+		resolved := neural.ChooseBackend(backend, neural.NativeAvailable(), *neuralORTLib, runtime.GOOS)
+		if resolved.Backend == neural.BackendNative && *neuralORTLib == "" {
+			*neuralORTLib = resolved.Library
+		}
+		backend, neuralBackendReason = resolved.Backend, resolved.Reason
+		if resolved.Reason == "native_runtime_missing" {
+			lg.Printf("找不到原生 ONNX Runtime（onnxruntime.dll），模型不會載入，改用統計轉換")
+		} else if resolved.Reason == "native_unavailable" {
+			lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
+		}
+	} else if backend == neural.BackendNative {
+		resolved := neural.ChooseBackend(backend, neural.NativeAvailable(), *neuralORTLib, runtime.GOOS)
+		if *neuralORTLib == "" {
+			*neuralORTLib = resolved.Library
+		}
+		neuralBackendReason = resolved.Reason
+		if resolved.Reason == "native_runtime_missing" {
+			lg.Printf("找不到原生 ONNX Runtime（onnxruntime.dll），模型不會載入，改用統計轉換")
+		} else if resolved.Reason == "native_unavailable" {
+			lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
+		}
+	}
 	var selectionSource, punctuationSource string
 	var selectionModel, punctuationModel *neural.Handle
 	var modelManager *neural.Manager
 	if config.Selection == settings.Neural && !explicit["neural-package"] {
 		neuralState = "not_installed"
+		if backend == neural.BackendNative && !bundled.HasSelect && neuralBackendReason != "" {
+			neuralState = "runtime_missing"
+		}
 		if bundled.HasSelect {
 			*neuralPackage, *neuralWorker, *neuralPython = bundled.SelectPackage, bundled.SelectWorker, python
 			selectionSource = bundled.SelectSource
@@ -321,14 +353,6 @@ func serve() string {
 		lg.Printf("未知的模型常駐模式 %q，改用 auto：%v", modeValue, modeErr)
 		mode = neural.ModeAuto
 	}
-	backend, backendErr := neural.ParseBackend(*neuralBackend)
-	if backendErr != nil {
-		lg.Printf("未知的模型後端 %q，改用 python：%v", *neuralBackend, backendErr)
-		backend = neural.BackendPython
-	}
-	if backend == neural.BackendNative && !neural.NativeAvailable() {
-		lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
-	}
 	primary := config.PrimaryLanguage
 	if explicit["primary-language"] {
 		primary = *primaryLanguage
@@ -349,10 +373,14 @@ func serve() string {
 			Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage, DictionarySHA256: dictionarySHA,
 			Threads: *neuralThreads, Timeout: *neuralTimeout, Preload: true})
 	}
-	if *punctPackage != "" {
+	if *punctPackage != "" && backend != neural.BackendNative {
 		specs = append(specs, neural.ModelSpec{Name: "zh-punct", Language: "zh", Role: neural.RolePunct,
 			Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
 			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
+	} else if *punctPackage != "" && backend == neural.BackendNative {
+		// 原生後端目前只實作 sequence／reranker；沒有 Python 的產品不啟動補標點 worker，
+		// 提交時保留原文（統計轉換），原因由 health 的 punctuation 狀態說明。
+		lg.Printf("原生後端不支援補標點；提交時保留原文")
 	}
 	languageSeen := map[string]bool{}
 	for _, spec := range specs {
@@ -584,6 +612,7 @@ func serve() string {
 	}
 	srv.Info = map[string]string{"version": buildVersion, "protocol": fmt.Sprint(proto.Version),
 		"neural_startup_state": neuralState, "neural_backend": string(backend),
+		"neural_backend_reason": neuralBackendReason, "neural_ort_library": *neuralORTLib,
 		"neural_native_available": fmt.Sprint(neural.NativeAvailable()),
 		"personal_store":          personalState, "personal_lock": lockState,
 		"input_profile": config.ActiveProfile().ID, "input_profile_fingerprint": config.ProfileFingerprint(),

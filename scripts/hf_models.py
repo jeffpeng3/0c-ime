@@ -219,6 +219,7 @@ def replace_models(neural, data, out, weights, lock_path=LOCK, workers=WORKERS):
 def check_shipped(neural, data, lock_path=LOCK, workers=WORKERS):
     """出貨的 neural/ 是公開版模型、配對 data 的 manifest：manifest.json、vocab.json 等於 pairing.lock，
     model.onnx、LICENSE、README.md 等於 models.lock；worker 等於 repo 的 platforms/neural/runtime。
+    workers=None 時不檢查 worker：P2-43 的 Windows 產品只有原生 runtime，沒有 Python worker。
     回傳這份字典的 pairing.lock 位元組。"""
     lock = load_lock(lock_path)
     neural = Path(neural)
@@ -237,6 +238,8 @@ def check_shipped(neural, data, lock_path=LOCK, workers=WORKERS):
                 except ValueError as error:
                     raise ValueError(f"{error}；官網套件要內建 Hugging Face 公開版（models.lock）") from None
     for name in WORKER_NAMES:
+        if workers is None:
+            continue
         path = neural / name
         if not path.is_file() or path.read_bytes() != (Path(workers) / name).read_bytes():
             raise ValueError(f"neural/{name} 與 platforms/neural/runtime/{name} 不同；用 hf_models.py neural 重新產生 neural/")

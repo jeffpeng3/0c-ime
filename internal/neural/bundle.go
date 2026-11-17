@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
 // 模型與推論環境的來源，health 的 selection_source／punctuation_source、neural_python 回報這些值。
@@ -51,6 +53,12 @@ type Bundled struct {
 	Python, SelectWorker, SelectPackage, PunctWorker, PunctPackage string
 	PythonSource, SelectSource, PunctSource                        string // 空字串：沒有找到
 	HasSelect, HasPunct                                            bool
+	// P2-43：原生 ONNX Runtime。Native 為這個建置含原生後端且執行檔旁有 ONNX Runtime；
+	// NativeLibrary 是找到的 DLL／so 路徑。沒有 Python 的 Windows 產品靠這一組載入模型。
+	Native        bool
+	NativeLibrary string
+	// NativeBuilt 是這個建置是否含原生後端（與 DLL 是否存在無關）。
+	NativeBuilt bool
 }
 
 // RuntimeMissing 回報找到模型與 worker、要用的系統 Python 卻不存在（Linux 沒裝 python3）。引擎照樣啟動
@@ -89,9 +97,13 @@ func Find(o Options) Bundled {
 	if o.UserDir != "" && len(o.DictionarySHA256) == 64 {
 		user = filepath.Join(o.UserDir, "models", o.DictionarySHA256)
 	}
-	find := func(worker, name string) (string, string, string) {
+	b.NativeBuilt = native.Available()
+	b.NativeLibrary = native.RuntimeLibrary()
+	b.Native = b.NativeBuilt && b.NativeLibrary != ""
+	nativeUsable := b.Native
+	find := func(worker, name string, needsWorker bool) (string, string, string) {
 		script := filepath.Join(dir, worker)
-		if !regular(script) {
+		if needsWorker && !regular(script) {
 			return script, filepath.Join(dir, name), ""
 		}
 		if bundled := filepath.Join(dir, name); regular(filepath.Join(bundled, "manifest.json")) {
@@ -104,10 +116,11 @@ func Find(o Options) Bundled {
 		}
 		return script, filepath.Join(dir, name), ""
 	}
-	b.SelectWorker, b.SelectPackage, b.SelectSource = find("sequence_runtime.py", "select")
-	b.PunctWorker, b.PunctPackage, b.PunctSource = find("punct_runtime.py", "punct")
-	b.HasSelect = b.Python != "" && b.SelectSource != ""
-	b.HasPunct = b.Python != "" && b.PunctSource != ""
+	b.SelectWorker, b.SelectPackage, b.SelectSource = find("sequence_runtime.py", "select", !nativeUsable)
+	// 補標點仍只有 Python worker；沒有 Python 的安裝不載入它，提交時保留原文。
+	b.PunctWorker, b.PunctPackage, b.PunctSource = find("punct_runtime.py", "punct", true)
+	b.HasSelect = b.SelectSource != "" && (b.Python != "" || nativeUsable)
+	b.HasPunct = b.PunctSource != "" && b.Python != ""
 	return b
 }
 

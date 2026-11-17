@@ -33,7 +33,7 @@ ShowUninstDetails hide
 !insertmacro MUI_PAGE_LICENSE "terms.txt"
 !insertmacro MUI_PAGE_INSTFILES
 !define MUI_FINISHPAGE_TITLE "靈犀注音已安裝"
-!define MUI_FINISHPAGE_TEXT "安裝完成，不必登出。$\r$\n$\r$\n「靈犀注音」與「靈犀日本語」已加入 Windows 語言設定，使用 Win＋空白在中文（台灣）與日文之間切換；清單裡沒有時，在對應語言新增「靈犀注音」或「靈犀日本語」鍵盤。每個程式會記住上次使用的語言。個人詞庫已保留。$\r$\n$\r$\n更新時，已經開著的應用程式要重新開啟才會換成新版。"
+!define MUI_FINISHPAGE_TEXT "安裝完成，不必登出。$\r$\n$\r$\n「靈犀注音（0c）」的單一 Mixed 設定已加入 Windows 語言設定；注音、日文與英文在同一個輸入法裡直接輸入，不需要切換語言。清單裡沒有時，在中文（台灣）新增「Mixed」鍵盤。每個程式會記住上次使用的輸入法。個人詞庫已保留。$\r$\n$\r$\n更新時，已經開著的應用程式要重新開啟才會換成新版。"
 !insertmacro MUI_PAGE_FINISH
 !define MUI_UNCONFIRMPAGE_TEXT_TOP "解除安裝會停用靈犀注音，保留個人詞庫及版本備份。請先完成正在輸入的文字；已經開著的應用程式要重新開啟才會停用。"
 !insertmacro MUI_UNPAGE_CONFIRM
