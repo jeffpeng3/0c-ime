@@ -76,7 +76,7 @@ python3 scripts/build_release_data.py --bigram-dir 0c-ime-bigram-20261019/bigram
 
 ## 組裝 Release tarball
 
-Git repo 保存 [字典 lock](data/dictionary.lock.json)、[上游模型 lock](models/models.lock.json) 與 [配對 lock](models/pairing.lock.json)；二進位字典由發佈工具加入原始碼 tarball，配對後的模型另外打成模型 tarball。
+Git repo 保存 [字典 lock](data/dictionary.lock.json)、[上游模型 lock](models/models.lock.json) 與 [配對 lock](models/pairing.lock.json)；二進位字典由發佈工具加入原始碼 tarball，配對後的模型另外打成模型 tarball。`models/pairing.lock.json` 的 `model_sets` 另外分開日文 public-core 與 cc-by-sa 模型組（P2-27），兩組不得混用；模型檔不進 Git，安裝器以 `cmd/0c-model-set` 選擇要帶哪一組，`0c-server -model-report` 會回報使用中的組。
 
 先提交原始碼與固定清單、建立版本 tag，再用已驗證的現成字典組裝。輸出目錄須尚未存在：
 

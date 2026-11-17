@@ -37,6 +37,10 @@ htmlcov/
 /neural/
 /models/select/
 /models/punct/
+*.onnx
+/models/ja-public-core/
+/models/ja-cc-by-sa/
+/models/active.json
 /SOURCE-RELEASE.json
 
 # Private working notes belong outside the public repository.
