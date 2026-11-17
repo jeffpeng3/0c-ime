@@ -283,6 +283,7 @@ func (s *Session) languageKey(k string) (handled bool, commit string, ok bool) {
 		return true, "", true
 	case lang.ActionCancel:
 		if r.converting {
+			s.dropLanguageSelections()
 			r.endConversion()
 		} else {
 			r.reset()
@@ -318,6 +319,7 @@ func (s *Session) languageInsert(k string) bool {
 		return false
 	}
 	if r.converting {
+		s.dropLanguageSelections()
 		r.endConversion() // 打字取消変換，かな原樣保留
 	}
 	r.surface = ""
@@ -334,6 +336,7 @@ func (s *Session) languageBackspace() bool {
 		return false
 	}
 	if r.converting {
+		s.dropLanguageSelections()
 		r.endConversion()
 		return true
 	}
@@ -463,6 +466,11 @@ func (s *Session) languageSelectIndex(n int, advance bool) bool {
 	s.languageApplyCandidate(r, cand)
 	r.candidate = n
 	r.candidateFor = r.clause
+	previous := s.lastLanguage
+	if r.clause > 0 {
+		previous = lang.ID(r.profile.ID())
+	}
+	s.noteLanguageSelection(cand.Surface, cand.Reading, lang.ID(r.profile.ID()), previous)
 	if advance && r.clause+1 < len(r.clauses) {
 		r.clause++
 		r.candidates = nil
@@ -519,6 +527,8 @@ func (s *Session) languageCommit() string {
 	if !s.paused && !s.private {
 		s.emitLearn(lang.ID(r.profile.ID()), text)
 	}
+	s.flushLanguageSelections(!s.paused && !s.private && !s.learningCleared)
+	s.noteCommittedLanguage()
 	r.reset()
 	return text
 }

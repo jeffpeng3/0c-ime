@@ -56,8 +56,9 @@ func DefaultParams() Params {
 // 4 加入有上限且獨立於詞彙學習的 EmojiRecent；5 加入表情的常用分數 EmojiStats 與上次選用的
 // = 選單分頁 PaletteTab，EmojiRecent 改為保存（含遲滯的）顯示順序，舊版照樣讀得懂（#124）；
 // 6 加入多字詞的手選紀錄 Confirmed（#218，舊檔由留下的更正推回）與中英混打選過的注音文 ZhuyinKeys（#208，舊檔沒有這份紀錄）；
-// 7 加入符號選單「最近」分頁的順序 SymbolRecent 與常用分數 SymbolStats（#290，舊檔沒有，讀進來是空的）。
-const StoreFormat = 7
+// 7 加入符號選單「最近」分頁的順序 SymbolRecent 與常用分數 SymbolStats（#290，舊檔沒有，讀進來是空的）；
+// 8 加入分語言學習 Languages 與跨語言偏好 CrossLanguage（P2-15，舊檔沒有，讀進來是空的）。
+const StoreFormat = 8
 
 // NewerFormatError 表示個人資料由較新版本寫成；呼叫端不得以目前的結構寫回。
 type NewerFormatError struct{ Format int }
@@ -103,6 +104,13 @@ type Store struct {
 	// SymbolRecent 是 ` 符號選單「最近」分頁的顯示順序，最多 symbols.MaxRecent 項，只收目錄裡的符號；不參與文字學習（#290）。
 	SymbolRecent []string
 	SymbolStats  map[string]emoji.Stat // SymbolRecent 各項的常用分數，排序規則同表情
+
+	// Languages 是分語言的選擇學習：語言 ID → 命名空間。每個語言只看到自己的紀錄，
+	// 中文學習不會增加日文的計數；跨語言的偏好另存 CrossLanguage（P2-15）。
+	Languages map[string]*LanguageNamespace `json:"Languages,omitempty"`
+	// CrossLanguage 是跨語言的弱偏好：各語言被選過的次數與「前一個片段語言 → 這次語言」的次數。
+	// 只影響候選的語言偏好，不會把某個語言的學習內容搬到另一個語言。
+	CrossLanguage CrossLanguage `json:"CrossLanguage,omitempty"`
 }
 
 func NewStore() *Store {
@@ -115,6 +123,11 @@ func NewStore() *Store {
 		ZhuyinKeys: map[string]UsageEvidence{},
 		Pronouns:   map[string]PronounHabit{},
 		English:    map[string]EnglishEvidence{},
+		Languages:  map[string]*LanguageNamespace{},
+		CrossLanguage: CrossLanguage{
+			Primary:     map[string]int{},
+			Transitions: map[string]int{},
+		},
 	}
 }
 
@@ -142,6 +155,11 @@ func (s *Store) Clone() *Store {
 	c.EmojiStats = maps.Clone(s.EmojiStats)
 	c.SymbolRecent = slices.Clone(s.SymbolRecent)
 	c.SymbolStats = maps.Clone(s.SymbolStats)
+	c.Languages = make(map[string]*LanguageNamespace, len(s.Languages))
+	for id, ns := range s.Languages {
+		c.Languages[id] = ns.clone()
+	}
+	c.CrossLanguage = s.CrossLanguage.clone()
 	return &c
 }
 
@@ -179,6 +197,7 @@ func LoadStore(r io.Reader) (*Store, error) {
 	if s.SymbolStats == nil && len(s.SymbolRecent) > 0 { // 有順序沒有分數（手改過的檔）：照順序給初始分數
 		s.SymbolStats = emoji.SeedStats(s.SymbolRecent)
 	}
+	s.cleanLanguages()
 	return s, nil
 }
 
@@ -212,6 +231,9 @@ type Model struct {
 	prunedDay int64
 	// undo 是 Undoable 執行期間記錄改動的複本；其餘時候是 nil（見 recording）。
 	undo *Undo
+	// languageJournal 是分語言學習的反悔紀錄（P2-15）。只在記憶體裡，與 Undo 一樣不寫進
+	// 個人檔：使用者要求忘記的內容不能因為反悔又留在磁碟上。
+	languageJournal []languageUndo
 }
 
 func NewModel(lex lexicon.Source, sys lm.System) *Model {
@@ -224,6 +246,7 @@ func (m *Model) ResetStore() {
 	m.Store = NewStore()
 	m.englishIndex, m.englishIndexStore, m.englishIndexBase = nil, nil, nil
 	m.correctionIndex, m.diversityIndex, m.habitIndex = correctionIndex{}, diversityIndex{}, habitIndex{}
+	m.languageJournal = nil
 	m.Gen++
 }
 
