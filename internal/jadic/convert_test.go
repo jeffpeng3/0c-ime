@@ -42,7 +42,7 @@ func TestConvertToProductTSV(t *testing.T) {
 	if !strings.Contains(out, "明日\tあ し た\t1\tnoun\t"+DefaultOrigin+"\t\n") {
 		t.Fatalf("明日 詞條格式不符：\n%s", out)
 	}
-	if !strings.Contains(out, "食べる\tた べ る\t0\tverb\t"+DefaultOrigin+"\tgodan\n") {
+	if !strings.Contains(out, "食べる\tた べ る\t-0.3\tverb\t"+DefaultOrigin+"\tgodan\n") {
 		t.Fatalf("負成本或活用型不符：\n%s", out)
 	}
 	if !strings.Contains(out, "謎\tな ぞ\t0.5\tother\t") {
@@ -51,14 +51,14 @@ func TestConvertToProductTSV(t *testing.T) {
 	if stats.Entries != 4 || stats.Surfaces != 3 {
 		t.Fatalf("stats = %+v", stats)
 	}
-	if stats.NegativeCostClamped != 1 || stats.UnknownPOS != 1 || stats.UnknownConj != 0 {
+	if stats.NegativeCosts != 1 || stats.UnknownPOS != 1 || stats.UnknownConj != 0 {
 		t.Fatalf("stats = %+v", stats)
 	}
 	if stats.MaxReadingUnits != 3 {
 		t.Fatalf("MaxReadingUnits = %d", stats.MaxReadingUnits)
 	}
 
-	// 產出的 TSV 必須能直接被產品日文詞典載入。
+	// 產出的 TSV 必須能直接被產品日文詞典載入，且負成本原樣保留。
 	lex, err := jalexicon.Load(strings.NewReader(out))
 	if err != nil {
 		t.Fatalf("產品詞典載入失敗：%v", err)
@@ -66,7 +66,7 @@ func TestConvertToProductTSV(t *testing.T) {
 	if got := lex.Lookup("明日"); len(got) != 2 {
 		t.Fatalf("Lookup(明日) = %#v", got)
 	}
-	if got := lex.Lookup("食べる"); len(got) != 1 || got[0].Cost != 0 {
+	if got := lex.Lookup("食べる"); len(got) != 1 || got[0].Cost != -0.3 {
 		t.Fatalf("Lookup(食べる) = %#v", got)
 	}
 }
@@ -152,8 +152,11 @@ func TestImportWritesDataDir(t *testing.T) {
 	if r.Schema != ImportSchema || r.Pack.SHA256 != p.FileSHA256() || r.Pack.Path != packPath {
 		t.Fatalf("receipt = %+v", r)
 	}
-	if r.Import.Origin != "ja-jadic-test" || r.Import.CostScale != 0.002 || r.Import.NegativeCostClamped != 1 {
+	if r.Import.Origin != "ja-jadic-test" || r.Import.CostScale != 0.002 || r.Import.NegativeCosts != 1 {
 		t.Fatalf("receipt import = %+v", r.Import)
+	}
+	if r.Import.CostRule != CostRule {
+		t.Fatalf("receipt cost rule = %q", r.Import.CostRule)
 	}
 	if len(r.Import.Needs) != 0 {
 		t.Fatalf("已提供 connection.tsv，needs = %v", r.Import.Needs)

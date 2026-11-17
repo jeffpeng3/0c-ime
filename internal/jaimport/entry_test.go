@@ -1,6 +1,7 @@
 package jaimport
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -117,13 +118,23 @@ func TestMergeKeepsMinimumCostAndOrigins(t *testing.T) {
 	}
 }
 
+func TestTSVKeepsSignedCost(t *testing.T) {
+	r, _ := NormalizeReading("ふ")
+	out := string(TSV([]Entry{MakeEntry("負", r, -8.313, POSNoun, []string{"curated"}, ConjNone)}))
+	if !strings.Contains(out, "負\tふ\t-8.313\tnoun\n") {
+		t.Fatalf("TSV = %q", out)
+	}
+}
+
 func TestEntryValidation(t *testing.T) {
 	r, _ := NormalizeReading("あ")
 	for _, e := range []Entry{
 		{Reading: r, POS: POSNoun},
 		{Surface: "あ", POS: POSNoun},
 		{Surface: "あ", Reading: reading.Sequence{" "}, POS: POSNoun},
-		{Surface: "あ", Reading: r, Cost: -1, POS: POSNoun},
+		{Surface: "あ", Reading: r, Cost: MinWordCost - 0.001, POS: POSNoun},
+		{Surface: "あ", Reading: r, Cost: MaxWordCost + 0.001, POS: POSNoun},
+		{Surface: "あ", Reading: r, Cost: math.NaN(), POS: POSNoun},
 		{Surface: "あ", Reading: r, POS: "bad"},
 		{Surface: "あ", Reading: r, POS: POSNoun, Okurigana: 2},
 	} {
@@ -133,5 +144,8 @@ func TestEntryValidation(t *testing.T) {
 	}
 	if err := MakeEntry("あ", r, 1, POSNoun, nil, ConjNone).Validate(); err != nil {
 		t.Fatal(err)
+	}
+	if err := MakeEntry("あ", r, -8.313, POSNoun, nil, ConjNone).Validate(); err != nil {
+		t.Fatalf("負成本應被接受：%v", err)
 	}
 }

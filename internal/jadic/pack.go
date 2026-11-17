@@ -3,6 +3,10 @@
 // Pack 是上游詞典建置流程的產物，不是產品執行期格式。這個套件只負責解析、
 // 驗證與匯出；產品執行期仍然讀 data/ja 編譯出的 lexicon.bin。
 // 格式定義見 plan/0c-ja/phase2/reference/pack-format.md。
+//
+// 載入契約：讀音只接受平假名與長音符 'ー'，片假名或混用會在 Parse/Load 時拒絕。
+// 匯出契約：同一 surface 內依成本（換算後）、讀音、詞性、活用型、活用形排序，
+// 相同 tuple 保留 pack 順序。成本是 signed i16，匯出時乘上 0.001 並保留正負號。
 package jadic
 
 import (
@@ -13,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -504,6 +509,26 @@ func (p *Pack) buildSurfaces() error {
 	return nil
 }
 
+// ReadingScript 是 ja 匯入路徑唯一接受的讀音文字系統。pack 格式允許建置時輸出
+// 片假名並在 manifest 記錄 reading_script，但產品路徑在載入時就要求平假名，
+// 不把片假名留到 Convert 才轉換。
+const ReadingScript = "hiragana"
+
+// checkReading 檢查讀音只含平假名與長音符 'ー'。
+// 片假名、片假名與平假名混用、以及其他字元都在 Parse/Load 時拒絕。
+func checkReading(s string) error {
+	for _, r := range s {
+		if r == 'ー' || unicode.Is(unicode.Hiragana, r) {
+			continue
+		}
+		if unicode.Is(unicode.Katakana, r) {
+			return fmt.Errorf("含有片假名 %q；ja 讀音必須是平假名", r)
+		}
+		return fmt.Errorf("含有非平假名字元 %q；ja 讀音必須是平假名", r)
+	}
+	return nil
+}
+
 // validateEntries 逐筆檢查引用範圍、排序、surface index 對應與 flags。
 func (p *Pack) validateEntries() error {
 	var prevSurface string
@@ -519,6 +544,9 @@ func (p *Pack) validateEntries() error {
 		}
 		if e.Cost < MinCost {
 			return fmt.Errorf("jadic: 第 %d 筆 %q 的詞成本 %d 低於合法下限 %d", i, e.Surface, e.Cost, MinCost)
+		}
+		if err := checkReading(e.Reading); err != nil {
+			return fmt.Errorf("jadic: 第 %d 筆 %q 的讀音 %q：%w", i, e.Surface, e.Reading, err)
 		}
 		if e.Flags&^uint16(0x3) != 0 {
 			return fmt.Errorf("jadic: 第 %d 筆 %q 帶有未定義的 flags %#x", i, e.Surface, e.Flags)

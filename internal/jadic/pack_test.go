@@ -233,6 +233,42 @@ func TestParseRejectsIndexCorruption(t *testing.T) {
 	}
 }
 
+func TestParseRejectsKatakanaReading(t *testing.T) {
+	data := encodeTestPack(t, []testEntry{
+		{surface: "アニメ", reading: "アニメ", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 1},
+	}, nil, nil, nil)
+	if _, err := Parse(data); err == nil || !strings.Contains(err.Error(), "片假名") {
+		t.Fatalf("片假名讀音錯誤 = %v", err)
+	}
+}
+
+func TestParseRejectsMixedReading(t *testing.T) {
+	data := encodeTestPack(t, []testEntry{
+		{surface: "あ似", reading: "あにメ", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 1},
+	}, nil, nil, nil)
+	if _, err := Parse(data); err == nil || !strings.Contains(err.Error(), "片假名") {
+		t.Fatalf("混用讀音錯誤 = %v", err)
+	}
+}
+
+func TestParseRejectsNonKanaReading(t *testing.T) {
+	data := encodeTestPack(t, []testEntry{
+		{surface: "abc", reading: "あb", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 1},
+	}, nil, nil, nil)
+	if _, err := Parse(data); err == nil || !strings.Contains(err.Error(), "非平假名") {
+		t.Fatalf("非かな讀音錯誤 = %v", err)
+	}
+}
+
+func TestParseAcceptsProlongedSoundMark(t *testing.T) {
+	data := encodeTestPack(t, []testEntry{
+		{surface: "アート", reading: "あーと", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 1},
+	}, nil, nil, nil)
+	if _, err := Parse(data); err != nil {
+		t.Fatalf("長音符應被接受：%v", err)
+	}
+}
+
 func mustHeader(t *testing.T, data []byte) Header {
 	t.Helper()
 	h, err := parseHeader(data[:HeaderSize])

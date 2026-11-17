@@ -113,6 +113,43 @@ func TestLoadAndBuildJA(t *testing.T) {
 	}
 }
 
+func TestJAAcceptsSignedWordCost(t *testing.T) {
+	f := newJAFixture(t)
+	mustWrite(t, filepath.Join(f.dir, "lexicon", "words.tsv"), `# 詞面	讀音	成本	詞性	來源	活用型
+負	ふ	-8.313	noun	curated	-
+零	れい	0	noun	curated	-
+正	せい	2.5	noun	curated	-
+`)
+	d, errs, err := LoadJA(f.dir, f.root)
+	if err != nil || len(errs) > 0 {
+		t.Fatalf("%v %v", err, errs)
+	}
+	res := BuildJA(d, DefaultJAOptions())
+	if len(res.Errors) > 0 {
+		t.Fatal(res.Errors)
+	}
+	for reading, want := range map[string]float64{"ふ": -8.313, "れい": 0, "せい": 2.5} {
+		got := res.Lexicon.Exact(mustReading(t, reading))
+		if len(got) != 1 || got[0].Cost != want {
+			t.Fatalf("%s = %#v，want cost %v", reading, got, want)
+		}
+	}
+}
+
+func TestJARejectsWordCostOutOfRange(t *testing.T) {
+	for _, cost := range []string{"-32.768", "32.768", "NaN", "+Inf"} {
+		f := newJAFixture(t)
+		mustWrite(t, filepath.Join(f.dir, "lexicon", "words.tsv"), "# 詞面\t讀音\t成本\t詞性\t來源\t活用型\n負\tふ\t"+cost+"\tnoun\tcurated\t-\n")
+		_, errs, err := LoadJA(f.dir, f.root)
+		if err != nil {
+			t.Fatalf("cost %s：%v", cost, err)
+		}
+		if len(errs) == 0 {
+			t.Errorf("cost %s 應被拒絕", cost)
+		}
+	}
+}
+
 func TestJAConjugationExpansion(t *testing.T) {
 	f := newJAFixture(t)
 	d, errs, err := LoadJA(f.dir, f.root)

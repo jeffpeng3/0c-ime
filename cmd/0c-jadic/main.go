@@ -134,7 +134,7 @@ func runImport(args []string) error {
 	}
 	fmt.Printf("已匯入 %d 筆詞條、%d 個 surface\n", res.Stats.Entries, res.Stats.Surfaces)
 	fmt.Printf("詞條：%s\n回執：%s\n", res.WordsPath, res.ReceiptPath)
-	fmt.Printf("成本換算：%s；負成本飽和 %d 筆\n", jadic.CostRule, res.Stats.NegativeCostClamped)
+	fmt.Printf("成本換算：%s；負成本保留 %d 筆\n", jadic.CostRule, res.Stats.NegativeCosts)
 	if len(res.Receipt.Import.Needs) > 0 {
 		fmt.Printf("注意：%s\n", strings.Join(res.Receipt.Import.Needs, "；"))
 	}

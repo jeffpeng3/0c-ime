@@ -206,6 +206,19 @@ type Entry struct {
 	Okurigana int
 }
 
+// 產品詞成本容許的範圍，與 core/ja/lexicon 的 MinWordCost/MaxWordCost 相同。
+// 0c-jadic 把 pack 的 signed i16 成本乘上 0.001，所以負成本是合法輸入；
+// jaimport 與 core/ja/lexicon 刻意不互相 import，兩邊各自持有同一組常數。
+const (
+	MinWordCost = -32.767
+	MaxWordCost = 32.767
+)
+
+// validCost 回報 c 是否為文件化的詞成本；NaN、Inf 與超出範圍都不合法。
+func validCost(c float64) bool {
+	return !math.IsNaN(c) && !math.IsInf(c, 0) && c >= MinWordCost && c <= MaxWordCost
+}
+
 // Key 是詞條的穩定鍵，供除重使用。
 func (e Entry) Key() string {
 	return e.Surface + "|" + reading.Key(e.Reading) + "|" + string(e.POS)
@@ -224,8 +237,8 @@ func (e Entry) Validate() error {
 			return fmt.Errorf("%q 的讀音單位 %q 不合法", e.Surface, u)
 		}
 	}
-	if math.IsNaN(e.Cost) || math.IsInf(e.Cost, 0) || e.Cost < 0 {
-		return fmt.Errorf("%q 的詞成本 %v 不合法", e.Surface, e.Cost)
+	if !validCost(e.Cost) {
+		return fmt.Errorf("%q 的詞成本 %v 超出容許範圍 %v～%v", e.Surface, e.Cost, MinWordCost, MaxWordCost)
 	}
 	if !e.POS.Valid() {
 		return fmt.Errorf("%q 的詞性 %q 不合法", e.Surface, e.POS)

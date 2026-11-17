@@ -1,8 +1,12 @@
 package jadic
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"unicode"
 )
@@ -10,6 +14,10 @@ import (
 // 參考 pack 不進 repo。設 OC_JADIC_REFERENCE_PACK 指向
 // ja-lexicon-public-core.pack（manifest.json 放在旁邊）才會執行。
 const referencePackEnv = "OC_JADIC_REFERENCE_PACK"
+
+// referenceWordsSHA256 是參考 pack 以 mapping D 匯入兩次都必須相同的 words.tsv 雜湊。
+// 它同時固定 signed 成本、同 surface 排序與 bytes 輸出格式。
+const referenceWordsSHA256 = "5b6718fdf558d3883a1b807f63b1dce17485c86276ab54dda98bfbe99ef99f5f"
 
 func TestReferencePack(t *testing.T) {
 	path := os.Getenv(referencePackEnv)
@@ -67,5 +75,81 @@ func TestReferencePack(t *testing.T) {
 				t.Fatalf("讀音 %q 含非平假名字元 %q", e.Reading, r)
 			}
 		}
+	}
+}
+
+func TestReferencePackImportStable(t *testing.T) {
+	path := os.Getenv(referencePackEnv)
+	if path == "" {
+		t.Skipf("未設定 %s，跳過真實 pack 測試", referencePackEnv)
+	}
+	p, err := Load(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	manifestPath := filepath.Join(filepath.Dir(path), "manifest.json")
+	m, err := LoadManifest(manifestPath)
+	if err != nil {
+		t.Fatalf("載入 manifest：%v", err)
+	}
+
+	var sums []string
+	for run := 0; run < 2; run++ {
+		out := t.TempDir()
+		res, err := Import(p, m, ImportOptions{
+			OutDir:       out,
+			PackPath:     path,
+			ManifestPath: manifestPath,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.Stats.Entries != 1147021 || res.Stats.Surfaces != 870298 {
+			t.Fatalf("run %d counts = %d / %d", run, res.Stats.Entries, res.Stats.Surfaces)
+		}
+		if res.Stats.NegativeCosts != 114 {
+			t.Fatalf("run %d 負成本 = %d，want 114", run, res.Stats.NegativeCosts)
+		}
+
+		data, err := os.ReadFile(res.WordsPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		sum := sha256.Sum256(data)
+		sums = append(sums, hex.EncodeToString(sum[:]))
+
+		negatives := 0
+		var institute []string
+		for _, line := range strings.Split(string(data), "\n") {
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			f := strings.Split(line, "\t")
+			if len(f) < 3 {
+				t.Fatalf("words.tsv 欄位不足：%q", line)
+			}
+			cost, err := strconv.ParseFloat(f[2], 64)
+			if err != nil {
+				t.Fatalf("成本 %q：%v", f[2], err)
+			}
+			if cost < 0 {
+				negatives++
+			}
+			if f[0] == "研究所" {
+				institute = append(institute, line)
+			}
+		}
+		if negatives != 114 {
+			t.Fatalf("run %d words.tsv 負成本列 = %d，want 114", run, negatives)
+		}
+		if len(institute) != 2 || !strings.HasPrefix(institute[0], "研究所\tけ ん き ゅ う じ ょ\t-4.215\t") {
+			t.Fatalf("研究所 順序 = %#v", institute)
+		}
+	}
+	if sums[0] != sums[1] {
+		t.Fatalf("兩次匯入 SHA 不同：%s vs %s", sums[0], sums[1])
+	}
+	if sums[0] != referenceWordsSHA256 {
+		t.Fatalf("words.tsv SHA = %s，want %s", sums[0], referenceWordsSHA256)
 	}
 }

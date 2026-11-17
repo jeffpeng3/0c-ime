@@ -576,8 +576,8 @@ func parseJAWords(path string) ([]jaimport.Entry, error) {
 			return nil, fmt.Errorf("第 %d 行：%w", ln, err)
 		}
 		cost, err := strconv.ParseFloat(strings.TrimSpace(c[2]), 64)
-		if err != nil || math.IsNaN(cost) || math.IsInf(cost, 0) || cost < 0 {
-			return nil, fmt.Errorf("第 %d 行：成本 %q 不合法", ln, c[2])
+		if err != nil || math.IsNaN(cost) || math.IsInf(cost, 0) || cost < jaimport.MinWordCost || cost > jaimport.MaxWordCost {
+			return nil, fmt.Errorf("第 %d 行：成本 %q 不合法；容許範圍 %v～%v", ln, c[2], jaimport.MinWordCost, jaimport.MaxWordCost)
 		}
 		pos, err := jaimport.ParsePOS(strings.TrimSpace(c[3]))
 		if err != nil {

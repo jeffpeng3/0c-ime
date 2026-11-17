@@ -22,9 +22,10 @@ const (
 	DefaultCostScale = 1.0 / 1000.0
 )
 
-// CostRule 說明 pack 成本如何轉成產品成本。產品詞典不接受負成本，
-// 因此負值飽和到 0；原本越小的成本仍然越優先。
-const CostRule = "max(0, cost) * scale；scale 預設 0.001"
+// CostRule 說明 production 的 pack 成本換算規則。P2-22F 依 P2-22E 的量測
+// 採用 mapping D：保留 pack 的 signed i16 成本，只乘上 scale，不 clamp、不 offset。
+// 負成本因此原樣寫進 words.tsv；產品詞典與編譯器接受 -32.767～32.767 的詞成本。
+const CostRule = "cost * scale（signed，不 clamp、不 offset）；scale 預設 0.001"
 
 // ConvertOptions 控制 pack → words.tsv 的轉換。
 type ConvertOptions struct {
@@ -38,17 +39,30 @@ type ConvertOptions struct {
 
 // ConvertStats 是轉換結果統計。
 type ConvertStats struct {
-	Entries             int
-	Surfaces            int
-	NegativeCostClamped int
-	UnknownPOS          int
-	UnknownConj         int
-	POSCounts           map[string]int
-	MaxReadingUnits     int
+	Entries         int
+	Surfaces        int
+	NegativeCosts   int
+	UnknownPOS      int
+	UnknownConj     int
+	POSCounts       map[string]int
+	MaxReadingUnits int
+}
+
+// convertedRow 是一筆已換算成產品欄位的詞條，保留 pack 原值供同 surface 排序。
+type convertedRow struct {
+	source  Entry
+	reading string
+	pos     jaimport.POS
+	conj    jaimport.Conjugation
+	cost    float64
 }
 
 // Convert 把 pack 串流寫成產品 data/ja 的中介格式：
 // 詞面、空白分隔讀音、產品成本、產品詞性、來源、活用型。
+//
+// 輸出順序是契約的一部分：surface 依 pack 的 code point 序，同一 surface 內依
+// 成本（換算後）、讀音、詞性、活用型、活用形排序，五欄完全相同時保留 pack 內的
+// 原始順序。同一份 pack 因此永遠產生相同位元組。
 func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 	stats := ConvertStats{POSCounts: map[string]int{}}
 	if opt.Origin == "" {
@@ -68,9 +82,35 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 	if _, err := fmt.Fprintln(bw, "# 由 0c-jadic pack 匯入；詞面\t讀音\t成本\t詞性\t來源\t活用型"); err != nil {
 		return stats, err
 	}
-	prevSurface := ""
+	rows := make([]convertedRow, 0, 128)
+	currentSurface := ""
+	flush := func() error {
+		// 穩定排序：成本用實際寫出的產品成本；相同 tuple 保留 pack 內的先後順序。
+		sort.SliceStable(rows, func(i, j int) bool {
+			a := orderOf(rows[i].source, rows[i].cost)
+			b := orderOf(rows[j].source, rows[j].cost)
+			return a.Order(b) < 0
+		})
+		stats.Surfaces++
+		for _, row := range rows {
+			stats.Entries++
+			stats.POSCounts[string(row.pos)]++
+			if _, err := fmt.Fprintf(bw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+				row.source.Surface, row.reading, formatCost(row.cost), row.pos, opt.Origin, row.conj); err != nil {
+				return err
+			}
+		}
+		rows = rows[:0]
+		return nil
+	}
 	index := 0
 	err := p.ForEach(func(e Entry) error {
+		if len(rows) > 0 && e.Surface != currentSurface {
+			if err := flush(); err != nil {
+				return err
+			}
+		}
+		currentSurface = e.Surface
 		if err := convertCheckEntry(e, opt); err != nil {
 			return fmt.Errorf("第 %d 筆 %q：%w", index, e.Surface, err)
 		}
@@ -88,27 +128,26 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 			stats.UnknownConj++
 		}
 		if e.Cost < 0 {
-			stats.NegativeCostClamped++
+			stats.NegativeCosts++
 		}
-		cost := float64(e.Cost)
-		if cost < 0 {
-			cost = 0
-		}
-		cost *= opt.CostScale
-		if e.Surface != prevSurface {
-			stats.Surfaces++
-			prevSurface = e.Surface
-		}
+		// mapping D：signed 成本直接縮放，不飽和、不位移。
+		cost := float64(e.Cost) * opt.CostScale
 		if n := len(reading); n > stats.MaxReadingUnits {
 			stats.MaxReadingUnits = n
 		}
-		stats.Entries++
-		stats.POSCounts[string(pos)]++
-		_, err = fmt.Fprintf(bw, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			e.Surface, readingTSV(reading), formatCost(cost), pos, opt.Origin, conj)
-		return err
+		rows = append(rows, convertedRow{
+			source:  e,
+			reading: readingTSV(reading),
+			pos:     pos,
+			conj:    conj,
+			cost:    cost,
+		})
+		return nil
 	})
 	if err != nil {
+		return stats, fmt.Errorf("jadic: %w", err)
+	}
+	if err := flush(); err != nil {
 		return stats, fmt.Errorf("jadic: %w", err)
 	}
 	if stats.Entries != p.EntryCount() {

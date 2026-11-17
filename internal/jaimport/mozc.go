@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -95,8 +96,12 @@ func ParseMozc(r io.Reader, opt MozcOptions) ([]Entry, error) {
 			return nil, fmt.Errorf("第 %d 行：詞面不可為空", ln)
 		}
 		rawCost, err := strconv.ParseFloat(strings.TrimSpace(f[3]), 64)
-		if err != nil || rawCost < 0 {
+		if err != nil || math.IsNaN(rawCost) || math.IsInf(rawCost, 0) {
 			return nil, fmt.Errorf("第 %d 行：詞成本 %q 不合法", ln, f[3])
+		}
+		cost := rawCost * scale
+		if !validCost(cost) {
+			return nil, fmt.Errorf("第 %d 行：詞成本 %q 換算後 %v 超出容許範圍 %v～%v", ln, f[3], cost, MinWordCost, MaxWordCost)
 		}
 		posName := ""
 		conjName := ""
@@ -126,7 +131,7 @@ func ParseMozc(r io.Reader, opt MozcOptions) ([]Entry, error) {
 			pos = MapPOS(posName)
 		}
 		conj := MapConjugation(conjName)
-		out = append(out, MakeEntry(surface, reading, rawCost*scale, pos, []string{opt.Origin}, conj))
+		out = append(out, MakeEntry(surface, reading, cost, pos, []string{opt.Origin}, conj))
 	}
 	return Merge(out), sc.Err()
 }

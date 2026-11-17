@@ -35,13 +35,28 @@ func TestLoadRejectsBadRows(t *testing.T) {
 	for _, src := range []string{
 		"明日\n",
 		"明日\t\n",
-		"明日\tあした\t-1\tnoun\n",
+		"明日\tあした\t-32.768\tnoun\n",
+		"明日\tあした\t32.768\tnoun\n",
+		"明日\tあした\tNaN\tnoun\n",
 		"明日\tあした\tabc\tnoun\n",
 		"明日\tあした\t1\tunknown\n",
 	} {
 		if _, err := lexicon.Load(strings.NewReader(src)); err == nil {
 			t.Errorf("Load(%q) 應失敗", src)
 		}
+	}
+}
+
+func TestLoadAcceptsSignedCost(t *testing.T) {
+	m := mustLoad(t, "負\tふ\t-8.313\tnoun\n零\tれい\t0\tnoun\n正\tせい\t2.5\tnoun\n")
+	if got := m.Lookup("負")[0].Cost; got != -8.313 {
+		t.Fatalf("負成本 = %v", got)
+	}
+	if got := m.Lookup("零")[0].Cost; got != 0 {
+		t.Fatalf("零成本 = %v", got)
+	}
+	if got := m.Lookup("正")[0].Cost; got != 2.5 {
+		t.Fatalf("正成本 = %v", got)
 	}
 }
 
@@ -100,12 +115,16 @@ func TestAddValidates(t *testing.T) {
 		{Surface: "", Reading: reading.Sequence{"あ"}, POS: lexicon.POSNoun},
 		{Surface: "あ", Reading: nil, POS: lexicon.POSNoun},
 		{Surface: "あ", Reading: reading.Sequence{" "}, POS: lexicon.POSNoun},
-		{Surface: "あ", Reading: reading.Sequence{"あ"}, POS: lexicon.POSVerb, Cost: -1},
+		{Surface: "あ", Reading: reading.Sequence{"あ"}, POS: lexicon.POSVerb, Cost: lexicon.MinWordCost - 0.001},
+		{Surface: "あ", Reading: reading.Sequence{"あ"}, POS: lexicon.POSVerb, Cost: lexicon.MaxWordCost + 0.001},
 		{Surface: "あ", Reading: reading.Sequence{"あ"}, POS: "bad"},
 	} {
 		if err := m.Add(e); err == nil {
 			t.Errorf("Add(%#v) 應失敗", e)
 		}
+	}
+	if err := m.Add(lexicon.Entry{Surface: "負", Reading: reading.Sequence{"ふ"}, POS: lexicon.POSNoun, Cost: -1}); err != nil {
+		t.Fatalf("負成本應被接受：%v", err)
 	}
 }
 

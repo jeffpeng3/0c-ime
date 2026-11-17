@@ -9,7 +9,7 @@ import (
 )
 
 // ImportSchema 是匯入回執的格式版本。
-const ImportSchema = "0c-jadic-import/1"
+const ImportSchema = "0c-jadic-import/2"
 
 // ImportOptions 控制把 pack 寫進產品資料目錄。
 type ImportOptions struct {
@@ -55,18 +55,18 @@ type ReceiptManifest struct {
 
 // ReceiptImport 是匯入參數與結果。
 type ReceiptImport struct {
-	Origin              string         `json:"origin"`
-	CostScale           float64        `json:"cost_scale"`
-	CostRule            string         `json:"cost_rule"`
-	Entries             int            `json:"entries"`
-	Surfaces            int            `json:"surfaces"`
-	NegativeCostClamped int            `json:"negative_cost_clamped"`
-	UnknownPOS          int            `json:"unknown_pos"`
-	UnknownConj         int            `json:"unknown_conj"`
-	MaxReadingUnits     int            `json:"max_reading_units"`
-	POSCounts           map[string]int `json:"pos_counts"`
-	Files               []string       `json:"files"`
-	Needs               []string       `json:"needs,omitempty"`
+	Origin          string         `json:"origin"`
+	CostScale       float64        `json:"cost_scale"`
+	CostRule        string         `json:"cost_rule"`
+	Entries         int            `json:"entries"`
+	Surfaces        int            `json:"surfaces"`
+	NegativeCosts   int            `json:"negative_costs"`
+	UnknownPOS      int            `json:"unknown_pos"`
+	UnknownConj     int            `json:"unknown_conj"`
+	MaxReadingUnits int            `json:"max_reading_units"`
+	POSCounts       map[string]int `json:"pos_counts"`
+	Files           []string       `json:"files"`
+	Needs           []string       `json:"needs,omitempty"`
 }
 
 // ImportResult 是匯入後的路徑與統計。
@@ -178,18 +178,18 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 			AllowedSources: append([]string(nil), m.Allowed...),
 		},
 		Import: ReceiptImport{
-			Origin:              origin,
-			CostScale:           scale,
-			CostRule:            CostRule,
-			Entries:             stats.Entries,
-			Surfaces:            stats.Surfaces,
-			NegativeCostClamped: stats.NegativeCostClamped,
-			UnknownPOS:          stats.UnknownPOS,
-			UnknownConj:         stats.UnknownConj,
-			MaxReadingUnits:     stats.MaxReadingUnits,
-			POSCounts:           stats.POSCounts,
-			Files:               files,
-			Needs:               needs,
+			Origin:          origin,
+			CostScale:       scale,
+			CostRule:        CostRule,
+			Entries:         stats.Entries,
+			Surfaces:        stats.Surfaces,
+			NegativeCosts:   stats.NegativeCosts,
+			UnknownPOS:      stats.UnknownPOS,
+			UnknownConj:     stats.UnknownConj,
+			MaxReadingUnits: stats.MaxReadingUnits,
+			POSCounts:       stats.POSCounts,
+			Files:           files,
+			Needs:           needs,
 		},
 	}
 	if err := writeJSON(receiptPath, res.Receipt); err != nil {
