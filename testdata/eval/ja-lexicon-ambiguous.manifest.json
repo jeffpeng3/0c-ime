@@ -1,0 +1,17 @@
+{
+ "schema": 1,
+ "corpus": "ja-lexicon-ambiguous",
+ "path": "ja-lexicon-ambiguous.json",
+ "sha256": "57cca4ea310cb4e5507595e4de2a00a19c6b1a058249c64d2e822f226e5c1afc",
+ "count": 1200,
+ "holdout": 400,
+ "seed": 60,
+ "sample_size": 1200,
+ "pack": {
+  "path": "ja-lexicon-public-core.pack",
+  "sha256": "8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840",
+  "manifest_path": "manifest.json",
+  "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+  "entries": 1147021
+ }
+}

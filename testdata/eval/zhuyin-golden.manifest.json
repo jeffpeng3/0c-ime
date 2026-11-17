@@ -1,0 +1,9 @@
+{
+ "schema": 1,
+ "corpus": "zhuyin-golden",
+ "path": "zhuyin-golden.json",
+ "sha256": "77989561d5eac04db6aa7f343db6ef34bb99c248f99a37d49485979d6f827400",
+ "count": 17,
+ "cases_sha256": "4c698a4112fd1e9dc98318e4753ae86258d4e0619f1743157bca96fb4105a6c0",
+ "expected_sha256": "0b701bb67b2880267dfc852cbaf66ccf4d3e3ba046da60dcb45c392cee4527b5"
+}
