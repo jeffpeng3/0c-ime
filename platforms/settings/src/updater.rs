@@ -210,6 +210,62 @@ pub fn api_args(action: &str, port: Option<u16>) -> Result<Vec<String>, String> 
     Ok(out)
 }
 
+fn server_name() -> &'static str {
+    if cfg!(windows) {
+        "0c-server.exe"
+    } else {
+        "0c-server"
+    }
+}
+
+/// 找 0c-server（P2-42 的 -model-report）。優先 ZC_SERVER，其次是 0c-update 旁邊、
+/// macOS 外層 App 的 Contents/MacOS、Windows 的穩定副本。找不到時回 None，畫面只顯示
+/// 0c-update 的模型狀態。
+pub fn find_server(env_server: Option<&str>, updater: &Path) -> Option<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(p) = env_server.filter(|p| !p.is_empty()) {
+        candidates.push(PathBuf::from(p));
+    }
+    if let Some(dir) = updater.parent() {
+        candidates.push(dir.join(server_name()));
+    }
+    for contents in updater.ancestors().filter(|a| a.file_name().is_some_and(|n| n == "Contents")) {
+        candidates.push(contents.join("MacOS").join(server_name()));
+    }
+    if let Some(base) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
+        candidates.push(base.join("Zuin").join("bin").join(server_name()));
+    }
+    candidates.into_iter().find(|p| usable(p))
+}
+
+/// `0c-server -model-report` 的參數。用獨立的 socket 與 0 秒鎖等待，不和執行中的引擎
+/// 搶端點；user 決定模型組根目錄與要讀的設定檔。
+pub fn model_report_args(user: &str, data: Option<&str>) -> Vec<String> {
+    let pid = std::process::id();
+    #[cfg(windows)]
+    let sock = format!("0c-model-report-{pid}");
+    #[cfg(not(windows))]
+    let sock = std::env::temp_dir().join(format!("0c-model-report-{pid}.sock")).display().to_string();
+    let mut args = vec![
+        "-model-report".to_string(),
+        "-socket".to_string(), sock,
+        "-legacy-socket".to_string(), String::new(),
+        "-lock-wait".to_string(), "0s".to_string(),
+        "-user".to_string(), user.to_string(),
+    ];
+    if let Some(data) = data.filter(|d| !d.is_empty()) {
+        args.push("-data".to_string());
+        args.push(data.to_string());
+    }
+    args
+}
+
+/// 讀取測試或外部提供的模型報告（ZC_MODEL_REPORT 指向一個 JSON 檔）。
+pub fn read_model_report(path: &Path) -> Result<Value, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| format!("無法讀取模型報告 {}：{e}", path.display()))?;
+    serde_json::from_str::<Value>(&text).map_err(|e| format!("模型報告不是 JSON：{e}"))
+}
+
 /// 「模型」頁（#180）的固定動作對應到 0c-update models 的參數與逾時（秒）。download 在背景開始下載、立刻回傳，
 /// 進度由 status 的 operation 輪詢；網路與檔案動作都在 Go 端。
 pub fn models_args(action: &str) -> Result<(Vec<String>, u64), String> {
@@ -844,5 +900,42 @@ mod tests {
         ] {
             assert!(browser_url(bad).is_err(), "{bad:?}");
         }
+    }
+
+    // P2-42：模型報告用獨立 socket、0 秒鎖等待，不與執行中的引擎搶端點；使用者路徑決定模型組根目錄。
+    #[test]
+    fn model_report_args_are_isolated_from_a_running_engine() {
+        let args = model_report_args("/home/u/.local/share/zuin/user.json", Some("/usr/share/0c/data"));
+        assert_eq!(args[0], "-model-report");
+        assert!(args.windows(2).any(|w| w[0] == "-lock-wait" && w[1] == "0s"));
+        assert!(args.windows(2).any(|w| w[0] == "-legacy-socket" && w[1].is_empty()));
+        assert!(args.windows(2).any(|w| w[0] == "-user" && w[1] == "/home/u/.local/share/zuin/user.json"));
+        assert!(args.windows(2).any(|w| w[0] == "-data" && w[1] == "/usr/share/0c/data"));
+        assert!(args.windows(2).any(|w| w[0] == "-socket" && w[1].contains("0c-model-report")));
+        let no_data = model_report_args("u.json", None);
+        assert!(!no_data.windows(2).any(|w| w[0] == "-data"), "沒有字典目錄時交給 0c-server 的預設值");
+    }
+
+    #[test]
+    fn find_server_prefers_the_environment_and_the_updater_sibling() {
+        let dir = temp("server");
+        let updater = script(&dir, "0c-update", "exit 0");
+        let server = script(&dir, server_name(), "echo '{}'");
+        assert_eq!(find_server(None, &updater), Some(server.clone()));
+        let other = script(&dir, "other-server", "echo '{}'");
+        assert_eq!(find_server(Some(other.to_str().unwrap()), &updater), Some(other));
+        assert_eq!(find_server(Some("/no/such/0c-server"), &updater), Some(server));
+    }
+
+    #[test]
+    fn read_model_report_accepts_only_json_objects() {
+        let dir = temp("report");
+        let ok = dir.join("report.json");
+        fs::write(&ok, r#"{"resident_bytes":1,"model_set":{"active":false}}"#).unwrap();
+        assert_eq!(read_model_report(&ok).unwrap()["resident_bytes"], 1);
+        let bad = dir.join("bad.json");
+        fs::write(&bad, "not json").unwrap();
+        assert!(read_model_report(&bad).is_err());
+        assert!(read_model_report(&dir.join("missing.json")).is_err());
     }
 }

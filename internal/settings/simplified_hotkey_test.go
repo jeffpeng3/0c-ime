@@ -60,7 +60,7 @@ func TestSimplifiedHotkeyDefaultsOffAndPersists(t *testing.T) {
 	items := Default().Items()
 	for i, it := range items {
 		if it.Key == "simplified-hotkey" {
-			if it.Value != "off" || it.Default != "off" || items[i-1].Key != "output-simplified" ||
+			if it.Value != "off" || it.Default != "off" || items[i-1].Key != "output-variant" ||
 				!strings.Contains(it.Description, SimplifiedHotkeyLabel(runtime.GOOS)) {
 				t.Fatalf("設定程式的項目：%+v", it)
 			}

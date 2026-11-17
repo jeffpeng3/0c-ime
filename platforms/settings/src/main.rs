@@ -200,6 +200,41 @@ async fn models_command(action: String) -> Result<Value, String> {
     call(command, timeout).await
 }
 
+/// P2-42：`0c-server -model-report` 的摘要（模型組、變體、placeholder、常駐位元組）。
+/// 用 0c-update status 找使用中的安裝與字典，settings 找個人資料檔；ZC_SERVER／ZC_DATA／
+/// ZC_USER 可覆寫，ZC_MODEL_REPORT 直接回一份測試或外部產生的報告。
+#[tauri::command]
+async fn model_report() -> Result<Value, String> {
+    if let Some(path) = std::env::var_os("ZC_MODEL_REPORT") {
+        return updater::read_model_report(Path::new(&path));
+    }
+    let status = call(args(&["status", "-json"]), 20).await?;
+    let settings = call(args(&["settings", "-json"]), 20).await?;
+    let updater = updater_path()?;
+    let server = updater::find_server(std::env::var("ZC_SERVER").ok().as_deref(), &updater)
+        .ok_or_else(|| "找不到 0c-server；請重新安裝靈犀注音".to_string())?;
+    let user = std::env::var("ZC_USER").ok()
+        .or_else(|| settings.get("file").and_then(|f| f.get("path")).and_then(Value::as_str).map(|p| {
+            // settings.file.path 是 settings.json；0c-server 的 -user 是個人詞庫 user.json。
+            Path::new(p).parent().map(|dir| dir.join("user.json").display().to_string()).unwrap_or_else(|| p.to_string())
+        }))
+        .ok_or_else(|| "找不到設定檔路徑，無法讀取模型報告".to_string())?;
+    let data = std::env::var("ZC_DATA").ok().or_else(|| active_data(&status));
+    let report_args = updater::model_report_args(&user, data.as_deref());
+    tauri::async_runtime::spawn_blocking(move || {
+        updater::run_blocking(&server, &report_args, Duration::from_secs(30))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// status 的 installs：使用中那一份安裝的字典目錄（P2-42）。
+fn active_data(status: &Value) -> Option<String> {
+    let installs = status.get("installs")?.as_array()?;
+    let active = installs.iter().find(|i| i.get("active").and_then(Value::as_bool) == Some(true)).or_else(|| installs.first())?;
+    active.get("data").and_then(Value::as_str).filter(|d| !d.is_empty()).map(str::to_string)
+}
+
 /// 「我的詞彙」頁「靈犀學到的」底下的「清除學習紀錄」（#301）：0c-update personal reset -json。結果（成功或契約錯誤）原樣交給前端。
 #[tauri::command]
 async fn personal_command(action: String) -> Result<Value, String> {
@@ -333,7 +368,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             app_info, get_status, get_settings, set_settings, check_update, download_update, install_update, export_summary,
             profile_command, vocab_request, export_vocab, api_command, vocab_watch, vocab_unwatch, models_command, open_url,
-            personal_command
+            personal_command, model_report
         ])
         .setup(move |app| {
             open_window(app.handle(), page)?;

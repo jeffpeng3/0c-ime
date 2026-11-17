@@ -6,35 +6,45 @@ const path = require('node:path');
 
 globalThis.window = globalThis;
 globalThis.document = { querySelector: () => null };
+require('../ui/mixed.js');
 require('../ui/language.js');
 const logic = window.ZcLanguage;
 
 const settings = (value, items = []) => ({ profiles: { language: [{ key: 'language', value }] }, items });
 
-test('側欄與頁面帶到語言選項，language.js 在 app.js 之前載入', () => {
+test('側欄帶到語言頁，mixed.js 與 language.js 都在 app.js 之前載入', () => {
   const html = fs.readFileSync(path.join(__dirname, '../ui/index.html'), 'utf8');
-  assert.match(html, /data-page="mode"[^>]*>語言與中英切換</);
+  assert.match(html, /data-page="mode"/);
+  assert.ok(html.indexOf('src="mixed.js"') < html.indexOf('src="app.js"'));
   assert.ok(html.indexOf('src="language.js"') < html.indexOf('src="app.js"'));
 });
 
-test('語言頁的項目排在「語言與中英切換」最上面，app.js 認得這些鍵', () => {
+test('Mixed 設定在 mode 頁，P2-42 的鍵都在 app.js 的頁面順序裡', () => {
   const app = fs.readFileSync(path.join(__dirname, '../ui/app.js'), 'utf8');
   const mode = /mode: \{[\s\S]*?keys: \[([\s\S]*?)\]/.exec(app);
   assert.ok(mode);
   const keys = [...mode[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
-  assert.deepEqual(keys.slice(0, logic.LANGUAGE_PAGE_KEYS.length), logic.LANGUAGE_PAGE_KEYS);
+  for (const key of ['primary-language', 'mixed-input', 'english-autocomplete', 'cjk-latin-space', 'model-mode', 'model-residency-mb', 'model-set', 'allow-placeholders', 'ja-input-method', 'ja-model']) {
+    assert.ok(keys.includes(key), key);
+  }
+  // English profile 與分開的語言切換不出現在 Mixed 畫面。
+  assert.equal(window.ZcMixed.hidden('language'), true);
+  assert.equal(window.ZcMixed.hidden('language-hotkey'), true);
   assert.match(app, /capabilityCard\(\)/);
   for (const cap of logic.CAPABILITIES) assert.ok(app.includes('cap.id'), '能力卡要列出旗標 id');
 });
 
-test('沒讀到 language 或是舊版 0c-update 時當注音，選日文才切成日文', () => {
+test('主要語言讀 primary-language；舊契約的 language 仍讀得到', () => {
   assert.equal(logic.activeLanguage({ items: [] }), 'zh');
   assert.equal(logic.activeLanguage({ profiles: {}, items: [] }), 'zh');
   assert.equal(logic.activeLanguage(null), 'zh');
   assert.equal(logic.activeLanguage(settings('zh')), 'zh');
   assert.equal(logic.activeLanguage(settings('ja')), 'ja');
   assert.equal(logic.activeLanguage({ profiles: { language: [{ key: 'language', value: 'ko' }] } }), 'zh');
-  // 舊版把語言選項放在 items（或未來改回）時也讀得到。
+  // 新契約：主要語言在 items。
+  assert.equal(logic.activeLanguage({ items: [{ key: 'primary-language', value: 'ja' }] }), 'ja');
+  assert.equal(logic.activeLanguage({ items: [{ key: 'primary-language', value: 'zh' }] }), 'zh');
+  // 舊版把語言選項放在 items 時也讀得到。
   assert.equal(logic.activeLanguage({ items: [{ key: 'language', value: 'ja' }] }), 'ja');
   assert.equal(logic.languageLabel('ja'), '日文');
 });
@@ -59,11 +69,11 @@ test('item.languages 決定適用的語言；沒有 languages 的通用項目兩
   assert.deepEqual(logic.visible([zhuyin, japanese, common], 'ja').map((item) => item.key), ['ja-model', 'selection']);
 });
 
-test('注音專屬選項（排列、模糊音、聲調、簡繁轉換）在日文模式全部收起', () => {
+test('注音專屬選項（排列、模糊音、聲調、標點）在日文模式全部收起', () => {
   const zhOnly = [
     'keyboard-layout', 'fuzzy-z-zh', 'fuzzy-c-ch', 'toneless', 'zhuyin-error-hint',
-    'output-simplified', 'simplified-hotkey', 'space-selects', 'ctrl-punctuation',
-    'shift-symbol-halfwidth', 'mixed-input', 'english-autocomplete', 'caps-lock-english',
+    'simplified-hotkey', 'space-selects', 'ctrl-punctuation',
+    'shift-symbol-halfwidth', 'caps-lock-english',
     'emoji-shortcut', 'emoji-equals-first', 'style-tab',
   ].map((key) => ({ key, languages: ['zh'] }));
   assert.deepEqual(logic.visible(zhOnly, 'ja'), []);

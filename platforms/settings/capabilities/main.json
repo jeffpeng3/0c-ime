@@ -19,6 +19,7 @@
     "allow-vocab-watch",
     "allow-vocab-unwatch",
     "allow-models-command",
+    "allow-model-report",
     "allow-open-url",
     "allow-personal-command",
     "core:event:allow-listen",

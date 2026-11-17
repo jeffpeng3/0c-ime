@@ -233,17 +233,17 @@ import -window root "$OUT/live-second-instance.png"
 stop_app
 unset HOME
 
-# 輸出設定是左側獨立一頁（#118）：導覽之後第一個是輸出簡體字開關，預設關閉。
+# 輸出設定是左側獨立一頁（#118／P2-42）：導覽之後第一個是輸出變體，預設繁體。
 launch live output
 if window_up; then
   sleep 2.5
-  tabs $((NAV + 1)); xdotool key space
+  tabs $((NAV + 1)); xdotool key Down
   sleep 3
-  check "輸出簡體字開關可保存 on" grep -q '"output_simplified": true' "$(settings_of live)"
-  import -window root "$OUT/output-simplified-on.png"
-  xdotool key space
+  check "輸出變體可保存 simplified" grep -q '"output_variant": "simplified"' "$(settings_of live)"
+  import -window root "$OUT/output-variant-simplified.png"
+  xdotool key Up
   sleep 3
-  check "輸出簡體字開關可改回 off" grep -q '"output_simplified": false' "$(settings_of live)"
+  check "輸出變體可改回 traditional" grep -q '"output_variant": "traditional"' "$(settings_of live)"
   # 下一個是「用快捷鍵切換簡體字」（#192），預設關閉，說明寫出快捷鍵。
   xdotool key --delay 150 Tab space
   sleep 3
@@ -303,7 +303,7 @@ check "外殼等重新登入：收據 0.2.9、沒有指標、執行中是 $ENGIN
 shoot shellpending overview
 stop_engine
 
-# #169：「輸出簡體字」可以即時切換：引擎在執行時，設定程式的開關不交接重啟引擎（同一個行程），引擎立刻回報新的值。
+# #169／P2-42：輸出變體可以即時切換：引擎在執行時，設定程式的 simplified 不交接重啟引擎（同一個行程），引擎立刻回報新的值。
 new_home outputlive
 start_engine outputlive
 launch outputlive output
@@ -312,17 +312,17 @@ live_runtime() { # 期望值 → 引擎回報能即時切換，而且目前的�
 }
 if window_up; then
   sleep 2.5
-  tabs $((NAV + 1)); xdotool key space
+  tabs $((NAV + 1)); xdotool key Down
   sleep 3
-  check "輸出簡體字：引擎在執行時開啟，寫入設定" grep -q '"output_simplified": true' "$(settings_of outputlive)"
-  check "輸出簡體字：引擎沒有重啟（同一個行程）" kill -0 "$ENGINE_PID"
-  check "輸出簡體字：引擎立即回報開啟" live_runtime on
-  import -window root "$OUT/output-simplified-live-on.png"
-  xdotool key space
+  check "輸出變體：引擎在執行時選 simplified，寫入設定" grep -q '"output_variant": "simplified"' "$(settings_of outputlive)"
+  check "輸出變體：引擎沒有重啟（同一個行程）" kill -0 "$ENGINE_PID"
+  check "輸出變體：引擎立即回報開啟" live_runtime on
+  import -window root "$OUT/output-variant-live-simplified.png"
+  xdotool key Up
   sleep 3
-  check "輸出簡體字：即時關閉，寫入設定" grep -q '"output_simplified": false' "$(settings_of outputlive)"
-  check "輸出簡體字：關閉後引擎仍是同一個行程" kill -0 "$ENGINE_PID"
-  check "輸出簡體字：引擎立即回報關閉" live_runtime off
+  check "輸出變體：即時改回 traditional，寫入設定" grep -q '"output_variant": "traditional"' "$(settings_of outputlive)"
+  check "輸出變體：關閉後引擎仍是同一個行程" kill -0 "$ENGINE_PID"
+  check "輸出變體：引擎立即回報關閉" live_runtime off
   # #192：「用快捷鍵切換簡體字」要交接重啟引擎（外殼看新引擎回報的 simplified_hotkey），下一個按鍵起生效。
   # 引擎在執行時交接；之後引擎沒在執行（容器裡沒有常駐引擎），外殼下一個按鍵啟動引擎時讀新設定，提示一樣。
   xdotool key --delay 150 Tab space

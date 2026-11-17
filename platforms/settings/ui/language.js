@@ -1,9 +1,9 @@
-// T27：語言選擇與日文選項的畫面邏輯。
+// T27／P2-42：語言選項與日文選項的畫面邏輯。
 //
-// 設定程式只讀 0c-update settings -json 的快照：語言選項在 profiles.language（value 是目前設定），
+// 設定程式只讀 0c-update settings -json 的快照：日文選項在 profiles.language（value 是目前設定），
 // 其餘設定項目的 item.languages 是這一項適用的語言（沒有表示不分語言），適合日文的功能另有
-// item.capabilities 能力旗標。日文模式收起注音專屬的排列、模糊音、聲調與簡繁轉換；切換語言只是
-// 送出 set language，每個輸入框實際使用的語言由引擎的輸入工作階段記住。
+// item.capabilities 能力旗標。P2-42 的 Mixed profile 直接混合注音、日文與英文，主要語言是
+// items 裡的 primary-language；這裡只保留舊契約的讀法與日文能力旗標，Mixed 的畫面切換在 mixed.js。
 (function () {
   'use strict';
 
@@ -20,25 +20,35 @@
     { id: 'live_conversion', label: 'ライブ変換' },
   ];
 
-  // 只有語言的設定（不分語言）與日文專屬選項；畫在「語言與中英切換」頁的最上面。
-  const LANGUAGE_KEYS = ['language', 'language-memory', 'language-hotkey'];
+  // P2-42 起 Mixed profile 不再有 language／language-memory／language-hotkey；保留空清單
+  // 讓舊版 0c-update 的契約與舊測試仍可讀。日文選項照舊。
+  const LANGUAGE_KEYS = [];
   const JAPANESE_KEYS = ['ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'];
   const LANGUAGE_PAGE_KEYS = LANGUAGE_KEYS.concat(JAPANESE_KEYS);
+  // 舊契約（T27）的語言鍵：只在讀舊版 0c-update 的快照時使用，不再顯示。
+  const LEGACY_LANGUAGE_KEYS = ['language', 'language-memory', 'language-hotkey'];
 
   // 語言選項由 0c-update 的 settings 契約放在 profiles.language（ProfileView.Language）；
   // 舊版 0c-update 沒有這個欄位，若哪天改回 items 也照樣讀得到。
   const languageItems = (settings) => {
     if (settings && settings.profiles && Array.isArray(settings.profiles.language)) return settings.profiles.language;
     if (settings && Array.isArray(settings.items)) {
-      return settings.items.filter((item) => LANGUAGE_PAGE_KEYS.includes(item.key));
+      return settings.items.filter((item) => LANGUAGE_PAGE_KEYS.includes(item.key) || LEGACY_LANGUAGE_KEYS.includes(item.key));
     }
     return [];
   };
 
   const itemOf = (list, key) => (Array.isArray(list) ? list.find((item) => item.key === key) : null);
 
-  // 目前選的語言；還沒讀到或讀不懂時一律當注音，舊版 0c-update 的行為不變。
-  const activeLanguage = (settings) => (itemOf(languageItems(settings), 'language')?.value === 'ja' ? 'ja' : 'zh');
+  // 目前的主要語言；新契約讀 primary-language，舊契約或舊版 0c-update 仍讀 language。
+  // 還沒讀到或讀不懂時一律當注音，舊版行為不變。
+  const activeLanguage = (settings) => {
+    const legacy = itemOf(languageItems(settings), 'language');
+    if (legacy && legacy.value === 'ja') return 'ja';
+    const primary = itemOf(settings && settings.items, 'primary-language');
+    if (primary && primary.value === 'ja') return 'ja';
+    return 'zh';
+  };
 
   const languageLabel = (id) => (LANGUAGES.find((language) => language.id === id) || LANGUAGES[0]).label;
 

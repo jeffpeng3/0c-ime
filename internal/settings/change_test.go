@@ -30,8 +30,11 @@ func TestChangeWritesLikeUpdaterSet(t *testing.T) {
 	}
 	var got map[string]any
 	b, _ := os.ReadFile(path)
-	if json.Unmarshal(b, &got) != nil || got["output_simplified"] != true || got["selection"] != "statistical" || got["future_key"] == nil {
+	if json.Unmarshal(b, &got) != nil || got["output_variant"] != "simplified" || got["selection"] != "statistical" || got["future_key"] == nil {
 		t.Fatalf("寫回的設定：%s", b)
+	}
+	if _, old := got["output_simplified"]; old {
+		t.Fatalf("舊的 output_simplified 應移除：%s", b)
 	}
 	before, _ := os.Stat(path)
 	time.Sleep(10 * time.Millisecond)

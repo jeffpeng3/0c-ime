@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -410,10 +409,7 @@ func TestCorruptFileIsReportedAndCanBeQuarantined(t *testing.T) {
 func TestItemsListEveryKeyWithCurrentValue(t *testing.T) {
 	s := Default()
 	items := s.Items()
-	want := 24 + len(fuzzy.Pairs()) + len(ruleSpecs()) // 含 simplified-hotkey（#192）、toneless（#150）、shift-symbol-halfwidth（#258）、cjk-latin-space（#273）、zhuyin-error-hint（#300）
-	if CapsLockEnglishSetting(runtime.GOOS) {
-		want++ // caps-lock-english（#173）只有 Windows、Linux
-	}
+	want := len(specs()) + len(modelSpecs()) // 引擎設定加上 P2-42 的模型與主要語言
 	if len(items) != want || items[0].Key != "selection" {
 		t.Fatalf("項目數量或順序不對：%+v", items)
 	}
