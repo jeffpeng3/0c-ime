@@ -11,7 +11,9 @@ param(
     # 離線或沒有 WebView2 執行階段時標為 skipped（列在結果裡，不算失敗）。
     # ja-*（T29）：日文互動驗收。ja-smoke／ja-candidate／ja-profile／ja-private／ja-sandbox／ja-32bit；
     # 預設組不含日文，讓還沒有 ja-JP profile 的舊 bundle 仍可跑原本的注音驗收。結果目錄以 ja- 開頭。
-    [ValidateSet('wpf','native','wpf32','native32','browser','webview2','notepad','terminal','candidate','search','word','excel','onenote','private','leftshift','explorer','winui','ja-smoke','ja-candidate','ja-profile','ja-private','ja-sandbox','ja-32bit')][string[]]$Suite=@('wpf','native','wpf32','native32','browser','webview2','notepad','terminal','candidate','search','private'),
+    # p2-mixed（P2-44）：Mixed profile 的協定層驗收（英文直接輸入、逐片段候選、長詞單一候選、無語言標籤）與 WPF 宿主檢查；
+    # 由 Windows VM harness 明確指定，不加入既有預設組，舊 bundle 仍可跑原本的注音驗收。
+    [ValidateSet('wpf','native','wpf32','native32','browser','webview2','notepad','terminal','candidate','search','p2-mixed','word','excel','onenote','private','leftshift','explorer','winui','ja-smoke','ja-candidate','ja-profile','ja-private','ja-sandbox','ja-32bit')][string[]]$Suite=@('wpf','native','wpf32','native32','browser','webview2','notepad','terminal','candidate','search','private'),
     [string]$ResultDir
 )
 $ErrorActionPreference='Stop'
@@ -141,8 +143,8 @@ try {
     if(Test-Path -LiteralPath $expectedDLL32){
         if((RegisteredDLL32) -ne $expectedDLL32){throw "32-bit registration does not match test bundle: $(RegisteredDLL32)"}
     } elseif($Suite -match '32$' -or $Suite -contains 'ja-32bit'){throw 'Bundle has no 32-bit DLL (x86\0c_tsf.dll)'}
-    $scripts=@{wpf='smoke';native='native';wpf32='smoke';native32='native';browser='browser';webview2='webview2';notepad='notepad';terminal='terminal';candidate='candidate';search='search';word='word';excel='excel';onenote='onenote';private='private';leftshift='leftshift';explorer='explorer';winui='winui';'ja-smoke'='ja-smoke';'ja-candidate'='ja-candidate';'ja-profile'='ja-profile';'ja-private'='ja-private';'ja-sandbox'='ja-sandbox';'ja-32bit'='ja-32bit'}
-    $outputs=@{wpf='desktop';native='native';wpf32='desktop';native32='native';browser='browser';webview2='webview2';notepad='notepad';terminal='terminal';candidate='candidate';search='search';word='word';excel='excel';onenote='onenote';private='private';leftshift='leftshift';explorer='explorer';winui='winui';'ja-smoke'='ja-smoke';'ja-candidate'='ja-candidate';'ja-profile'='ja-profile';'ja-private'='ja-private';'ja-sandbox'='ja-sandbox';'ja-32bit'='ja-32bit'}
+    $scripts=@{wpf='smoke';native='native';wpf32='smoke';native32='native';browser='browser';webview2='webview2';notepad='notepad';terminal='terminal';candidate='candidate';search='search';'p2-mixed'='p2-mixed';word='word';excel='excel';onenote='onenote';private='private';leftshift='leftshift';explorer='explorer';winui='winui';'ja-smoke'='ja-smoke';'ja-candidate'='ja-candidate';'ja-profile'='ja-profile';'ja-private'='ja-private';'ja-sandbox'='ja-sandbox';'ja-32bit'='ja-32bit'}
+    $outputs=@{wpf='desktop';native='native';wpf32='desktop';native32='native';browser='browser';webview2='webview2';notepad='notepad';terminal='terminal';candidate='candidate';search='search';'p2-mixed'='p2-mixed';word='word';excel='excel';onenote='onenote';private='private';leftshift='leftshift';explorer='explorer';winui='winui';'ja-smoke'='ja-smoke';'ja-candidate'='ja-candidate';'ja-profile'='ja-profile';'ja-private'='ja-private';'ja-sandbox'='ja-sandbox';'ja-32bit'='ja-32bit'}
     foreach($name in ($Suite|Select-Object -Unique)){
         $directory=Join-Path $ResultDir $name
         New-Item -ItemType Directory $directory|Out-Null

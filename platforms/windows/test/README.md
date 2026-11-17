@@ -2,6 +2,15 @@
 
 這頁說明日文 TSF 驗收怎麼跑、哪些由 CI 自動測、哪些一定要在互動桌面手動看。腳本只操作自己的測試視窗、暫存引擎與專用瀏覽器設定目錄；不讀寫日常 `user.json`。
 
+## Phase 2 Mixed profile VM harness（P2-44）
+
+`vm/` 是從 Linux 以 SSH／SCP 操作 Windows 10/11 x64 VM 的 harness：上傳目前 bundle、在已登入的互動桌面安裝、跑 `acceptance-test.ps1` 與 Phase 2 的 `p2-mixed` suite，抓回日誌與截圖。`p2-mixed-test.ps1` 檢查單一 Mixed profile、候選無語言標籤、游標換片段、長詞單一候選、英文直接輸入與注音 smoke；WPF／記事本／Terminal／Edge／WebView2／搜尋框／32 位元沿用既有 suite。Linux 端有 46 個自我測試，不需要 Windows。用法、結果格式與限制見 [vm/README.md](vm/README.md)，本機執行紀錄見 [vm/LIVE-RUN.md](vm/LIVE-RUN.md)。
+
+```sh
+python3 platforms/windows/test/vm/p2vm.py selftest
+python3 platforms/windows/test/vm/p2vm.py run --host <VM> --user <admin> --key <key> --bundle <windows-x64.zip>
+```
+
 ## CI 與手動驗收的邊界
 
 CI（T05 的 `windows-2022` workflow）只跑功能性的部分：
