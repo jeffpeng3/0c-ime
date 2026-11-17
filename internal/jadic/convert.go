@@ -22,12 +22,10 @@ const (
 	DefaultCostScale = 1.0 / 1000.0
 )
 
-// CostRule 說明目前 production 的 pack 成本換算規則。產品詞典不接受負成本，
-// 因此負值飽和到 0；原本越小的成本仍然越優先。
-//
-// P2-22E 已量測保留 signed cost 與 offset 方案，但尚未切換。負成本或 offset
-// 都會影響 `core/ja/lexicon` 與 `internal/compile` 的非負檢查，屬於另一項變更。
-const CostRule = "max(0, cost) * scale；scale 預設 0.001"
+// CostRule 說明 production 的 pack 成本換算規則。P2-22F 依 P2-22E 的量測
+// 採用 mapping D：保留 pack 的 signed i16 成本，只乘上 scale，不 clamp、不 offset。
+// 負成本因此原樣寫進 words.tsv；產品詞典與編譯器接受 -32.767～32.767 的詞成本。
+const CostRule = "cost * scale（signed，不 clamp、不 offset）；scale 預設 0.001"
 
 // ConvertOptions 控制 pack → words.tsv 的轉換。
 type ConvertOptions struct {
@@ -41,13 +39,13 @@ type ConvertOptions struct {
 
 // ConvertStats 是轉換結果統計。
 type ConvertStats struct {
-	Entries             int
-	Surfaces            int
-	NegativeCostClamped int
-	UnknownPOS          int
-	UnknownConj         int
-	POSCounts           map[string]int
-	MaxReadingUnits     int
+	Entries         int
+	Surfaces        int
+	NegativeCosts   int
+	UnknownPOS      int
+	UnknownConj     int
+	POSCounts       map[string]int
+	MaxReadingUnits int
 }
 
 // convertedRow 是一筆已換算成產品欄位的詞條，保留 pack 原值供同 surface 排序。
@@ -130,13 +128,10 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 			stats.UnknownConj++
 		}
 		if e.Cost < 0 {
-			stats.NegativeCostClamped++
+			stats.NegativeCosts++
 		}
-		cost := float64(e.Cost)
-		if cost < 0 {
-			cost = 0
-		}
-		cost *= opt.CostScale
+		// mapping D：signed 成本直接縮放，不飽和、不位移。
+		cost := float64(e.Cost) * opt.CostScale
 		if n := len(reading); n > stats.MaxReadingUnits {
 			stats.MaxReadingUnits = n
 		}

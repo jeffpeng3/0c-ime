@@ -150,6 +150,8 @@ data/ja/
 
 `words.tsv` 的欄位是 `詞面<TAB>讀音<TAB>成本<TAB>詞性<TAB>來源<TAB>活用型`。來源可逗號分隔；活用型可用 `godan`、`ichidan`、`suru`、`kuru`、`i-adjective`、`na-adjective`，或 Mozc／UniDic 的日文名稱。詞性名稱與 `core/ja/lexicon.POS` 相同。
 
+詞成本是浮點數，越小越優先，負值合法。合法範圍是 `-32.767`～`32.767`，對應 `0c-jadic` pack 的 signed i16 成本乘上 `0.001`；NaN、Inf 與超出範圍的值會被 `core/ja/lexicon.Load` 與 `internal/compile.parseJAWords` 拒絕。成本只約束單詞，連接成本 `connection.tsv` 仍要求非負。
+
 `import/` 的檔名前綴就是來源 ID，必須在 `data/sources/ledger.tsv` 有紀錄：
 
 - `ja-mozc.mozc.tsv`：Mozc 的「讀音、左 ID、右 ID、成本、詞面、MeCab 詞性 CSV」。成本預設乘以 `1/1000`（`-ja-mozc-scale` 可改），與 curated 詞條的 1～3 同一尺度。
@@ -165,7 +167,8 @@ P2-22E 固定了 `internal/jadic` 的讀音與排序契約，完整量測與成�
 
 - 讀音：`jadic.Load`／`Parse` 只接受平假名與長音符 `ー`。片假名、片假名與平假名混用、以及其他字元會讓載入失敗，不會留到 `Convert` 才正規化。manifest 的 `reading_script` 可以記錄建置來源，但產品匯入路徑要求 hiragana。
 - 同 surface 排序：成本（換算後，升冪）、讀音、詞性、活用型、活用形。五欄完全相同時保留 pack 內的原始順序。同一份 pack 的 `words.tsv` 因此位元組固定。
-- 成本：目前仍是 `max(0, cost) * 0.001`，114 筆負成本飽和成 0。P2-22E 只完成量測與建議，生產換算規則尚未切換；負成本與 offset 方案需要另外改 `core/ja/lexicon` 與 `internal/compile` 的非負檢查。
+- 成本：P2-22F 起採用 P2-22E 的 mapping D，`words.tsv` 的成本是 `pack_i16_cost * 0.001`，保留正負號，不 clamp、不 offset。單位是 0.001／MeCab・Sudachi 成本單位，越小越優先；負成本是原資料的語意，不是錯誤。114 筆負成本（最低 `-8.313`）原樣寫入，例如「研究所」的 `けんきゅうじょ -4.215` 排在 `けんきゅうしょ -3.955` 之前。
+- 與連接成本結合：解碼器對每條路徑累加「每個詞的詞成本 + 相鄰詞性的 `connection.tsv` 成本」，再取最低總成本。詞成本與連接成本共用同一尺度，可以直接相加；mapping D 不改變任何一筆的相對權重，也不引入每詞固定偏移。connection 的中位數是 `0.4`，若用 `+8.313` offset 會是它的 20.8 倍，會系統性偏向短分割。
 
 ### 資料包內容
 

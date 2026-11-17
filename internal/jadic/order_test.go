@@ -54,9 +54,10 @@ func TestSortSurfaceEntriesStable(t *testing.T) {
 	}
 }
 
-func TestConvertClampedCostsRetieByReading(t *testing.T) {
-	// 兩筆負成本在目前 clamp 規則下都變成 0，讀音決定順序：
-	// 「けんきゅうしょ」在「けんきゅうじょ」之前。
+func TestConvertSignedCostsKeepOrder(t *testing.T) {
+	// mapping D 保留 signed cost：-4.215 比 -3.955 更小，所以
+	// 「けんきゅうじょ」排在「けんきゅうしょ」之前。clamp 會讓兩筆同為 0，
+	// 改由讀音決勝，順序相反。
 	data := encodeTestPack(t, []testEntry{
 		{surface: "研究所", reading: "けんきゅうじょ", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: -4215},
 		{surface: "研究所", reading: "けんきゅうしょ", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: -3955},
@@ -75,9 +76,46 @@ func TestConvertClampedCostsRetieByReading(t *testing.T) {
 			readings = append(readings, strings.Split(line, "\t")[1])
 		}
 	}
-	want := []string{"け ん き ゅ う し ょ", "け ん き ゅ う じ ょ"}
+	want := []string{"け ん き ゅ う じ ょ", "け ん き ゅ う し ょ"}
 	if len(readings) != 2 || readings[0] != want[0] || readings[1] != want[1] {
 		t.Fatalf("讀音順序 = %v，預期 %v", readings, want)
+	}
+}
+
+func TestConvertSignedCostsRankWithinSurface(t *testing.T) {
+	// 負成本保留原值：同 surface 內必須排在 0 成本與正成本之前。
+	data := encodeTestPack(t, []testEntry{
+		{surface: "順", reading: "う", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 500},
+		{surface: "順", reading: "あ", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: -500},
+		{surface: "順", reading: "い", pos: "名詞,普通名詞,一般,*", conjType: "*", conjForm: "*", cost: 0},
+	}, nil, nil, nil)
+	p, err := Parse(data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	stats, err := Convert(&buf, p, ConvertOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.NegativeCosts != 1 {
+		t.Fatalf("NegativeCosts = %d", stats.NegativeCosts)
+	}
+	var costs []string
+	for _, line := range strings.Split(strings.TrimSpace(buf.String()), "\n") {
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		costs = append(costs, strings.Split(line, "\t")[2])
+	}
+	want := []string{"-0.5", "0", "0.5"}
+	if len(costs) != len(want) {
+		t.Fatalf("成本 = %v，預期 %v", costs, want)
+	}
+	for i := range want {
+		if costs[i] != want[i] {
+			t.Fatalf("成本 = %v，預期 %v", costs, want)
+		}
 	}
 }
 

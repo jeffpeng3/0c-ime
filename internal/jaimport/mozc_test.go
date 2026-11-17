@@ -71,7 +71,8 @@ func TestParseMozcUsesIDDef(t *testing.T) {
 func TestParseMozcRejectsBadRows(t *testing.T) {
 	for _, src := range []string{
 		"あ\t1\t1\t1000\n",
-		"あ\t1\t1\t-1\t亜\n",
+		"あ\t1\t1\tNaN\t亜\n",
+		"あ\t1\t1\t40000\t亜\n",
 		"あ\t1\t1\tabc\t亜\n",
 		"あ\t1\t1\t1000\t\n",
 		"\t1\t1\t1000\t亜\n",
@@ -79,6 +80,16 @@ func TestParseMozcRejectsBadRows(t *testing.T) {
 		if _, err := ParseMozc(strings.NewReader(src), DefaultMozcOptions()); err == nil {
 			t.Errorf("ParseMozc(%q) 應失敗", src)
 		}
+	}
+}
+
+func TestParseMozcAcceptsSignedCost(t *testing.T) {
+	entries, err := ParseMozc(strings.NewReader("あ\t1\t1\t-1000\t亜\n"), DefaultMozcOptions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Cost != -1 {
+		t.Fatalf("entries = %#v", entries)
 	}
 }
 

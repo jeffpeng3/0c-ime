@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 
@@ -97,9 +98,23 @@ func (p POS) Dependent() bool {
 type Entry struct {
 	Surface string
 	Reading reading.Sequence
-	// Cost 是 unigram 詞成本，越低越優先。0 表示未指定，由解碼器的保底值補上。
+	// Cost 是 unigram 詞成本，越低越優先。0 表示未指定，由解碼器的保底值補上；
+	// 負值合法，代表比 0 更優先。範圍見 MinWordCost 與 MaxWordCost。
 	Cost float64
 	POS  POS
+}
+
+// 產品詞成本容許的範圍。0c-jadic 匯入把 pack 的 signed i16 成本乘上 0.001，
+// 所以 -32767～32767 對應 -32.767～32.767；負值保留原資料語意，越小越優先。
+// 這個範圍只約束單詞成本，連接成本仍要求非負。
+const (
+	MinWordCost = -32.767
+	MaxWordCost = 32.767
+)
+
+// validCost 回報 c 是否在文件化的詞成本範圍內；NaN 與 Inf 一律不合法。
+func validCost(c float64) bool {
+	return !math.IsNaN(c) && !math.IsInf(c, 0) && c >= MinWordCost && c <= MaxWordCost
 }
 
 // Key 回傳詞條的穩定鍵，供除重與測試使用。
@@ -155,8 +170,8 @@ func (m *Mem) Add(e Entry) error {
 			return fmt.Errorf("%q 的讀音單位 %q 不合法", e.Surface, u)
 		}
 	}
-	if e.Cost < 0 {
-		return fmt.Errorf("%q 的詞成本 %v 不可為負", e.Surface, e.Cost)
+	if !validCost(e.Cost) {
+		return fmt.Errorf("%q 的詞成本 %v 超出容許範圍 %v～%v", e.Surface, e.Cost, MinWordCost, MaxWordCost)
 	}
 	if !e.POS.Valid() {
 		return fmt.Errorf("%q 的詞性 %q 不合法", e.Surface, e.POS)
@@ -290,8 +305,8 @@ func Load(r io.Reader) (*Mem, error) {
 		}
 		if len(f) > 2 && f[2] != "" {
 			cost, err := strconv.ParseFloat(f[2], 64)
-			if err != nil || cost < 0 {
-				return nil, fmt.Errorf("第 %d 行：詞成本 %q 不合法", ln, f[2])
+			if err != nil || !validCost(cost) {
+				return nil, fmt.Errorf("第 %d 行：詞成本 %q 不合法；容許範圍 %v～%v", ln, f[2], MinWordCost, MaxWordCost)
 			}
 			e.Cost = cost
 		}

@@ -6,7 +6,7 @@
 //
 // 載入契約：讀音只接受平假名與長音符 'ー'，片假名或混用會在 Parse/Load 時拒絕。
 // 匯出契約：同一 surface 內依成本（換算後）、讀音、詞性、活用型、活用形排序，
-// 相同 tuple 保留 pack 順序。
+// 相同 tuple 保留 pack 順序。成本是 signed i16，匯出時乘上 0.001 並保留正負號。
 package jadic
 
 import (
