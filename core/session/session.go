@@ -22,6 +22,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/proto"
 	"github.com/0c-biggo/0c-ime/core/punct"
 	"github.com/0c-biggo/0c-ime/core/rerank"
+	"github.com/0c-biggo/0c-ime/core/segment"
 	"github.com/0c-biggo/0c-ime/core/suggest"
 	"github.com/0c-biggo/0c-ime/core/symbols"
 	"github.com/0c-biggo/0c-ime/core/zhconv"
@@ -219,6 +220,16 @@ type Session struct {
 	languages  map[lang.ID]lang.Profile
 	languageID lang.ID
 	runtimes   map[lang.ID]*languageRuntime
+
+	// Phase 2 片段狀態（P2-13）：片段是游標所在的編輯單位，各自帶語言標籤。
+	// 一般情況由目前的組字路徑即時推導；ReplaceSegment／InsertSegment／RemoveSegment
+	// 會把推導結果變成可編輯的副本，等到下一次 Handle 讓 rev 改變後再重新推導。
+	segments         []segment.Segment
+	segmentCursor    int
+	segmentCursorSet bool
+	segmentCursorRev int
+	segmentManual    bool
+	segmentRev       int
 
 	comp            zhuyin.Composer
 	pendingLiterals []pendingLiteral // 暫存成字面注音的組音狀態，撤銷旁邊的英數後可接續
