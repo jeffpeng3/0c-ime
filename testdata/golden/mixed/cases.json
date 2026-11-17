@@ -1,0 +1,311 @@
+{
+  "format": 1,
+  "cases": [
+    {
+      "name": "scenario-a-primary-ja",
+      "note": "情境 A：主要語言日文。羅馬字、注音、英文在同一次輸入，不切換模式；日文片段用 ja，中文片段用 zh-Hant，英文保留原文。",
+      "primary": "ja",
+      "input": "watashiwaㄉㄚˋㄐㄧㄅㄚdesu is a good sentence",
+      "segments": [
+        {
+          "span": {"start": 0, "end": 9},
+          "script": "latin",
+          "reading": ["わ", "た", "し", "わ"],
+          "surface": "私わ",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "dictionary",
+          "also": [
+            {
+              "span": {"start": 0, "end": 9},
+              "script": "latin",
+              "surface": "watashiwa",
+              "language": {"language": "en"},
+              "variant": "en",
+              "source": "literal"
+            }
+          ]
+        },
+        {
+          "span": {"start": 9, "end": 16},
+          "script": "zhuyin",
+          "reading": ["ㄉㄚˋ", "ㄐㄧ", "ㄅㄚ"],
+          "surface": "大雞巴",
+          "language": {"language": "zh"},
+          "variant": "zh-Hant",
+          "source": "dictionary"
+        },
+        {
+          "span": {"start": 16, "end": 20},
+          "script": "latin",
+          "reading": ["で", "す"],
+          "surface": "です",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "dictionary",
+          "also": [
+            {
+              "span": {"start": 16, "end": 20},
+              "script": "latin",
+              "surface": "desu",
+              "language": {"language": "en"},
+              "variant": "en",
+              "source": "literal"
+            }
+          ]
+        },
+        {
+          "span": {"start": 20, "end": 21},
+          "script": "symbol",
+          "surface": " ",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "symbol"
+        },
+        {
+          "span": {"start": 21, "end": 39},
+          "script": "latin",
+          "surface": "is a good sentence",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "dictionary"
+        }
+      ],
+      "output": "私わ大雞巴です is a good sentence"
+    },
+    {
+      "name": "scenario-b-primary-zh",
+      "note": "情境 B：主要語言中文，同一串輸入。注音優先中文，羅馬字仍產生日文候選、英文仍產生英文候選；主要語言不是硬性 gate，輸出與情境 A 相同。",
+      "primary": "zh",
+      "input": "watashiwaㄉㄚˋㄐㄧㄅㄚdesu is a good sentence",
+      "segments": [
+        {
+          "span": {"start": 0, "end": 9},
+          "script": "latin",
+          "reading": ["わ", "た", "し", "わ"],
+          "surface": "私わ",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "dictionary",
+          "also": [
+            {
+              "span": {"start": 0, "end": 9},
+              "script": "latin",
+              "surface": "watashiwa",
+              "language": {"language": "en"},
+              "variant": "en",
+              "source": "literal"
+            }
+          ]
+        },
+        {
+          "span": {"start": 9, "end": 16},
+          "script": "zhuyin",
+          "reading": ["ㄉㄚˋ", "ㄐㄧ", "ㄅㄚ"],
+          "surface": "大雞巴",
+          "language": {"language": "zh"},
+          "variant": "zh-Hant",
+          "source": "dictionary"
+        },
+        {
+          "span": {"start": 16, "end": 20},
+          "script": "latin",
+          "reading": ["で", "す"],
+          "surface": "です",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "dictionary",
+          "also": [
+            {
+              "span": {"start": 16, "end": 20},
+              "script": "latin",
+              "surface": "desu",
+              "language": {"language": "en"},
+              "variant": "en",
+              "source": "literal"
+            }
+          ]
+        },
+        {
+          "span": {"start": 20, "end": 21},
+          "script": "symbol",
+          "surface": " ",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "symbol"
+        },
+        {
+          "span": {"start": 21, "end": 39},
+          "script": "latin",
+          "surface": "is a good sentence",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "dictionary"
+        }
+      ],
+      "output": "私わ大雞巴です is a good sentence"
+    },
+    {
+      "name": "scenario-c-proper-nouns",
+      "note": "情境 C：專有名詞。主要語言是中文時，kubectl、pCloud、GitHub 仍直接保留原文，不拆成注音或かな；GitHub 已在個人詞彙，來源是 personal。",
+      "primary": "zh",
+      "input": "kubectl pCloud GitHub",
+      "personal": ["GitHub"],
+      "segments": [
+        {
+          "span": {"start": 0, "end": 7},
+          "script": "latin",
+          "surface": "kubectl",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "literal"
+        },
+        {
+          "span": {"start": 7, "end": 8},
+          "script": "symbol",
+          "surface": " ",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "symbol"
+        },
+        {
+          "span": {"start": 8, "end": 14},
+          "script": "latin",
+          "surface": "pCloud",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "literal"
+        },
+        {
+          "span": {"start": 14, "end": 15},
+          "script": "symbol",
+          "surface": " ",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "symbol"
+        },
+        {
+          "span": {"start": 15, "end": 21},
+          "script": "latin",
+          "surface": "GitHub",
+          "language": {"language": "en"},
+          "variant": "en",
+          "source": "personal",
+          "also": [
+            {
+              "span": {"start": 15, "end": 21},
+              "script": "latin",
+              "surface": "GitHub",
+              "language": {"language": "en"},
+              "variant": "en",
+              "source": "literal"
+            }
+          ]
+        }
+      ],
+      "output": "kubectl pCloud GitHub"
+    },
+    {
+      "name": "long-word-cross-segment-zhuyin",
+      "note": "長詞跨片段：使用者分兩段打 ㄇㄚˊㄆㄛˊ 與 ㄉㄡˋㄈㄨˇ，片段邊界落在 rune 6；詞庫長詞麻婆豆腐跨邊界合併成一個片段。",
+      "primary": "zh",
+      "input": "ㄇㄚˊㄆㄛˊㄉㄡˋㄈㄨˇ",
+      "pieces": [
+        {
+          "span": {"start": 0, "end": 6},
+          "script": "zhuyin",
+          "language": {"language": "zh"},
+          "note": "第一段：ㄇㄚˊㄆㄛˊ"
+        },
+        {
+          "span": {"start": 6, "end": 12},
+          "script": "zhuyin",
+          "language": {"language": "zh"},
+          "note": "第二段：ㄉㄡˋㄈㄨˇ"
+        }
+      ],
+      "segments": [
+        {
+          "span": {"start": 0, "end": 12},
+          "script": "zhuyin",
+          "reading": ["ㄇㄚˊ", "ㄆㄛˊ", "ㄉㄡˋ", "ㄈㄨˇ"],
+          "surface": "麻婆豆腐",
+          "language": {"language": "zh"},
+          "variant": "zh-Hant",
+          "source": "dictionary"
+        }
+      ],
+      "output": "麻婆豆腐"
+    },
+    {
+      "name": "long-word-cross-segment-kana",
+      "note": "長詞跨片段：日文分兩段打 とうきょう 與 だいがく，長詞東京大学跨片段合併，輸出變體是 ja。",
+      "primary": "ja",
+      "input": "とうきょうだいがく",
+      "pieces": [
+        {
+          "span": {"start": 0, "end": 5},
+          "script": "kana",
+          "language": {"language": "ja"},
+          "note": "第一段：とうきょう"
+        },
+        {
+          "span": {"start": 5, "end": 9},
+          "script": "kana",
+          "language": {"language": "ja"},
+          "note": "第二段：だいがく"
+        }
+      ],
+      "segments": [
+        {
+          "span": {"start": 0, "end": 9},
+          "script": "kana",
+          "reading": ["と", "う", "き", "ょ", "う", "だ", "い", "が", "く"],
+          "surface": "東京大学",
+          "language": {"language": "ja"},
+          "variant": "ja",
+          "source": "dictionary"
+        }
+      ],
+      "output": "東京大学"
+    },
+    {
+      "name": "long-word-cross-segment-zhuyin-three-pieces",
+      "note": "長詞跨片段：中華民國分成 ㄓㄨㄥ、ㄏㄨㄚˊㄇㄧㄣˊ、ㄍㄨㄛˊ 三段打完，兩個片段邊界都被長詞合併吸收。",
+      "primary": "zh",
+      "input": "ㄓㄨㄥㄏㄨㄚˊㄇㄧㄣˊㄍㄨㄛˊ",
+      "pieces": [
+        {
+          "span": {"start": 0, "end": 3},
+          "script": "zhuyin",
+          "language": {"language": "zh"},
+          "note": "第一段：ㄓㄨㄥ"
+        },
+        {
+          "span": {"start": 3, "end": 11},
+          "script": "zhuyin",
+          "language": {"language": "zh"},
+          "note": "第二段：ㄏㄨㄚˊㄇㄧㄣˊ"
+        },
+        {
+          "span": {"start": 11, "end": 15},
+          "script": "zhuyin",
+          "language": {"language": "zh"},
+          "note": "第三段：ㄍㄨㄛˊ"
+        }
+      ],
+      "segments": [
+        {
+          "span": {"start": 0, "end": 15},
+          "script": "zhuyin",
+          "reading": ["ㄓㄨㄥ", "ㄏㄨㄚˊ", "ㄇㄧㄣˊ", "ㄍㄨㄛˊ"],
+          "surface": "中華民國",
+          "language": {"language": "zh"},
+          "variant": "zh-Hant",
+          "source": "dictionary"
+        }
+      ],
+      "output": "中華民國"
+    }
+  ]
+}
