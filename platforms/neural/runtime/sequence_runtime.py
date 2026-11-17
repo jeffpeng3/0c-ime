@@ -36,6 +36,30 @@ TONE_POLICY_SCHEMA = 'zuin-tone-mask-v1'
 MAX_CANDIDATES = 16   # 同 ime rerank.MaxCandidates：打出讀音 8 個＋輕聲擴充最多 8 個
 
 
+def execution_providers(ort):
+    """GPU execution provider 只在 ZUIN_ORT_PROVIDERS 指定且實際可用時加入。
+
+    預設完全同舊版：只用 CPUExecutionProvider。使用者要求 CUDA／CoreML 等但
+    onnxruntime 沒有那個 provider 時直接略過，不讓缺少 GPU 變成啟動失敗。
+    """
+    requested = [x.strip() for x in os.environ.get('ZUIN_ORT_PROVIDERS', '').split(',') if x.strip()]
+    available = set(ort.get_available_providers())
+    providers = [p for p in requested if p in available]
+    if 'CPUExecutionProvider' not in providers:
+        providers.append('CPUExecutionProvider')
+    return providers
+
+
+def create_session(ort, path, options):
+    providers = execution_providers(ort)
+    try:
+        return ort.InferenceSession(str(path), sess_options=options, providers=providers)
+    except Exception:
+        if providers == ['CPUExecutionProvider']:
+            raise
+        return ort.InferenceSession(str(path), sess_options=options, providers=['CPUExecutionProvider'])
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -173,7 +197,7 @@ class Runtime:
         options = ort.SessionOptions(); options.intra_op_num_threads = threads; options.inter_op_num_threads = 1
         options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         options.add_session_config_entry('session.intra_op.allow_spinning', '0')
-        self.session = ort.InferenceSession(str(package / 'model.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
+        self.session = create_session(ort, package / 'model.onnx', options)
         self.model_sha = m['files']['model.onnx']; self.dictionary = dictionary
         self.allow_partial = bool(m.get('allow_partial', False))
         self.text_mode = float(m.get('text_weight', 0)) > 0

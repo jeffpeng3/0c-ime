@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -69,6 +70,8 @@ func serve() string {
 	neuralWorker := flag.String("neural-worker", "", "worker 腳本路徑（encoder_runtime.py 或 sequence_runtime.py）")
 	neuralTimeout := flag.Duration("neural-timeout", 100*time.Millisecond, "模型決策期限，上限 100ms；逾時保留原排序")
 	neuralThreads := flag.Int("neural-threads", neural.DefaultThreads(), "模型 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
+	modelMode := flag.String("model-mode", string(neural.ModeAuto), "模型常駐模式：auto（主要語言先載入，其他語言延遲）、all、primary、none")
+	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja")
 	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
 	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
@@ -269,8 +272,8 @@ func serve() string {
 	}
 	neuralState := "disabled_by_setting"
 	var selectionSource, punctuationSource string
-	var selectionWorker *neural.Supervisor
-	var punctuationWorker *neural.PunctWorker
+	var selectionModel, punctuationModel *neural.Handle
+	var modelManager *neural.Manager
 	if config.Selection == settings.Neural && !explicit["neural-package"] {
 		neuralState = "not_installed"
 		if bundled.HasSelect {
@@ -288,46 +291,81 @@ func serve() string {
 			*punctThreads = neural.DefaultThreads()
 		}
 	}
+	// 模型常駐（P2-30）：管理器一次管 sequence 選字與補標點，共用一個有界執行器。
+	// 所有模式都不在第一個按鍵前載入模型；auto 先載入主要語言，其他語言延遲。
+	mode, modeErr := neural.ParseMode(*modelMode)
+	if modeErr != nil {
+		lg.Printf("未知的模型常駐模式 %q，改用 auto：%v", *modelMode, modeErr)
+		mode = neural.ModeAuto
+	}
+	primary := *primaryLanguage
+	if !explicit["primary-language"] && *jaLanguage == "ja" {
+		primary = "ja"
+	}
+	if mode == neural.ModeNone {
+		neuralState = "disabled_by_setting"
+	}
+	var specs []neural.ModelSpec
 	if *neuralPackage != "" {
-		workerErr := manifestErr
-		var worker *neural.Supervisor
-		if workerErr == nil {
-			// 模型在背景載入；引擎先以統計引擎服務，外殼的第一個按鍵不必等 Python。
-			worker, workerErr = neural.OpenSupervisedAsync(neural.Config{Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage,
-				DictionarySHA256: dictionarySHA, Threads: *neuralThreads, Timeout: *neuralTimeout})
-		}
-		if workerErr != nil {
-			lg.Printf("神經模型未啟用，保留統計引擎：%v", workerErr)
-			neuralState = "startup_fallback"
-		} else {
-			worker.SetLog(lg.Printf)
-			defer func() {
-				worker.Close()
-				lg.Printf("神經統計（無文字）：%+v 重啟 %d 次", worker.Stats(), worker.Restarts())
-			}()
-			eng.Rerank = worker.Options()
-			selectionWorker = worker
-			neuralState = "enabled"
-			if selectionSource != "" && bundled.RuntimeMissing(false) {
-				neuralState = "runtime_missing" // 啟動時就知道沒有 python3；之後的狀態看 selection_state
-			}
-			lg.Printf("神經選字已啟用（背景載入模型）：%s（%d threads）", filepath.Base(*neuralPackage), *neuralThreads)
-		}
+		specs = append(specs, neural.ModelSpec{Name: "zh-select", Language: "zh", Role: neural.RoleSelect,
+			Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage, DictionarySHA256: dictionarySHA,
+			Threads: *neuralThreads, Timeout: *neuralTimeout, Preload: true})
 	}
 	if *punctPackage != "" {
-		pw, punctErr := neural.OpenPunct(neural.PunctConfig{Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
-			Threads: *punctThreads, Timeout: *punctTimeout})
-		if punctErr != nil {
-			lg.Printf("補標點未啟用：%v", punctErr)
+		specs = append(specs, neural.ModelSpec{Name: "zh-punct", Language: "zh", Role: neural.RolePunct,
+			Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
+			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
+	}
+	if len(specs) > 0 {
+		manager, managerErr := neural.OpenManager(neural.ManagerConfig{Mode: mode, PrimaryLanguage: primary, Log: lg.Printf}, specs...)
+		if managerErr != nil {
+			lg.Printf("模型管理器未啟用，保留統計引擎：%v", managerErr)
+			neuralState = "startup_fallback"
 		} else {
-			pw.SetLog(lg.Printf)
+			modelManager = manager
+			selectionModel = manager.Handle("zh-select")
+			punctuationModel = manager.Handle("zh-punct")
+			if selectionModel != nil {
+				switch {
+				case selectionModel.Disabled():
+					neuralState = "disabled_by_setting"
+				case !manager.StartupOK("zh-select"):
+					lg.Printf("神經模型未啟用，保留統計引擎：%s", manager.Reason("zh-select"))
+					neuralState = "startup_fallback"
+				default:
+					eng.Rerank = selectionModel.Options()
+					neuralState = "enabled"
+					if selectionSource != "" && bundled.RuntimeMissing(false) {
+						neuralState = "runtime_missing" // 啟動時就知道沒有 python3；之後的狀態看 selection_state
+					}
+					lg.Printf("神經選字已啟用（背景載入模型）：%s（%d threads，%s）", filepath.Base(*neuralPackage), *neuralThreads, mode)
+				}
+			}
+			if punctuationModel != nil {
+				switch {
+				case punctuationModel.Disabled():
+					punctuationModel = nil
+				case !manager.StartupOK("zh-punct"):
+					lg.Printf("補標點未啟用：%s", manager.Reason("zh-punct"))
+					punctuationModel = nil
+				default:
+					eng.Punct = punctuationModel
+					lg.Printf("補標點已啟用（背景載入模型）：%s", filepath.Base(*punctPackage))
+				}
+			}
 			defer func() {
-				pw.Close()
-				lg.Printf("補標點統計（無文字）：%+v", pw.Stats())
+				if err := modelManager.Close(); err != nil {
+					lg.Printf("關閉模型管理器：%v", err)
+				}
+				if selectionModel != nil {
+					lg.Printf("神經統計（無文字）：%+v 重啟 %d 次", selectionModel.Stats(), selectionModel.Restarts())
+				}
+				if punctuationModel != nil {
+					lg.Printf("補標點統計（無文字）：%+v", punctuationModel.Stats())
+				}
+				r := modelManager.Residency()
+				lg.Printf("模型常駐（無文字）：模式 %s，已載入 %d，常駐 %d bytes，峰值 %d bytes", r.Mode, r.Loaded, r.ResidentBytes, r.PeakBytes)
 			}()
-			eng.Punct = pw
-			punctuationWorker = pw
-			lg.Printf("補標點已啟用：%s", filepath.Base(*punctPackage))
 		}
 	}
 	// 日文語言 profile（P2-01）：只載入統計轉換資料，不建立 worker、不載入
@@ -531,8 +569,11 @@ func serve() string {
 	// 舊欄位保留啟動配置語意；另提供當下可用性，避免背景啟動失敗仍被視為模型已就緒。
 	srv.RuntimeInfo = func() map[string]string {
 		selectionState := neuralState
-		if selectionWorker != nil {
-			selectionState = selectionWorker.State()
+		if selectionModel != nil {
+			selectionState = selectionModel.State()
+			if selectionState == "disabled" {
+				selectionState = "disabled_by_setting"
+			}
 		} else if selectionState == "startup_fallback" {
 			selectionState = "fallback"
 		}
@@ -540,12 +581,18 @@ func serve() string {
 		if !config.Punctuation {
 			punctuationState = "disabled_by_setting"
 		}
-		if punctuationWorker != nil {
-			punctuationState = punctuationWorker.State()
+		if punctuationModel != nil {
+			punctuationState = punctuationModel.State()
+			if punctuationState == "disabled" {
+				punctuationState = "disabled_by_setting"
+			}
+		} else if mode == neural.ModeNone && (*punctPackage != "" || config.Punctuation) {
+			punctuationState = "disabled_by_setting"
 		} else if *punctPackage != "" {
 			punctuationState = "fallback"
 		}
-		info := map[string]string{"selection_state": selectionState, "punctuation_state": punctuationState}
+		info := map[string]string{"selection_state": selectionState, "punctuation_state": punctuationState,
+			"model_mode": string(mode), "model_primary": primary}
 		// 「輸出簡體字」可以從選單即時切換（#169）：回報引擎目前實際的值，設定程式據此判斷有沒有套用。
 		info["output_simplified"] = fmt.Sprint(eng.OutputSimplified())
 		// #160：新 session 開始時的模式（全部共用時是目前共用的模式）。外殼在第一個按鍵前據此顯示中／英。
@@ -557,11 +604,28 @@ func serve() string {
 			info[k] = v
 		}
 		// 退回時附上原因代碼（例如缺少系統元件），狀態摘要與設定程式據此說明；不含輸出內容。
-		if selectionState == "fallback" && selectionWorker != nil && selectionWorker.Reason() != "" {
-			info["selection_reason"] = selectionWorker.Reason()
+		if selectionState == "fallback" && selectionModel != nil && selectionModel.Reason() != "" {
+			info["selection_reason"] = selectionModel.Reason()
 		}
-		if punctuationState == "fallback" && punctuationWorker != nil && punctuationWorker.Reason() != "" {
-			info["punctuation_reason"] = punctuationWorker.Reason()
+		if punctuationState == "fallback" && punctuationModel != nil && punctuationModel.Reason() != "" {
+			info["punctuation_reason"] = punctuationModel.Reason()
+		}
+		if modelManager != nil {
+			r := modelManager.Residency()
+			info["model_resident_bytes"] = fmt.Sprint(r.ResidentBytes)
+			info["model_peak_bytes"] = fmt.Sprint(r.PeakBytes)
+			info["model_in_flight"] = fmt.Sprint(r.InFlight)
+			if b, err := json.Marshal(r.Models); err == nil {
+				info["model_residency"] = string(b)
+			}
+			placeholder := false
+			for _, m := range r.Models {
+				placeholder = placeholder || m.Placeholder
+			}
+			if placeholder {
+				// placeholder 模型（P2-25P）不得被誤認為已訓練模型或進入正式安裝包。
+				info["model_placeholder"] = "true"
+			}
 		}
 		jaState := "not_installed"
 		if jaLang != nil && jaLang.Available() {
