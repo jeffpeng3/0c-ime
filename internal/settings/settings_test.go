@@ -483,7 +483,7 @@ func TestFuzzyAutoRoundTrips(t *testing.T) {
 	if err := Save(path, back); err != nil {
 		t.Fatal(err)
 	}
-	if b, _ := os.ReadFile(path); strings.Contains(string(b), `"auto"`) || !strings.Contains(string(b), `"z-zh": "off"`) {
+	if b, _ := os.ReadFile(path); strings.Contains(string(b), `"z-zh": "auto"`) || !strings.Contains(string(b), `"z-zh": "off"`) {
 		t.Fatalf("關回 off 要明確寫入、不留 auto：%s", b)
 	}
 	if err := back.Set("fuzzy-z-zh", "select"); err != nil {

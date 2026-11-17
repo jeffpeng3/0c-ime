@@ -70,8 +70,11 @@ func serve() string {
 	neuralWorker := flag.String("neural-worker", "", "worker 腳本路徑（encoder_runtime.py 或 sequence_runtime.py）")
 	neuralTimeout := flag.Duration("neural-timeout", 100*time.Millisecond, "模型決策期限，上限 100ms；逾時保留原排序")
 	neuralThreads := flag.Int("neural-threads", neural.DefaultThreads(), "模型 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
-	modelMode := flag.String("model-mode", string(neural.ModeAuto), "模型常駐模式：auto（主要語言先載入，其他語言延遲）、all、primary、none")
-	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja")
+	modelMode := flag.String("model-mode", string(neural.ModeAuto), "模型常駐模式：auto（主要語言先載入，其他語言延遲）、all、primary、none；未指定時依 settings.json")
+	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja；未指定時依 settings.json")
+	modelResidencyMB := flag.Int("model-residency-mb", -1, "模型常駐預算（MB）：-1 依 settings.json，0 不限制，其他為明確上限")
+	allowPlaceholders := flag.Bool("allow-placeholders", false, "允許載入 placeholder 模型（P2-25P）；未指定時依 settings.json，預設關閉")
+	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
 	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
 	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
@@ -293,14 +296,25 @@ func serve() string {
 	}
 	// 模型常駐（P2-30）：管理器一次管 sequence 選字與補標點，共用一個有界執行器。
 	// 所有模式都不在第一個按鍵前載入模型；auto 先載入主要語言，其他語言延遲。
-	mode, modeErr := neural.ParseMode(*modelMode)
+	// P2-33：沒有明確的命令列參數時，模式、主要語言、常駐預算與 placeholder 政策都依 settings.json。
+	modeValue := *modelMode
+	if !explicit["model-mode"] {
+		modeValue = config.ModelMode
+	}
+	mode, modeErr := neural.ParseMode(modeValue)
 	if modeErr != nil {
-		lg.Printf("未知的模型常駐模式 %q，改用 auto：%v", *modelMode, modeErr)
+		lg.Printf("未知的模型常駐模式 %q，改用 auto：%v", modeValue, modeErr)
 		mode = neural.ModeAuto
 	}
-	primary := *primaryLanguage
+	primary := config.PrimaryLanguage
+	if explicit["primary-language"] {
+		primary = *primaryLanguage
+	}
 	if !explicit["primary-language"] && *jaLanguage == "ja" {
 		primary = "ja"
+	}
+	if primary != "zh" && primary != "ja" {
+		primary = "zh"
 	}
 	if mode == neural.ModeNone {
 		neuralState = "disabled_by_setting"
@@ -316,8 +330,25 @@ func serve() string {
 			Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
 			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
 	}
+	languageSeen := map[string]bool{}
+	for _, spec := range specs {
+		if spec.Language != "" {
+			languageSeen[spec.Language] = true
+		}
+	}
+	dualLanguage := len(languageSeen) > 1
+	budgetMB := config.ModelBudgetMB(dualLanguage)
+	budgetSource := config.ModelBudgetSource(dualLanguage)
+	if explicit["model-residency-mb"] && *modelResidencyMB >= 0 {
+		budgetMB, budgetSource = *modelResidencyMB, "flag"
+	}
+	allowPlaceholderModels := config.AllowPlaceholders
+	if explicit["allow-placeholders"] {
+		allowPlaceholderModels = *allowPlaceholders
+	}
 	if len(specs) > 0 {
-		manager, managerErr := neural.OpenManager(neural.ManagerConfig{Mode: mode, PrimaryLanguage: primary, Log: lg.Printf}, specs...)
+		loader := newBudgetLoader(int64(budgetMB)<<20, allowPlaceholderModels, nil, lg.Printf)
+		manager, managerErr := neural.OpenManager(neural.ManagerConfig{Mode: mode, PrimaryLanguage: primary, Log: lg.Printf, Loader: loader.Load}, specs...)
 		if managerErr != nil {
 			lg.Printf("模型管理器未啟用，保留統計引擎：%v", managerErr)
 			neuralState = "startup_fallback"
@@ -367,6 +398,22 @@ func serve() string {
 				lg.Printf("模型常駐（無文字）：模式 %s，已載入 %d，常駐 %d bytes，峰值 %d bytes", r.Mode, r.Loaded, r.ResidentBytes, r.PeakBytes)
 			}()
 		}
+	}
+	// P2-33：-model-report 只等 eager 載入（auto/all），輸出單一模型與總常駐量後結束；
+	// 不啟動 IPC 或本機 API，也不為了報告觸發延遲載入。
+	if *modelReport {
+		r := neural.Residency{Mode: mode, PrimaryLanguage: primary}
+		if modelManager != nil {
+			r = waitForResidency(modelManager, 15*time.Second)
+		}
+		report := buildResidencyReport(mode, primary, allowPlaceholderModels, budgetMB, budgetSource, r)
+		if err := writeResidencyReport(os.Stdout, report); err != nil {
+			lg.Printf("輸出模型報告：%v", err)
+		}
+		if modelManager != nil {
+			_ = modelManager.Close()
+		}
+		return ""
 	}
 	// 日文語言 profile（P2-01）：只載入統計轉換資料，不建立 worker、不載入
 	// 模型。日文資料缺失時 profile 為 nil，-language ja 會留在注音；有資料但
@@ -592,7 +639,9 @@ func serve() string {
 			punctuationState = "fallback"
 		}
 		info := map[string]string{"selection_state": selectionState, "punctuation_state": punctuationState,
-			"model_mode": string(mode), "model_primary": primary}
+			"model_mode": string(mode), "model_primary": primary,
+			"model_budget_mb": fmt.Sprint(budgetMB), "model_budget_bytes": fmt.Sprint(int64(budgetMB) << 20),
+			"model_budget_source": budgetSource, "model_allow_placeholders": fmt.Sprint(allowPlaceholderModels)}
 		// 「輸出簡體字」可以從選單即時切換（#169）：回報引擎目前實際的值，設定程式據此判斷有沒有套用。
 		info["output_simplified"] = fmt.Sprint(eng.OutputSimplified())
 		// #160：新 session 開始時的模式（全部共用時是目前共用的模式）。外殼在第一個按鍵前據此顯示中／英。
