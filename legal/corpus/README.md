@@ -1,6 +1,6 @@
 # 訓練語料授權與 NOTICE
 
-P2-20 產出。範圍是 Phase 2 日文訓練語料與 experimental 模型來源，不含產品詞庫。產品詞庫授權見 `data/sources/ledger.tsv` 與 `data/sources/licenses/`。
+P2-20 產出。範圍是 Phase 2 日文訓練語料、experimental 模型來源與 public core 詞典來源，不含產品詞庫。產品詞庫授權見 `data/sources/ledger.tsv` 與 `data/sources/licenses/`。
 
 本目錄不是法律意見。CC BY-SA 的 share-alike 是否延伸到模型權重，依實際使用與司法管轄而定；本專案採保守政策：experimental 語料與模型都以 CC BY-SA 4.0 釋出，且不與 public core 混用。
 
@@ -14,6 +14,7 @@ P2-20 產出。範圍是 Phase 2 日文訓練語料與 experimental 模型來源
 | `../CC-BY-4.0.txt` | CC BY 4.0 完整條款 |
 | `../CC-BY-SA-3.0.txt` | CC BY-SA 3.0 完整條款 |
 | `../CC-BY-SA-4.0.txt` | CC BY-SA 4.0 完整條款 |
+| `../UNICODE-NOTICE.txt` | Unicode License V3 完整條款（Unihan） |
 
 來源清單、版本、雜湊與逐來源署名在 `data/sources/corpus/`。
 
@@ -21,8 +22,14 @@ P2-20 產出。範圍是 Phase 2 日文訓練語料與 experimental 模型來源
 
 | 軌道 | 可用授權 | 釋出 | 不可做的事 |
 |---|---|---|---|
-| Public core | CC BY 4.0、公共領域 | 程式 AGPL-3.0-only；資料與模型依各自授權 | 不收 CC BY-SA、ODC-BY、Common Crawl 衍生、Mozc、UniDic |
+| Public core | CC BY 4.0、公共領域、permissive notice-only | 程式 AGPL-3.0-only；資料與模型依各自授權 | 不收 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 預設分支、SudachiDict、NEologin、JUMAN、NEologd |
 | Experimental | CC BY-SA 2.5／3.0／4.0 | 衍生語料與模型以 CC BY-SA 4.0 釋出 | 不混進 public core；不共用 manifest、checkpoint 或安裝包 |
+
+Public core 的三類授權：
+
+1. CC BY 4.0：保留署名、授權連結與修改說明。
+2. 公共領域：寫明判定依據。
+3. permissive notice-only：沒有 copyleft、沒有 non-commercial 限制，但散布時必須保留著作權、許可與免責聲明。2026-11-17 決策允許的來源限 IPADic 2.7.0（NAIST + ICOT）、Unicode Unihan（Unicode License V3）與 0c 自有 curated。這不是通用通行證；新來源仍須逐案審查並在 `data/sources/corpus/public-core.tsv` 留下允許理由。
 
 Public core 與 experimental 必須有不同資料目錄、不同 manifest、不同 checkpoint。安裝包若同時提供兩組模型，必須在設定與檔案層分開標示，不能讓使用者誤以為同一組權重。
 
@@ -32,10 +39,11 @@ Public core 與 experimental 必須有不同資料目錄、不同 manifest、不
 
 1. 每個實際使用來源的 `id`、名稱、提供者、URL、版本或快照日期。
 2. 帳本 `attribution` 欄的完整署名文字。
-3. 授權名稱與全文連結，或隨附 `legal/CC-BY-4.0.txt`。
+3. 授權名稱與全文連結，或隨附 `legal/CC-BY-4.0.txt`、`legal/UNICODE-NOTICE.txt`。
 4. 修改說明：正規化、去重、過濾、抽樣、斷詞、tokenization、模型訓練。
 5. 免責聲明：來源方未背書本專案，也未參與模型訓練。
 6. 若來源是公共領域，寫明判定依據，例如作品著作權已消滅或法令不受著作權保護。
+7. 若來源是 permissive notice-only，附完整著作權、許可與免責聲明。IPADic 的 NAIST 聲明與 ICOT NO WARRANTY 不得刪除；Unicode 要保留 copyright 與 permission notice。
 
 `NOTICE-public-core.md` 是範本；實際 release 只列這次真正使用的來源。没有使用的來源不要放進 NOTICE，避免暗示使用範圍大於事實。
 
@@ -59,6 +67,10 @@ Public core 與 experimental 必須有不同資料目錄、不同 manifest、不
 | KAKEN | 只取研究課題概要。2015 年度以前部分研究報告的著作權屬作者，不取。不得暗示 NII 背書。 |
 | 特許庁 | 網站內容依 PDL1.0，與 CC BY 4.0 互換。個別圖表或第三人權利另有標示時，不取。 |
 | SIP3 | 提供者以 CC BY 4.0 釋出。保留網站來源與 takedown 流程；只取 level0 與 pdf2text。 |
+| IPADic 2.7.0 | NAIST + ICOT，permissive notice-only。保留完整著作權與 ICOT NO WARRANTY；不可只寫 BSD-3-Clause 或 CC BY 4.0。 |
+| Unicode Unihan | Unicode License V3，permissive notice-only。保留 copyright 與 permission notice；只取日文讀音與漢字屬性。 |
+| 0c curated | 0c 自有。public core 版本以 permissive notice-only 釋出；產品 `ledger.tsv` 的 `curated` 列仍是 CC BY-SA 4.0。 |
+| UniDic BSD | 另案調查中（`review.tsv` 的 `rev-unidic-bsd`）；未簽核前不進 public core。UniDic 預設分支仍在 `excluded.tsv`。 |
 | Wikipedia | 文字 CC BY-SA 4.0，另可依 GFDL。不取圖片、商標。 |
 | Stack Exchange | CC BY-SA 4.0；2018-05-02 以前投稿可能是 2.5 或 3.0。逐帖署名。 |
 | AJIMEE-Bench | 評測資料 CC BY-SA 3.0；程式 CC0-1.0。只供 experimental 評測。 |
