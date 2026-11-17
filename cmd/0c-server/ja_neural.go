@@ -119,6 +119,12 @@ func (w *jaNeuralWiring) Attach(s *session.Session) bool {
 	return w.AttachProfile(s) && s.SetLanguage(lang.Ja)
 }
 
+// Available 回報是否有可註冊的日文 profile（日文資料包存在）。
+// 模型缺失不影響：profile 仍使用統計轉換。
+func (w *jaNeuralWiring) Available() bool {
+	return w != nil && w.profile != nil
+}
+
 // State 回報 worker 狀態。沒有模型時是 not_installed，模型檔存在但
 // worker 載入失敗或逾時則是 fallback；日文仍使用統計轉換。
 func (w *jaNeuralWiring) State() string {
