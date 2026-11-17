@@ -8,5 +8,5 @@ T14 的 Python worker、mock、manifest 範例與 smoke 文件已從 `platforms/
 移除，避免正式安裝路徑誤用。T03 的實驗 spike 保留在
 `scripts/spike/ja-zenz/`，只供歷史參考，不是產品路徑。
 
-正式的日文模型會由 P2-30 以 ONNX Runtime 重新接上；在那之前沒有模型檔、
-沒有 worker，也沒有需要核對的 manifest。
+正式的日文模型會由 P2-25 匯出、P2-30 以 ONNX Runtime 接上；在那之前沒有
+模型檔、沒有 worker，也沒有需要核對的 manifest。

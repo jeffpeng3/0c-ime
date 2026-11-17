@@ -92,7 +92,7 @@ make assets MODELS_ONLY=1           # 只換注音模型，需已有 assets/data
 python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 ```
 
-系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64；安裝 ja-JP 鍵盤／語言，才能從語言列選擇靈犀注音的日文 profile。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。日文神經模型 zenz 不隨安裝包出貨，缺少模型時使用統計轉換。
+系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64；安裝 ja-JP 鍵盤／語言，才能從語言列選擇靈犀注音的日文 profile。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。日文轉換目前只用統計詞典；正式產品不 import 或啟動 llama.cpp、GGUF、zenz。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上。
 
 ### 量測
 

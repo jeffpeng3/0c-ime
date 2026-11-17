@@ -5,8 +5,8 @@
 `runtime/sequence_runtime.py` 與 `runtime/punct_runtime.py` 是 stdio worker，依賴 numpy 與 onnxruntime。固定模型版本、授權及系統字典配對要求見 [模型說明](../../models/README.md)。
 
 日文神經路徑已在 P2-01 移除：正式產品只用統計轉換，不再啟動外部
-推論後端。日文 ONNX 模型由 P2-30 重新接上；在那之前 `ja/` 只有移除說明，
-沒有可執行的 worker。
+推論後端。日文 ONNX 模型由 P2-25 匯出、P2-30 接上；在那之前 `ja/` 只有
+移除說明，沒有可執行的 worker。
 
 ## 使用發行版提供的 Python
 
