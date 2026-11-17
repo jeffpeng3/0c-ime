@@ -469,10 +469,10 @@ pub fn tooltip_text(
     attention: bool,
 ) -> String {
     let (name, mode) = if japanese {
-        ("靈犀日本語", japanese_method(input_method).to_string())
+        ("靈犀 Mixed", japanese_method(input_method).to_string())
     } else {
         (
-            "靈犀注音",
+            "靈犀 Mixed",
             match (english, simplified) {
                 (true, _) => "英文".to_string(),
                 (false, true) => "中・簡體輸出".to_string(),
@@ -926,12 +926,12 @@ mod tests {
         assert_eq!(indicator_text(false, false, false, ""), "中");
         assert_eq!(indicator_text(false, true, false, ""), "简");
         assert_eq!(indicator_text(true, true, false, ""), "英", "英文模式維持「英」");
-        assert_eq!(tooltip_text(false, true, false, "", false), "靈犀注音（中・簡體輸出）");
-        assert_eq!(tooltip_text(false, false, false, "", false), "靈犀注音（中文）");
-        assert_eq!(tooltip_text(true, true, false, "", false), "靈犀注音（英文）");
+        assert_eq!(tooltip_text(false, true, false, "", false), "靈犀 Mixed（中・簡體輸出）");
+        assert_eq!(tooltip_text(false, false, false, "", false), "靈犀 Mixed（中文）");
+        assert_eq!(tooltip_text(true, true, false, "", false), "靈犀 Mixed（英文）");
         assert_eq!(
             tooltip_text(false, true, false, "", true),
-            "靈犀注音（中・簡體輸出）：有待辦，按右鍵查看"
+            "靈犀 Mixed（中・簡體輸出）：有待辦，按右鍵查看"
         );
     }
 
@@ -947,7 +947,7 @@ mod tests {
             ("", "あ", "ローマ字入力"),
         ] {
             assert_eq!(indicator_text(false, false, true, method), text, "{method}");
-            assert_eq!(tooltip_text(false, false, true, method, false), format!("靈犀日本語（{name}）"), "{method}");
+            assert_eq!(tooltip_text(false, false, true, method, false), format!("靈犀 Mixed（{name}）"), "{method}");
         }
         // 日文模式優先於英文與簡體標記；回到注音時指示照舊。
         assert_eq!(indicator_text(true, true, true, "kana"), "カ");
