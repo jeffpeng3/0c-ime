@@ -122,7 +122,9 @@
   const SHELL_RETIRING_NOTE = '不必登出，在那之前照常可以打字。';
   const OLD_SHELL_HELP = '新版已安裝，但系統仍開著更新前留下的舊版輸入法。請先儲存工作，登出再登入一次就會改用新版；如果之後仍看到這則訊息，請到「問題排解」匯出狀態摘要回報。';
   const VALUE = { neural: '神經選字', statistical: '統計引擎', off: '關閉', select: '僅供選字', auto: '自動修正（實驗）', vertical: '直排', grid: '多排', before: '游標前方', after: '游標後方', standard: '標準', eten: '倚天 41 鍵', hsu: '許氏',
-    zh: '注音', ja: '日文', field: '每個輸入框記住', global: '全部共用同一個語言', romaji: '羅馬字', kana: '直接かな' };
+    zh: '注音', ja: '日文', field: '每個輸入框記住', global: '全部共用同一個語言', romaji: '羅馬字', kana: '直接かな',
+    traditional: '繁體中文', simplified: '簡體中文', shinjitai: '日文新字體', 'public-core': 'Public Core 公開核心', 'cc-by-sa': 'CC BY-SA 實驗（placeholder）',
+    all: '全部載入', primary: '只載入主要語言', none: '關閉模型' };
   const ERROR = {
     read_only: '設定檔來自較新版本的靈犀注音，這個版本只能查看，不能修改。',
     corrupt: '設定檔無法解析。可到「總覽」修復。',
@@ -147,6 +149,16 @@
 
   // Windows 外殼裝好不等重新登入（#253）：待完成只會是新引擎還沒接手，說明由 0c-update 照實給（ShellEngine*Detail）。
   const isWindows = () => /^windows\//.test(state.info?.platform || '');
+  // P2-42：Windows 只有一個 Mixed profile，設定畫面收起 English profile 與分開的輸入語言。
+  const mixedMode = () => window.ZcMixed.isMixed(state.info, state.settings);
+  // 目前輸出變體；舊版 0c-update 只有 output-simplified 時換成 simplified／traditional。
+  const outputVariant = () => {
+    const items = (state.settings && state.settings.items) || [];
+    const item = items.find((entry) => entry.key === 'output-variant');
+    if (item) return item.value || 'traditional';
+    const legacy = items.find((entry) => entry.key === 'output-simplified');
+    return legacy && legacy.value === 'on' ? 'simplified' : 'traditional';
+  };
   const WINDOWS_REOPEN_NOTE = '之後開啟的應用程式直接使用新版；已經開著的要重新開啟才會換成新版。';
 
   function updateSummary(update) {
@@ -471,13 +483,21 @@
 
   function itemRow(item, locked) {
     const name = h('span', {}, item.label || item.key);
+    const mixed = mixedMode();
+    const inapplicable = mixed && window.ZcMixed.zhuyinOnly(item.key);
+    const hotkeyInactive = item.key === 'simplified-hotkey' && outputVariant() !== 'simplified';
     if (item.locked) name.append(h('span', { class: 'badge muted-badge', title: item.locked_reason }, profileLockLabel()));
+    if (inapplicable) name.append(h('span', { class: 'badge muted-badge', title: window.ZcMixed.zhuyinReason(item.key) }, 'Mixed 模式不適用'));
+    if (hotkeyInactive) name.append(h('span', { class: 'badge muted-badge', title: '只切換簡體輸出' }, '輸出變體不是簡體時不作用'));
     if (item.disabled && item.disabled_reason) name.append(h('span', { class: 'badge muted-badge' }, item.disabled_reason));
     else if (item.pending) name.append(h('span', { class: 'badge' }, '已儲存，尚未套用'));
     return row(
       h('div', {}, h('div', { class: 'label', id: 'label-' + item.key }, name), item.description ? h('div', { class: 'desc' }, item.description) : null,
+        inapplicable ? h('div', { class: 'desc' }, window.ZcMixed.zhuyinReason(item.key)) : null,
         causeLink(item), unlockOffer(item)),
-      control(item, locked));
+      mixed && item.key === 'mixed-input'
+        ? h('div', { class: 'value' }, h('span', { class: 'status-ok' }, '固定開啟'))
+        : control(item, locked || inapplicable));
   }
 
   // T27：設定程式支援的日文能力旗標。引擎在 health／open 回報同名旗標才實際生效；舊引擎沒有 japanese 時
@@ -500,9 +520,11 @@
   const SAVE_NOTE = '改動會立即儲存，並在沒有組字時讓輸入法套用。';
   const INPUT_PAGES = {
     mode: {
-      title: '語言與中英切換', lead: '選擇注音或日文、日文輸入方式，以及中英切換鍵與換程式後回到哪個模式。切換語言後下一個按鍵生效。',
-      keys: ['language', 'language-memory', 'language-hotkey', 'ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
-        'toggle-key', 'start-mode', 'mode-memory', 'mixed-input', 'english-autocomplete', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
+      title: '語言與中英切換', lead: '選擇主要語言、混合輸入與模型，以及中英切換鍵與換程式後回到哪個模式。Mixed profile 直接接受注音、日文與英文。',
+      keys: ['primary-language', 'language', 'language-memory', 'language-hotkey', 'mixed-input', 'english-autocomplete', 'cjk-latin-space',
+        'model-mode', 'model-residency-mb', 'model-set', 'allow-placeholders',
+        'ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
+        'toggle-key', 'start-mode', 'mode-memory', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
     },
     candidates: {
       title: '選字', lead: '候選字怎麼排、怎麼選，以及要不要列出近音的字（模糊音）。',
@@ -517,8 +539,8 @@
       keys: ['keyboard-layout', 'ctrl-punctuation', 'shift-symbol-halfwidth', 'cjk-latin-space', 'punctuation', 'emoji-shortcut', 'emoji-equals-first', 'style-punctuation', 'style-shift-space', 'style-shift-delete'],
     },
   };
-  const OUTPUT_KEYS = ['output-simplified', 'simplified-hotkey'];
-  const pageTitle = (name) => (INPUT_PAGES[name] ? INPUT_PAGES[name].title : '輸入設定');
+  const OUTPUT_KEYS = ['output-variant', 'output-simplified', 'simplified-hotkey'];
+  const pageTitle = (name) => (name === 'mode' && mixedMode() ? 'Mixed 輸入' : INPUT_PAGES[name] ? INPUT_PAGES[name].title : '輸入設定');
   function pageOfKey(key) {
     if (OUTPUT_KEYS.includes(key)) return 'output';
     if (key.startsWith('fuzzy-')) return 'candidates';
@@ -549,7 +571,8 @@
   }
 
   function settingsPage(name, root) {
-    const spec = INPUT_PAGES[name];
+    const mixed = mixedMode() && name === 'mode';
+    const spec = mixed ? { title: 'Mixed 輸入', lead: '主要語言、混合輸入與模型設定。Mixed profile 直接接受注音、日文與英文，不需要切換輸入語言或 English profile。' } : INPUT_PAGES[name];
     root.append(h('h1', {}, spec.title), h('p', { class: 'lead' }, spec.lead + SAVE_NOTE));
     if (problem(root)) return;
     const settings = state.settings;
@@ -561,12 +584,14 @@
         h('button', { type: 'button', class: 'secondary', 'data-focus': 'style-settings', onclick: () => show('styles') }, '選用風格／複製成自訂')));
     }
     // T27：日文模式收起注音專屬的項目（item.languages）；日文選項只在日文模式出現。
+    // P2-42：Mixed profile 收起 English profile 與分開的輸入語言，注音專屬但不適用的選項另外標示。
     const language = window.ZcLanguage.activeLanguage(settings);
     const emoji = items.find((item) => item.key === 'emoji-shortcut');
     const equalsFirst = items.find((item) => item.key === 'emoji-equals-first');
     const order = (item) => (spec.keys.includes(item.key) ? spec.keys.indexOf(item.key) : spec.keys.length);
-    const mine = items.filter((item) => window.ZcLanguage.applies(item, language) && pageOfKey(item.key) === name &&
-      !item.key.startsWith('fuzzy-') && !(emoji && item === equalsFirst))
+    const inPage = items.filter((item) => pageOfKey(item.key) === name &&
+      !item.key.startsWith('fuzzy-') && !(emoji && item === equalsFirst));
+    const mine = inPage.filter((item) => (mixed ? window.ZcMixed.visible(item.key) : window.ZcLanguage.applies(item, language)))
       .map((item, i) => [order(item), i, item]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([, , item]) => item);
     const rows = (list) => list.map((item) => {
       const parent = itemRow(item, locked ||
@@ -576,7 +601,16 @@
       child.classList.add('suboption');
       return h('div', { class: 'setting-group', role: 'group', 'aria-labelledby': 'label-' + item.key }, parent, child);
     });
-    if (name === 'mode') {
+    if (mixed) {
+      root.append(h('div', { class: 'notice info' }, h('p', {},
+        'English profile 設定已移除：英文直接在 Mixed 內輸入。舊設定檔的輸入語言、語言記憶與語言切換熱鍵已遷移到主要語言並清除。')));
+      for (const group of window.ZcMixed.groups()) {
+        const list = mine.filter((item) => group.keys.includes(item.key));
+        if (list.length) root.append(h('h2', {}, group.title), h('div', { class: 'card' }, ...rows(list)));
+      }
+      const other = mine.filter((item) => !window.ZcMixed.MIXED_KEYS.includes(item.key));
+      if (other.length) root.append(h('h2', {}, '輸入習慣'), h('div', { class: 'card' }, ...rows(other)));
+    } else if (name === 'mode') {
       // 語言選項不在 settings.items：0c-update 從 profiles.language 帶過來（見 ui/language.js）。
       const languageItems = window.ZcLanguage.languageItems(settings).filter((item) => window.ZcLanguage.applies(item, language));
       const rest = mine.filter((item) => !window.ZcLanguage.isLanguagePageItem(item));
@@ -721,20 +755,26 @@
     vocab.render(root);
   }
 
-  // 輸出設定：送出的文字怎麼轉換（#118 簡體字），跟打字、選字分開，左側獨立一頁。
+  // 輸出設定：送出的文字怎麼轉換（#118 簡體字、P2-42 輸出變體），跟打字、選字分開，左側獨立一頁。
   function output(root) {
-    root.append(h('h1', {}, '輸出設定'), h('p', { class: 'lead' }, '決定送到應用程式的文字；組字和候選照常顯示繁體。改動會立即儲存並馬上套用，正在組字的字送出時也照新的設定；也可以從輸入法選單的「輸出簡體字」切換。'));
+    root.append(h('h1', {}, '輸出設定'), h('p', { class: 'lead' }, '決定送到應用程式的字形；組字和候選照常顯示原字。改動會立即儲存並馬上套用，正在組字的字送出時也照新的設定。'));
     if (problem(root)) return;
     const settings = state.settings;
     root.append(...fileNotices(settings));
-    // 「用快捷鍵切換簡體字」（#192）排在「輸出簡體字」下面；說明由 0c-update 依平台寫出快捷鍵。
-    // T27：簡繁轉換是注音專屬選項，日文模式不顯示。
+    // 「輸出變體」取代舊的「輸出簡體字」（#118）；「用快捷鍵切換簡體字」（#192）只在簡體時作用。
+    // T27：簡繁轉換是中文專屬選項；日文模式不顯示。
     const language = window.ZcLanguage.activeLanguage(settings);
-    const items = ['output-simplified', 'simplified-hotkey']
+    const items = ['output-variant', 'output-simplified', 'simplified-hotkey']
       .map((key) => (settings.items || []).find((item) => item.key === key))
       .filter((item) => item && window.ZcLanguage.applies(item, language));
-    if (items.length) root.append(h('div', { class: 'card' }, ...items.map((item) => itemRow(item, settings.file.read_only))));
-    else if (language === 'ja') root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用簡繁轉換；切回注音就會出現。')));
+    if (items.length) {
+      if (window.ZcMixed.outputVariantLabel(outputVariant())) {
+        root.append(h('p', { class: 'muted small' }, '目前：' + window.ZcMixed.outputVariantLabel(outputVariant())));
+      }
+      root.append(h('div', { class: 'card' }, ...items.map((item) => itemRow(item, settings.file.read_only))));
+    } else if (language === 'ja') {
+      root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用簡繁轉換；切回注音就會出現。')));
+    }
   }
 
   const RENDER = {
@@ -750,9 +790,11 @@
     const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.focus : null;
     const selection = focused === 'style-name' ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;
     const vocabOn = vocabEnabled();
+    const mixed = mixedMode();
     if (page === 'vocab' && vocabOn === false) { page = 'overview'; vocab.setActive(false); }
     document.querySelectorAll('.nav').forEach((button) => {
       if (button.dataset.page === 'vocab') button.hidden = !vocabOn;
+      if (button.dataset.page === 'mode') button.textContent = mixed ? 'Mixed 輸入' : '語言與中英切換';
       if (button.dataset.page === page) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     });

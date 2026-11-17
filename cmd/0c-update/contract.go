@@ -186,9 +186,9 @@ func runningValues(info map[string]string) map[string]string {
 	}
 	switch info["output_simplified"] {
 	case "true":
-		out["output-simplified"] = "on"
+		out["output-variant"] = settings.VariantSimplified
 	case "false":
-		out["output-simplified"] = "off"
+		out["output-variant"] = settings.VariantTraditional
 	}
 	switch info["simplified_hotkey"] { // #192
 	case "true":
@@ -313,6 +313,11 @@ func buildSettingsDoc(base string, dial autoupdate.Dialer) settingsDoc {
 	for _, it := range r.Settings.Items() {
 		item := settingsItem{Item: it}
 		if v, ok := running[it.Key]; ok {
+			// 日文新字體不經過簡繁轉換，引擎的 output_simplified 看不出它；不要因此標成待套用。
+			if it.Key == "output-variant" && it.Value == settings.VariantShinjitai {
+				doc.Items = append(doc.Items, item)
+				continue
+			}
 			item.Running = &v
 			want := it.Value
 			if it.Effective != "" { // 停用期間實際用的值（#184）
@@ -335,7 +340,7 @@ type setOptions struct {
 	repair bool // 設定檔壞掉時改名保留，從預設值重新開始
 }
 
-const setUsage = "用法：0c-update set selection neural|statistical、set punctuation on|off、set document-context on|off、set mixed-input on|off、set english-autocomplete on|off、set left-shift on|off、set esc-clear on|off、set space-selects on|off、set candidate-cursor before|after、set advance-after-select on|off、set output-simplified on|off、set simplified-hotkey on|off、set ctrl-punctuation on|off、set shift-symbol-halfwidth off|on|all、set cjk-latin-space on|off、set zhuyin-error-hint on|off、set caps-lock-english on|off（Windows、Linux）、set toneless on|off、set keyboard-layout standard|eten|hsu、set fuzzy-z-zh|fuzzy-c-ch|fuzzy-s-sh|fuzzy-en-eng off|select|auto [鍵 值 ...] [-apply] [-notify] [-json] [-repair]"
+const setUsage = "用法：0c-update set selection neural|statistical、set punctuation on|off、set document-context on|off、set mixed-input on|off、set english-autocomplete on|off、set left-shift on|off、set esc-clear on|off、set space-selects on|off、set candidate-cursor before|after、set advance-after-select on|off、set output-variant traditional|simplified|shinjitai、set simplified-hotkey on|off、set ctrl-punctuation on|off、set shift-symbol-halfwidth off|on|all、set cjk-latin-space on|off、set zhuyin-error-hint on|off、set caps-lock-english on|off（Windows、Linux）、set toneless on|off、set keyboard-layout standard|eten|hsu、set primary-language zh|ja、set model-mode auto|all|primary|none、set model-residency-mb auto|0–4096、set model-set public-core|cc-by-sa、set allow-placeholders on|off、set fuzzy-z-zh|fuzzy-c-ch|fuzzy-s-sh|fuzzy-en-eng off|select|auto [鍵 值 ...] [-apply] [-notify] [-json] [-repair]"
 
 func parseSetArgs(args []string) (setOptions, error) {
 	var o setOptions
@@ -459,11 +464,23 @@ func liveSimplified(changes []changeView) (on, ok bool) {
 		return false, false
 	}
 	for _, c := range changes {
-		if c.Key != "output-simplified" {
+		switch c.Key {
+		case "output-simplified":
+			on = c.To == "on"
+		case "output-variant":
+			switch c.To {
+			case settings.VariantSimplified:
+				on = true
+			case settings.VariantTraditional:
+				on = false
+			default:
+				return false, false // 日文新字體不經過簡繁轉換
+			}
+		default:
 			return false, false
 		}
 	}
-	return changes[len(changes)-1].To == "on", true
+	return on, true
 }
 
 // applySettings 請引擎在沒有組字時存檔退出；外殼的下一個按鍵會以新設定重新啟動引擎。

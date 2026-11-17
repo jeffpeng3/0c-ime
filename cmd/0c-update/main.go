@@ -87,7 +87,8 @@ func listSettings(w io.Writer, r settings.Report, path string) {
 	fmt.Fprintf(w, "advance-after-select=%s（選字後游標移到下一個字）\n", onOff(s.AdvanceAfterSelect))
 	fmt.Fprintf(w, "candidate-layout=%s（選字排列）\nemoji-shortcut=%s（表情自選快捷鍵）\n", s.CandidateLayout, s.EmojiShortcut)
 	fmt.Fprintf(w, "emoji-equals-first=%s（將 = 放在 Emoji 第一項）\n", onOff(s.EmojiEqualsFirst))
-	fmt.Fprintf(w, "output-simplified=%s（輸出簡體字：組字和候選仍是繁體，送出時轉成簡體）\n", onOff(s.OutputSimplified))
+	variant, _ := s.Value("output-variant")
+	fmt.Fprintf(w, "output-variant=%s（輸出變體：traditional 繁體中文；simplified 簡體中文；shinjitai 日文新字體；組字和候選仍是原字，送出時才轉換）\n", variant)
 	fmt.Fprintf(w, "simplified-hotkey=%s（按 %s 切換輸出簡體字；關閉時這個鍵交給應用程式）\n", onOff(s.SimplifiedHotkey), settings.SimplifiedHotkeyLabel(runtime.GOOS))
 	fmt.Fprintf(w, "selection-keys=%s（選字鍵：1234567890、1234qweras 或 asdfghjkl;；換成字母時數字仍照位置選字）\n", s.SelectionKeys)
 	fmt.Fprintf(w, "ctrl-punctuation=%s（注音模式按 Ctrl＋, . ' ; 與 Ctrl＋Shift＋/ 1 ; 9 0 打全形標點；關閉時交給應用程式）\n", onOff(s.CtrlPunctuation))
@@ -100,6 +101,15 @@ func listSettings(w io.Writer, r settings.Report, path string) {
 	}
 	fmt.Fprintf(w, "toneless=%s（不打聲調也能選字：沒打聲調的字依前後文決定，有打的照聲調，組字中的 ' 切字；只在標準排列有效；開啟時中英混打停用）\n", onOff(s.Toneless))
 	fmt.Fprintf(w, "keyboard-layout=%s（鍵盤排列：standard 標準；eten 倚天 41 鍵，這時不提供 Emoji 選單與中英混打；hsu 許氏，這時不提供中英混打）\n", s.KeyboardLayout)
+	modelMode, _ := s.Value("model-mode")
+	primary, _ := s.Value("primary-language")
+	residency, _ := s.Value("model-residency-mb")
+	modelSet, _ := s.Value("model-set")
+	fmt.Fprintf(w, "model-mode=%s（模型常駐模式：auto 自動；all 全部載入；primary 只主要語言；none 關閉）\n", modelMode)
+	fmt.Fprintf(w, "primary-language=%s（主要語言：zh 中文；ja 日文；只影響先驗、切換成本與輸出變體，不阻擋其他語言）\n", primary)
+	fmt.Fprintf(w, "model-residency-mb=%s（模型常駐預算：auto 依單／雙語言選 250／400 MB；其他為明確上限）\n", residency)
+	fmt.Fprintf(w, "model-set=%s（日文模型組：public-core 公開核心；cc-by-sa 實驗，目前只有 placeholder；兩組不混用）\n", modelSet)
+	fmt.Fprintf(w, "allow-placeholders=%s（允許未訓練的 placeholder 模型；預設關閉）\n", onOff(s.AllowPlaceholders))
 	for _, it := range s.Items() {
 		if strings.HasPrefix(it.Key, "style-") {
 			fmt.Fprintf(w, "%s=%s（%s）\n", it.Key, it.Value, it.Label)

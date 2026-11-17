@@ -29,7 +29,7 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 
 | 頁面（`--page`） | 項目 |
 |---|---|
-| 語言與中英切換（`mode`） | 輸入語言、切換輸入框後的語言、全域切換熱鍵、日文輸入方式、ライブ変換、記号與顔文字、日文學習、日文神經模型；中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
+| 語言與中英切換（`mode`） | P2-42 Mixed profile：主要語言、混合輸入（混打、英文補字、中英之間加空格）、模型模式／常駐預算／模型組／placeholder；日文輸入方式、ライブ変換、記号與顔文字、日文學習、日文神經模型。其他平台仍顯示中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
 | 選字（`candidates`） | 選字方式（神經選字）、依前文選字、空白鍵選字、修改字詞的位置、選字後游標移到下一個字、選字排列、選字鍵、按 Esc 清除整段組字，另一張卡是模糊音總開關 |
 | 鍵盤與符號（`keyboard`） | 鍵盤排列、Ctrl＋標點打全形、標點寬度、提交時補標點（Beta）、Emoji 選單（子選項「將 = 放在第一項」） |
 
@@ -39,22 +39,34 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 
 Emoji 選單以一個開關控制（`emoji-shortcut`：off／equals），預設開啟，保留使用者明確關閉的設定。另有 `emoji-equals-first` 開關（預設 on），可取消第一項的等號；設定說明提醒關閉後仍可按兩次 == 輸入一個 =。模糊音顯示一列總開關，預設開啟（四組 select），開啟時以同一次設定交易將四組近音都設為 select，關閉時全部設 off；沒有逐組控制或自動修正單選。舊設定只啟用部分配對或使用 auto 時，畫面視為開啟，載入不改寫；關閉再開啟才統一成四組 select。CLI 的逐組設定與原有檔案格式仍保留，未知欄位與唯讀保護沿用既有契約。
 
-## 語言與日文選項（T27）
+## 日文選項（T27；Mixed 為 P2-42）
 
-側欄第一頁「語言與中英切換」（`--page mode`，頁名不變）最上面是語言區塊：
+P2-42 起 Mixed profile 不再有分開的「輸入語言」：主要語言是 `primary-language`（在 Mixed 頁最上面），舊的 `language`、`language-memory`、`language-hotkey` 只留在舊設定檔遷移與命令列相容。設定程式原本的語言區塊只剩日文選項：
 
-- **輸入語言**（`language`，`zh` 注音／`ja` 日文）：送 `0c-update set language ja -apply -json`，在沒有組字時交接，下一個按鍵生效。每個輸入框實際使用的語言由引擎的工作階段記住；設定程式只送切換請求並顯示設定快照，不自己保存使用中語言。
-- **切換輸入框後的語言**（`language-memory`，`field` 每個輸入框記住／`global` 全部共用）。
-- **全域切換熱鍵**（`language-hotkey`，預設開）：`Ctrl＋Shift＋F9`（macOS `⌃⇧F9`）；外殼攔鍵，關閉時交給應用程式。
 - **日文輸入方式**（`ja-input-method`，`romaji` 羅馬字／`kana` 直接かな）、**ライブ変換**（`ja-live-conversion`，預設關）、**記号與顔文字**（`ja-symbols`）、**日文學習**（`ja-learning`）、**日文神經模型**（`ja-model`）。
 
-語言選項沒有放進 `settings.items`（`0c-update settings` 的文字清單是逐項寫死的，新增項目會讓那份清單與 CLI 不同步），而是由 `settings.Profiles().Language` 帶出，0c-update 原樣轉送成 `profiles.language`。設定程式只從那裡讀；`Set language …`／`Value("language")` 照常可用，舊版 0c-update 沒有這個欄位時不顯示語言區塊。
+日文選項沒有放進 `settings.items`，而是由 `settings.Profiles().Language` 帶出，0c-update 原樣轉送成 `profiles.language`。設定程式從那裡讀；`Set ja-model …` 等照常可用，舊版 0c-update 沒有這個欄位時不顯示日文區塊。
 
 引擎設定清單的每個 item 多了 `languages` 與 `capabilities`（舊版 0c-update 沒有時視為通用、沒有能力需求）。`languages` 含 `zh` 的項目在日文模式收起：鍵盤排列、模糊音、聲調（不打聲調、打錯注音時提示）、簡繁轉換、標點與 Emoji 等注音專屬設定；`ja-*` 只在日文模式出現。設定檔的值不動，切回注音照原值顯示。`capabilities` 是 `core/proto` 的旗標（`japanese`、`convert_keys`、`clause_display`、`live_conversion`），語言區塊下方列出四項；引擎在 health／open 回報同名旗標才實際生效，舊引擎沒有 `japanese` 時外殼不送日文按鍵。
 
 舊設定檔（沒有 `language` 或 `ja_*`）照注音與日文預設值載入，schema 維持 2：新版寫入的欄位，舊版讀不懂時原樣保留，不會被拒收或重設。讀不懂的語言值只退回預設並在 `notes` 說明。寫入失敗沿用 `set_settings` 的錯誤（`read_only`、`corrupt`、`busy` 或系統錯誤訊息）。
 
 畫面邏輯在 `ui/language.js`（`ZcLanguage`）；`test/language_test.js` 驗證語言值、`item.languages` 篩選與能力旗標清單，`test/input_styles_test.js` 另外核對舊版沒有 `languages` 時照舊全部顯示。
+
+## Mixed profile（P2-42）
+
+Windows 只有一個 TSF profile「Mixed」（P2-40），設定程式的第一頁改名為「Mixed 輸入」，由 `ui/mixed.js` 判斷（`info.platform` 是 `windows/*`，或較新的契約用 `features.mixed` 覆寫）：
+
+- **主要語言**（`primary-language`，`zh`／`ja`）：影響先驗、切換成本、輸出變體與 auto／primary 模式先常駐的模型；不阻擋其他語言。
+- **混合輸入**：`mixed-input` 在 Mixed 固定開啟，畫面顯示「固定開啟」；`english-autocomplete`、`cjk-latin-space` 照舊可調。
+- **模型**：`model-mode`（auto／all／primary／none）、`model-residency-mb`（auto、250、400、512、1024）、`model-set`（`public-core` 公開核心／`cc-by-sa` 實驗）、`allow-placeholders`（預設關閉）。`cc-by-sa` 目前整組是未訓練的 placeholder，名稱與說明都直接標示，預設不載入。
+- **輸出變體**（`output-variant`，放在「輸出設定」）：`traditional` 繁中、`simplified` 簡中、`shinjitai` 日文新字體。舊的 `output-simplified` 只留給命令列與外殼選單，設定檔存檔只寫新欄位；「用快捷鍵切換簡體字」只在 `simplified` 時作用。
+- **English profile 設定移除**：`language`、`language-memory`、`language-hotkey`、`start-mode` 不再出現在 Mixed 畫面。設定檔的舊值由 Go 端遷移：`language` 併入 `primary_language`，`output_simplified` 併入 `output_variant`，`language_*`、`english_profile` 與舊鍵在存檔時移除；`start-mode`、`toggle-key`、`mode-memory` 仍有引擎使用，只從 Mixed 畫面收起。
+- **注音專屬但不適用的選項**：`mixed-input`、`space-selects`、`toneless`、`zhuyin-error-hint` 在 Mixed 畫面標示「Mixed 模式不適用」並停用控制項，設定值保留，切到其他平台或關閉混打時照舊。
+
+「模型」頁多了「模型組與常駐」卡：Tauri 指令 `model_report` 以 0c-update status／settings 找使用中的安裝、字典與個人資料檔，再執行 `0c-server -model-report`（獨立 socket、`-lock-wait 0s`，30 秒逾時），把 `model_set`（`set_id`、`variant`、`placeholder`）、`resident_bytes`、`budget_bytes` 與 `within_budget` 交給 `ZcMixed.reportFacts` 顯示。`ZC_SERVER`／`ZC_DATA`／`ZC_USER` 可覆寫路徑，`ZC_MODEL_REPORT` 直接回一份現成 JSON（測試用）。找不到 0c-server 或報告失敗時只顯示錯誤，不影響上面的 0c-update 狀態。
+
+UI 測試：`test/mixed_test.js` 驗證 English profile 收起清單、不適用標示、分組與模型報告摘要；`test/language_test.js` 驗證主要語言與舊契約讀法。Go 測試在 `internal/settings/mixed_profile_test.go`：舊鍵遷移、移除、模型與輸出設定持久化。
 
 ## 我的詞彙（0.2.0，#125）
 
@@ -86,6 +98,7 @@ UI 測試：`python3 scripts/test_settings_ui.py --settings <輸出>/0c-settings
 | 指令 | 參數 | 說明 |
 |---|---|---|
 | `models_command` | `action`：`status`／`download`／`cancel`／`remove` | 對應 `0c-update models <action> -json`，結果原樣回傳；status 逾時 20 秒，其他 60 秒（download 在背景開始、立刻回傳） |
+| `model_report` | 無 | P2-42：執行 `0c-server -model-report` 或讀 `ZC_MODEL_REPORT`；30 秒逾時，結果原樣回傳 |
 | `open_url` | `url` | 交給系統瀏覽器（Linux `xdg-open`、macOS `open`、Windows `rundll32 url.dll,FileProtocolHandler`）；只放行 `https://huggingface.co/` 開頭、路徑只有英數與 `/._-` 的網址。設定視窗本身照舊不離開本機頁面 |
 
 UI 測試：`python3 scripts/test_settings_ui.py --settings <輸出>/0c-settings [--only models]`，`fake-update.py --models` 依契約模擬內建、未安裝、下載中、已安裝、需要重新下載、缺推論元件、發行版關閉下載、字典不在配對清單上；外部網址交給 PATH 上假的 `xdg-open` 記下來。
@@ -167,7 +180,7 @@ Windows 完整更新視窗驗收另有 `test/settings-update-test.ps1`：在沒�
 
 輸入設定的「不打聲調也能選字」（`toneless`，`settings.json` 的 `toneless`）預設關閉，放在「選字」頁的選字項目最後、模糊音之前（#207 的頁面依 spec 排序，沒列在頁面清單裡的項目排在該頁最後）。開啟時聲調選填：ㄋㄧㄏㄠ 就是「你好」，有打聲調的字照聲調，組字中的 ' 用來切字；中英混打反灰並標「不打聲調時關閉」，已儲存的值不動。只在標準排列有效，倚天、許氏時這一項反灰（#150）。引擎讀設定，套用（引擎重啟）後生效，外殼不必改。
 
-輸入設定的「輸出簡體字」（`output-simplified`，`settings.json` 的 `output_simplified`）預設關閉，在設定程式左側獨立的「輸出設定」頁（`--page output`）。開啟後組字和候選仍顯示繁體，送出時才轉成簡體字（OpenCC ver.1.4.2 的 tw2s 字典，編在 `0c-server` 裡，見 `internal/simplified/opencc`）；我的詞彙與我的片語也一起轉，英文、數字、標點與 Emoji 不變，學習照常記繁體（#118）。這一項可以即時切換（#169）：開關照樣執行 `0c-update set output-simplified on|off -apply -json`，0c-update 寫好設定後，引擎回報 `output_simplified_live=true` 就請它即時切換（`apply.state` 是 `applied`），不重啟引擎，組字中也立即生效；舊引擎照舊交接重啟。四個外殼的輸入法選單也有可以打勾的「輸出簡體字」，從選單切換時由引擎寫 `settings.json`，設定程式的開關下一次讀取（切回視窗或重新整理）就跟著變。
+P2-42 起輸出設定頁的第一項是「輸出變體」（`output-variant`，`settings.json` 的 `output_variant`）：`traditional` 繁體中文（預設）、`simplified` 簡體中文、`shinjitai` 日文新字體。簡體時組字和候選仍顯示繁體，送出時才轉成簡體字（OpenCC ver.1.4.2 的 tw2s 字典，編在 `0c-server` 裡，見 `internal/simplified/opencc`）；我的詞彙與我的片語也一起轉，英文、數字、標點與 Emoji 不變，學習照常記繁體（#118）。選 simplified 或 traditional 可以即時切換（#169）：設定照樣執行 `0c-update set output-variant … -apply -json`，0c-update 寫好設定後，引擎回報 `output_simplified_live=true` 就請它即時切換（`apply.state` 是 `applied`），不重啟引擎，組字中也立即生效；日文新字體不經過簡繁轉換，照一般交接。舊引擎與舊腳本仍可用 `set output-simplified on|off`，讀檔時會換成 `simplified`／`traditional`，存檔只留新欄位。四個外殼的輸入法選單也有可以打勾的「輸出簡體字」，從選單切換時由引擎寫 `settings.json`，設定程式的輸出變體下一次讀取（切回視窗或重新整理）就跟著變。
 
 輸出設定頁的「用快捷鍵切換簡體字」（`simplified-hotkey`，`settings.json` 的 `simplified_hotkey`，#192）預設關閉，排在「輸出簡體字」下面；說明由 `0c-update settings` 依平台寫出快捷鍵（Windows／Linux Ctrl＋Shift＋F11、macOS ⌃⇧F11，提醒 F 鍵是媒體鍵時加按 Fn／fn）。開啟後四個外殼攔這個鍵，跟輸入法選單一樣即時切換「輸出簡體字」；這個開關本身照一般設定交接重啟引擎套用。
 

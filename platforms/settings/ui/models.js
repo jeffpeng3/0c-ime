@@ -116,7 +116,7 @@
   // ctx：h、invoke、toast、copyText、modelLabel、visible()（這一頁是否正在顯示）、render()（重畫整個畫面）。
   window.ZcModels = function (ctx) {
     const { h, invoke, toast, copyText, modelLabel } = ctx;
-    const m = { status: null, error: null, busy: null, removeAsk: false, polling: false };
+    const m = { status: null, error: null, busy: null, removeAsk: false, polling: false, report: null, reportError: null };
 
     async function load() {
       try {
@@ -130,6 +130,18 @@
         }
       } catch (error) {
         m.error = String(error);
+      }
+    }
+
+    // P2-42：`0c-server -model-report` 的摘要（模型組、變體、placeholder、常駐位元組）。
+    // 報告需要載入模型，只在這一頁顯示時抓；失敗不影響上面的 0c-update 狀態。
+    async function loadReport() {
+      try {
+        const report = await invoke('model_report');
+        m.report = report || null;
+        m.reportError = null;
+      } catch (error) {
+        m.reportError = String(error);
       }
     }
 
@@ -169,7 +181,7 @@
       try { await load(); ctx.render(); } finally { m.polling = false; }
     }
 
-    async function refresh() { await load(); }
+    async function refresh() { await Promise.all([load(), loadReport()]); }
 
     // 確認刪除出現時焦點先放在「取消」（連按兩下不會誤刪），取消後回到「刪除」。
     function focus(key) {
@@ -207,6 +219,28 @@
           h('div', { class: 'value' }, h('span', { class: ready ? 'status-ok' : 'muted' }, stateText(model, modelLabel)))),
         facts.length ? h('dl', { class: 'facts' }, ...facts.flatMap(([k, v]) => [h('dt', {}, k), h('dd', {}, v)])) : null,
         note ? h('p', { class: 'muted small model-note' }, note) : null);
+    }
+
+    function reportCard() {
+      const Mixed = window.ZcMixed;
+      if (!Mixed) return null;
+      if (m.reportError) {
+        return h('div', { class: 'card', id: 'model-report' },
+          h('h2', {}, '模型組與常駐'),
+          h('p', { class: 'notice', role: 'status' }, '無法讀取模型報告：' + m.reportError),
+          h('p', { class: 'muted small' }, '模型組與常駐量需要啟動引擎量測；輸入法仍在執行時也可以稍後再試。'));
+      }
+      if (!m.report) {
+        return h('div', { class: 'card', id: 'model-report' }, h('h2', {}, '模型組與常駐'), h('p', { class: 'muted' }, '讀取中…'));
+      }
+      const facts = Mixed.reportFacts(m.report);
+      return h('div', { class: 'card', id: 'model-report' },
+        h('h2', {}, '模型組與常駐'),
+        h('dl', { class: 'facts' }, ...facts.flatMap((fact) => [
+          h('dt', {}, fact.label),
+          h('dd', { class: fact.tone === 'warn' ? 'status-warn' : fact.tone === 'ok' ? 'status-ok' : 'muted' }, fact.value),
+        ])),
+        h('p', { class: 'muted small' }, '資料來自 0c-server -model-report。模型組選擇在「Mixed 輸入」頁的「模型」。'));
     }
 
     function render(root) {
@@ -265,6 +299,8 @@
             h('button', { type: 'button', class: 'primary', 'data-focus': 'models-remove-confirm', onclick: () => act('remove') }, '確認刪除'),
             h('button', { type: 'button', class: 'secondary', 'data-focus': 'models-remove-cancel', onclick: () => { m.removeAsk = false; ctx.render(); focus('models-remove'); } }, '取消'))));
       }
+      const card = reportCard();
+      if (card) root.append(card);
       for (const model of s.models || []) root.append(modelCard(model));
     }
 
