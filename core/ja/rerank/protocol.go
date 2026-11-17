@@ -8,8 +8,9 @@ import (
 	"github.com/0c-biggo/0c-ime/core/reading"
 )
 
-// 驗證器可回報的固定錯誤類別。core 不能 import internal/neural，所以
-// 非 core 的 T14 轉接層要把 neural.ErrTimeout 等錯誤包成這些 sentinel。
+// 驗證器可回報的固定錯誤類別。core 不能 import 外殼或 runtime 套件，所以
+// 外殼的轉接層要把底層錯誤包成這些 sentinel。正式產品目前沒有接模型，
+// Reranker 直接回傳統計結果；P2-30 的 ONNX 模型沿用同一組 sentinel。
 var (
 	ErrTimeout     = errors.New("rerank verifier timeout")
 	ErrUnavailable = errors.New("rerank verifier unavailable")
@@ -62,8 +63,8 @@ type Request struct {
 	Candidates  []Candidate
 }
 
-// Verifier 是 T14 runtime 的最小介面。實作可以是 neural.NeuralVerifier，
-// 也可以是測試用的 fake。
+// Verifier 是外部模型的最小介面。實作可以是 ONNX reranker 的轉接層，
+// 也可以是測試用的 fake。正式外殼目前沒有接任何模型。
 type Verifier interface {
 	Verify(context.Context, Request) (Result, error)
 }

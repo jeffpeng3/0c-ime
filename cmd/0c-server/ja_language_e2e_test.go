@@ -6,9 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"testing"
-	"time"
 
 	"github.com/0c-biggo/0c-ime/bridge/ipc"
 	"github.com/0c-biggo/0c-ime/core/proto"
@@ -66,25 +64,6 @@ func startJaTestServer(t *testing.T, data string, extra ...string) *ipc.Client {
 	return client
 }
 
-func waitJaHealth(t *testing.T, client *ipc.Client, what string, ok func(map[string]string) bool) map[string]string {
-	t.Helper()
-	deadline := time.Now().Add(15 * time.Second)
-	var last map[string]string
-	for time.Now().Before(deadline) {
-		info, err := client.Health()
-		if err != nil {
-			t.Fatal(err)
-		}
-		last = info
-		if ok(info) {
-			return info
-		}
-		time.Sleep(25 * time.Millisecond)
-	}
-	t.Fatalf("等不到 %s：%v", what, last)
-	return nil
-}
-
 func ipcJaKeys(t *testing.T, client *ipc.Client, keys string) proto.Snapshot {
 	t.Helper()
 	var snap proto.Snapshot
@@ -114,17 +93,10 @@ func ipcJaConvert(t *testing.T, client *ipc.Client) proto.Snapshot {
 	return snap
 }
 
-// 真正的 0c-server：OpenSession hook 把日文 profile 與共享 reranker 掛上，
-// 按鍵走日文 composer、変換走 T12 draft + T30 rerank + T14 mock worker。
-func TestJaServerSessionUsesSharedNeuralReranker(t *testing.T) {
-	python, script, pkg := jaMockPaths(t)
-	client := startJaTestServer(t, jaServerData(t),
-		"-ja-neural-package", pkg,
-		"-ja-neural-python", python,
-		"-ja-neural-script", script,
-		"-ja-neural-server", "mock",
-		"-ja-neural-threads", "2",
-	)
+// 真正的 0c-server：日文 session 只走統計轉換，health 明確回報
+// statistical，不再有 neural/rerank 狀態，也沒有模型或 worker 可啟動。
+func TestJaServerSessionUsesStatisticalConversion(t *testing.T) {
+	client := startJaTestServer(t, jaServerData(t))
 	if err := client.Open(); err != nil {
 		t.Fatal(err)
 	}
@@ -135,66 +107,51 @@ func TestJaServerSessionUsesSharedNeuralReranker(t *testing.T) {
 	if snap.Text() != "きょうは" {
 		t.Fatalf("組字 = %q", snap.Text())
 	}
-
-	// 第一次変換觸發 worker 背景啟動；Cancel 回かな，等就緒再做一次。
-	if _, err := client.Handle(proto.Request{Type: proto.Key, Key: proto.KeyConvert}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.Handle(proto.Request{Type: proto.Key, Key: proto.KeyEscape}); err != nil {
-		t.Fatal(err)
-	}
-	info := waitJaHealth(t, client, "日文 worker 就緒", func(info map[string]string) bool {
-		return info["ja_neural_state"] == "ready"
-	})
-	if info["ja_neural_state"] != "ready" {
-		t.Fatalf("health = %v", info)
-	}
-
 	commit := ipcJaConvert(t, client)
-	if commit.Commit == "" || commit.Converting || commit.Language != "ja" {
+	if commit.Commit != "今日は" || commit.Converting || commit.Language != "ja" {
 		t.Fatalf("送出 = %#v", commit)
 	}
-	info = waitJaHealth(t, client, "神經重排真的執行", func(info map[string]string) bool {
-		n, _ := strconv.Atoi(info["ja_rerank_verified"])
-		return n > 0
-	})
-	if calls, _ := strconv.Atoi(info["ja_rerank_calls"]); calls == 0 {
-		t.Fatalf("rerank calls = 0：%v", info)
+
+	info, err := client.Health()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info["ja_state"] != "statistical" {
+		t.Fatalf("health = %v", info)
+	}
+	for _, key := range []string{"ja_neural_state", "ja_neural_reason", "ja_rerank_calls", "ja_rerank_verified"} {
+		if _, ok := info[key]; ok {
+			t.Fatalf("正式路徑仍有 %q：%v", key, info)
+		}
 	}
 }
 
-// 模型檔缺失時 hook 仍建立日文 session，但 reranker 不執行，輸入照統計轉換。
-func TestJaServerSessionFallsBackWhenModelMissing(t *testing.T) {
-	pkg := t.TempDir()
-	manifest := `{"schema":"ja-zenz-verify-v1","backend":"llama.cpp","backend_commit":"test",` +
-		`"context_policy":"confirmed_left_128","model":{"file":"model.gguf","sha256":"` +
-		"0000000000000000000000000000000000000000000000000000000000000000" + `","bytes":5}}`
-	if err := os.WriteFile(filepath.Join(pkg, "manifest.json"), []byte(manifest), 0o644); err != nil {
-		t.Fatal(err)
+// 日文資料缺失時 -language ja 不會讓 session 壞掉；session 留在注音，
+// health 回報 not_installed。
+func TestJaServerWithoutDataStaysZhuyin(t *testing.T) {
+	data := t.TempDir()
+	for _, name := range []string{"lexicon.tsv", "lm.tsv"} {
+		b, err := os.ReadFile(filepath.Join("../../testdata/toy", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(data, name), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
 	}
-	client := startJaTestServer(t, jaServerData(t), "-ja-neural-package", pkg)
+	client := startJaTestServer(t, data)
 	if err := client.Open(); err != nil {
 		t.Fatal(err)
 	}
-	info := waitJaHealth(t, client, "模型缺失狀態", func(info map[string]string) bool {
-		return info["ja_neural_state"] == "fallback"
-	})
-	if info["ja_neural_reason"] != "model_missing" {
-		t.Fatalf("health = %v", info)
-	}
-	snap := ipcJaKeys(t, client, "kyouha")
-	if snap.Language != "ja" {
-		t.Fatalf("session 不是日文：%q", snap.Language)
-	}
-	commit := ipcJaConvert(t, client)
-	if commit.Commit != "今日は" {
-		t.Fatalf("統計轉換 = %q", commit.Commit)
+	snap := ipcJaKeys(t, client, "a")
+	if snap.Language != "" && snap.Language != "zh" {
+		t.Fatalf("沒有日文資料仍切到 %q", snap.Language)
 	}
 	info, err := client.Health()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if info["ja_rerank_calls"] != "0" || info["ja_rerank_verified"] != "0" {
-		t.Fatalf("模型缺失仍呼叫 rerank：%v", info)
+	if info["ja_state"] != "not_installed" {
+		t.Fatalf("health = %v", info)
 	}
 }

@@ -8,7 +8,6 @@ import (
 	"github.com/0c-biggo/0c-ime/core/ja/rerank"
 	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/internal/eval"
-	"github.com/0c-biggo/0c-ime/internal/neural"
 )
 
 const (
@@ -100,7 +99,7 @@ type unavailableVerifier struct{ calls int }
 
 func (v *unavailableVerifier) Verify(context.Context, rerank.Request) (rerank.Result, error) {
 	v.calls++
-	return rerank.Result{}, neural.ErrUnavailable
+	return rerank.Result{}, rerank.ErrUnavailable
 }
 
 func TestT33UnavailableModelMatchesStatisticalBaseline(t *testing.T) {
