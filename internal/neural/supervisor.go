@@ -60,10 +60,15 @@ func openSupervisedAsync(c Config, load func(Config) (Manifest, error), open fun
 }
 
 func (s *Supervisor) Options() rerank.Options {
-	return rerank.Options{Scorer: s, Weight: s.manifest.Weight, Margin: s.manifest.Margin, AllowPartial: s.manifest.AllowPartial,
-		ContextRunes: contextRunes(s.manifest), HintGap: s.manifest.HintGap,
-		TextWeight: s.manifest.TextWeight, TextMargin: s.manifest.TextMargin,
-		NeutralExpand: s.manifest.NeutralExpand, NeutralBases: neutralBases(s.manifest)}
+	o := optionsFor(s.manifest)
+	o.Scorer = s
+	return o
+}
+
+// openPreparedSupervisedAsync 以已核對的 manifest 背景啟動 worker；不重新計算模型雜湊。
+func openPreparedSupervisedAsync(c Config, m Manifest) (*Supervisor, error) {
+	return openSupervisedAsync(c, func(Config) (Manifest, error) { return m, nil },
+		func(c Config) (*Worker, error) { return openPrepared(c, m) })
 }
 
 func (s *Supervisor) Score(r rerank.Request) ([]float64, error) {

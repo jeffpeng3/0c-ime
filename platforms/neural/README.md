@@ -38,3 +38,19 @@ Windows 使用 `windows-amd64`，Apple Silicon 使用 `macos-arm64`（onnxruntim
 以 `--neural` 將輸出目錄交給平台打包工具，並用同一份字典作為 `--data`。發行版離線建置應自行提供相依套件，不直接使用會下載 runtime 的可攜套件流程。
 
 worker 必須以 `-I -B -X utf8` 執行；安裝後檔案不得在執行時改變。換模型須同步更換配對字典並重新產生 runtime，不手動改寫 manifest。公開包打包時核對 `neural/` 就是公開版模型配對出貨字典的結果（`hf_models.check_shipped`）。
+
+## 模型常駐與 CPU／GPU provider（P2-30）
+
+`0c-server` 以一個模型管理器管理 sequence 選字與補標點，兩者共用同一個有界執行器；模型的 manifest 與雜湊同步核對，模型本身一律在背景載入，第一個按鍵不必等 Python。
+
+- `-model-mode auto`：主要語言先背景載入，其他語言第一次用到才載入（預設）。
+- `-model-mode all`：所有模型背景載入，仍不阻塞第一個按鍵。
+- `-model-mode primary`：只常駐 `-primary-language` 指定的語言。
+- `-model-mode none`：不載入模型，只用統計引擎。
+- 模型缺失、manifest 版本或字典配對不符、檔案雜湊不符、ONNX 內容損壞、Python 或 onnxruntime 不可用時，按鍵與提交照統計結果繼續；health 的 `selection_state`、`punctuation_state` 與 `*_reason` 會回報狀態。
+- `model_resident_bytes`、`model_peak_bytes`、`model_in_flight`、`model_residency` 由 health 回報，供記憶體量測；不含輸入文字。
+- manifest 帶 `placeholder: true` 時，health 另回報 `model_placeholder=true`，啟動紀錄也會標明 PLACEHOLDER；placeholder 模型不得當成已訓練模型或進入正式安裝包。
+
+onnxruntime 預設只用 `CPUExecutionProvider`。需要 GPU 時用 `ZUIN_ORT_PROVIDERS` 指定逗號分隔的 provider（例如 `CUDAExecutionProvider`）：只有 onnxruntime 實際回報可用時才加入，建立 session 失敗或 provider 不存在都會回退 CPU，不影響啟動。
+
+`runtime/onnx_bundle_probe.py` 是 P2-25P placeholder 的驗證工具，會核對 `0c.model.manifest/1` 的檔案大小與 SHA-256、載入 int8 ONNX、跑一次推論並輸出 placeholder、provider、載入時間與第一次推論時間。它不進正式安裝包。

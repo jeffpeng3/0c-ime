@@ -27,6 +27,17 @@ const frameLimit = 65536
 var ErrUnavailable = errors.New("neural worker unavailable")
 var ErrTimeout = errors.New("neural deadline exceeded")
 
+// 套件核對失敗的固定類別；residency manager 依這些 sentinel 回報 missing、corrupt、
+// hash_mismatch、version_mismatch，讓狀態摘要能區分「檔案不見」「內容壞掉」與
+// 「版本或字典配對不符」。錯誤字串維持原本的訊息。
+var (
+	errCorruptPackage       = errors.New("neural package is corrupt")
+	errPackageHashMismatch  = errors.New("neural package hash mismatch")
+	errPackageContract      = errors.New("neural manifest contract mismatch")
+	errPunctPackageHash     = errors.New("punct package hash mismatch")
+	errPunctPackageContract = errors.New("punct manifest contract mismatch")
+)
+
 // StartupError 是 worker 沒有回報就緒的原因，給狀態摘要與設定程式顯示（#80：精簡版 Windows 缺 C++ 執行階段時，
 // 使用者原本只看到「模型無法使用」）。Reason 是固定代碼，不含輸出內容。
 type StartupError struct {
@@ -50,6 +61,11 @@ const (
 	// ReasonRuntimeMissing：找不到 Python，或 Python 匯入不到 numpy、onnxruntime（Linux 系統安裝沒裝
 	// python3-numpy、python3-onnxruntime，#181）。health 的狀態直接報 runtime_missing，不當成模型故障。
 	ReasonRuntimeMissing = "runtime_missing"
+	// P2-30 的套件核對分類：狀態摘要用固定代碼，不含檔名或輸入文字。
+	ReasonMissing         = "missing"
+	ReasonCorrupt         = "corrupt"
+	ReasonHashMismatch    = "hash_mismatch"
+	ReasonVersionMismatch = "version_mismatch"
 )
 
 // startupStderr 只收集 worker 回報就緒前的 stderr：此時還沒送出任何輸入文字，內容只會是載入錯誤；
@@ -149,6 +165,10 @@ type Manifest struct {
 	NeutralExpand    float64           `json:"neutral_expand_penalty"`
 	NeutralTolerant  []string          `json:"neutral_tolerant_last"`
 	Files            map[string]string `json:"files"`
+	// Placeholder／Quality 由 P2-25P、P2-27 的 manifest 帶入；placeholder 模型不得
+	// 當成已訓練模型，狀態摘要會單獨顯示。
+	Placeholder bool   `json:"placeholder,omitempty"`
+	Quality     string `json:"quality,omitempty"`
 	// TonePolicy 只在 v2 套件出現（zuin-tone-mask-v1），loadManifest 依 rerank.ValidTonePolicy 核對。
 	// 桌面不依它開未知聲調：沒打聲調的段落照統計引擎，請求不帶 tone_known，打了聲調的分數與 v1 套件的做法相同。
 	TonePolicy *rerank.TonePolicy `json:"tone_policy,omitempty"`
@@ -224,6 +244,12 @@ func Open(c Config) (*Worker, error) {
 	if err != nil {
 		return nil, err
 	}
+	return openPrepared(c, m)
+}
+
+// openPrepared 以已核對過的 manifest 啟動 worker，不再重讀或重算模型雜湊。
+// residency manager 的 Preload 路徑先同步核對一次，背景載入時直接重用。
+func openPrepared(c Config, m Manifest) (*Worker, error) {
 	cmd := pythonCommand(c.Python, c.Script, "--package", c.Package, "--dictionary", c.DictionarySHA256, "--threads", fmt.Sprint(c.Threads))
 	return start(cmd, m, c.Timeout)
 }
@@ -242,12 +268,12 @@ func loadManifest(c Config) (Manifest, error) {
 		return m, err
 	}
 	if err = json.Unmarshal(b, &m); err != nil {
-		return m, err
+		return m, fmt.Errorf("%w: %v", errCorruptPackage, err)
 	}
 	if !validContract(m) || len(m.DictionarySHA256) != 64 || m.DictionarySHA256 != c.DictionarySHA256 || !(m.Weight > 0) || math.IsInf(m.Weight, 0) || !(m.Margin >= 0) || math.IsInf(m.Margin, 0) || !(m.HintGap >= 0) || math.IsInf(m.HintGap, 0) ||
 		!(m.TextWeight >= 0) || math.IsInf(m.TextWeight, 0) || !(m.TextMargin >= 0) || math.IsInf(m.TextMargin, 0) ||
 		!(m.NeutralExpand >= 0) || math.IsInf(m.NeutralExpand, 0) || m.NeutralExpand > 0 && len(m.NeutralTolerant) == 0 {
-		return m, errors.New("neural manifest contract mismatch")
+		return m, errPackageContract
 	}
 	for _, name := range []string{"model.onnx", "vocab.json"} {
 		digest, e := fileSHA(filepath.Join(c.Package, name))
@@ -255,7 +281,7 @@ func loadManifest(c Config) (Manifest, error) {
 			return m, e
 		}
 		if digest != m.Files[name] {
-			return m, errors.New("neural package hash mismatch")
+			return m, errPackageHashMismatch
 		}
 	}
 	return m, nil
@@ -365,10 +391,19 @@ func (w *Worker) stop() {
 	}
 }
 func (w *Worker) Close() { w.mu.Lock(); w.stop(); w.mu.Unlock(); <-w.done }
+
+// optionsFor 把套件 manifest 轉成 core/rerank 的選項。Scorer 由呼叫端填入：
+// worker 自己、supervisor，或 residency manager 的 handle。
+func optionsFor(m Manifest) rerank.Options {
+	return rerank.Options{Weight: m.Weight, Margin: m.Margin, AllowPartial: m.AllowPartial,
+		ContextRunes: contextRunes(m), HintGap: m.HintGap,
+		TextWeight: m.TextWeight, TextMargin: m.TextMargin,
+		NeutralExpand: m.NeutralExpand, NeutralBases: neutralBases(m)}
+}
 func (w *Worker) Options() rerank.Options {
-	return rerank.Options{Scorer: w, Weight: w.manifest.Weight, Margin: w.manifest.Margin, AllowPartial: w.manifest.AllowPartial,
-		ContextRunes: contextRunes(w.manifest), HintGap: w.manifest.HintGap, TextWeight: w.manifest.TextWeight, TextMargin: w.manifest.TextMargin,
-		NeutralExpand: w.manifest.NeutralExpand, NeutralBases: neutralBases(w.manifest)}
+	o := optionsFor(w.manifest)
+	o.Scorer = w
+	return o
 }
 func (w *Worker) Stats() Stats { w.mu.Lock(); defer w.mu.Unlock(); return w.stats }
 func (w *Worker) Dead() bool   { w.mu.Lock(); defer w.mu.Unlock(); return w.dead }

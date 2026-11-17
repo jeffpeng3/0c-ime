@@ -58,36 +58,56 @@ func OpenPunct(c PunctConfig) (*PunctWorker, error) {
 
 // openPunct 同步核對套件，worker 在背景啟動；引擎不必等 Python 載入模型才開始服務。
 func openPunct(c PunctConfig, command func() *exec.Cmd) (*PunctWorker, error) {
-	if c.Timeout <= 0 || c.Timeout > 500*time.Millisecond {
-		return nil, errors.New("punct timeout must be in (0,500ms]")
-	}
-	if c.Threads < 1 || c.Threads > MaxThreads {
-		return nil, errors.New("invalid punct threads")
-	}
-	b, err := os.ReadFile(filepath.Join(c.Package, "manifest.json"))
+	model, _, _, _, err := loadPunctManifest(c)
 	if err != nil {
 		return nil, err
 	}
+	return openPunctPrepared(c, model, command)
+}
+
+// loadPunctManifest 只核對 timeout、threads、manifest 契約與檔案雜湊，不啟動 worker。
+func loadPunctManifest(c PunctConfig) (string, int64, bool, string, error) {
+	if c.Timeout <= 0 || c.Timeout > 500*time.Millisecond {
+		return "", 0, false, "", errors.New("punct timeout must be in (0,500ms]")
+	}
+	if c.Threads < 1 || c.Threads > MaxThreads {
+		return "", 0, false, "", errors.New("invalid punct threads")
+	}
+	b, err := os.ReadFile(filepath.Join(c.Package, "manifest.json"))
+	if err != nil {
+		return "", 0, false, "", err
+	}
 	var m struct {
-		Schema string            `json:"schema"`
-		Files  map[string]string `json:"files"`
+		Schema      string            `json:"schema"`
+		Files       map[string]string `json:"files"`
+		Placeholder bool              `json:"placeholder,omitempty"`
+		Quality     string            `json:"quality,omitempty"`
 	}
 	if err = json.Unmarshal(b, &m); err != nil {
-		return nil, err
+		return "", 0, false, "", fmt.Errorf("%w: %v", errCorruptPackage, err)
 	}
 	if m.Schema != PunctSchema {
-		return nil, errors.New("punct manifest contract mismatch")
+		return "", 0, false, "", errPunctPackageContract
 	}
+	var bytes int64
 	for _, name := range []string{"model.onnx", "vocab.json"} {
 		digest, e := fileSHA(filepath.Join(c.Package, name))
 		if e != nil {
-			return nil, e
+			return "", 0, false, "", e
 		}
 		if digest != m.Files[name] {
-			return nil, errors.New("punct package hash mismatch")
+			return "", 0, false, "", errPunctPackageHash
+		}
+		if info, e := os.Stat(filepath.Join(c.Package, name)); e == nil {
+			bytes += info.Size()
 		}
 	}
-	w := &PunctWorker{cfg: c, model: m.Files["model.onnx"], command: command}
+	return m.Files["model.onnx"], bytes, m.Placeholder, m.Quality, nil
+}
+
+// openPunctPrepared 以已核對的模型雜湊背景啟動 worker，不再重讀 manifest。
+func openPunctPrepared(c PunctConfig, model string, command func() *exec.Cmd) (*PunctWorker, error) {
+	w := &PunctWorker{cfg: c, model: model, command: command}
 	w.mu.Lock()
 	w.startLocked(false)
 	w.mu.Unlock()

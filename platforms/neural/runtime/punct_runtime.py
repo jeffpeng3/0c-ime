@@ -33,6 +33,26 @@ ENUMERATORS = set('一二三四五六七八九十壹貳參肆伍陸柒捌玖拾�
 MAX_FRAME = 1 << 16
 
 
+def execution_providers(ort):
+    """同 sequence_runtime：預設 CPU，ZUIN_ORT_PROVIDERS 指定的 GPU provider 可用時才加入。"""
+    requested = [x.strip() for x in os.environ.get('ZUIN_ORT_PROVIDERS', '').split(',') if x.strip()]
+    available = set(ort.get_available_providers())
+    providers = [p for p in requested if p in available]
+    if 'CPUExecutionProvider' not in providers:
+        providers.append('CPUExecutionProvider')
+    return providers
+
+
+def create_session(ort, path, options):
+    providers = execution_providers(ort)
+    try:
+        return ort.InferenceSession(str(path), sess_options=options, providers=providers)
+    except Exception:
+        if providers == ['CPUExecutionProvider']:
+            raise
+        return ort.InferenceSession(str(path), sess_options=options, providers=['CPUExecutionProvider'])
+
+
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -80,7 +100,7 @@ class Runtime:
         options = ort.SessionOptions(); options.intra_op_num_threads = threads; options.inter_op_num_threads = 1
         options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
         options.add_session_config_entry('session.intra_op.allow_spinning', '0')
-        self.session = ort.InferenceSession(str(package / 'model.onnx'), sess_options=options, providers=['CPUExecutionProvider'])
+        self.session = create_session(ort, package / 'model.onnx', options)
         self.model_sha = m['files']['model.onnx']
 
     def window_probs(self, text):
