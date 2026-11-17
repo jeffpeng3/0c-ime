@@ -30,7 +30,8 @@ const ZhNeutralScore = 0
 //
 // 同一個請求可以含中文、日文與英文候選；只有中文候選會送進中文模型，
 // 其他候選拿 ZhNeutralScore。若完全沒有可評分的中文候選，或模型回報任何
-// 錯誤，Score 回傳 ErrUnavailable，呼叫端保留統計轉換結果。
+// 錯誤，Score 回傳 ErrUnavailable，呼叫端保留統計轉換結果。Privacy 不是
+// PublicPrivacy() 時直接回 ErrPrivate，文字不會離開這個行程。
 type ZhAdapter struct {
 	// Scorer 是既有中文模型（core/rerank.Scorer）。必填。
 	Scorer rerank.Scorer
@@ -66,6 +67,9 @@ func (a *ZhAdapter) Languages() []lang.ID { return []lang.ID{lang.Zh} }
 func (a *ZhAdapter) Score(ctx context.Context, req Request) ([]float64, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, errors.Join(ErrUnavailable, err)
+	}
+	if !req.Privacy.AllowsModel() {
+		return nil, ErrPrivate
 	}
 	if a == nil || a.Scorer == nil {
 		return nil, ErrUnavailable
