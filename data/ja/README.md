@@ -2,6 +2,8 @@
 
 T02 的結論：日文資料可以在 AGPL-3.0-only 的 0c 產品裡散布，條件是每個來源照自己的授權附聲明，且不把混合授權的 Mozc 詞典整體當成 BSD-3-Clause。
 
+P2-01 起，正式產品不 import 或啟動 llama.cpp、GGUF、zenz；日文轉換只用本目錄編譯出的統計詞典。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上。T03 的 zenz 實驗只保留在 `scripts/spike/ja-zenz/`，不是產品路徑。
+
 逐檔清單在 [ja-files.tsv](../sources/ja-files.tsv)，來源摘要與邊界在 [ja-sources.tsv](../sources/ja-sources.tsv)，完整授權全文在 [sources/licenses/ja-*.txt](../sources/licenses/)。
 
 ## 建議來源
@@ -11,7 +13,7 @@ T02 的結論：日文資料可以在 AGPL-3.0-only 的 0c 產品裡散布，條
 | 日文詞典與連接成本 | `ja-mozc` | `ja-sudachidict` | Mozc 直接提供詞條、品詞、詞成本與連接矩陣，符合契約的 Mozc 式 Converter。SudachiDict 授權較單純，但只有詞條與品詞，沒有 IME 用的詞成本，T13 需要另外估成本。 |
 | 讀音與斷詞 | `ja-unidic` | `ja-sudachidict` 內附的 UniDic 詞條 | UniDic 選 BSD-3-Clause，商用與再散布都可以；用來標注 Wikipedia 語料與補讀音。 |
 | 詞頻與 n-gram | `ja-wiki` | 0c 自有日文語料 | Wikipedia 授權明確，版本可固定；衍生統計維持 CC BY-SA 4.0。 |
-| 神經重排 | `ja-zenz` | 無 | zenz-v3.1-small GGUF 是已量化的 73.9 MB 模型，CC BY-SA 4.0，適合當第一版 baseline。 |
+| 神經重排 | 日文 ONNX reranker（P2-25 匯出、P2-30 接上） | 無 | P2-01 起正式產品沒有 llama.cpp、GGUF、zenz 路徑，目前只用統計詞典。新模型由訓練 repo 匯出，授權待 P2-20 帳本定案。 |
 | 轉換評測 | `ja-anthy-corpus` 的 corpus.1.txt | `ja-ajimee` | Anthy corpus.1 明示 public domain；AJIMEE 資料是 CC BY-SA 3.0，適合放 testdata。 |
 
 `ja-sudachidict` 當備案的具體做法：用 SudachiDict Core 的詞條與 UniDic 讀音建立候選，再用 Wikipedia 詞頻估成本。這樣可以避開 Mozc 的混合授權，但轉換品質與成本曲線要重新驗證。
@@ -23,7 +25,7 @@ T02 的結論：日文資料可以在 AGPL-3.0-only 的 0c 產品裡散布，條
 | Mozc `dictionary_oss` | `a4541df` | BSD-3-Clause + NAIST/IPAdic + ICOT + 沖繩辭書 Public Domain | 是 | 可散布，必須附完整混合聲明。不可整體標成 BSD-3-Clause。 |
 | SudachiDict Core | `v20261015` | Apache-2.0，內含 UniDic BSD 與 NEologd 詞條 | 是 | 可散布，附 Apache-2.0 全文與 LEGAL。 |
 | 現代書き言葉UniDic | `unidic-cwj-202512` | GPL-2.0／LGPL-2.1／BSD-3-Clause 三選一 | 是 | 選 BSD-3-Clause。CC BY-NC-SA 版本不可用。 |
-| zenz-v3.1-small GGUF | `ddf6e44` | CC-BY-SA-4.0 | 是 | 模型檔獨立散布，附作者、來源與 CC BY-SA 4.0 全文。 |
+| zenz-v3.1-small GGUF（僅 T03 spike，非正式） | `ddf6e44` | CC-BY-SA-4.0 | 僅供歷史參考 | P2-01 起不進正式產品；實驗程式留在 `scripts/spike/ja-zenz/`。 |
 | Anthy corpus | `fc2260c` | Public Domain，僅 corpus.1.txt 明示 | 是，限 corpus.1.txt | corpus.2、corpus.3、corpus.5 沒有授權聲明，corpus.5 出處不明，不得散布。 |
 | AJIMEE-Bench | `401666c` | 資料 CC-BY-SA-3.0；程式 CC0-1.0 | 是 | 可放 testdata。資料檔保留 CC BY-SA 3.0，不改成 AGPL。 |
 | 日本語版 Wikipedia | `jawiki-20261101` | CC-BY-SA-4.0，另可依 GFDL | 是 | 衍生詞頻與 n-gram 維持 CC BY-SA 4.0，附作者、版本與修改說明。 |
@@ -42,12 +44,9 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 
 ## 模型與程式分開
 
-`ja-zenz` 的 GGUF 是獨立的資料檔，不編進 Go 執行檔，也不放進 manifest 的 `files`。契約第 4 節已經規定日文 neural 權重由 `models/ja/` 管理，這個邊界要維持。
+P2-01 起正式產品沒有 llama.cpp、GGUF、zenz 路徑，也不從 `models/ja/` 載入權重。日文轉換只用本目錄編譯出的統計詞典。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上；屆時模型權重仍與程式碼分開授權，模型不進資料包 manifest 的 `files`。
 
-- 程式碼：AGPL-3.0-only。
-- 模型權重：CC-BY-SA-4.0，附作者三輪敬太、模型頁連結、完整授權與修改說明。
-- 量化、轉檔、再訓練後的權重：仍是 CC-BY-SA-4.0。
-- 模型輸出的文字：不因模型授權而變成 CC BY-SA；產品仍可正常使用輸出。
+T03 的 zenz 權重是 CC-BY-SA-4.0，只留在 `scripts/spike/ja-zenz/` 的歷史實驗，不是產品路徑。模型輸出的文字不因模型授權而變成 CC BY-SA；產品仍可正常使用輸出。
 
 ## 公開資料包 NOTICE 草稿
 
@@ -83,13 +82,6 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 網址：https://dumps.wikimedia.org/jawiki/
 姓名標示：Wikipedia contributors
 [附 ja-wiki.txt 全文]
-
-== zenz-v3.1-small GGUF（ja-zenz）==
-授權：CC-BY-SA-4.0
-版本：ddf6e44b2e05ab7ea9a3e31559c5e7948761365c
-網址：https://huggingface.co/Miwa-Keita/zenz-v3.1-small-gguf
-姓名標示：三輪敬太（Miwa-Keita）
-[附 ja-zenz.txt 全文；模型檔不進 manifest files]
 ```
 
 評測資料不進公開資料包時，NOTICE 不必列 `ja-anthy-corpus` 與 `ja-ajimee`。若 testdata 隨 release 散布，另外在 testdata 目錄附上 `ja-anthy-corpus.txt` 與 `ja-ajimee.txt`。
@@ -100,7 +92,7 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 2. 使用 `ja-mozc` 時，`data/sources/licenses/ja-mozc.txt` 必須完整附進 NOTICE。不要刪掉 NAIST、ICOT 或沖繩辭書段落。
 3. 使用 `ja-sudachidict` 時，附 `ja-sudachidict.txt`，內含 Apache-2.0、LEGAL、UniDic BSD 與 NEologd 聲明。
 4. 使用 `ja-wiki` 時，附 `ja-wiki.txt`，並在 manifest 記錄 dump 版本與 md5。
-5. 使用 `ja-zenz` 時，模型放 `models/ja/`，不進 manifest `files`；資料包只記模型名稱與版本。
+5. 日文神經模型不進資料包 manifest `files`；P2-01 起也沒有外部模型路徑。ONNX 模型由 P2-25 匯出、P2-30 接上，屆時再更新打包與配對流程。
 6. `0c-compile -public` 前確認實際使用的來源都在 `ledger.tsv` 有 `yes`，且 `sources/licenses/<ID>.txt` 存在。
 7. 不要把 Anthy corpus.2、corpus.3、corpus.5 放進 testdata 或資料包。
 8. AJIMEE 資料檔保留 CC BY-SA 3.0 授權檔與出處，不要改標成 AGPL。
@@ -112,7 +104,7 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 | Mozc 詞典 | 可以 | NAIST/IPAdic、ICOT、BSD-3 都是保留聲明的寬鬆授權；附完整聲明。 |
 | SudachiDict | 可以 | Apache-2.0 與 GPLv3／AGPLv3 相容；附授權與 NOTICE。 |
 | UniDic | 可以 | 選 BSD-3-Clause；附 BSD 全文與作者。 |
-| zenz 模型 | 可以 | 模型是獨立資料檔，依 CC BY-SA 4.0 散布，不併入程式碼。 |
+| zenz 模型（僅 T03 spike） | 不進正式產品 | P2-01 起不隨產品散布；實驗程式在 `scripts/spike/ja-zenz/`。 |
 | Anthy corpus.1 | 可以 | Public Domain；只限 corpus.1.txt。 |
 | AJIMEE | 可以 | 資料依 CC BY-SA 3.0 獨立散布，程式 CC0；不併入 AGPL 程式碼。 |
 | Wikipedia 衍生統計 | 可以 | 資料依 CC BY-SA 4.0 獨立散布，附署名與修改說明。 |
@@ -122,7 +114,7 @@ NAIST/IPAdic 與 ICOT 都是保留聲明的寬鬆授權，沒有 copyleft。它�
 ## 檔案
 
 - [ja-sources.tsv](../sources/ja-sources.tsv)：來源摘要、版本、授權、可散布、署名、用途與邊界。
-- [ja-files.tsv](../sources/ja-files.tsv)：Mozc 逐檔清單，以及 SudachiDict、UniDic、zenz、Anthy、AJIMEE、Wikipedia 的檔案層級結論。
+- [ja-files.tsv](../sources/ja-files.tsv)：Mozc 逐檔清單，以及 SudachiDict、UniDic、Anthy、AJIMEE、Wikipedia 與歷史 zenz spike 的檔案層級結論。
 - [ledger.tsv](../sources/ledger.tsv)：已追加 `ja-*` 七列，既有列未改。
 - [sources/licenses/ja-*.txt](../sources/licenses/)：各來源的完整授權全文或聲明。
 

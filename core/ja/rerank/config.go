@@ -110,7 +110,7 @@ func (c Config) normalized() Config {
 	if c.MaxCandidates <= 0 {
 		c.MaxCandidates = d.MaxCandidates
 	}
-	// T14 協定一次最多 8 條候選；rerank 不能超過驗證器上限。
+	// 驗證器一次最多 8 條候選；rerank 不能超過驗證器上限。
 	if c.MaxCandidates > 8 {
 		c.MaxCandidates = 8
 	}

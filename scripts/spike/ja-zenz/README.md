@@ -1,5 +1,9 @@
 # T03 神經轉換實測 spike
 
+> **非正式、不進產品。** P2-01 起正式產品只用統計轉換與 ONNX Runtime；這個
+> 目錄的 llama.cpp／zenz 實驗程式與結果只供歷史參考，不得被 `cmd/`、`internal/`、
+> `platforms/` 或正式建置引用。日文 ONNX 模型由 P2-25 匯出、P2-30 接上。
+
 狀態：**初步結果**。品質數字在 `corpus.1.txt` 的 200 題上有效。延遲與記憶體來自修正前的混合 corpus 樣本，而且是在主機 load average 約 21（12 vCPU，兩個 CI 加上其他 agent 正在編譯）時量的，只能當上限，不能當最終數字。安靜時段要用 `--isolated` 重跑。
 
 ## 結論

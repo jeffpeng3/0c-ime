@@ -25,7 +25,7 @@
 | 英文詞表（`data/english`） | SCOWL 授權 | 符合 |
 | 日文種子詞條、連接成本與詞頻（`data/ja`） | CC BY-SA 4.0 | 符合，可由 Git 內資料重建 |
 | 日文記号與顔文字（`data/ja/symbols`） | AGPL-3.0-only | 符合 |
-| 日文 zenz GGUF（選用、不隨安裝包出貨） | CC BY-SA 4.0 | 模型權重可散布；沒有公開訓練程式與資料，比照神經模型留在 main 之外 |
+| 日文神經模型（預定 P2-25／P2-30） | 尚未定案 | P2-01 已移除 llama.cpp、GGUF、zenz 路徑，正式產品目前只用統計詞典；ONNX 模型匯出後再依實際授權審查 |
 | 測試資料（`testdata/`） | AGPL-3.0-only | 符合 |
 | Release：英文子包 `assets/data/english/` | SCOWL 授權 | 符合，可由 `data/english` 重建 |
 | Release：統計字典 `assets/data/lexicon.bin`、`lm.bin` | CC BY-SA 4.0 等 | 符合，可由 Git 內資料加 [0c-ime-data](https://github.com/0c-biggo/0c-ime-data) 的詞對統計重建 |
@@ -104,7 +104,7 @@ go-winio 只用於 Windows 的 named pipe，Linux 與 macOS 的執行檔不含�
 
 ### 日文資料
 
-`data/ja/` 的種子詞條、連接成本與詞頻由本專案維護，採 CC BY-SA 4.0；`data/ja/symbols/` 的記号與顔文字由本專案整理，採 AGPL-3.0-only。編譯器 `0c-compile -lang ja -public` 會逐來源檢查 `data/sources/ledger.tsv`、可散布標記與 `data/sources/licenses/ja-*.txt`，輸出的 `data/ja/NOTICE.txt` 保留完整姓名標示。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，依各自授權與混合邊界標示，不整體改寫成單一授權。zenz-v3.1-small GGUF 是選用的外部模型，不隨安裝包或來源 tarball 出貨；它的訓練程式與資料未公開，因此不進 main，使用方式見 [日文神經驗證 runtime](../platforms/neural/ja/README.md)。
+`data/ja/` 的種子詞條、連接成本與詞頻由本專案維護，採 CC BY-SA 4.0；`data/ja/symbols/` 的記号與顔文字由本專案整理，採 AGPL-3.0-only。編譯器 `0c-compile -lang ja -public` 會逐來源檢查 `data/sources/ledger.tsv`、可散布標記與 `data/sources/licenses/ja-*.txt`，輸出的 `data/ja/NOTICE.txt` 保留完整姓名標示。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，依各自授權與混合邊界標示，不整體改寫成單一授權。日文神經模型目前不隨產品出貨：P2-01 已移除 llama.cpp、GGUF、zenz 路徑，日文只用統計詞典。P2-25 匯出 ONNX 模型、P2-30 接上 runtime 後，再依模型授權與訓練資料更新本節；T03 的實驗記錄在 `scripts/spike/ja-zenz/`，不是正式產品路徑。
 
 ### 圖示與圖片
 
