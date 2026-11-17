@@ -2,7 +2,10 @@
 //
 // 每個片段保有自己的語言標籤與輸出變體：中文片段可以是繁中或簡中，日文片段
 // 第一版是新字體，英文保留原文。組裝器只在片段之間處理標點與 CJK/Latin
-// 間距，不得把整段文字當成單一語言重新轉換。實作由 P2-14 補上。
+// 間距，不得把整段文字當成單一語言重新轉換。
+//
+// 標準實作是 DefaultAssembler；它搭配 VariantRenderer、LanguagePunctuator
+// 與 CJKLatinSpacer。簡體轉換器由宿主提供，實作見 *zhconv.Converter。
 package output
 
 import (
