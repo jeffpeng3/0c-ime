@@ -18,9 +18,9 @@ Public core 與 CC BY-SA experimental 是兩個獨立資料集，不共用輸出
 1. Public core 只使用 `public-core.tsv` 中 `status=approved` 或 `approved-with-caveat` 的來源。`kind=lexicon` 的列由 P2-22 詞典管線使用，不進 P2-21 語料 tokenization。
 2. CC BY-SA 資料只進 experimental；不得與 public core 混用、去重後合併或共用 tokenized binary。
 3. `review.tsv` 與 `excluded.tsv` 的來源不得進 public core。要改狀態，先改帳本並留下審查依據。
-4. Mozc、UniDic 預設分支、SudachiDict、NEologin、JUMAN、Common Crawl 與 NEologd 不進 public core。Common Crawl 的衍生資料（CC-100、OSCAR、FineWeb-2、LLM-jp `ja_cc`／`ja_fineweb-2`）同樣不進。UniDic BSD 分支另列 `review.tsv` 的 `rev-unidic-bsd`，未簽核前也不進。
+4. Mozc、SudachiDict、NEologin、JUMAN、Common Crawl 與 NEologd 不進 public core。Common Crawl 的衍生資料（CC-100、OSCAR、FineWeb-2、LLM-jp `ja_cc`／`ja_fineweb-2`）同樣不進。UniDic 只准 `pc-unidic` 的 BSD-3-Clause 分支，而且只限現代書き言葉（`cwj`）與現代話し言葉（`csj`）；CC BY-NC-SA 版本、古文用與方言用版本列 `excluded.tsv` 的 `x-unidic`。
 5. 新聞、5ch、Twitter/X 沒有逐站書面授權前，public core 與 experimental 都不用。
-6. permissive notice-only 只適用經 2026-11-17 決策簽核的來源：IPADic 2.7.0、Unicode Unihan 與 0c 自有 curated。散布時必須保留完整著作權、許可與免責聲明；這不是新的通用授權類別。
+6. permissive notice-only 只適用經 2026-11-17 決策簽核的來源：IPADic 2.7.0、Unicode Unihan、0c 自有 curated，以及 2026-11-17 第二修訂簽核的現代書き言葉UniDic BSD-3-Clause 分支。散布時必須保留完整著作權、許可與免責聲明；這不是新的通用授權類別。
 
 ## 2. 檔案
 
@@ -91,8 +91,9 @@ Public core 詞典來源（P2-22）：
 - mecab-ipadic-2.7.0-20070801，NAIST + ICOT Free Software，permissive notice-only；詞條、品詞、讀音、活用與連接成本。官方下載頁 https://taku910.github.io/mecab/#download；GitHub mirror commit 2fd29256c6d5e1b10211cac838069ee9ede8c77a。
 - Unicode Unihan Database 18.0.0（UCD 18.0.0，2026-09-01），Unicode License V3，permissive notice-only；只取日文讀音與漢字屬性。`Unihan.zip` 在 https://www.unicode.org/Public/18.0.0/ucd/Unihan.zip。
 - 0c curated 日文種子詞條，`data/ja/lexicon/words.tsv`，137 詞條，0c 自有，permissive notice-only。產品 `ledger.tsv` 的 `curated` 列仍為 CC BY-SA 4.0，本列不撤回該授權。
+- 現代書き言葉UniDic `unidic-cwj-202512`（2025-12-31），NINJAL／The UniDic Consortium，三重授權選 BSD-3-Clause，permissive notice-only；只取詞條、品詞、讀音、活用與成本。散布時每個詞典包必附 `legal/unidic/BSD.txt`、`legal/unidic/BSD-unidic-cwj-202512.txt` 與 `legal/unidic/AUTHORS.md`。NINJAL 沒有獨立 `AUTHORS` 下載，artifact 內也沒有 `AUTHORS`。
 
-UniDic BSD 分支（`unidic-cwj-202512`）仍在 `review.tsv` 的 `rev-unidic-bsd`，未簽核前不是 public core 來源；UniDic 預設分支維持在 `excluded.tsv`。
+UniDic BSD 分支（`unidic-cwj-202512`）在 2026-11-17 第二修訂簽核通過，改列 `public-core.tsv` 的 `pc-unidic`；`review.tsv` 的 `rev-unidic-bsd` 已結案移除。CC BY-NC-SA 版本、古文用與方言用版本仍留在 `excluded.tsv` 的 `x-unidic`。
 
 Experimental 可用來源：
 
@@ -113,7 +114,7 @@ Experimental 可用來源：
 7. **Common Crawl 衍生資料全部排除。** 即使 dataset card 標 ODC-BY 或 CC BY-SA，也不符合 public core 的授權條件。
 8. **LLM-jp 自己也拿掉不能重散布的來源。** NWJC 與 Ceek.jp News 不在 Corpus v4 公開資料集；兩者列 `excluded.tsv`。不要從其他管道補回來。
 9. **IPADic 與 Unihan 是 permissive notice-only，不是 CC BY 4.0 或公共領域。** 2026-11-17 決策單獨允許這兩類與 0c curated 進 public core；條件是保留完整著作權、許可與免責聲明。IPADic 不可只寫 BSD-3-Clause；Unihan 不可只寫「Unicode」。
-10. **UniDic BSD 分支不是已簽核來源。** 即使 BSD-3-Clause 可商用，2026-11-17 決策仍要求另案調查；`rev-unidic-bsd` 未結案前不得放進 `public-core.tsv`，`x-unidic` 的既有排除也仍然有效。
+10. **UniDic BSD 分支已簽核，但範圍很窄。** NINJAL FAQ 明示授權附著於解析用UniDic 自体，可在 GPL／LGPL／BSD 三者擇一；本專案選 BSD-3-Clause，只准 `unidic-cwj-202512` 與同系列的現代話し言葉。CC BY-NC-SA 版本、古文用與方言用字典仍在 `x-unidic`，不得混用。BSD 的義務是保留著作權、條件與免責聲明，並且每次都附 `BSD` 與著作者表示。
 
 ## 7. P2-21 入口條件
 
@@ -138,7 +139,7 @@ P2-21B（experimental）：
 新增來源時：
 
 1. 先在對應 TSV 加一列，填齊 URL、版本、授權、署名、邊界。
-2. 授權不是 CC BY 4.0、公共領域或經簽核的 permissive notice-only，不能進 `public-core.tsv`。permissive notice-only 目前只限 IPADic、Unihan 與 0c curated。
-3. 授權有疑問，先放 `review.tsv`，不要先用再補。UniDic BSD 分支就是這樣處理。
+2. 授權不是 CC BY 4.0、公共領域或經簽核的 permissive notice-only，不能進 `public-core.tsv`。permissive notice-only 目前只限 IPADic、Unihan、0c curated 與 UniDic 的 BSD-3-Clause 分支。
+3. 授權有疑問，先放 `review.tsv`，不要先用再補。UniDic BSD 分支就是先放 `rev-unidic-bsd`、簽核後才進 `public-core.tsv` 的例子。
 4. 改動 `public-core.tsv` 或 `experimental.tsv` 後，重跑 P2-21 的 manifest 檢查。
 5. 不把語料、壓縮檔或 tokenized binary 放進 Git。

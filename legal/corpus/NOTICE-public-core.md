@@ -6,7 +6,7 @@
 
 本產出使用下列公開資料訓練或建置。各來源依其授權提供；來源方未背書本專案，也未參與模型訓練或輸出。
 
-公開核心只使用三類授權：CC BY 4.0、公共領域、permissive notice-only。permissive notice-only 不是 CC0；散布時必須保留各來源的著作權、許可與免責聲明。CC BY-SA、non-commercial、Mozc、UniDic 預設分支、SudachiDict、NEologin、JUMAN、Common Crawl 與 NEologd 來源不得放進本 NOTICE。
+公開核心只使用三類授權：CC BY 4.0、公共領域、permissive notice-only。permissive notice-only 不是 CC0；散布時必須保留各來源的著作權、許可與免責聲明。CC BY-SA、non-commercial、Mozc、UniDic 的 CC BY-NC-SA 版本與古文用／方言用版本、SudachiDict、NEologin、JUMAN、Common Crawl 與 NEologd 來源不得放進本 NOTICE。
 
 修改說明：資料經過正規化、重複與近重複移除、文件群組 holdout、抽樣、斷詞與 tokenization；模型由本專案從零訓練。實際步驟見訓練 manifest。
 
@@ -201,21 +201,34 @@ authorization of the copyright holder.
 - 邊界：只收無第三方貢獻的 curated 種子。`data/sources/ledger.tsv` 的產品 `curated` 列仍為 CC BY-SA 4.0；本 NOTICE 的 permissive 授權是權利人對 public core 版本另外授予，不撤回也不取代產品資料包的 CC BY-SA 4.0。
 - 修改：正規化、讀音驗證、重複移除、成本調整與排序。
 
-## 10. 授權全文
+## 10. 現代書き言葉UniDic（BSD-3-Clause 分支）
+
+- 來源：現代書き言葉UniDic（https://clrd.ninjal.ac.jp/unidic/），The UniDic Consortium；国立国語研究所（NINJAL）
+- 取用形式：`unidic-cwj-202512`（2025-12-31，ver.2025.12 解析用軽量版），下載頁 https://clrd.ninjal.ac.jp/unidic/download.html，版本頁 https://clrd.ninjal.ac.jp/unidic/back_number.html
+- 授權類別：Permissive-Notice-Only；NINJAL 對解析用UniDic 提供 GPL-2.0-only／LGPL-2.1-only／BSD-3-Clause 三重授權，本專案選 **BSD-3-Clause**。條款：https://clrd.ninjal.ac.jp/unidic/copying/BSD
+- 允許理由：NINJAL FAQ（https://clrd.ninjal.ac.jp/unidic/faq.html）明示授權附著於「解析用UniDic 自体」，可自 GPL／LGPL／BSD 三者擇一或組合。BSD-3-Clause 只要求保留著作權、條件與免責聲明，且不得用 UniDic Consortium 名義背書，沒有 copyleft 與 non-commercial 限制。
+- 邊界：只使用現代書き言葉（`cwj`，2.x 系列與 2023.02 起的年月編號）與現代話し言葉（`csj`，2.2.x 系列）。古文用（`chuko`、`chusei-*`、`jodai`、`kindai-*`、`kinsei-*`、`waka`）與方言用（`kansai`、`D-kansai`）不在核准範圍；CC BY-NC-SA 版本也不使用。
+- 修改：只取詞條、品詞、讀音、活用與連接成本；轉成 UTF-8、讀音正規化為平假名、重複移除、成本尺度調整與排序。
+- **散布義務：每一個散布的詞典包都必須同時附上 `legal/unidic/BSD.txt`、`legal/unidic/BSD-unidic-cwj-202512.txt` 與 `legal/unidic/AUTHORS.md`。** 兩份 BSD 的著作權行不同（網站版 `Copyright (c) 2011-2021, The UniDic Consortium`；artifact 版 `Copyright (c) 2023 National Institute for Japanese Language and Linguistics`），不得只留一份、改寫或合併成單一 `BSD-3-Clause` 標籤。
+- 必須保留的聲明：`legal/unidic/` 的三個檔案全文。NINJAL 沒有提供獨立的 `AUTHORS` 下載，`unidic-cwj-202512.zip` 內也沒有 `AUTHORS`；`AUTHORS.md` 由 artifact 的 `README.md` 與 `license/COPYING` 逐字整理。若日後換用的 artifact 內含 `AUTHORS`，改為逐字附上該檔。
+
+## 11. 授權全文
 
 - CC BY 4.0：`legal/CC-BY-4.0.txt` 或 https://creativecommons.org/licenses/by/4.0/legalcode
 - 公共領域：依各來源聲明；本範本第 1 與第 6 節已記錄判定依據。
 - IPADic：https://github.com/taku910/mecab/blob/master/mecab-ipadic/COPYING；完整 NAIST 與 ICOT 聲明見第 7 節。
 - Unicode License V3：`legal/UNICODE-NOTICE.txt` 或 https://www.unicode.org/license.txt；完整聲明見第 8 節。
 - 0c curated：權利人 0c 的 permissive notice-only 授權記錄在本 NOTICE 與 `data/sources/corpus/public-core.tsv`。
+- UniDic BSD-3-Clause：`legal/unidic/BSD.txt`、`legal/unidic/BSD-unidic-cwj-202512.txt`、`legal/unidic/COPYING-unidic-cwj-202512.txt`；來源為 https://clrd.ninjal.ac.jp/unidic/copying/BSD。
 
-## 11. Release 檢查
+## 12. Release 檢查
 
 - [ ] NOTICE 只列實際使用的來源。
 - [ ] 每個來源都有版本、雜湊、授權與完整署名。
 - [ ] 修改說明與 manifest 一致。
 - [ ] 已附 CC BY 4.0 全文或連結。
-- [ ] 已附 permissive notice-only 來源的完整著作權與免責聲明：IPADic 的 NAIST 與 ICOT NO WARRANTY、Unicode License V3、0c curated 署名。
-- [ ] 沒有 CC BY-SA、non-commercial、Mozc、UniDic 預設分支、SudachiDict、NEologin、JUMAN、Common Crawl、NEologd 來源。
-- [ ] UniDic BSD 分支未經 `review.tsv` 的 `rev-unidic-bsd` 簽核前不得列入；簽核後才更新本 NOTICE。
+- [ ] 已附 permissive notice-only 來源的完整著作權與免責聲明：IPADic 的 NAIST 與 ICOT NO WARRANTY、Unicode License V3、0c curated 署名、UniDic 的兩份 BSD 與 `AUTHORS.md`。
+- [ ] 沒有 CC BY-SA、non-commercial、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN、Common Crawl、NEologd 來源。
+- [ ] 每個含 UniDic 詞條的詞典包都實際帶了 `legal/unidic/BSD.txt`、`legal/unidic/BSD-unidic-cwj-202512.txt` 與 `legal/unidic/AUTHORS.md`；不是只在 repo 裡有檔。
+- [ ] 沒有包含原始 `unidic-cwj-202512.zip`、`sys.dic`、`matrix.bin`、`lex.csv`。
 - [ ] 沒有暗示來源方背書。

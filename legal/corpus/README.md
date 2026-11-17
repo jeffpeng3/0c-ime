@@ -15,6 +15,7 @@ P2-20 產出。範圍是 Phase 2 日文訓練語料、experimental 模型來源�
 | `../CC-BY-SA-3.0.txt` | CC BY-SA 3.0 完整條款 |
 | `../CC-BY-SA-4.0.txt` | CC BY-SA 4.0 完整條款 |
 | `../UNICODE-NOTICE.txt` | Unicode License V3 完整條款（Unihan） |
+| `../unidic/` | UniDic 的修正 BSD 全文（網站版與 artifact 版）、COPYING 與著作者表示 |
 
 來源清單、版本、雜湊與逐來源署名在 `data/sources/corpus/`。
 
@@ -22,14 +23,14 @@ P2-20 產出。範圍是 Phase 2 日文訓練語料、experimental 模型來源�
 
 | 軌道 | 可用授權 | 釋出 | 不可做的事 |
 |---|---|---|---|
-| Public core | CC BY 4.0、公共領域、permissive notice-only | 程式 AGPL-3.0-only；資料與模型依各自授權 | 不收 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 預設分支、SudachiDict、NEologin、JUMAN、NEologd |
+| Public core | CC BY 4.0、公共領域、permissive notice-only | 程式 AGPL-3.0-only；資料與模型依各自授權 | 不收 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN、NEologd |
 | Experimental | CC BY-SA 2.5／3.0／4.0 | 衍生語料與模型以 CC BY-SA 4.0 釋出 | 不混進 public core；不共用 manifest、checkpoint 或安裝包 |
 
 Public core 的三類授權：
 
 1. CC BY 4.0：保留署名、授權連結與修改說明。
 2. 公共領域：寫明判定依據。
-3. permissive notice-only：沒有 copyleft、沒有 non-commercial 限制，但散布時必須保留著作權、許可與免責聲明。2026-11-17 決策允許的來源限 IPADic 2.7.0（NAIST + ICOT）、Unicode Unihan（Unicode License V3）與 0c 自有 curated。這不是通用通行證；新來源仍須逐案審查並在 `data/sources/corpus/public-core.tsv` 留下允許理由。
+3. permissive notice-only：沒有 copyleft、沒有 non-commercial 限制，但散布時必須保留著作權、許可與免責聲明。2026-11-17 決策允許的來源限 IPADic 2.7.0（NAIST + ICOT）、Unicode Unihan（Unicode License V3）、0c 自有 curated，以及 2026-11-17 第二修訂簽核的現代書き言葉UniDic BSD-3-Clause 分支。這不是通用通行證；新來源仍須逐案審查並在 `data/sources/corpus/public-core.tsv` 留下允許理由。
 
 Public core 與 experimental 必須有不同資料目錄、不同 manifest、不同 checkpoint。安裝包若同時提供兩組模型，必須在設定與檔案層分開標示，不能讓使用者誤以為同一組權重。
 
@@ -70,7 +71,7 @@ Public core 與 experimental 必須有不同資料目錄、不同 manifest、不
 | IPADic 2.7.0 | NAIST + ICOT，permissive notice-only。保留完整著作權與 ICOT NO WARRANTY；不可只寫 BSD-3-Clause 或 CC BY 4.0。 |
 | Unicode Unihan | Unicode License V3，permissive notice-only。保留 copyright 與 permission notice；只取日文讀音與漢字屬性。 |
 | 0c curated | 0c 自有。public core 版本以 permissive notice-only 釋出；產品 `ledger.tsv` 的 `curated` 列仍是 CC BY-SA 4.0。 |
-| UniDic BSD | 另案調查中（`review.tsv` 的 `rev-unidic-bsd`）；未簽核前不進 public core。UniDic 預設分支仍在 `excluded.tsv`。 |
+| UniDic BSD | `pc-unidic`，`unidic-cwj-202512`，三重授權選 BSD-3-Clause。每個散布的詞典包必附 `legal/unidic/` 的兩份 BSD 與 `AUTHORS.md`。只准現代書き言葉與現代話し言葉；CC BY-NC-SA、古文用與方言用版本不用。 |
 | Wikipedia | 文字 CC BY-SA 4.0，另可依 GFDL。不取圖片、商標。 |
 | Stack Exchange | CC BY-SA 4.0；2018-05-02 以前投稿可能是 2.5 或 3.0。逐帖署名。 |
 | AJIMEE-Bench | 評測資料 CC BY-SA 3.0；程式 CC0-1.0。只供 experimental 評測。 |
