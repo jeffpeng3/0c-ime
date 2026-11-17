@@ -12,9 +12,9 @@ import (
 )
 
 // #290：符號選單「最近」分頁的順序與分數存在格式 7。
-// 新版讀舊檔：格式 6 以前沒有這兩個欄位，讀進來是空的，其他資料照舊；存檔寫成格式 7、來回一致。
+// 新版讀舊檔：格式 6 以前沒有這兩個欄位，讀進來是空的，其他資料照舊；存檔寫成目前格式、來回一致。
 func TestSymbolRecentOldFormats(t *testing.T) {
-	if StoreFormat != 7 {
+	if StoreFormat < 7 {
 		t.Fatalf("符號的最近使用加在格式 7：%d", StoreFormat)
 	}
 	for _, format := range []int{0, 4, 5, 6} {
@@ -28,8 +28,8 @@ func TestSymbolRecentOldFormats(t *testing.T) {
 		if err := s.Save(&b); err != nil {
 			t.Fatal(err)
 		}
-		if !bytes.Contains(b.Bytes(), []byte(`"Format":7`)) || !bytes.Contains(b.Bytes(), []byte(`"SymbolRecent":["※"]`)) {
-			t.Fatalf("存成格式 7：%s", b.String())
+		if !bytes.Contains(b.Bytes(), []byte(fmt.Sprintf(`"Format":%d`, StoreFormat))) || !bytes.Contains(b.Bytes(), []byte(`"SymbolRecent":["※"]`)) {
+			t.Fatalf("存成目前格式：%s", b.String())
 		}
 		back, err := LoadStore(&b)
 		if err != nil || !reflect.DeepEqual(back, s) {

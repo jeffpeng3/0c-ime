@@ -220,6 +220,12 @@ type Session struct {
 	languages  map[lang.ID]lang.Profile
 	languageID lang.ID
 	runtimes   map[lang.ID]*languageRuntime
+	// lastLanguage 是上一次送出的最後一個片段語言（P2-15）。選字時用它判斷跨語言偏好：
+	// 句首或被清掉後是空字串，代表沒有前文語言。
+	lastLanguage lang.ID
+	// languageSelections 是本次組字中尚未送出的選字觀察（P2-15）。與注音學習一樣，
+	// 選字本身不改持久模型；送出時才依私人／暫停狀態決定要不要寫入。
+	languageSelections []personal.LanguageSelection
 
 	// Phase 2 片段狀態（P2-13）：片段是游標所在的編輯單位，各自帶語言標籤。
 	// 一般情況由目前的組字路徑即時推導；ReplaceSegment／InsertSegment／RemoveSegment
@@ -1644,6 +1650,7 @@ func (s *Session) selectCandidate(id int) bool {
 	}
 	start, length := s.cand.span(id)
 	c, end := s.cand.items[id].Entry, start+length
+	s.noteZhSelection(c.Surface, start, end)
 	shown, auto := slices.Clone(s.path), slices.Clone(s.autoLog)
 	for _, g := range s.path {
 		if g.Start <= start && start < g.End && (g.Word != c.Surface || g.Start != start || g.End != end) {
@@ -1756,6 +1763,7 @@ func (s *Session) commit() string {
 	if s.mixedInput() && learn && !s.localBlocked {
 		s.model.LearnZhuyinKeys(s.zhuyinKeyCommits())
 	}
+	s.flushLanguageSelections(learn)
 	if learn {
 		s.emitLearn(lang.Zh, text)
 	}
@@ -1763,6 +1771,7 @@ func (s *Session) commit() string {
 	text = s.punctuate(text)
 	tail := s.committedTail()
 	neural := s.neuralCommitContext(text)
+	s.noteCommittedLanguage()
 	s.reset()
 	if tail != "" && text != "" {
 		s.pendingLeft = tail
@@ -1853,6 +1862,7 @@ func (s *Session) punctuate(text string) string {
 }
 
 func (s *Session) reset() {
+	s.languageSelections = nil
 	if s.Language() != lang.Zh {
 		// 只清目前語言；切走時另一邊未完成的組字保留。
 		s.styleCycle = nil
