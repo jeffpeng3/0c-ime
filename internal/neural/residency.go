@@ -396,6 +396,10 @@ func wrapPrepareError(err error) error {
 
 // modelReason 把套件錯誤分類成固定代碼。分類只看 sentinel，不解析訊息內容。
 func modelReason(err error) string {
+	var modelErr *ModelError
+	if errors.As(err, &modelErr) && modelErr.Reason != "" {
+		return modelErr.Reason
+	}
 	switch {
 	case errors.Is(err, os.ErrNotExist):
 		return ReasonMissing
