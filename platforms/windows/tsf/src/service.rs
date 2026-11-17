@@ -26,6 +26,7 @@ use windows_core::{implement, ComObject, IUnknownImpl, Interface, Ref, BOOL, GUI
 use zuin_win_common::{has_content, notice_expires, UiCandidate, UiMessage, NOTICE_MS};
 
 use crate::candidate::CandidateWindow;
+use crate::candidate_model;
 use crate::cuas::{Cuas, Win32Cuas};
 use crate::displayattr::{AttributeEnum, InputAttribute, KINDS};
 use crate::log::{zdebug, zlog};
@@ -939,7 +940,7 @@ impl TextService_Impl {
     }
 
     fn handle_key(&self, ctx: Option<&ITfContext>, key: &str) -> bool {
-        let snapshot = self.state.borrow_mut().session.key(key);
+        let mut snapshot = self.state.borrow_mut().session.key(key);
         zdebug!(
             "snapshot ok={} handled={} composing={} commit_len={}",
             snapshot.ok,
@@ -947,6 +948,20 @@ impl TextService_Impl {
             snapshot.composing(),
             snapshot.commit.chars().count()
         );
+        // P2-41：游標移動後，候選跟著新的片段重開。候選窗開著時左右鍵由引擎
+        // 翻頁，不會走到這裡；這裡只處理已經移動游標、畫面還沒有候選的按鍵。
+        if candidate_model::follows_cursor(&snapshot, key) {
+            let followed = self.state.borrow_mut().session.candidates();
+            if followed.ok && followed.handled && !followed.candidates.is_empty() {
+                zdebug!(
+                    "segment candidates start={} length={} active={:?}",
+                    followed.candidate_start,
+                    followed.candidate_length,
+                    candidate_model::CandidateModel::from_snapshot(&followed).active
+                );
+                snapshot = followed;
+            }
+        }
         self.present(ctx, &snapshot)
     }
 

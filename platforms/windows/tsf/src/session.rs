@@ -25,6 +25,10 @@ pub struct Snapshot {
     pub cursor_utf16: usize, // 核心直接提供 UTF-16 位置；TSF 的範圍以 UTF-16 計
     pub suggestion: String,
     pub candidates: Vec<(i64, String)>, // 目前這一頁的（ID, 文字）
+    /// 候選對應的組字起點與替換字數（rune）；舊核心沒有時都是 0。
+    /// P2-41：跟著游標所在片段，長詞候選可以跨多個片段但仍是一項。
+    pub candidate_start: usize,
+    pub candidate_length: usize,
     pub candidate_notes: Vec<String>, // 與 candidates 等長的低調附註（模糊音近音為「近音 ㄓ」），其餘為空字串
     /// 與 candidates 等長的鍵標（#112）：核心給的選字鍵（1、q、;）；舊核心沒有時依位置 1–0，
     /// 英文模式（只有自動補字候選，數字是文字）為空字串、不畫。
@@ -793,6 +797,12 @@ impl Session {
         self.handle(json!({"type": "key", "key": key}))
     }
 
+    /// 為游標所在片段重開候選（P2-41）。Length 0：核心以目前路徑的詞長為準，
+    /// 詞庫的長詞 match 因此是一項候選，不會被外殼拆成多個片段候選。
+    pub fn candidates(&mut self) -> Snapshot {
+        self.handle(json!({"type": "candidates"}))
+    }
+
     /// 單按 Shift 或輸入指示器按鈕切換中英。上一次切換之後沒有任何按鍵或其他請求時帶 restore，
     /// 核心才放回切到英文時清掉的未打完注音（#90 防誤觸）。
     pub fn toggle(&mut self) -> Snapshot {
@@ -891,6 +901,8 @@ fn parse(reply: &Value) -> Snapshot {
         s.columns = c["columns"].as_u64().unwrap_or(0).min(10) as usize;
         s.candidate_kind = c["kind"].as_str().unwrap_or("").to_string();
         s.candidate_title = c["title"].as_str().unwrap_or("").to_string();
+        s.candidate_start = c["start"].as_u64().unwrap_or(0) as usize;
+        s.candidate_length = c["length"].as_u64().unwrap_or(0) as usize;
         s.page = c["page"].as_i64().unwrap_or(0);
         s.pages = c["pages"].as_i64().unwrap_or(0);
         s.highlight = c["highlight"].as_i64().unwrap_or(0);
@@ -1031,6 +1043,17 @@ mod parse_tests {
             s.candidate_notes,
             vec!["".to_string(), "近音 ㄔ".to_string()]
         );
+    }
+
+    #[test]
+    fn candidate_range_is_parsed_for_segment_following() {
+        let s = parse(&json!({"snapshot": {"handled": true, "candidates": {
+            "start": 1, "length": 2, "items": [{"id": 4, "text": "風景"}]}}}));
+        assert_eq!((s.candidate_start, s.candidate_length), (1, 2));
+        assert_eq!(s.candidates, vec![(4, "風景".to_string())]);
+        // 舊核心沒有範圍欄位：零值代表未知，不影響候選顯示。
+        let old = parse(&json!({"snapshot": {"candidates": {"items": [{"id": 0, "text": "我"}]}}}));
+        assert_eq!((old.candidate_start, old.candidate_length), (0, 0));
     }
 
     // #112：鍵標照核心給的選字鍵；舊核心依位置 1–0（第 10 項是 0），英文模式的補字候選不畫。

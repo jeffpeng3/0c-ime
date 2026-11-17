@@ -1052,5 +1052,33 @@ mod tests {
         let completion = UiCandidate { id: 0, text: "hello".into(), key: Some(String::new()), ..Default::default() };
         assert_eq!(candidate_line(0, &completion), "hello", "英文補字不畫鍵標");
     }
+
+    #[test]
+    fn candidate_rows_are_language_neutral_and_keep_long_matches_whole() {
+        // P2-41：中、日、英候選在同一張清單，畫面上沒有語言標籤；長詞 match
+        // 是一列，不會因為跨越多個片段被拆開。
+        let m = UiMessage {
+            show: true,
+            candidates: vec![
+                UiCandidate { id: 1, text: "風景".into(), ..Default::default() },
+                UiCandidate { id: 2, text: "私".into(), ..Default::default() },
+                UiCandidate { id: 3, text: "good".into(), ..Default::default() },
+            ],
+            ..Default::default()
+        };
+        let rows = lines(&m);
+        assert_eq!(rows.len(), 3, "每個候選一列，長詞不拆");
+        let text = |row: &(Vec<u16>, Row)| String::from_utf16(&row.0).unwrap();
+        assert_eq!(text(&rows[0]), "1. 風景");
+        for row in &rows {
+            let line = text(row);
+            for label in ["中文", "日文", "英文", "zh", "ja", "en"] {
+                assert!(!line.contains(label), "候選列不得帶語言標籤 {label:?}: {line}");
+            }
+        }
+        // 舊 DLL 只有文字時也一樣：沒有語言欄位可畫。
+        let old: UiCandidate = serde_json::from_str(r#"{"id":1,"text":"風景"}"#).unwrap();
+        assert_eq!(candidate_line(0, &old), "1. 風景");
+    }
 }
 
