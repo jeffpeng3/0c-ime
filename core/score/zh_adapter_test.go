@@ -63,7 +63,7 @@ func TestZhAdapterConvertsAndScores(t *testing.T) {
 	adapter := NewZhAdapter(scorer)
 	adapter.AllowPartial = true
 	contextText := strings.Repeat("文", 70)
-	req := Request{
+	req := Request{Privacy: PublicPrivacy(),
 		Context: contextText,
 		Candidates: []lattice.Candidate{
 			zhCandidate("今天", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
@@ -114,7 +114,7 @@ func TestZhAdapterMixedLanguagesKeepsOrder(t *testing.T) {
 		{Segment: segment.Segment{Surface: "kubectl", Language: lang.Tag(lang.En), Variant: lang.VariantEn}},
 	}
 
-	got, err := adapter.Score(context.Background(), Request{Candidates: candidates})
+	got, err := adapter.Score(context.Background(), Request{Privacy: PublicPrivacy(), Candidates: candidates})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestZhAdapterSeparateReadings(t *testing.T) {
 		return nil, errors.New("unexpected reading")
 	}}
 	adapter := NewZhAdapter(scorer)
-	req := Request{Candidates: []lattice.Candidate{
+	req := Request{Privacy: PublicPrivacy(), Candidates: []lattice.Candidate{
 		zhCandidate("今天", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
 		zhCandidate("明天", "ㄇㄧㄥˊ ㄊㄧㄢ", lang.Zh),
 		zhCandidate("金田", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
@@ -168,7 +168,7 @@ func TestZhAdapterDeduplicatesSurface(t *testing.T) {
 	first.Source = lattice.SourceDictionary
 	again := first
 	again.Source = lattice.SourcePersonal
-	req := Request{Candidates: []lattice.Candidate{
+	req := Request{Privacy: PublicPrivacy(), Candidates: []lattice.Candidate{
 		first,
 		zhCandidate("金田", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
 		again,
@@ -186,7 +186,7 @@ func TestZhAdapterDeduplicatesSurface(t *testing.T) {
 func TestZhAdapterSingleSyllableTextMode(t *testing.T) {
 	scorer := &recordingZhScorer{}
 	adapter := NewZhAdapter(scorer)
-	req := Request{
+	req := Request{Privacy: PublicPrivacy(),
 		Context: "前文",
 		Candidates: []lattice.Candidate{
 			zhCandidate("今", "ㄐㄧㄣ", lang.Zh),
@@ -212,7 +212,7 @@ func TestZhAdapterSingleSyllableTextMode(t *testing.T) {
 func TestZhAdapterContextModes(t *testing.T) {
 	scorer := &recordingZhScorer{}
 	adapter := NewZhAdapter(scorer)
-	req := Request{
+	req := Request{Privacy: PublicPrivacy(),
 		Context: "abcdef",
 		Candidates: []lattice.Candidate{
 			zhCandidate("今天", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
@@ -264,22 +264,22 @@ func TestZhAdapterFallback(t *testing.T) {
 		ctx     context.Context
 		req     Request
 	}{
-		{name: "nil scorer", adapter: NewZhAdapter(nil), ctx: context.Background(), req: Request{Candidates: valid}},
+		{name: "nil scorer", adapter: NewZhAdapter(nil), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: valid}},
 		{name: "scorer error", adapter: NewZhAdapter(&recordingZhScorer{fn: func(rerank.Request) ([]float64, error) {
 			return nil, errors.New("worker down")
-		}}), ctx: context.Background(), req: Request{Candidates: valid}},
-		{name: "no chinese candidates", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Candidates: nonZh}},
-		{name: "kana reading", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Candidates: badSyllable}},
-		{name: "surface reading mismatch", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Candidates: wrongLength}},
-		{name: "single candidate", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Candidates: valid[:1]}},
+		}}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: valid}},
+		{name: "no chinese candidates", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: nonZh}},
+		{name: "kana reading", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: badSyllable}},
+		{name: "surface reading mismatch", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: wrongLength}},
+		{name: "single candidate", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: valid[:1]}},
 		{name: "score count mismatch", adapter: NewZhAdapter(&recordingZhScorer{fn: func(rerank.Request) ([]float64, error) {
 			return []float64{1}, nil
-		}}), ctx: context.Background(), req: Request{Candidates: valid}},
+		}}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: valid}},
 		{name: "non-finite score", adapter: NewZhAdapter(&recordingZhScorer{fn: func(rerank.Request) ([]float64, error) {
 			return []float64{math.NaN(), 1}, nil
-		}}), ctx: context.Background(), req: Request{Candidates: valid}},
-		{name: "canceled context", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: canceled, req: Request{Candidates: valid}},
-		{name: "invalid context", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Context: string([]byte{0xff}), Candidates: valid}},
+		}}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Candidates: valid}},
+		{name: "canceled context", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: canceled, req: Request{Privacy: PublicPrivacy(), Candidates: valid}},
+		{name: "invalid context", adapter: NewZhAdapter(&recordingZhScorer{}), ctx: context.Background(), req: Request{Privacy: PublicPrivacy(), Context: string([]byte{0xff}), Candidates: valid}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := tc.adapter.Score(tc.ctx, tc.req)
@@ -291,14 +291,14 @@ func TestZhAdapterFallback(t *testing.T) {
 }
 
 func TestZhAdapterDoesNotMutateRequest(t *testing.T) {
-	req := Request{
+	req := Request{Privacy: PublicPrivacy(),
 		Context: "前文",
 		Candidates: []lattice.Candidate{
 			zhCandidate("今天", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
 			zhCandidate("金田", "ㄐㄧㄣ ㄊㄧㄢ", lang.Zh),
 		},
 	}
-	before := Request{
+	before := Request{Privacy: PublicPrivacy(),
 		Context:    req.Context,
 		Candidates: append([]lattice.Candidate(nil), req.Candidates...),
 	}
@@ -311,7 +311,7 @@ func TestZhAdapterDoesNotMutateRequest(t *testing.T) {
 }
 
 func TestZhAdapterEmptyCandidates(t *testing.T) {
-	got, err := NewZhAdapter(&recordingZhScorer{}).Score(context.Background(), Request{})
+	got, err := NewZhAdapter(&recordingZhScorer{}).Score(context.Background(), Request{Privacy: PublicPrivacy()})
 	if err != nil || len(got) != 0 {
 		t.Fatalf("Score = %v, %v; want empty and nil", got, err)
 	}

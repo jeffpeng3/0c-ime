@@ -106,6 +106,10 @@ type Session struct {
 	styleGrid    bool
 	// Rerank 由宿主在第一次 Handle 前設定；零值保持原引擎。
 	Rerank rerank.Options
+	// SecureInput 由宿主設定：焦點在密碼框或安全輸入環境時為 true。
+	// 它與每個請求的 Private 一樣併入 s.private，因此模型、前文、學習與
+	// 補標點都走同一條隱私路徑；宿主忘記逐鍵帶 Private 也不會漏。
+	SecureInput bool
 	// Events 由宿主設定：學習與補完事件會帶著語言 ID 分流（T20）。零值不通知。
 	Events LanguageEvents
 	// Punct 由宿主設定：提交時補標點（只插入、不改原字）；nil 停用。私人／暫停／英數狀態一律不送出文字。
@@ -358,13 +362,16 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 	if !(r.Type == proto.Key && (r.Key == proto.KeyTab || r.Key == proto.KeyEscape)) && r.Type != proto.Accept {
 		s.previewRewrite = false
 	}
+	// 隱私只有一個入口：宿主逐鍵的 Private 與密碼／安全輸入狀態在這裡合併，
+	// 之後所有學習、模型與補標點都只看 s.private，避免某條路徑漏檢查。
+	requestPrivate := r.Private || s.SecureInput
 	if !s.composing() {
-		s.private = r.Private
+		s.private = requestPrivate
 	} else {
-		s.private = s.private || r.Private
+		s.private = s.private || requestPrivate
 	}
 	private := s.private // 送出時 reset 會清掉；中英文之間補空格（#273）看送出前的
-	if r.Private || r.Type == proto.Pause && r.On {
+	if requestPrivate || r.Type == proto.Pause && r.On {
 		s.clearDocumentContext()
 		s.localBlocked = true
 		if s.cand != nil && (s.cand.mixed || s.cand.kind != "" || s.cand.symbols == symbols.Recent) {
@@ -482,7 +489,7 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 	}
 	s.refresh()
 	// 保護狀態／前文確認／撤銷可以在候選窗仍開啟時變更；不能留下過期的個人或關聯標示。
-	if s.cand != nil && !s.cand.mixed && (r.Private || r.Type == proto.Pause || r.Type == proto.Context || r.Type == proto.Forget) {
+	if s.cand != nil && !s.cand.mixed && (requestPrivate || r.Type == proto.Pause || r.Type == proto.Context || r.Type == proto.Forget) {
 		s.cand.labels = s.candidateLabels(s.cand)
 	}
 	s.rev++

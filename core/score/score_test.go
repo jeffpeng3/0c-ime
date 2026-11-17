@@ -21,7 +21,7 @@ var (
 )
 
 func TestScorerContract(t *testing.T) {
-	req := score.Request{
+	req := score.Request{Privacy: score.PublicPrivacy(),
 		Context: "前文",
 		Candidates: []lattice.Candidate{
 			{Segment: segment.Segment{Surface: "今日", Language: lang.Tag(lang.Ja)}},

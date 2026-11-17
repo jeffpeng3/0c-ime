@@ -2,8 +2,10 @@ package score
 
 import (
 	"context"
+	"errors"
 	"math"
 	"sort"
+	"time"
 
 	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/lattice"
@@ -63,6 +65,11 @@ const (
 	DefaultSwitchCost = 0.5
 	// DefaultPrimarySwitchCost 是涉及主要語言時的較低切換成本。
 	DefaultPrimarySwitchCost = 0.1
+	// DefaultModelTimeout 是一次請求的模型評分時間預算。
+	//
+	// 這是 placeholder：輸入法每鍵都要在數十毫秒內回應，模型只能分到一小段。
+	// 真正的數值等 P2-60 的延遲評測後再校準；調大之前先確認最慢按鍵仍在預算內。
+	DefaultModelTimeout = 25 * time.Millisecond
 )
 
 // DefaultWeights 回傳第一版固定權重。
@@ -124,6 +131,11 @@ type Ranker struct {
 	SwitchCost float64
 	// PrimarySwitchCost 是涉及主要語言時的切換成本。零值規則同上。
 	PrimarySwitchCost float64
+	// Timeout 是一次請求的模型評分時間預算。零值使用 DefaultModelTimeout；
+	// 負值也使用預設值，沒有「關閉逾時」的設定。
+	Timeout time.Duration
+
+	counters counterSet
 }
 
 // RankerConfig 是建立 Ranker 的參數。零值代表沒有模型、沒有歷史、使用
@@ -135,6 +147,8 @@ type RankerConfig struct {
 	Weights           Weights
 	SwitchCost        float64
 	PrimarySwitchCost float64
+	// Timeout 是模型評分時間預算；零值使用 DefaultModelTimeout。
+	Timeout time.Duration
 }
 
 // NewRanker 建立特徵式仲裁器。Models 可以是 nil，表示只用統計特徵。
@@ -146,7 +160,17 @@ func NewRanker(cfg RankerConfig) *Ranker {
 		Weights:           cfg.Weights,
 		SwitchCost:        cfg.SwitchCost,
 		PrimarySwitchCost: cfg.PrimarySwitchCost,
+		Timeout:           cfg.Timeout,
 	}
+}
+
+// Counters 回傳目前累計的服務來源。回退、逾時與隱私跳過都留在 Requests
+// 分母裡；這個快照可以安全地被多個 goroutine 同時讀取。
+func (r *Ranker) Counters() Counters {
+	if r == nil {
+		return Counters{}
+	}
+	return r.counters.snapshot()
 }
 
 var _ Arbitrator = (*Ranker)(nil)
@@ -158,6 +182,9 @@ var _ Arbitrator = (*Ranker)(nil)
 type RankRequest struct {
 	// Context 是已確定的左側文字，只轉交給模型；隱私欄位不得送進來。
 	Context string
+	// Privacy 是這次請求的欄位敏感度。零值 PrivacyUnspecified 視為私人，
+	// 模型完全不會被呼叫；一般欄位必須明確標成 PublicPrivacy()。
+	Privacy Privacy
 	// PreviousLanguage 是前文語言；零值表示句首或未知。
 	PreviousLanguage lang.LanguageTag
 	// PrimaryLanguage 是使用者主要語言；零值表示未設定。
@@ -229,30 +256,37 @@ func (r *Ranker) Arbitrate(f Features) Decision {
 	return Decision{Score: score, Reason: featureReason}
 }
 
-// Rank 排序全部候選並回傳單一清單。
+// Rank 排序全部候選並回傳單一清單，是 RankResult 的便利包裝。
 //
 // 決定性規則：分數由高到低；分數完全相同時保留 Candidates 的原始索引，
 // 也就是先出現的候選優先。這個規則讓沒有模型時的結果與統計順序一致，也
 // 讓同一份輸入每次都得到相同順序。Rank 不會修改 req 或候選。
 //
-// 模型錯誤的處理：ErrUnavailable、回傳長度不符或非有限分數都視為該模型
-// 暫時不可用，跳過它並繼續用其他特徵排序；只有 context 取消會回傳錯誤。
-// 因此呼叫端不需要為了「模型缺失」準備另一條 API。
+// 模型錯誤的處理：隱私等級不是公開、模型缺失、ErrUnavailable、回傳長度
+// 不符、非有限分數或超過 Timeout，都會讓整筆請求改用統計排序；只有呼叫端
+// 自己的 context 取消會回傳錯誤。回退不會刪除任何候選。
 func (r *Ranker) Rank(ctx context.Context, req RankRequest) ([]Ranked, error) {
+	ranking, err := r.RankResult(ctx, req)
+	return ranking.Items, err
+}
+
+// RankResult 與 Rank 相同，另外回報這次請求的服務來源，讓評測把回退、
+// 逾時與隱私跳過留在分母裡。
+func (r *Ranker) RankResult(ctx context.Context, req RankRequest) (Ranking, error) {
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return Ranking{}, err
 	}
 	out := make([]Ranked, len(req.Candidates))
 	if len(out) == 0 {
-		return out, nil
+		return Ranking{Items: out, Outcome: OutcomeNone}, nil
 	}
 
-	modelScores, err := r.scoreModels(ctx, req)
+	modelScores, outcome, err := r.scoreModels(ctx, req)
 	if err != nil {
-		return nil, err
+		return Ranking{}, err
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return Ranking{}, err
 	}
 
 	for i, candidate := range req.Candidates {
@@ -289,67 +323,131 @@ func (r *Ranker) Rank(ctx context.Context, req RankRequest) ([]Ranked, error) {
 		}
 		return out[i].Index < out[j].Index
 	})
-	return out, nil
+	if r != nil {
+		r.counters.record(outcome)
+	}
+	return Ranking{Items: out, Outcome: outcome}, nil
 }
 
-// scoreModels 呼叫所有可用模型，回傳每個候選的模型分數合計。
+// scorerReply 是背景模型呼叫的結果；緩衝通道讓逾時後才完成的呼叫不會卡住。
+type scorerReply struct {
+	raw []float64
+	err error
+}
+
+// scoreModels 呼叫所有可用模型，回傳每個候選的模型分數合計與服務來源。
 //
-// 模型只對 Languages 宣告的語言貢獻分數；其他候選保持 0，即使模型回傳
-// 非中性值也一樣。任何模型失敗都只跳過該模型，不影響統計回退。
-func (r *Ranker) scoreModels(ctx context.Context, req RankRequest) ([]float64, error) {
+// 一次請求只有一份時間預算（Ranker.Timeout）。任何模型逾時、回錯、長度
+// 不符或分數無效，整筆請求都不採用模型分數：已算好的模型分數也會丟棄，
+// 讓回退結果與「完全沒有模型」逐位元相同。模型只對 Languages 宣告的語言
+// 貢獻分數；其他候選保持 0。
+func (r *Ranker) scoreModels(ctx context.Context, req RankRequest) ([]float64, Outcome, error) {
 	out := make([]float64, len(req.Candidates))
+	// 隱私檢查必須在任何模型、任何前文複製之前。零值也走這條路。
+	if !req.Privacy.AllowsModel() {
+		return out, OutcomePrivacy, nil
+	}
 	if r == nil || len(r.Models) == 0 {
-		return out, nil
+		return out, OutcomeFallback, nil
 	}
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return nil, OutcomeNone, err
 	}
 
+	var relevant []Scorer
 	for _, scorer := range r.Models {
 		if scorer == nil || !scorerRelevant(scorer, req.Candidates) {
 			continue
 		}
-		raw, err := scorer.Score(ctx, Request{
+		relevant = append(relevant, scorer)
+	}
+	if len(relevant) == 0 {
+		return out, OutcomeFallback, nil
+	}
+
+	deadline := time.Now().Add(r.timeout())
+	for _, scorer := range relevant {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return out, OutcomeTimeout, nil
+		}
+		raw, timedOut, err := callScorer(ctx, scorer, Request{
+			Privacy:    req.Privacy,
 			Context:    req.Context,
 			Candidates: req.Candidates,
-		})
+		}, remaining)
 		if err != nil {
 			if ctxErr := ctx.Err(); ctxErr != nil {
-				return nil, ctxErr
+				return nil, OutcomeNone, ctxErr
 			}
-			continue
+			if timedOut || errors.Is(err, context.DeadlineExceeded) {
+				return out, OutcomeTimeout, nil
+			}
+			return out, OutcomeFallback, nil
+		}
+		if timedOut {
+			return out, OutcomeTimeout, nil
 		}
 		if len(raw) != len(out) {
-			continue
+			return out, OutcomeFallback, nil
 		}
 
 		add := make([]float64, len(raw))
-		valid := true
 		for i, value := range raw {
 			if !scorerSupports(scorer, candidateLanguage(req.Candidates[i])) {
 				continue
 			}
 			if !isFinite(value) {
-				valid = false
-				break
+				return out, OutcomeFallback, nil
 			}
 			if r.Calibrator != nil {
 				value = r.Calibrator.Calibrate(value)
 				if !isFinite(value) {
-					valid = false
-					break
+					return out, OutcomeFallback, nil
 				}
 			}
 			add[i] = value
 		}
-		if !valid {
-			continue
-		}
+		// 只有整筆驗證通過才併入；失敗的請求不會留下部分模型分數。
 		for i := range out {
 			out[i] += add[i]
 		}
 	}
-	return out, nil
+	return out, OutcomeModel, nil
+}
+
+// callScorer 在背景 goroutine 呼叫模型，最多等 wait。
+//
+// 模型實作即使不理會 context，也無法讓呼叫端等超過預算；背景 goroutine
+// 之後完成時把結果寫進緩衝通道就結束，不會洩漏阻塞。回傳 timedOut 表示
+// 是這層的預算用完，呼叫端自己的 context 取消另有回傳值。
+func callScorer(ctx context.Context, scorer Scorer, req Request, wait time.Duration) (raw []float64, timedOut bool, err error) {
+	runCtx, cancel := context.WithTimeout(ctx, wait)
+	defer cancel()
+	done := make(chan scorerReply, 1)
+	go func() {
+		scores, scoreErr := scorer.Score(runCtx, req)
+		done <- scorerReply{raw: scores, err: scoreErr}
+	}()
+	select {
+	case reply := <-done:
+		if reply.err != nil && ctx.Err() != nil {
+			return nil, false, ctx.Err()
+		}
+		return reply.raw, false, reply.err
+	case <-runCtx.Done():
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return nil, false, ctxErr
+		}
+		return nil, true, runCtx.Err()
+	}
+}
+
+func (r *Ranker) timeout() time.Duration {
+	if r != nil && r.Timeout > 0 {
+		return r.Timeout
+	}
+	return DefaultModelTimeout
 }
 
 func (r *Ranker) weights() Weights {

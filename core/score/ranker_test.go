@@ -87,7 +87,7 @@ func TestFeatureRankerScenariosAB(t *testing.T) {
 			ranker := NewRanker(RankerConfig{}) // 沒有模型：走統計回退
 			for _, step := range steps {
 				t.Run(step.name, func(t *testing.T) {
-					got, err := ranker.Rank(context.Background(), RankRequest{
+					got, err := ranker.Rank(context.Background(), RankRequest{Privacy: PublicPrivacy(),
 						Context:          "前文",
 						PreviousLanguage: lang.Tag(step.previous),
 						PrimaryLanguage:  scenario.primary,
@@ -160,7 +160,7 @@ func TestFeatureRankerScenarioC(t *testing.T) {
 	}
 	for _, tc := range proper {
 		t.Run(tc.name, func(t *testing.T) {
-			got := mustRank(t, ranker, RankRequest{
+			got := mustRank(t, ranker, RankRequest{Privacy: PublicPrivacy(),
 				PrimaryLanguage: lang.Zh,
 				Candidates:      tc.candidates,
 			})
@@ -181,7 +181,7 @@ func TestFeatureRankerScenarioC(t *testing.T) {
 			scenarioCandidate("GitHub", lang.En, lang.VariantEn, 0.50, 0, lattice.SourceLiteral),
 			scenarioCandidate("github", lang.En, lang.VariantEn, 0.20, 0, lattice.SourceLiteral),
 		}
-		req := RankRequest{PrimaryLanguage: lang.Zh, Candidates: candidates}
+		req := RankRequest{Privacy: PublicPrivacy(), PrimaryLanguage: lang.Zh, Candidates: candidates}
 
 		withoutHistory := mustRank(t, NewRanker(RankerConfig{}), req)
 		if winner := candidates[withoutHistory[0].Index].Surface; winner != "github" {
@@ -216,7 +216,7 @@ func (s stubScorer) Score(context.Context, Request) ([]float64, error) {
 // TestFeatureRankerMissingModelFallsBack 驗證模型不可用、回錯、長度不符或
 // 非有限分數時都只跳過模型，排序仍等於完全沒有模型的統計結果。
 func TestFeatureRankerMissingModelFallsBack(t *testing.T) {
-	req := RankRequest{
+	req := RankRequest{Privacy: PublicPrivacy(),
 		Context:          "前文",
 		PreviousLanguage: lang.Tag(lang.Ja),
 		PrimaryLanguage:  lang.Ja,
@@ -249,7 +249,7 @@ func TestFeatureRankerUsesAvailableModel(t *testing.T) {
 		scenarioCandidate("模型加分", lang.En, lang.VariantEn, 0.50, 0, lattice.SourceModel),
 		scenarioCandidate("統計優先", lang.En, lang.VariantEn, 0.05, 0, lattice.SourceDictionary),
 	}
-	req := RankRequest{Candidates: candidates}
+	req := RankRequest{Privacy: PublicPrivacy(), Candidates: candidates}
 
 	without := mustRank(t, NewRanker(RankerConfig{}), req)
 	if winner := candidates[without[0].Index].Surface; winner != "統計優先" {
@@ -268,12 +268,12 @@ func TestFeatureRankerStableTieBreak(t *testing.T) {
 	second := scenarioCandidate("a", lang.En, lang.VariantEn, 0.20, 0, lattice.SourceLiteral)
 	ranker := NewRanker(RankerConfig{})
 
-	got := mustRank(t, ranker, RankRequest{Candidates: []lattice.Candidate{first, second}})
+	got := mustRank(t, ranker, RankRequest{Privacy: PublicPrivacy(), Candidates: []lattice.Candidate{first, second}})
 	if got[0].Index != 0 || got[1].Index != 1 {
 		t.Fatalf("ranking = %#v, want original order for equal scores", got)
 	}
 
-	reversed := mustRank(t, ranker, RankRequest{Candidates: []lattice.Candidate{second, first}})
+	reversed := mustRank(t, ranker, RankRequest{Privacy: PublicPrivacy(), Candidates: []lattice.Candidate{second, first}})
 	if reversed[0].Index != 0 || reversed[1].Index != 1 {
 		t.Fatalf("reversed ranking = %#v, want original order for equal scores", reversed)
 	}
@@ -290,7 +290,7 @@ func TestFeatureRankerRankedHasNoLanguageLabel(t *testing.T) {
 			t.Fatalf("Ranked field %q exposes a language label", typ.Field(i).Name)
 		}
 	}
-	got := mustRank(t, NewRanker(RankerConfig{}), RankRequest{Candidates: scenarioDesu()})
+	got := mustRank(t, NewRanker(RankerConfig{}), RankRequest{Privacy: PublicPrivacy(), Candidates: scenarioDesu()})
 	for _, item := range got {
 		if strings.Contains(strings.ToLower(item.Reason), "zh") ||
 			strings.Contains(strings.ToLower(item.Reason), "ja") ||
@@ -327,7 +327,7 @@ func TestFeatureRankerArbitrateFormula(t *testing.T) {
 func TestFeatureRankerCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := NewRanker(RankerConfig{}).Rank(ctx, RankRequest{Candidates: scenarioDesu()})
+	_, err := NewRanker(RankerConfig{}).Rank(ctx, RankRequest{Privacy: PublicPrivacy(), Candidates: scenarioDesu()})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
