@@ -35,11 +35,13 @@ const (
 
 // Envelope 是薄殼送出的訊息。
 type Envelope struct {
-	Op      string               `json:"op"`
-	Session uint64               `json:"session,omitempty"`
-	Req     *proto.Request       `json:"req,omitempty"`
-	Version int                  `json:"version,omitempty"` // 協定版本；open 時檢查
-	Vocab   *engine.VocabRequest `json:"vocab,omitempty"`
+	Op      string         `json:"op"`
+	Session uint64         `json:"session,omitempty"`
+	Req     *proto.Request `json:"req,omitempty"`
+	Version int            `json:"version,omitempty"` // 協定版本；open 時檢查
+	// Language 是 open 請求要用的語言（"zh"、"ja"）；舊外殼不送，照引擎啟動時的預設。
+	Language string               `json:"language,omitempty"`
+	Vocab    *engine.VocabRequest `json:"vocab,omitempty"`
 }
 
 // Reply 是 server 的回應。

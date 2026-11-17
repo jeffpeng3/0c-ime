@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/0c-biggo/0c-ime/core/engine"
+	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/proto"
 )
 
@@ -27,9 +28,11 @@ type Server struct {
 	// RuntimeInfo 提供會改變的運作狀態；須可並行查詢且不能包含個人文字。
 	RuntimeInfo func() map[string]string
 	// OnOpenSession 在 Engine.OpenSession 建立 session 後、回覆 open 之前呼叫。
-	// 宿主可在這裡註冊語言 profile 或套用初始語言；id 是剛建立的 session。
-	// 回呼不含文字，也不應保存 session 指標（連線關閉後 session 會失效）。
-	OnOpenSession func(id uint64)
+	// 宿主可在這裡註冊語言 profile 或套用初始語言；id 是剛建立的 session，
+	// language 是 open 請求帶的語言（可能為空，表示照啟動預設）。
+	// 回傳實際套用的語言（"zh"、"ja"），讓 open 回覆的 start_mode 反映這個 session；
+	// 空字串表示沒有改變。回呼不含文字，也不應保存 session 指標（連線關閉後 session 會失效）。
+	OnOpenSession func(id uint64, language string) string
 	// OnDrained 在交接條件成立、BeforeDrain 成功並斷開所有連線後呼叫；宿主應結束服務。
 	OnDrained func()
 	// BeforeDrain runs after active requests finish, while endpoints still belong
@@ -298,10 +301,17 @@ func (s *Server) do(env Envelope, sessions map[uint64]bool, startDrain *bool) Re
 		}
 		id := s.Engine.OpenSession()
 		sessions[id] = true
+		applied := ""
 		if s.OnOpenSession != nil {
-			s.OnOpenSession(id)
+			applied = s.OnOpenSession(id, env.Language)
 		}
-		return Reply{OK: true, Session: id, Info: s.info()}
+		info := s.info()
+		// 這個 session 從日文開始時，外殼要看到 start_mode=japanese 才會把
+		// 可見 ASCII 與日文具名鍵交給引擎；其餘模式照引擎啟動時的設定。
+		if applied == string(lang.Ja) && info["start_mode"] != proto.ModeEnglish {
+			info["start_mode"] = proto.ModeJapanese
+		}
+		return Reply{OK: true, Session: id, Info: info}
 	case OpClose:
 		if sessions[env.Session] {
 			s.Engine.CloseSession(env.Session)

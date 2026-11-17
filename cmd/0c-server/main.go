@@ -24,6 +24,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/bridge/ipc"
 	"github.com/0c-biggo/0c-ime/core/engine"
+	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/layout"
 	"github.com/0c-biggo/0c-ime/core/personal"
 	"github.com/0c-biggo/0c-ime/core/proto"
@@ -449,21 +450,37 @@ func serve() string {
 	srv := &ipc.Server{Engine: eng, Log: lg, VocabDisabled: vocabDisabled, OnVocab: func() { vocabEdited() },
 		OnCommit: func() { schedule.changed(time.Now(), false); remind.markCommitted() },
 		OnForget: func() { schedule.changed(time.Now(), true) }}
-	// 每個新 session 都註冊日文 profile；-language ja 時直接切到日文。
-	// 模型缺失只影響 rerank，profile 仍用統計轉換；沒有日文資料時 Attach
-	// 回 false，session 保持注音。
+	// 每個新 session 都註冊日文 profile；open 請求的 language 決定這個 session
+	// 從哪個語言開始，空值或未知值照 -language 啟動預設。模型缺失只影響 rerank，
+	// profile 仍用統計轉換；沒有日文資料時 SetLanguage 回 false，session 保持注音。
 	if jaWiring != nil {
-		srv.OnOpenSession = func(id uint64) {
+		srv.OnOpenSession = func(id uint64, requested string) string {
 			s := eng.Session(id)
 			if s == nil {
-				return
+				return ""
 			}
-			if *jaLanguage == "ja" {
-				jaWiring.Attach(s)
-				return
+			jaWiring.AttachProfile(s) // 之後仍可切到日文；不影響目前語言
+			switch requested {
+			case string(lang.Ja):
+				if s.SetLanguage(lang.Ja) {
+					return string(lang.Ja)
+				}
+				return "" // 沒有日文 profile／資料：回退注音
+			case string(lang.Zh):
+				if s.SetLanguage(lang.Zh) {
+					return string(lang.Zh)
+				}
+				return ""
 			}
-			jaWiring.AttachProfile(s)
+			if *jaLanguage == string(lang.Ja) && s.SetLanguage(lang.Ja) {
+				return string(lang.Ja)
+			}
+			return string(lang.Zh)
 		}
+	}
+	if jaWiring != nil && jaWiring.Available() {
+		// T15 能力旗標：外殼看到 japanese 才會在日文 session 送可見 ASCII 與具名日文鍵。
+		srv.Capabilities = []string{proto.CapJapanese, proto.CapConvertKeys, proto.CapClauseDisplay}
 	}
 	// 設定程式的「清除學習紀錄」（#301）：清空記憶體裡的個人資料並立刻存檔，不重啟引擎。
 	srv.ResetPersonal = personalReset{mu: &saveMu, eng: eng, path: *user, writable: writable, state: &personalState, schedule: schedule}.run

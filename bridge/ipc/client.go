@@ -45,7 +45,14 @@ func DialTimeout(network, address string, timeout time.Duration) (*Client, error
 }
 
 // Open 開一個 session，並記住 open 回覆的 info（能力旗標）。已有 session 時先關閉舊的。
+// 不指定語言：引擎照啟動時的 -language 預設開 session，與舊外殼相同。
 func (c *Client) Open() error {
+	return c.OpenLanguage("")
+}
+
+// OpenLanguage 與 Open 相同，但把語言放進 open 請求（"ja"、"zh"）。
+// 空字串等於 Open；引擎不認得的值照啟動預設。已有 session 時先關閉舊的。
+func (c *Client) OpenLanguage(language string) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.closed {
@@ -55,7 +62,7 @@ func (c *Client) Open() error {
 		_, _ = c.callLocked(Envelope{Op: OpClose, Session: c.session})
 		c.session, c.info = 0, nil
 	}
-	reply, err := c.callLocked(Envelope{Op: OpOpen, Version: proto.Version})
+	reply, err := c.callLocked(Envelope{Op: OpOpen, Version: proto.Version, Language: language})
 	if err != nil {
 		return err
 	}
