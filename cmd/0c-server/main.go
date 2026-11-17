@@ -74,6 +74,9 @@ func serve() string {
 	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja；未指定時依 settings.json")
 	modelResidencyMB := flag.Int("model-residency-mb", -1, "模型常駐預算（MB）：-1 依 settings.json，0 不限制，其他為明確上限")
 	allowPlaceholders := flag.Bool("allow-placeholders", false, "允許載入 placeholder 模型（P2-25P）；未指定時依 settings.json，預設關閉")
+	modelSetID := flag.String("model-set", "", "回報為使用中的日文模型組 ID（P2-27）；空值時讀取 -model-set-root/active.json")
+	modelSetLock := flag.String("model-set-lock", "models/pairing.lock.json", "日文模型組清單（P2-27）")
+	modelSetRoot := flag.String("model-set-root", "", "已安裝模型組的根目錄（P2-27）；空值時使用個人目錄下的 models")
 	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
 	jaLanguage := flag.String("language", "zh", "新 session 的語言：zh（注音）或 ja（日文）；ja 需要日文資料包")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
@@ -407,6 +410,11 @@ func serve() string {
 			r = waitForResidency(modelManager, 15*time.Second)
 		}
 		report := buildResidencyReport(mode, primary, allowPlaceholderModels, budgetMB, budgetSource, r)
+		modelRoot := *modelSetRoot
+		if modelRoot == "" {
+			modelRoot = filepath.Join(filepath.Dir(*user), "models")
+		}
+		report.ModelSet = buildModelSetReport(*modelSetID, *modelSetLock, modelRoot, *data, allowPlaceholderModels)
 		if err := writeResidencyReport(os.Stdout, report); err != nil {
 			lg.Printf("輸出模型報告：%v", err)
 		}

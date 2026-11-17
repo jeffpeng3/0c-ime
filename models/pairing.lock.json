@@ -1,5 +1,377 @@
 {
   "dictionary_manifest_sha256": "4e4c4cdf7681b48de2004927745c2adc03f53b0c7b776e9258c39a7f5b0f4075",
+  "model_sets": {
+    "mixing_policy": "public-core and cc-by-sa artifacts must never be installed or scored as one pair; each set is complete only with one reranker and one punctuation model from the same variant and the same dictionary pack.",
+    "schema": "0c.model-sets/1",
+    "sets": {
+      "ja-cc-by-sa": {
+        "artifacts": [
+          {
+            "artifact_id": "reranker-cc-by-sa",
+            "attribution": [
+              "legal/copyright",
+              "data/sources/corpus/experimental.tsv",
+              "data/sources/licenses/ja-wiki.txt"
+            ],
+            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+            "files": {
+              "fp32": {
+                "bytes": 130784628,
+                "path": "reranker-cc-by-sa/reranker-cc-by-sa.placeholder.fp32.onnx",
+                "quantization": "none (fp32)",
+                "sha256": "1c3ac68b50fd2fe8d944bb54fad1cf65709b77f4485b94be9652463a018cc975"
+              },
+              "int8": {
+                "bytes": 55361694,
+                "path": "reranker-cc-by-sa/reranker-cc-by-sa.placeholder.int8.onnx",
+                "quantization": "dynamic-quint8",
+                "sha256": "d543645063ab7cf36880770a547c17fb3a681626cd987a051156e5c1e79df3af"
+              }
+            },
+            "io": {
+              "inputs": [
+                {
+                  "description": "Token ids, batch-major.",
+                  "dtype": "int64",
+                  "name": "input_ids",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                },
+                {
+                  "description": "1 for real tokens, 0 for padding.",
+                  "dtype": "int64",
+                  "name": "attention_mask",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                }
+              ],
+              "outputs": [
+                {
+                  "description": "One untrained relevance score per candidate.",
+                  "dtype": "float32",
+                  "name": "scores",
+                  "shape": [
+                    "batch"
+                  ]
+                }
+              ]
+            },
+            "kind": "reranker",
+            "license": {
+              "distribution": "experimental only, never inside the public-core install",
+              "id": "CC-BY-SA-4.0",
+              "notice": "legal/CC-BY-SA-4.0.txt",
+              "scope": "cc-by-sa"
+            },
+            "manifest": "reranker-cc-by-sa/manifest.json",
+            "parameters": 32691713,
+            "placeholder": true,
+            "production_eligible": false,
+            "quality": "untrained",
+            "source": {
+              "checkpoint": "",
+              "datasets": [],
+              "fingerprint": "reranker:cc-by-sa:seed=20261119:params=32691713:init_std=0.02",
+              "generator": "oc_training.export.placeholder 0.1.0",
+              "training_data": "none (untrained placeholder)"
+            },
+            "variant": "cc-by-sa",
+            "version": "placeholder-0.1.0"
+          },
+          {
+            "artifact_id": "punctuation-cc-by-sa",
+            "attribution": [
+              "legal/copyright",
+              "data/sources/corpus/experimental.tsv",
+              "data/sources/licenses/ja-wiki.txt"
+            ],
+            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+            "files": {
+              "fp32": {
+                "bytes": 130789948,
+                "path": "punctuation-cc-by-sa/punctuation-cc-by-sa.placeholder.fp32.onnx",
+                "quantization": "none (fp32)",
+                "sha256": "76cd331d1a91143fd4f07d6cfe50a376526543ffd20a9011e37db0e569d403ff"
+              },
+              "int8": {
+                "bytes": 55362064,
+                "path": "punctuation-cc-by-sa/punctuation-cc-by-sa.placeholder.int8.onnx",
+                "quantization": "dynamic-quint8",
+                "sha256": "36e691b9e8adc0619cd5d4513b88c0d69315026dc5e68ee1c0f9394533706f1e"
+              }
+            },
+            "io": {
+              "inputs": [
+                {
+                  "description": "Token ids, batch-major.",
+                  "dtype": "int64",
+                  "name": "input_ids",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                },
+                {
+                  "description": "1 for real tokens, 0 for padding.",
+                  "dtype": "int64",
+                  "name": "attention_mask",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                }
+              ],
+              "outputs": [
+                {
+                  "description": "Per-token punctuation logits in label order ['none', 'comma', 'period', 'question'].",
+                  "dtype": "float32",
+                  "name": "logits",
+                  "shape": [
+                    "batch",
+                    "seq",
+                    4
+                  ]
+                }
+              ]
+            },
+            "kind": "punctuation",
+            "license": {
+              "distribution": "experimental only, never inside the public-core install",
+              "id": "CC-BY-SA-4.0",
+              "notice": "legal/CC-BY-SA-4.0.txt",
+              "scope": "cc-by-sa"
+            },
+            "manifest": "punctuation-cc-by-sa/manifest.json",
+            "parameters": 32693252,
+            "placeholder": true,
+            "production_eligible": false,
+            "quality": "untrained",
+            "source": {
+              "checkpoint": "",
+              "datasets": [],
+              "fingerprint": "reranker:cc-by-sa:seed=20261121:params=32693252:init_std=0.02",
+              "generator": "oc_training.export.placeholder 0.1.0",
+              "training_data": "none (untrained placeholder)"
+            },
+            "variant": "cc-by-sa",
+            "version": "placeholder-0.1.0"
+          }
+        ],
+        "attribution": [
+          "legal/copyright",
+          "data/sources/corpus/experimental.tsv",
+          "data/sources/licenses/ja-wiki.txt"
+        ],
+        "description": "Experimental reranker and punctuation models trained on CC BY-SA data; never installed together with public-core models.",
+        "dictionary": {
+          "format": 2,
+          "language": "ja",
+          "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+          "pack_id": "ja-lexicon-public-core",
+          "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
+          "version": "public-core-20261118"
+        },
+        "language": "ja",
+        "license": {
+          "distribution": "experimental only, never inside the public-core install",
+          "id": "CC-BY-SA-4.0",
+          "notice": "legal/CC-BY-SA-4.0.txt",
+          "scope": "cc-by-sa"
+        },
+        "placeholder": true,
+        "production_eligible": false,
+        "quality": "untrained",
+        "variant": "cc-by-sa",
+        "version": "placeholder-0.1.0"
+      },
+      "ja-public-core": {
+        "artifacts": [
+          {
+            "artifact_id": "reranker-public-core",
+            "attribution": [
+              "legal/copyright",
+              "data/sources/corpus/public-core.tsv"
+            ],
+            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+            "files": {
+              "fp32": {
+                "bytes": 130784637,
+                "path": "reranker-public-core/reranker-public-core.placeholder.fp32.onnx",
+                "quantization": "none (fp32)",
+                "sha256": "8ed9d2c876d6ad9b0d9b621e0886c8e90f6d7daf9f435895ef5e1b880e0405ee"
+              },
+              "int8": {
+                "bytes": 55361701,
+                "path": "reranker-public-core/reranker-public-core.placeholder.int8.onnx",
+                "quantization": "dynamic-quint8",
+                "sha256": "8e4a354c30d1f4d32071e720846454ddef2d6a78fa5c7529e6ac25a1211496cd"
+              }
+            },
+            "io": {
+              "inputs": [
+                {
+                  "description": "Token ids, batch-major.",
+                  "dtype": "int64",
+                  "name": "input_ids",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                },
+                {
+                  "description": "1 for real tokens, 0 for padding.",
+                  "dtype": "int64",
+                  "name": "attention_mask",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                }
+              ],
+              "outputs": [
+                {
+                  "description": "One untrained relevance score per candidate.",
+                  "dtype": "float32",
+                  "name": "scores",
+                  "shape": [
+                    "batch"
+                  ]
+                }
+              ]
+            },
+            "kind": "reranker",
+            "license": {
+              "distribution": "public-core install only; model weights are not part of the source tarball",
+              "id": "CC-BY-4.0",
+              "notice": "legal/CC-BY-4.0.txt",
+              "scope": "public-core"
+            },
+            "manifest": "reranker-public-core/manifest.json",
+            "parameters": 32691713,
+            "placeholder": true,
+            "production_eligible": false,
+            "quality": "untrained",
+            "source": {
+              "checkpoint": "",
+              "datasets": [],
+              "fingerprint": "reranker:public-core:seed=20261118:params=32691713:init_std=0.02",
+              "generator": "oc_training.export.placeholder 0.1.0",
+              "training_data": "none (untrained placeholder)"
+            },
+            "variant": "public-core",
+            "version": "placeholder-0.1.0"
+          },
+          {
+            "artifact_id": "punctuation-public-core",
+            "attribution": [
+              "legal/copyright",
+              "data/sources/corpus/public-core.tsv"
+            ],
+            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+            "files": {
+              "fp32": {
+                "bytes": 130789957,
+                "path": "punctuation-public-core/punctuation-public-core.placeholder.fp32.onnx",
+                "quantization": "none (fp32)",
+                "sha256": "bdad8ba17116c017d079604c1bedc5ed6f2d57329b4743c02cf69053bbea708d"
+              },
+              "int8": {
+                "bytes": 55362070,
+                "path": "punctuation-public-core/punctuation-public-core.placeholder.int8.onnx",
+                "quantization": "dynamic-quint8",
+                "sha256": "a5152cef6e42278b4ddf4f4ae21feee89929cd21cc1ab5eeb648b32ef5885954"
+              }
+            },
+            "io": {
+              "inputs": [
+                {
+                  "description": "Token ids, batch-major.",
+                  "dtype": "int64",
+                  "name": "input_ids",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                },
+                {
+                  "description": "1 for real tokens, 0 for padding.",
+                  "dtype": "int64",
+                  "name": "attention_mask",
+                  "shape": [
+                    "batch",
+                    "seq"
+                  ]
+                }
+              ],
+              "outputs": [
+                {
+                  "description": "Per-token punctuation logits in label order ['none', 'comma', 'period', 'question'].",
+                  "dtype": "float32",
+                  "name": "logits",
+                  "shape": [
+                    "batch",
+                    "seq",
+                    4
+                  ]
+                }
+              ]
+            },
+            "kind": "punctuation",
+            "license": {
+              "distribution": "public-core install only; model weights are not part of the source tarball",
+              "id": "CC-BY-4.0",
+              "notice": "legal/CC-BY-4.0.txt",
+              "scope": "public-core"
+            },
+            "manifest": "punctuation-public-core/manifest.json",
+            "parameters": 32693252,
+            "placeholder": true,
+            "production_eligible": false,
+            "quality": "untrained",
+            "source": {
+              "checkpoint": "",
+              "datasets": [],
+              "fingerprint": "reranker:public-core:seed=20261120:params=32693252:init_std=0.02",
+              "generator": "oc_training.export.placeholder 0.1.0",
+              "training_data": "none (untrained placeholder)"
+            },
+            "variant": "public-core",
+            "version": "placeholder-0.1.0"
+          }
+        ],
+        "attribution": [
+          "legal/copyright",
+          "data/sources/corpus/public-core.tsv"
+        ],
+        "description": "Public-core reranker and punctuation models; the only set eligible for the default product install once trained.",
+        "dictionary": {
+          "format": 2,
+          "language": "ja",
+          "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+          "pack_id": "ja-lexicon-public-core",
+          "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
+          "version": "public-core-20261118"
+        },
+        "language": "ja",
+        "license": {
+          "distribution": "public-core install only; model weights are not part of the source tarball",
+          "id": "CC-BY-4.0",
+          "notice": "legal/CC-BY-4.0.txt",
+          "scope": "public-core"
+        },
+        "placeholder": true,
+        "production_eligible": false,
+        "quality": "untrained",
+        "variant": "public-core",
+        "version": "placeholder-0.1.0"
+      }
+    },
+    "updated": "2026-11-18"
+  },
   "models_lock_sha256": "84f5195065b5b4e3124d2af0e09c874b08a0be9eec0db354f61f7e3647adfdb7",
   "packages": {
     "punct": {

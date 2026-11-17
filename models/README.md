@@ -18,3 +18,46 @@
 字典或模型更新，須由維護者重新驗證並更新固定清單；不在一般建置或安裝時任意改寫綁定。遇到模型不支援的字或讀音，仍依 runtime 的既有規則退回統計選字。
 
 推論 worker 在 `platforms/neural/runtime/`。發行版提供 Python、NumPy 與 ONNX Runtime 執行環境；兩個 tarball 都不攜帶可攜 Python、wheel、訓練 checkpoint 或訓練環境。啟動方式見 [神經推論](../platforms/neural/README.md)。
+
+## 日文模型組與版本分離（P2-27）
+
+日文模型不以「單一模型檔」出貨，而是以**模型組**為單位：一組固定一個 reranker 與一個 punctuation，兩者同 variant，並綁定同一個日文詞典包的 manifest SHA-256。`public-core` 與 `cc-by-sa` 是兩個獨立的組，不得混用、不得配成 mixed set。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
+
+產品側 manifest schema 在 [model-set.schema.json](model-set.schema.json)（JSON Schema 2020-12）。每個模型記錄：
+
+- `artifact_id`、`kind`（`reranker`／`punctuation`）、`variant`、版本與參數數。
+- 每個檔案格式（`int8`、`fp32`）的相對路徑、大小、SHA-256 與量化方式。
+- `io`：`input_ids`／`attention_mask` 都是 `int64 [batch, seq]`；reranker 輸出 `scores` 為 `float32 [batch]`，punctuation 輸出 `logits` 為 `float32 [batch, seq, 4]`。
+- `license`、`notice`、`attribution` 參考（授權全文與來源帳本）。
+- `source`（訓練資料、generator、fingerprint）與 `placeholder`／`quality`／`production_eligible`。
+
+`dictionary.manifest_sha256` 是安裝後 `<data>/ja/manifest.json` 的 SHA-256。驗證時必須等於實際安裝的日文包；字典重建或換版就要重新審查並更新這份清單。placeholder 模型（`placeholder: true`、`quality: untrained`）只有在 `allow_placeholders` 開啟時才能通過驗證或安裝；預設拒絕，且 `production_eligible` 必須是 `false`。檔名含 `.placeholder.` 的檔案不能拿掉標記。
+
+### 選擇與安裝
+
+```sh
+# 列出模型組（含 placeholder 狀態）
+go run ./cmd/0c-model-set list
+
+# 只驗證，不搬檔案
+go run ./cmd/0c-model-set validate -set ja-public-core \
+  -from /path/to/reference/models -pack build/ja -allow-placeholders
+
+# 安裝所選的一組；-to 會寫出 active.json
+go run ./cmd/0c-model-set install -set ja-public-core \
+  -from /path/to/reference/models -to ~/.local/share/zuin/models \
+  -pack build/ja -allow-placeholders
+```
+
+`install` 只會放入所選 variant 的模型檔，並移除清單中另一組的目錄，避免同一個安裝目錄留下 public-core 與 cc-by-sa 混用的檔案。同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
+
+### 引擎回報
+
+`0c-server -model-report` 沿用 P2-33 的 JSON 輸出，另外加上 `model_set` 區段：
+
+```sh
+0c-server -model-report -model-set ja-public-core \
+  -model-set-root ~/.local/share/zuin/models -model-set-lock models/pairing.lock.json
+```
+
+沒有指定 `-model-set` 時會讀 `<model-set-root>/active.json`；兩者都沒有時 `model_set.active` 為 `false`。報告會列出使用中的 set／variant／placeholder、字典包雜湊是否相符、模型檔是否通過大小與 SHA-256 核對；設定或檔案有問題時只在報告裡說明，不影響注音與日文統計轉換。日文模型正式接上推論仍是 P2-30 之後的工作。
