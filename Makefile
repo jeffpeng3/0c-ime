@@ -1,4 +1,4 @@
-.PHONY: help assets upgrade test-upgrade test-release test-source-release test-sim
+.PHONY: help assets upgrade test-upgrade test-release test-source-release test-windows-package test-sim
 .DEFAULT_GOAL := help
 
 PULL ?= 1
@@ -22,6 +22,8 @@ help:
 	@echo 'make build PREFIX=/usr && make install PREFIX=/usr DESTDIR=…  發行版的系統安裝（由套件管理員更新，見 platforms/linux-system）'
 	@echo 'python3 scripts/package_release.py --help  建立完整 Linux 套件'
 	@echo 'python3 scripts/package_windows.py --help  建立 Windows x64 套件（在 Windows 執行）'
+	@echo 'python3 scripts/prepare_windows_runtime.py --help  取出固定版本的 Windows 原生 ONNX Runtime DLL'
+	@echo 'make test-windows-package  驗證 Windows 打包、原生 runtime lock 與 Python-free 邊界'
 	@echo 'python3 scripts/package_windows_installer.py --help  將 Windows ZIP 製成 EXE 安裝精靈'
 	@echo 'go run ./cmd/0c-update status  檢查套件版本'
 
@@ -47,6 +49,9 @@ test-source-release:
 	python3 scripts/check_public_tree.py
 	python3 -m unittest discover -s scripts -p 'test_source_release.py'
 	python3 -m unittest discover -s scripts -p 'test_copyright.py'
+
+test-windows-package:
+	python3 -m unittest discover -s scripts -p 'test_windows_package.py'
 
 # ---- 系統安裝（Linux 發行版套件，#181）----
 # make && make install PREFIX=/usr DESTDIR=<暫存根目錄>：把兩種外殼（Fcitx5、IBus）、引擎、0c-update、設定程式、

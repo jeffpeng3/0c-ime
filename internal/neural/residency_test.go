@@ -263,6 +263,24 @@ func TestLoadModelNativeUnavailable(t *testing.T) {
 	}
 }
 
+// P2-43：原生後端載入失敗時回報固定原因，管理器據此退回統計轉換，不啟動 Python。
+func TestNativeFailuresCarryStableReasons(t *testing.T) {
+	for _, c := range []struct {
+		err  error
+		want string
+	}{
+		{fmt.Errorf("%w: bad shape", native.ErrUnsupportedModel), ReasonUnsupportedModel},
+		{fmt.Errorf("%w: no dll", native.ErrRuntimeMissing), ReasonRuntimeMissing},
+		{fmt.Errorf("%w: no tag", native.ErrNativeUnavailable), ReasonNativeUnavailable},
+		{fmt.Errorf("%w: hash", native.ErrPackageHash), ReasonHashMismatch},
+	} {
+		var modelErr *ModelError
+		if !errors.As(wrapNativeError(c.err), &modelErr) || modelErr.Reason != c.want {
+			t.Errorf("wrapNativeError(%v) = %v, want reason %s", c.err, wrapNativeError(c.err), c.want)
+		}
+	}
+}
+
 func TestManagerModeSelection(t *testing.T) {
 	t.Run("all", func(t *testing.T) {
 		l := &fakeLoader{}

@@ -66,6 +66,10 @@ const (
 	ReasonCorrupt         = "corrupt"
 	ReasonHashMismatch    = "hash_mismatch"
 	ReasonVersionMismatch = "version_mismatch"
+	// P2-43：原生後端不可用（CGO／onnxruntime tag 關閉）或模型形狀不受支援。
+	// 兩者都退回統計轉換，原因照實回報，不啟動 Python。
+	ReasonNativeUnavailable = "native_unavailable"
+	ReasonUnsupportedModel  = "unsupported_model"
 )
 
 // startupStderr 只收集 worker 回報就緒前的 stderr：此時還沒送出任何輸入文字，內容只會是載入錯誤；

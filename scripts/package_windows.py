@@ -19,7 +19,8 @@ import zipfile
 
 from install_package import digest, regular
 from collect_notices import collect
-from package_release import ROOT, DATA_FILES, check_licenses, copy_licenses, check_release_docs, copy_release_docs, check_data, copy_neural, copy_english, copy_ja_data, seal_data
+from package_release import ROOT, DATA_FILES, check_licenses, copy_licenses, check_release_docs, copy_release_docs, check_data, copy_english, copy_ja_data, seal_data
+import windows_runtime
 import hf_models
 
 # 內嵌 Python 的 ._pth 或 PYTHONPATH 指向另一份原始碼時，會打包出那份程式（2026-10-01 曾因沿用舊建置目錄的
@@ -227,7 +228,9 @@ def stamp_version(path, version):
 
 TIMESTAMP_URL = "http://timestamp.acs.microsoft.com"
 PE_SUFFIXES = (".exe", ".dll", ".pyd")
-NEURAL_CRT = ("msvcp140.dll", "msvcp140_1.dll")  # scripts/prepare_neural.py 放在 python.exe 旁
+# 內附的原生 ONNX Runtime 與 MSVC 執行階段；固定版本與 SHA-256 在 models/runtime.lock.json。
+# 產品不內建 CPython、numpy 或 onnxruntime Python 套件。
+RUNTIME_DLLS = windows_runtime.DLLS
 
 
 def signer(path, args):
@@ -281,11 +284,132 @@ def check_settings(directory):
     return program, notices
 
 
+def check_runtime(directory):
+    """核對原生 ONNX Runtime 目錄：只有 lock 固定的 onnxruntime.dll 與四個 MSVC DLL。
+
+    版本、大小與 SHA-256 都在 models/runtime.lock.json；回傳 lock 的 platform entry，
+    供 release.json 記錄實際出貨的 runtime。
+    """
+    entry = windows_runtime.verify_tree(directory)
+    for dll in RUNTIME_DLLS:
+        check_pe(Path(directory) / dll)
+    return entry
+
+
+RUNTIME_NOTICE = """onnxruntime.dll
+    ONNX Runtime 1.30.0
+    Copyright (c) Microsoft Corporation. MIT License.
+    https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+
+vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, msvcp140_1.dll
+    Microsoft Visual C++ 2022 Runtime 14.44.35112
+    Redistributable per the Microsoft Visual Studio license terms.
+"""
+
+
+def python_free(stage):
+    """產品不得內建 Python：完成品出現 .py／.pyc／.pyd、wheel、numpy 或 onnxruntime Python 套件就失敗。"""
+    windows_runtime.check_python_free(stage)
+
+
+def load_model_sets(path=None):
+    """Read models/pairing.lock.json's P2-27 model_sets section."""
+    path = Path(path) if path else ROOT / "models" / "pairing.lock.json"
+    with open(path, encoding="utf-8") as stream:
+        lock = json.load(stream)
+    section = lock.get("model_sets")
+    if not section or section.get("schema") != "0c.model-sets/1" or not section.get("sets"):
+        raise ValueError(f"模型組清單沒有 model_sets：{path}")
+    return section
+
+
+def check_model_set(set_id, format, allow_placeholders, path=None):
+    """Validate one pairing-lock model set before staging it.
+
+    Placeholder (untrained) sets are never the default: shipping one requires an
+    explicit --model-set plus --allow-placeholders, and the bundle gets a marker.
+    """
+    section = load_model_sets(path)
+    sets = section["sets"]
+    if set_id not in sets:
+        raise ValueError(f"未知的模型組 {set_id!r}；可用：{', '.join(sorted(sets))}")
+    chosen = sets[set_id]
+    if chosen.get("variant") not in ("public-core", "cc-by-sa"):
+        raise ValueError(f"模型組 {set_id} 的 variant 不正確：{chosen.get('variant')}")
+    if chosen.get("placeholder") and not allow_placeholders:
+        raise ValueError(f"模型組 {set_id} 是 placeholder（quality={chosen.get('quality')}）；"
+                         "要出貨必須明確加 --allow-placeholders")
+    for artifact in chosen.get("artifacts", []):
+        if artifact.get("variant") != chosen["variant"]:
+            raise ValueError(f"模型組 {set_id} 混用 variant")
+        if format not in artifact.get("files", {}):
+            raise ValueError(f"模型組 {set_id} 沒有 {format} 檔案")
+    return chosen
+
+
+def check_model_pair(directory, data):
+    """P2-43：Windows 產品仍出貨配對好的注音 select／punct ONNX，但沒有 Python worker。
+
+    directory 是 hf_models.py pair 的輸出（select/、punct/、pairing.lock.json）。
+    """
+    directory = Path(directory)
+    for role in ("select", "punct"):
+        if not regular(directory / role / "manifest.json"):
+            raise ValueError(f"模型配對目錄缺少 {role}/manifest.json：{directory}")
+    expected = hf_models.check_shipped(directory, Path(data), workers=None)
+    lock = directory / "pairing.lock.json"
+    if not regular(lock) or lock.read_bytes() != expected:
+        raise ValueError(f"模型配對目錄的 pairing.lock.json 與出貨字典不符：{directory}")
+    return directory
+
+
+def copy_model_pair(source, stage):
+    """只複製模型檔與清單，不複製任何 Python worker。"""
+    source, stage = Path(source), Path(stage)
+    for path in sorted(source.rglob("*")):
+        if path.is_symlink() or not path.is_file():
+            continue
+        if path.suffix in (".py", ".pyc", ".pyd", ".whl"):
+            raise ValueError(f"模型配對目錄含 Python 檔案：{path}")
+        target = stage / "neural" / path.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
+
+
+def model_set_manifest(set_id, chosen, format):
+    """Stable release.json record; makes the placeholder status impossible to miss."""
+    return {
+        "set_id": set_id,
+        "variant": chosen["variant"],
+        "version": chosen.get("version", ""),
+        "format": format,
+        "placeholder": bool(chosen.get("placeholder")),
+        "quality": chosen.get("quality", ""),
+        "production_eligible": bool(chosen.get("production_eligible")),
+        "dictionary": chosen.get("dictionary", {}),
+    }
+
+
 def server_version(args, binary):
     """E2E fault package F: the engine reports a different version, so the post-switch health check fails."""
     if args.e2e_fault == "version-mismatch" and binary == "0c-server":
         return args.version + "-fault"
     return args.version
+
+
+def runtime_plan(ort_runtime, statistical_only, neural):
+    """Validate the shipped inference choice; returns "native" or "statistical".
+
+    The shipped product must carry the native runtime. --statistical-only exists
+    for diagnostic previews and --neural is rejected outright.
+    """
+    if neural:
+        raise ValueError("產品不內建 Python；請移除 --neural，改用 --ort-runtime 出貨原生 ONNX Runtime")
+    if ort_runtime and statistical_only:
+        raise ValueError("--ort-runtime 與 --statistical-only 只能擇一")
+    if not ort_runtime and not statistical_only:
+        raise ValueError("需要 --ort-runtime（原生 ONNX Runtime）；只有診斷用的純統計套件可加 --statistical-only")
+    return "native" if ort_runtime else "statistical"
 
 
 def build(args):
@@ -304,6 +428,24 @@ def build(args):
     if not valid_version(args.version):
         raise ValueError("版本請用 0.1.0-beta.1 形式")
     settings, settings_notices = check_settings(args.settings) if args.settings else (None, "")
+    runtime_plan(getattr(args, "ort_runtime", None), getattr(args, "statistical_only", False), getattr(args, "neural", None))
+    runtime = check_runtime(args.ort_runtime) if getattr(args, "ort_runtime", None) else None
+    model_set = None
+    if getattr(args, "model_set", None):
+        if not getattr(args, "model_source", None):
+            raise ValueError("--model-set 需要 --model-source（已匯出的 ONNX 來源目錄）")
+        if not args.ja_data:
+            raise ValueError("--model-set 需要 --ja-data：模型組綁定日文資料包的 manifest")
+        model_set = check_model_set(args.model_set, getattr(args, "model_format", "int8"), getattr(args, "allow_placeholders", False))
+    elif getattr(args, "model_source", None) or getattr(args, "allow_placeholders", False):
+        raise ValueError("--model-source／--allow-placeholders 必須搭配 --model-set")
+    model_pair = None
+    if getattr(args, "model_pair", None):
+        model_pair = check_model_pair(args.model_pair, data)
+    if runtime and not model_pair:
+        raise ValueError("原生產品需要 --model-pair：hf_models.py pair 產生的 select/、punct/ 與配對清單")
+    if model_pair and not runtime:
+        raise ValueError("--model-pair 只能搭配 --ort-runtime（產品不使用 Python worker）")
     args.out.mkdir(parents=True, exist_ok=True)
     name = f"0c-{args.version}-windows-amd64" + ("-preview" if args.preview else "")
     archive = args.out / (name + ".zip")
@@ -326,10 +468,26 @@ def build(args):
                        cwd=PLATFORM, check=True)
         copy(PLATFORM / "target" / TARGET32 / "release" / "0c_tsf.dll", DLL32)
         env = dict(os.environ, GOOS="windows", GOARCH="amd64", CGO_ENABLED="0")
+        # 原生 ONNX 後端：0c-server 以 CGO＋onnxruntime build tag 建置（Windows 需要 mingw 的 gcc）；
+        # 只有這一支帶 CGO。更新器、MCP 與啟動器維持純 Go（CGO_ENABLED=0），CGO-off 的伺服器路徑仍可建置。
+        server_env = dict(env)
+        server_tags = []
+        if runtime:
+            server_env.update(CGO_ENABLED="1", CC=args.cc)
+            server_tags.append("onnxruntime")
+        if args.e2etest:
+            server_tags.append("e2etest")
+        if args.e2etest and not args.preview:
+            raise ValueError("--e2etest 只能用於 --preview 套件")
+        server_tag_flag = ["-tags", ",".join(server_tags)] if server_tags else []
+        subprocess.run([args.go, "build", "-trimpath", *server_tag_flag,
+                        "-ldflags", f"-X main.buildVersion={server_version(args, '0c-server')}",
+                        "-o", str(stage / "0c-server.exe"), "./cmd/0c-server"],
+                       cwd=ROOT, env=server_env, check=True)
         # 0c-mcp：只支援 stdio 的 AI 工具用的轉接（#126）；0c-update 安裝時把它複製到不隨版本變動的
         # %LOCALAPPDATA%\Zuin\bin\0c-mcp.exe（穩定副本），設定程式把那個路徑填進範例。
-        for binary in ("0c-server", "0c-update", "0c-mcp"):
-            tags = ["-tags", "e2etest"] if args.e2etest and binary in ("0c-update", "0c-server") else []
+        for binary in ("0c-update", "0c-mcp"):
+            tags = ["-tags", "e2etest"] if args.e2etest and binary == "0c-update" else []
             subprocess.run([args.go, "build", "-trimpath", *tags, "-ldflags", f"-X main.buildVersion={server_version(args, binary)}",
                             "-o", str(stage / (binary + ".exe")), f"./cmd/{binary}"],
                            cwd=ROOT, env=env, check=True)
@@ -356,37 +514,66 @@ def build(args):
         for filename in DATA_FILES:
             copy(data / filename, "data/" + filename)
         copy_english(data, stage / "data", args.go)
+        if model_pair:
+            copy_model_pair(model_pair, stage)
         if args.ja_data:
             copy_ja_data(args.ja_data, stage / "data", public=not args.preview)
-        if args.neural:
-            copy_neural(args.neural, stage)
-            check_pe(stage / "neural/python/python.exe")
-            # 沒有這兩個檔，沒裝 Visual C++ 可轉散發套件的電腦載入不了 onnxruntime（#80）；沿用舊版 neural/ 時在這裡擋下。
-            # 迴圈變數不可用 name：它是套件名稱，後面要當 ZIP 頂層目錄。
-            for crt in NEURAL_CRT:
-                check_pe(stage / "neural/python" / crt)
+        if model_set:
+            # P2-27：只安裝 pairing lock 選中的那一組；public-core 與 cc-by-sa 不混用。
+            # 0c-model-set 會逐檔核對大小與 SHA-256 並寫出 active.json。
+            tool = Path(temp) / "0c-model-set.exe"
+            subprocess.run([args.go, "build", "-trimpath", "-o", str(tool), "./cmd/0c-model-set"],
+                           cwd=ROOT, env=env, check=True)
+            command = [str(tool), "install", "-set", args.model_set, "-from", str(args.model_source.resolve()),
+                       "-to", str(stage / "models"), "-format", getattr(args, "model_format", "int8"),
+                       "-lock", str(ROOT / "models" / "pairing.lock.json"), "-pack", str(args.ja_data.resolve())]
+            if getattr(args, "allow_placeholders", False):
+                command.append("-allow-placeholders")
+            subprocess.run(command, cwd=ROOT, env=env, check=True)
+            shutil.copy2(ROOT / "models" / "pairing.lock.json", stage / "models" / "pairing.lock.json")
+            marker = model_set_manifest(args.model_set, model_set, getattr(args, "model_format", "int8"))
+            (stage / "MODEL-SET.txt").write_text(
+                f"set_id: {marker['set_id']}\nvariant: {marker['variant']}\nversion: {marker['version']}\n"
+                f"format: {marker['format']}\nplaceholder: {'yes' if marker['placeholder'] else 'no'}\n"
+                f"quality: {marker['quality']}\n", encoding="utf-8")
+            if marker["placeholder"]:
+                (stage / "MODEL-SET-PLACEHOLDER.txt").write_text(
+                    "本套件的模型組是未訓練 placeholder（quality=" + marker["quality"] + "），"
+                    "僅供安裝、更新與回退流程驗證，不是正式模型。\n", encoding="utf-8")
+        if runtime:
+            for dll in RUNTIME_DLLS:
+                copy(args.ort_runtime / dll, dll)
             if args.sign:
-                for crt in NEURAL_CRT:
-                    if not (signer(stage / "neural/python" / crt, args) or "").startswith("Microsoft"):
-                        raise ValueError(f"內附的 {crt} 不是 Microsoft 簽章")
-                authenticode_sign(unsigned_pe(stage / "neural", args), args)
+                for dll in RUNTIME_DLLS:
+                    if not (signer(stage / dll, args) or "").startswith("Microsoft"):
+                        raise ValueError(f"內附的 {dll} 不是 Microsoft 簽章")
         seal_data(stage, args.go, public=not args.preview)
-        if args.neural and not args.preview:  # #180：公開包內建 Hugging Face 公開版，配對出貨字典
-            hf_models.check_shipped(stage / "neural", stage / "data")
         copy(PLATFORM / "install.ps1", "install.ps1")
         copy_release_docs(release_docs, stage)
         copy_licenses(stage)
         (stage / "THIRD_PARTY_NOTICES.txt").write_text(
-            collect("windows-amd64", stage / "neural" if args.neural else None, go=args.go, cargo=args.cargo)
+            collect("windows-amd64", None, go=args.go, cargo=args.cargo)
+            + ("\n" + RUNTIME_NOTICE if runtime else "")
             + ("\n" + settings_notices if settings_notices else ""), encoding="utf-8")
         if args.preview:
             (stage / "PREVIEW.txt").write_text("內部驗證包，非公開發行版。\n", encoding="utf-8")
+        # 最後一道產品邊界：不得有 CPython、numpy、onnxruntime Python 套件、worker 或 wheel。
+        python_free(stage)
         subprocess.run([str(stage / "0c-server.exe"), "-check-data", "-data", str(stage / "data")], check=True)
         release = {"schema": 1, "product": "0c", "name": "靈犀注音", "version": args.version,
                    "channel": "internal-preview" if args.preview else "public-beta", "os": "windows", "arch": "amd64",
                    "revision": revision, "dirty": dirty, "build_platform": platform.platform(),
                    "data_format": manifest["format"], "data_manifest_sha256": digest(stage / "data/manifest.json"),
                    "files": {p.relative_to(stage).as_posix(): digest(p) for p in sorted(stage.rglob("*")) if p.is_file()}}
+        if runtime:
+            release["native_runtime"] = windows_runtime.describe(runtime)
+        else:
+            release["native_runtime"] = {"backend": "statistical", "onnxruntime": None}
+        if model_set:
+            release["model_set"] = model_set_manifest(args.model_set, model_set, getattr(args, "model_format", "int8"))
+        if model_pair:
+            release["model_pair"] = {"dictionary_manifest_sha256": digest(stage / "data/manifest.json"),
+                                     "pairing_lock_sha256": digest(stage / "neural" / "pairing.lock.json")}
         if args.ja_data:
             release["ja_data_format"] = 2
             release["ja_data_manifest_sha256"] = digest(stage / "data/ja/manifest.json")
@@ -419,7 +606,19 @@ def main():
     parser.add_argument("--e2e-fault", choices=["version-mismatch"], help="E2E 故障套件 F：引擎回報不符的版本（須搭配 --e2etest）")
     parser.add_argument("--e2etest", action="store_true", help="E2E 測試版：更新器信任測試金鑰／CA，更新器與引擎包含可控同步點；須搭配 --preview")
     parser.add_argument("--go", default="go")
-    parser.add_argument("--neural", type=Path, help="scripts/prepare_neural.py --platform windows-amd64 產生的 neural/ 目錄")
+    parser.add_argument("--neural", type=Path, help="已移除：產品不內建 Python，指定時直接失敗")
+    parser.add_argument("--ort-runtime", type=Path,
+                        help="prepare_windows_runtime.py 產生的原生執行階段目錄（onnxruntime.dll 與四個 MSVC DLL）；必要")
+    parser.add_argument("--statistical-only", action="store_true",
+                        help="診斷用純統計套件：不建置 CGO 原生後端、不出貨 ONNX Runtime（不得用於正式發行）")
+    parser.add_argument("--cc", default="gcc", help="CGO 使用的 C 編譯器（Windows 上是 mingw 的 gcc）")
+    parser.add_argument("--model-set", help="pairing.lock 的模型組 ID（ja-public-core、ja-cc-by-sa）；不指定則不出貨日文模型組")
+    parser.add_argument("--model-pair", type=Path,
+                        help="hf_models.py pair 產生的注音 select/、punct/ 與 pairing.lock.json；原生產品必要")
+    parser.add_argument("--model-source", type=Path, help="已匯出／下載的模型根目錄，內含各 artifact 路徑（搭配 --model-set）")
+    parser.add_argument("--model-format", choices=("int8", "fp32"), default="int8")
+    parser.add_argument("--allow-placeholders", action="store_true",
+                        help="明確允許安裝未訓練 placeholder 模型組；完成品會標記 MODEL-SET-PLACEHOLDER.txt")
     parser.add_argument("--cargo", default="cargo")
     parser.add_argument("--settings", type=Path, help="scripts/build_settings_windows.py 產生的目錄（0c-settings.exe 與 NOTICES.txt）；省略則不內附設定程式")
     parser.add_argument("--signtool", type=Path, help="Windows SDK x64 signtool.exe")

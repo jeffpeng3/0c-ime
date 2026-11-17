@@ -6,18 +6,24 @@ import (
 	"strings"
 )
 
-// 靈犀在 Windows 語言清單裡的識別：語言（zh-TW／ja-JP）、TSF 的 CLSID 與語言 profile，
-// 與 platforms/windows/tsf/src/guids.rs 的 LANGID、LANGID_JA、CLSID_ZUIN、GUID_PROFILE、GUID_PROFILE_JA 相同。
+// 靈犀在 Windows 語言清單裡的識別：語言（zh-TW）、TSF 的 CLSID 與語言 profile，
+// 與 platforms/windows/tsf/src/guids.rs 的 LANGID、CLSID_ZUIN、GUID_PROFILE 相同。
+//
+// P2-40：整個輸入法只有一個 Mixed profile。舊版（T28）另外加入 ja-JP 的「靈犀日本語」；
+// 那個 tip 只用來在升級與解除安裝時移除，不再加入。
 const (
 	inputTipZh = "0404:{138C35D0-7F08-4CEF-BA90-C34C16301528}{EF62F743-9855-4C94-A658-1F0F98B7B840}"
 	inputTipJa = "0411:{138C35D0-7F08-4CEF-BA90-C34C16301528}{3D6A8B21-5C47-4F9E-B0D2-71E4A9C8F653}"
 
-	// inputTip 是注音的識別，保留給既有呼叫端與測試；新程式碼走 inputTips。
+	// inputTip 是唯一的 Mixed 識別，保留給既有呼叫端與測試。
 	inputTip = inputTipZh
 )
 
-// inputTips 是安裝時加入使用者語言清單的兩個 profile，順序固定（zh-TW 在前）。
-var inputTips = []string{inputTipZh, inputTipJa}
+// inputTips 是安裝時加入使用者語言清單的 profile。P2-40 起只有一個 Mixed。
+var inputTips = []string{inputTipZh}
+
+// legacyInputTips 是舊版留下、升級與解除安裝時要清掉的語言清單項目。
+var legacyInputTips = []string{inputTipJa}
 
 // inputListMarker 記下已替這個帳號把哪些語言加入過清單（#191、T28）。內容一行一個 tip，標記分語言：
 // 其中一個加入失敗時另一個仍然記住，下一次只重試缺的那一個。
@@ -62,7 +68,7 @@ func writeInputListMarker(base string, recorded map[string]bool) error {
 	return os.WriteFile(marker, []byte(strings.Join(lines, "\n")+"\n"), 0o600)
 }
 
-// listInputMethodOnce 第一次安裝（或從還沒有這一步的舊版更新）時把兩個語言加入這個帳號的輸入法清單，
+// listInputMethodOnce 第一次安裝（或從還沒有這一步的舊版更新）時把 Mixed 加入這個帳號的輸入法清單，
 // 之後不再加：使用者自己從清單移除的，更新不會再放回去。add 失敗的語言不留記號，下次安裝或更新只重試它。
 // 先看記號再查身分（owns，見 ownsDesktop）：登入工作與每日檢查每次都會走到這裡，已加入過的帳號不必查 token 與
 // 帳號名稱（網域電腦連不到網域控制站時查帳號可能要等很久，會拖慢引擎啟動）。owns 為 false 時不加入、不留記號。
@@ -96,7 +102,7 @@ func listInputMethodOnce(base string, owns func() bool, add func(tip string) err
 	return nil
 }
 
-// forgetInputListTips 從記號移除指定的語言（回復到不支援它們的舊版時用）；其他語言保留。
+// forgetInputListTips 從記號移除指定的語言（回復或移除舊 profile 時用）；其他語言保留。
 func forgetInputListTips(base string, tips ...string) error {
 	recorded, err := readInputListMarker(base)
 	if err != nil {
@@ -108,7 +114,23 @@ func forgetInputListTips(base string, tips ...string) error {
 	return writeInputListMarker(base, recorded)
 }
 
-// clearInputListMarker 在解除安裝時清掉記號，重新安裝才會再次加入兩個語言。
+// migrateLegacyInputList 清除舊版（T28）加入的 ja-JP 語言清單項目與記號。
+// 升級後清單只剩一個 Mixed；使用者如果在新版自己又加回來，這裡不會再動它。
+// remove 失敗只回報，不影響加入 Mixed；下一次登入或每日檢查會再試。
+func migrateLegacyInputList(base string, remove func(string) error) error {
+	var err error
+	for _, tip := range legacyInputTips {
+		if removeErr := remove(tip); removeErr != nil {
+			err = removeErr
+		}
+	}
+	if forgetErr := forgetInputListTips(base, legacyInputTips...); forgetErr != nil && err == nil {
+		err = forgetErr
+	}
+	return err
+}
+
+// clearInputListMarker 在解除安裝時清掉記號，重新安裝才會再次加入 Mixed。
 func clearInputListMarker(base string) error {
 	err := os.Remove(inputListMarker(base))
 	if os.IsNotExist(err) {

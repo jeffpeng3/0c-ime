@@ -94,16 +94,29 @@ python3 scripts/source_release.py verify build/source-release/<版本>/0c-ime-<�
 
 ## Windows 安裝、移除與回復
 
-Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。完整套件需要外部文件目錄的 `INSTALL.md`、`PRIVACY.md`、`UPDATING.md`：
+Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。**產品不內嵌 CPython、numpy 或 onnxruntime Python 套件**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查一次沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。
+
+`0c-server` 預設 `-neural-backend auto`：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 `onnxruntime.dll` 時使用 native；DLL 不在或載入失敗時直接退回統計轉換，不會啟動 Python。原生後端目前支援選字／reranker 的模型形狀；模型形狀不受支援時回報 `unsupported_model` 並保留統計排序。補標點仍只有 Python worker，因此 Python-free 套件提交時保留原文。
+
+完整套件需要外部文件目錄的 `INSTALL.md`、`PRIVACY.md`、`UPDATING.md`：
 
 ```powershell
 make assets LANG=ja
-python scripts\package_windows.py --data assets\data --ja-data build\ja `
+python scripts\prepare_windows_runtime.py --out build\runtime
+python -B scripts\hf_models.py pair --data assets\data --out build\models-pair
+python scripts\package_windows.py --data assets\data --ja-data build\ja --ort-runtime build\runtime `
+  --model-pair build\models-pair --model-set ja-public-core --model-source build\models-export `
   --release-docs <文件目錄> --version <版本> --out build\release
 python scripts\package_windows_installer.py --archive build\release\<ZIP> --out build\release
 ```
 
 `--ja-data` 是選用的。有指定時，日文包以 `data/ja/` 放進 ZIP，`release.json` 多了 `ja_data_format` 與 `ja_data_manifest_sha256`；安裝後位於 `%LOCALAPPDATA%\Zuin\versions\<版本>-<雜湊>\data\ja\`。沒有指定時，ZIP 與原本的注音套件相同。日文包會經過 `check_ja_data`：format 2、`language: ja`、manifest 內的檔案雜湊、公開包的來源聲明與 `symbols/*.tsv` 都會檢查。日文資料不經過 `-seal`，因為 `0c-compile -seal` 目前只驗證注音 manifest；ZIP 的逐檔 SHA-256 與安裝收據仍會保護它。
+
+`release.json` 的 `native_runtime` 記錄出貨的 ONNX Runtime／MSVC 版本與五個 DLL 的 SHA-256。`--statistical-only` 只供診斷，不建置原生後端、不出貨 DLL；公開套件必須用 `--ort-runtime`。`--neural` 已移除，指定時直接失敗。
+
+注音 select／punct ONNX 由 `--model-pair` 出貨（`hf_models.py pair` 的輸出；不含 Python worker），打包時核對 `models.lock` 與 `pairing.lock`。原生產品沒有 `--model-pair` 會拒絕出貨。
+
+日文模型組由 `--model-set` 從 [models/pairing.lock.json](models/pairing.lock.json) 選一組（`ja-public-core` 或 `ja-cc-by-sa`），`--model-source` 指向已匯出的 ONNX，`--model-format` 選 `int8`（預設）或 `fp32`。打包時以 `cmd/0c-model-set` 逐檔核對大小、SHA-256 與日文資料包 manifest，只放入所選 variant，並把 `active.json`、`pairing.lock.json` 放在套件的 `models/`。兩組不得混用。目前的模型組仍是未訓練 placeholder：沒有 `--allow-placeholders` 時拒絕出貨，明確允許時完成品一定有 `MODEL-SET-PLACEHOLDER.txt`，`release.json` 的 `model_set.placeholder` 也是 `true`；placeholder 不是預設值。
 
 `0c-update` 安裝時逐檔核對 `release.json`，把整個版本目錄換上去；升級保留上一版，`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版。`-restore-user` 額外還原升級前的個人詞庫。`install.ps1 -Uninstall` 或 `0c-update uninstall` 取消 TSF 註冊並停用收據，**不刪**版本目錄、字典、備份或 `%LOCALAPPDATA%\Zuin\user.json`；要清掉所有本機檔案時，先解除安裝，再自行刪除 `%LOCALAPPDATA%\Zuin`。回復到不含日文包的版本時，使用中的版本目錄沒有 `data/ja/`，不會從別版補上；想移除日文包請換成不含 `--ja-data` 的套件再安裝或回復，不要手動刪除版本目錄裡的檔案，收據核對會失敗。
 

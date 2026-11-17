@@ -29,8 +29,12 @@ func listInputMethod(base string) {
 	if version, err := installedVersion(); err != nil || version == "" {
 		return
 	}
+	// P2-40：舊版的 ja-JP 項目要在升級時清掉，清單只留一個 Mixed。
+	if err := migrateLegacyInputList(base, removeInputMethod); err != nil {
+		fmt.Fprintln(os.Stderr, "0c-update: 未能移除舊版的靈犀日本語輸入法項目：", err)
+	}
 	if err := listInputMethodOnce(base, listsOwnDesktop, addInputMethod); err != nil {
-		fmt.Fprintln(os.Stderr, "0c-update: 未能把靈犀注音與靈犀日本語加入輸入法清單（可在 Windows 語言設定新增對應鍵盤）：", err)
+		fmt.Fprintln(os.Stderr, "0c-update: 未能把 Mixed 加入輸入法清單（可在 Windows 語言設定新增對應鍵盤）：", err)
 	}
 }
 
@@ -210,12 +214,17 @@ func removeInputMethod(tip string) error {
 	return nil
 }
 
-// removeInputMethods 在解除安裝時移除兩個 profile，並清掉記號；重新安裝才會再次加入。
+// removeInputMethods 在解除安裝時移除 Mixed 與舊版留下的 ja-JP 項目，並清掉記號；重新安裝才會再次加入。
 // 失敗只提示：解除安裝仍要完成，使用者也可以在 Windows 語言設定自行移除。
 func removeInputMethods() {
 	for _, tip := range inputTips {
 		if err := removeInputMethod(tip); err != nil {
 			fmt.Fprintln(os.Stderr, "0c-update: 未能從輸入法清單移除靈犀：", err)
+		}
+	}
+	for _, tip := range legacyInputTips {
+		if err := removeInputMethod(tip); err != nil {
+			fmt.Fprintln(os.Stderr, "0c-update: 未能從輸入法清單移除舊版靈犀日本語：", err)
 		}
 	}
 	if err := clearInputListMarker(basePath()); err != nil {

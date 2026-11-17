@@ -1,0 +1,50 @@
+{
+  "schema": "0c.native-runtime/1",
+  "updated": "2026-11-18",
+  "comment": "Pinned native ONNX Runtime shipped with the Windows product. The product does not bundle CPython, numpy or the onnxruntime Python package; only these PE files are extracted from the pinned wheels and installed next to 0c-server.exe. Every size and SHA-256 is fixed here and checked by scripts/package_windows.py.",
+  "platforms": {
+    "windows-amd64": {
+      "onnxruntime": {
+        "version": "1.30.0",
+        "source": "onnxruntime-1.30.0-cp314-cp314-win_amd64.whl",
+        "url": "https://files.pythonhosted.org/packages/4d/0a/748b86000fbf9518b5dfc5bdc1b924eeaca976203740fd9d30649e568ee6/onnxruntime-1.30.0-cp314-cp314-win_amd64.whl",
+        "wheel_sha256": "3bdd1752a8502ac1a7ccc6e878d16db6943df574d54ed7f01058a6806ae05be4",
+        "files": {
+          "onnxruntime.dll": {
+            "wheel_path": "onnxruntime/capi/onnxruntime.dll",
+            "bytes": 18446136,
+            "sha256": "dfffcbfc0ac2942efeb9fce8205d0f9af25f51397f72a66e7d2578d9af699442"
+          }
+        }
+      },
+      "msvc_runtime": {
+        "version": "14.44.35112",
+        "source": "msvc_runtime-14.44.35112-cp314-cp314-win_amd64.whl",
+        "url": "https://files.pythonhosted.org/packages/d2/48/7fb574a4bfa697574a7dc7105bc15ef6882125e7c77c794c5e73429de832/msvc_runtime-14.44.35112-cp314-cp314-win_amd64.whl",
+        "wheel_sha256": "af179a6c552070e660493765efd5856283af3fed971ddc3577203a7d3f1ee8e7",
+        "files": {
+          "msvcp140.dll": {
+            "wheel_path": "msvc_runtime-14.44.35112.data/data/Scripts/msvcp140.dll",
+            "bytes": 557728,
+            "sha256": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9"
+          },
+          "msvcp140_1.dll": {
+            "wheel_path": "msvc_runtime-14.44.35112.data/data/Scripts/msvcp140_1.dll",
+            "bytes": 35952,
+            "sha256": "bfad5aef4c63a669e3c140655cdfdf395b6c979b400a447bd5dcb65ed8826c3d"
+          },
+          "vcruntime140.dll": {
+            "wheel_path": "msvc_runtime-14.44.35112.data/data/Scripts/vcruntime140.dll",
+            "bytes": 124544,
+            "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+          },
+          "vcruntime140_1.dll": {
+            "wheel_path": "msvc_runtime-14.44.35112.data/data/Scripts/vcruntime140_1.dll",
+            "bytes": 49792,
+            "sha256": "1f2d41c4aa5db0bc33ebf7b66d72943a817d7ce6cbe880502a9403823633093f"
+          }
+        }
+      }
+    }
+  }
+}

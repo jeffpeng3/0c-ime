@@ -229,7 +229,37 @@ func TestPrepareCoreCopiesMCPAndRecordsItsHash(t *testing.T) {
 	}
 }
 
-// 0c-updatew（#289，Windows 排程用的無主控台啟動器）同樣是選用成員：複製並記錄雜湊，切換後由它換上穩定副本。
+// P2-43：原生 ONNX Runtime 必須跟著核心更新一起換；models/ 的模型組也是核心檔。
+func TestPrepareCoreCopiesNativeRuntimeAndModelSets(t *testing.T) {
+	runtime := []string{"onnxruntime.dll", "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "msvcp140_1.dll"}
+	extra := map[string]string{"models/active.json": `{"schema":"0c.model-set.selection/1"}`, "models/ja-public-core/x.onnx": "onnx"}
+	for _, name := range runtime {
+		extra[name] = "runtime " + name
+	}
+	layout := CoreLayout{Server: "bin/0c-server", Update: "bin/0c-update", Runtime: runtime}
+	archive, sum := linuxArchiveWith(t, "0.2.0-dev.2", false, extra)
+	target := Target{Version: "0.2.0-dev.2", Kind: "core", SHA256: sum}
+	base := t.TempDir()
+	dir, err := PrepareCore(base, "", archive, target, "linux", "amd64", layout)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range append(runtime, "models/active.json", "models/ja-public-core/x.onnx") {
+		if _, err := os.Stat(filepath.Join(base, dir, filepath.FromSlash(name))); err != nil {
+			t.Fatalf("核心目錄缺少 %s: %v", name, err)
+		}
+	}
+	// 不認得 Runtime 的舊更新器不複製 DLL，只會得到純統計引擎（明確而不是壞掉的 native）。
+	old := t.TempDir()
+	dir, err = PrepareCore(old, "", archive, target, "linux", "amd64", CoreLayout{Server: "bin/0c-server", Update: "bin/0c-update"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(old, dir, "onnxruntime.dll")); err == nil {
+		t.Fatal("舊佈局不得複製原生 runtime")
+	}
+}
+
 func TestPrepareCoreCopiesLauncherAndRecordsItsHash(t *testing.T) {
 	withLauncher := CoreLayout{Server: "bin/0c-server", Update: "bin/0c-update", Launcher: "bin/0c-updatew"}
 	archive, sum := linuxArchiveWith(t, "0.2.0-dev.1", false, map[string]string{"bin/0c-updatew": "launcher"})

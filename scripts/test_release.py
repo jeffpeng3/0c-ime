@@ -2535,10 +2535,13 @@ Successfully verified: 0c-update.exe
         import hashlib
         import zipfile
         names = ('0c-update.exe', '0c-server.exe', '0c-ui.exe', '0c_tsf.dll', 'x86/0c_tsf.dll', 'TERMS.md', 'LICENSE', 'legal/README.md', 'THIRD_PARTY_NOTICES.txt',
-                 'data/manifest.json', 'data/lexicon.bin', 'data/lm.bin', 'data/NOTICE.txt', 'data/report.txt')
+                 'data/manifest.json', 'data/lexicon.bin', 'data/lm.bin', 'data/NOTICE.txt', 'data/report.txt',
+                 'onnxruntime.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll', 'msvcp140_1.dll')
         payload = {name: name.encode() for name in names}
         release = {'schema': 1, 'product': '0c', 'version': '0.1.0', 'channel': 'internal-preview',
                    'os': 'windows', 'arch': 'amd64',
+                   'native_runtime': {'platform': 'windows-amd64', 'onnxruntime': '1.30.0',
+                                      'msvc_runtime': '14.44.35112', 'files': {}},
                    'files': {name: hashlib.sha256(data).hexdigest() for name, data in payload.items()}}
         archive = self.root / 'windows.zip'
         def save():
@@ -2550,6 +2553,12 @@ Successfully verified: 0c-update.exe
         _, updater, terms = package_windows_installer.read_bundle(archive)
         self.assertEqual(updater, payload['0c-update.exe'])
         self.assertEqual(terms, 'TERMS.md')
+        payload['neural/sequence_runtime.py'] = b'print()'
+        release['files']['neural/sequence_runtime.py'] = hashlib.sha256(b'print()').hexdigest()
+        save()
+        with self.assertRaisesRegex(ValueError, 'Python'):
+            package_windows_installer.read_bundle(archive)
+        del payload['neural/sequence_runtime.py'], release['files']['neural/sequence_runtime.py']
         payload['0c-update.exe'] = b'tampered'
         save()
         with self.assertRaisesRegex(ValueError, '雜湊'):
@@ -2928,33 +2937,24 @@ Successfully verified: 0c-update.exe
                 self.assertFalse(out.exists())
                 self.assertEqual(self.data_snapshot(data), before)
 
-    def test_windows_neural_bundles_cpp_runtime_next_to_python(self):
-        # #80：onnxruntime 需要 MSVCP140.dll／MSVCP140_1.dll，沒裝 Visual C++ 可轉散發套件的 Windows 載入失敗。
-        import collect_notices
-        import prepare_neural
-        import zipfile
-        url, sha256, names = prepare_neural.RUNTIMES["windows-amd64"]["crt"]
-        self.assertEqual(names, package_windows.NEURAL_CRT)
-        self.assertTrue(url.endswith("-cp314-cp314-win_amd64.whl"))
-        with tempfile.TemporaryDirectory() as temp:
-            temp = Path(temp)
-            wheel = temp / "msvc_runtime.whl"
-            with zipfile.ZipFile(wheel, "w") as z:
-                for name in ("msvcp140.dll", "msvcp140_1.dll", "concrt140.dll"):
-                    z.writestr("msvc_runtime-14.44.35112.data/data/" + name, name)
-                    z.writestr("msvc_runtime-14.44.35112.data/data/Scripts/" + name, "scripts " + name)
-            python = temp / "neural/python"
-            (python / "Lib/site-packages").mkdir(parents=True)
-            prepare_neural.install_crt(wheel, names, python)
-            self.assertEqual(sorted(p.name for p in python.glob("*.dll")), ["msvcp140.dll", "msvcp140_1.dll"])
-            self.assertEqual((python / "msvcp140.dll").read_text(), "msvcp140.dll")
-            (python / "LICENSE.txt").write_text("PSF")
-            text = "\n".join(collect_notices.python_sections(temp / "neural", "windows-amd64"))
-            self.assertIn("Microsoft Visual C++ 執行階段（msvcp140.dll、msvcp140_1.dll）", text)
-            with zipfile.ZipFile(wheel, "a") as z:
-                z.writestr("other.data/data/msvcp140.dll", "duplicate")
-            with self.assertRaisesRegex(ValueError, "msvcp140.dll"):
-                prepare_neural.install_crt(wheel, names, python)
+    def test_windows_ships_native_runtime_not_python(self):
+        # P2-43：Windows 產品不再內嵌 CPython／numpy／onnxruntime wheel；出貨固定版本的
+        # onnxruntime.dll 與四個 MSVC 執行階段 DLL，放在 0c-server.exe 旁。
+        import windows_runtime
+        lock = windows_runtime.load_lock()
+        entry = windows_runtime.platform_entry(lock)
+        self.assertEqual(entry["onnxruntime"]["version"], "1.30.0")
+        self.assertEqual(entry["msvc_runtime"]["version"], "14.44.35112")
+        self.assertEqual(set(entry["files"]), set(windows_runtime.DLLS))
+        self.assertEqual(package_windows.RUNTIME_DLLS, windows_runtime.DLLS)
+        for name, file in entry["files"].items():
+            self.assertEqual(len(file["sha256"]), 64, name)
+            self.assertGreater(file["bytes"], 0, name)
+        self.assertEqual(package_windows.runtime_plan(Path("runtime"), False, None), "native")
+        with self.assertRaisesRegex(ValueError, "不內建 Python"):
+            package_windows.runtime_plan(None, False, Path("neural"))
+        with self.assertRaisesRegex(ValueError, "需要 --ort-runtime"):
+            package_windows.runtime_plan(None, False, None)
 
     def test_intel_mac_neural_runtime_matches_its_python(self):
         # onnxruntime 1.30.0 沒有 Intel Mac wheel：Intel 版用 1.23.2 與 CPython 3.13，wheel 的 ABI 與架構要一致。
