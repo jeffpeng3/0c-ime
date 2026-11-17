@@ -121,14 +121,34 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  # 未簽章的 Windows 預覽包，供人工驗收下載；不安裝、不註冊、不上傳 Release，也不需要 secret。
-  preview-bundle:
-    runs-on: windows-2022
-    timeout-minutes: 60
+  # 已發佈的注音字典在 Linux 上取得：source_release.verify 會比對檔案 mode，NTFS 沒有執行位元，
+  # 在 Windows 上解開的 tarball 一定 inventory 不符。這裡只下載與驗證，不重建 bigram。
+  chinese-dictionary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       # 字典取自已發佈的原始碼 tarball。工作目錄沒有 release tag，所以明確指定版本；
       # 變更 data/dictionary.lock.json 時要同步改成相符的 release。
       DICTIONARY_RELEASE: v0.2.12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Fetch the released Chinese dictionary
+        run: python3 scripts/fetch_assets.py --release "$DICTIONARY_RELEASE" --no-models
+      - name: Upload the Chinese dictionary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: chinese-dictionary
+          path: assets
+          if-no-files-found: error
+          retention-days: 7
+
+  # 未簽章的 Windows 預覽包，供人工驗收下載；不安裝、不註冊、不上傳 Release，也不需要 secret。
+  preview-bundle:
+    needs: chinese-dictionary
+    runs-on: windows-2022
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -154,8 +174,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
       # 只取已發佈的注音字典，不從 data/lm 重建中文 bigram。
-      - name: Fetch the released Chinese dictionary
-        run: python scripts/fetch_assets.py --release $env:DICTIONARY_RELEASE --no-models
+      - name: Download the released Chinese dictionary
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: chinese-dictionary
+          path: assets
       - name: Compile the Japanese seed pack
         run: go run ./cmd/0c-compile -lang ja -public -out build/ja
       - name: Prepare minimal release docs
