@@ -17,8 +17,9 @@ const referencePackEnv = "OC_JADIC_REFERENCE_PACK"
 
 // referenceWordsSHA256 是參考 pack 在 P2-45F 記号與非日文詞面過濾後，以 mapping D
 // 匯入兩次都必須相同的 words.tsv 雜湊。它同時固定 signed 成本、同 surface 排序與
-// bytes 輸出格式。
-const referenceWordsSHA256 = "c6470e46daabc6c439238e44556aae1152a0067ed158b3033d190ab3ad15aad4"
+// bytes 輸出格式。P2-45D 把 UniDic／Sudachi 形状詞對到 adjectival_noun 之後，
+// 4,468 筆詞條的 POS 欄從 other 變成 adjectival_noun；詞面、讀音、成本與筆數不變。
+const referenceWordsSHA256 = "830f6783cb6931751d719dd602c327164f7a72a8443871d153f8948a142c723d"
 
 // P2-45E 之後，words.tsv 不再包含 POS 為記号的 334 筆；其中 1 筆負成本記号丟棄，
 // 333 筆寫進 symbols/jadic.tsv。P2-45F 再丟棄詞面不含日文字元的 8792 筆，
