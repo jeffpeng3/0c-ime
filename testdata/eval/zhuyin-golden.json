@@ -1,0 +1,537 @@
+{
+ "schema": 1,
+ "name": "zhuyin-golden",
+ "license": "CC0-1.0. Derived from the project's own T01 zhuyin golden fixtures.",
+ "source": "testdata/golden/zh/cases.json and testdata/golden/zh/expected",
+ "notes": "Frozen regression corpus, not a human-annotated accuracy benchmark. Segments are the engine's own word chunks from the golden preedit, so a change in either candidate ranking or segmentation lowers a metric instead of silently redefining the reference.",
+ "source_pin": {
+  "cases_sha256": "4c698a4112fd1e9dc98318e4753ae86258d4e0619f1743157bca96fb4105a6c0",
+  "expected_sha256": "0b701bb67b2880267dfc852cbaf66ccf4d3e3ba046da60dcb45c392cee4527b5",
+  "case_ids": [
+   "single-char",
+   "word",
+   "long-word",
+   "sentence",
+   "long-sentence-1",
+   "long-sentence-2",
+   "long-sentence-3",
+   "long-sentence-4",
+   "long-sentence-5",
+   "long-sentence-6",
+   "long-sentence-7",
+   "long-sentence-8",
+   "long-sentence-9",
+   "long-sentence-10",
+   "heteronym-chong",
+   "heteronym-chang",
+   "heteronym-hao"
+  ]
+ },
+ "count": 17,
+ "items": [
+  {
+   "id": "single-char",
+   "case": "single-char",
+   "reading": "ㄨㄛˇ",
+   "surface": "我",
+   "segments": [
+    {
+     "reading": "ㄨㄛˇ",
+     "surface": "我"
+    }
+   ]
+  },
+  {
+   "id": "word",
+   "case": "word",
+   "reading": "ㄨㄛˇ ㄒㄧㄤˇ",
+   "surface": "我想",
+   "segments": [
+    {
+     "reading": "ㄨㄛˇ",
+     "surface": "我"
+    },
+    {
+     "reading": "ㄒㄧㄤˇ",
+     "surface": "想"
+    }
+   ]
+  },
+  {
+   "id": "long-word",
+   "case": "long-word",
+   "reading": "ㄇㄚˊ ㄆㄛˊ ㄉㄡˋ ㄈㄨˇ",
+   "surface": "麻婆豆腐",
+   "segments": [
+    {
+     "reading": "ㄇㄚˊ ㄆㄛˊ ㄉㄡˋ ㄈㄨˇ",
+     "surface": "麻婆豆腐"
+    }
+   ]
+  },
+  {
+   "id": "sentence",
+   "case": "sentence",
+   "reading": "ㄐㄧㄣ ㄊㄧㄢ ㄊㄧㄢ ㄑㄧˋ ㄏㄣˇ ㄏㄠˇ",
+   "surface": "今天天氣很好",
+   "segments": [
+    {
+     "reading": "ㄐㄧㄣ ㄊㄧㄢ",
+     "surface": "今天"
+    },
+    {
+     "reading": "ㄊㄧㄢ ㄑㄧˋ",
+     "surface": "天氣"
+    },
+    {
+     "reading": "ㄏㄣˇ ㄏㄠˇ",
+     "surface": "很好"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-1",
+   "case": "long-sentence-1",
+   "reading": "ㄐㄧㄣ ㄊㄧㄢ ㄊㄧㄢ ㄑㄧˋ ㄏㄣˇ ㄏㄠˇ ㄨㄛˇ ㄇㄣ˙ ㄧ ㄑㄧˇ ㄑㄩˋ ㄍㄨㄥ ㄩㄢˊ ㄙㄢˋ ㄅㄨˋ",
+   "surface": "今天天氣很好我們一起去公園散步",
+   "segments": [
+    {
+     "reading": "ㄐㄧㄣ ㄊㄧㄢ",
+     "surface": "今天"
+    },
+    {
+     "reading": "ㄊㄧㄢ ㄑㄧˋ",
+     "surface": "天氣"
+    },
+    {
+     "reading": "ㄏㄣˇ ㄏㄠˇ",
+     "surface": "很好"
+    },
+    {
+     "reading": "ㄨㄛˇ ㄇㄣ˙",
+     "surface": "我們"
+    },
+    {
+     "reading": "ㄧ ㄑㄧˇ",
+     "surface": "一起"
+    },
+    {
+     "reading": "ㄑㄩˋ",
+     "surface": "去"
+    },
+    {
+     "reading": "ㄍㄨㄥ ㄩㄢˊ",
+     "surface": "公園"
+    },
+    {
+     "reading": "ㄙㄢˋ ㄅㄨˋ",
+     "surface": "散步"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-2",
+   "case": "long-sentence-2",
+   "reading": "ㄓㄜˋ ㄅㄣˇ ㄕㄨ ㄕˋ ㄨㄛˇ ㄗㄨㄟˋ ㄒㄧˇ ㄏㄨㄢ ㄉㄜ˙ ㄒㄧㄠˇ ㄕㄨㄛ ㄓ ㄧ",
+   "surface": "這本書是我最喜歡的小說之一",
+   "segments": [
+    {
+     "reading": "ㄓㄜˋ ㄅㄣˇ",
+     "surface": "這本"
+    },
+    {
+     "reading": "ㄕㄨ",
+     "surface": "書"
+    },
+    {
+     "reading": "ㄕˋ",
+     "surface": "是"
+    },
+    {
+     "reading": "ㄨㄛˇ",
+     "surface": "我"
+    },
+    {
+     "reading": "ㄗㄨㄟˋ",
+     "surface": "最"
+    },
+    {
+     "reading": "ㄒㄧˇ ㄏㄨㄢ",
+     "surface": "喜歡"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄒㄧㄠˇ ㄕㄨㄛ",
+     "surface": "小說"
+    },
+    {
+     "reading": "ㄓ",
+     "surface": "之"
+    },
+    {
+     "reading": "ㄧ",
+     "surface": "一"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-3",
+   "case": "long-sentence-3",
+   "reading": "ㄊㄚ ㄇㄟˇ ㄊㄧㄢ ㄗㄠˇ ㄕㄤˋ ㄉㄡ ㄏㄨㄟˋ ㄏㄜ ㄧ ㄅㄟ ㄖㄜˋ ㄎㄚ ㄈㄟ",
+   "surface": "他每天早上都會喝一杯熱咖啡",
+   "segments": [
+    {
+     "reading": "ㄊㄚ",
+     "surface": "他"
+    },
+    {
+     "reading": "ㄇㄟˇ ㄊㄧㄢ",
+     "surface": "每天"
+    },
+    {
+     "reading": "ㄗㄠˇ ㄕㄤˋ",
+     "surface": "早上"
+    },
+    {
+     "reading": "ㄉㄡ",
+     "surface": "都"
+    },
+    {
+     "reading": "ㄏㄨㄟˋ",
+     "surface": "會"
+    },
+    {
+     "reading": "ㄏㄜ",
+     "surface": "喝"
+    },
+    {
+     "reading": "ㄧ ㄅㄟ",
+     "surface": "一杯"
+    },
+    {
+     "reading": "ㄖㄜˋ",
+     "surface": "熱"
+    },
+    {
+     "reading": "ㄎㄚ ㄈㄟ",
+     "surface": "咖啡"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-4",
+   "case": "long-sentence-4",
+   "reading": "ㄇㄧㄥˊ ㄊㄧㄢ ㄒㄧㄚˋ ㄨˇ ㄨㄛˇ ㄇㄣ˙ ㄗㄞˋ ㄔㄜ ㄓㄢˋ ㄑㄧㄢˊ ㄇㄧㄢˋ ㄐㄧㄢˋ ㄇㄧㄢˋ",
+   "surface": "明天下午我們在車站前面見面",
+   "segments": [
+    {
+     "reading": "ㄇㄧㄥˊ ㄊㄧㄢ",
+     "surface": "明天"
+    },
+    {
+     "reading": "ㄒㄧㄚˋ ㄨˇ",
+     "surface": "下午"
+    },
+    {
+     "reading": "ㄨㄛˇ ㄇㄣ˙",
+     "surface": "我們"
+    },
+    {
+     "reading": "ㄗㄞˋ",
+     "surface": "在"
+    },
+    {
+     "reading": "ㄔㄜ ㄓㄢˋ",
+     "surface": "車站"
+    },
+    {
+     "reading": "ㄑㄧㄢˊ ㄇㄧㄢˋ",
+     "surface": "前面"
+    },
+    {
+     "reading": "ㄐㄧㄢˋ ㄇㄧㄢˋ",
+     "surface": "見面"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-5",
+   "case": "long-sentence-5",
+   "reading": "ㄒㄩㄝˊ ㄒㄧˊ ㄒㄧㄣ ㄉㄜ˙ ㄩˇ ㄧㄢˊ ㄒㄩ ㄧㄠˋ ㄕˊ ㄐㄧㄢ ㄏㄜˊ ㄋㄞˋ ㄒㄧㄣ",
+   "surface": "學習新的語言需要時間和耐心",
+   "segments": [
+    {
+     "reading": "ㄒㄩㄝˊ ㄒㄧˊ",
+     "surface": "學習"
+    },
+    {
+     "reading": "ㄒㄧㄣ",
+     "surface": "新"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄩˇ ㄧㄢˊ",
+     "surface": "語言"
+    },
+    {
+     "reading": "ㄒㄩ ㄧㄠˋ",
+     "surface": "需要"
+    },
+    {
+     "reading": "ㄕˊ ㄐㄧㄢ",
+     "surface": "時間"
+    },
+    {
+     "reading": "ㄏㄜˊ",
+     "surface": "和"
+    },
+    {
+     "reading": "ㄋㄞˋ ㄒㄧㄣ",
+     "surface": "耐心"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-6",
+   "case": "long-sentence-6",
+   "reading": "ㄊㄞˊ ㄨㄢ ㄉㄜ˙ ㄧㄝˋ ㄕˋ ㄧㄡˇ ㄏㄣˇ ㄉㄨㄛ ㄏㄠˇ ㄔ ㄉㄜ˙ ㄒㄧㄠˇ ㄔ",
+   "surface": "台灣的夜市有很多好吃的小吃",
+   "segments": [
+    {
+     "reading": "ㄊㄞˊ ㄨㄢ",
+     "surface": "台灣"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄧㄝˋ ㄕˋ",
+     "surface": "夜市"
+    },
+    {
+     "reading": "ㄧㄡˇ",
+     "surface": "有"
+    },
+    {
+     "reading": "ㄏㄣˇ",
+     "surface": "很"
+    },
+    {
+     "reading": "ㄉㄨㄛ",
+     "surface": "多"
+    },
+    {
+     "reading": "ㄏㄠˇ ㄔ",
+     "surface": "好吃"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄒㄧㄠˇ ㄔ",
+     "surface": "小吃"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-7",
+   "case": "long-sentence-7",
+   "reading": "ㄑㄧㄥˇ ㄋㄧˇ ㄅㄚˇ ㄔㄨㄤ ㄏㄨˋ ㄉㄚˇ ㄎㄞ ㄖㄤˋ ㄎㄨㄥ ㄑㄧˋ ㄌㄧㄡˊ ㄊㄨㄥ",
+   "surface": "請你把窗戶打開讓空氣流通",
+   "segments": [
+    {
+     "reading": "ㄑㄧㄥˇ",
+     "surface": "請"
+    },
+    {
+     "reading": "ㄋㄧˇ",
+     "surface": "你"
+    },
+    {
+     "reading": "ㄅㄚˇ",
+     "surface": "把"
+    },
+    {
+     "reading": "ㄔㄨㄤ ㄏㄨˋ",
+     "surface": "窗戶"
+    },
+    {
+     "reading": "ㄉㄚˇ ㄎㄞ",
+     "surface": "打開"
+    },
+    {
+     "reading": "ㄖㄤˋ",
+     "surface": "讓"
+    },
+    {
+     "reading": "ㄎㄨㄥ ㄑㄧˋ",
+     "surface": "空氣"
+    },
+    {
+     "reading": "ㄌㄧㄡˊ ㄊㄨㄥ",
+     "surface": "流通"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-8",
+   "case": "long-sentence-8",
+   "reading": "ㄉㄨㄥ ㄊㄧㄢ ㄉㄜ˙ ㄕㄢ ㄕㄤˋ ㄔㄤˊ ㄔㄤˊ ㄒㄧㄚˋ ㄓㄜ˙ ㄅㄞˊ ㄙㄜˋ ㄉㄜ˙ ㄒㄩㄝˇ",
+   "surface": "冬天的山上常常下著白色的雪",
+   "segments": [
+    {
+     "reading": "ㄉㄨㄥ ㄊㄧㄢ",
+     "surface": "冬天"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄕㄢ ㄕㄤˋ",
+     "surface": "山上"
+    },
+    {
+     "reading": "ㄔㄤˊ ㄔㄤˊ",
+     "surface": "常常"
+    },
+    {
+     "reading": "ㄒㄧㄚˋ",
+     "surface": "下"
+    },
+    {
+     "reading": "ㄓㄜ˙",
+     "surface": "著"
+    },
+    {
+     "reading": "ㄅㄞˊ ㄙㄜˋ",
+     "surface": "白色"
+    },
+    {
+     "reading": "ㄉㄜ˙",
+     "surface": "的"
+    },
+    {
+     "reading": "ㄒㄩㄝˇ",
+     "surface": "雪"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-9",
+   "case": "long-sentence-9",
+   "reading": "ㄓㄜˋ ㄐㄧㄢˋ ㄕˋ ㄑㄧㄥˊ ㄉㄨㄟˋ ㄨㄛˇ ㄌㄞˊ ㄕㄨㄛ ㄈㄟ ㄔㄤˊ ㄓㄨㄥˋ ㄧㄠˋ",
+   "surface": "這件事情對我來說非常重要",
+   "segments": [
+    {
+     "reading": "ㄓㄜˋ",
+     "surface": "這"
+    },
+    {
+     "reading": "ㄐㄧㄢˋ",
+     "surface": "件"
+    },
+    {
+     "reading": "ㄕˋ ㄑㄧㄥˊ",
+     "surface": "事情"
+    },
+    {
+     "reading": "ㄉㄨㄟˋ",
+     "surface": "對"
+    },
+    {
+     "reading": "ㄨㄛˇ",
+     "surface": "我"
+    },
+    {
+     "reading": "ㄌㄞˊ ㄕㄨㄛ",
+     "surface": "來說"
+    },
+    {
+     "reading": "ㄈㄟ ㄔㄤˊ",
+     "surface": "非常"
+    },
+    {
+     "reading": "ㄓㄨㄥˋ ㄧㄠˋ",
+     "surface": "重要"
+    }
+   ]
+  },
+  {
+   "id": "long-sentence-10",
+   "case": "long-sentence-10",
+   "reading": "ㄉㄚˋ ㄐㄧㄚ ㄧ ㄑㄧˇ ㄋㄨˇ ㄌㄧˋ ㄨㄢˊ ㄔㄥˊ ㄓㄜˋ ㄍㄜ˙ ㄍㄨㄥ ㄗㄨㄛˋ",
+   "surface": "大家一起努力完成這個工作",
+   "segments": [
+    {
+     "reading": "ㄉㄚˋ ㄐㄧㄚ",
+     "surface": "大家"
+    },
+    {
+     "reading": "ㄧ ㄑㄧˇ",
+     "surface": "一起"
+    },
+    {
+     "reading": "ㄋㄨˇ ㄌㄧˋ",
+     "surface": "努力"
+    },
+    {
+     "reading": "ㄨㄢˊ ㄔㄥˊ",
+     "surface": "完成"
+    },
+    {
+     "reading": "ㄓㄜˋ ㄍㄜ˙",
+     "surface": "這個"
+    },
+    {
+     "reading": "ㄍㄨㄥ ㄗㄨㄛˋ",
+     "surface": "工作"
+    }
+   ]
+  },
+  {
+   "id": "heteronym-chong",
+   "case": "heteronym-chong",
+   "reading": "ㄔㄨㄥˊ",
+   "surface": "重",
+   "segments": [
+    {
+     "reading": "ㄔㄨㄥˊ",
+     "surface": "重"
+    }
+   ]
+  },
+  {
+   "id": "heteronym-chang",
+   "case": "heteronym-chang",
+   "reading": "ㄔㄤˊ",
+   "surface": "長",
+   "segments": [
+    {
+     "reading": "ㄔㄤˊ",
+     "surface": "長"
+    }
+   ]
+  },
+  {
+   "id": "heteronym-hao",
+   "case": "heteronym-hao",
+   "reading": "ㄏㄠˋ",
+   "surface": "好",
+   "segments": [
+    {
+     "reading": "ㄏㄠˋ",
+     "surface": "好"
+    }
+   ]
+  }
+ ]
+}

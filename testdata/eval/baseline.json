@@ -1,0 +1,40 @@
+{
+ "schema": 1,
+ "zhuyin": {
+  "corpus_sha256": "77989561d5eac04db6aa7f343db6ef34bb99c248f99a37d49485979d6f827400",
+  "engine": {
+   "data": "testdata/golden/zh/data",
+   "lexicon_sha256": "94d260889b92f3afd24dab1ac96dd9cf1d40739ed570e962eaeb79e0dc4d4c08",
+   "lm_sha256": "eb95dbd03262a76072fdeb1050b1ff96380396da2848739e4bdbc0778eb71f5f"
+  },
+  "segment_top1_rate": 1,
+  "segment_mrr": 1,
+  "sentences": 17,
+  "sentence_exact_rate": 1,
+  "gate": {
+   "gated": true,
+   "max_top1_drop": 0,
+   "max_mrr_drop": 0,
+   "max_whole_sentence_drop": 0,
+   "note": "zhuyin must not regress at all"
+  }
+ },
+ "japanese": {
+  "corpus_sha256": "57cca4ea310cb4e5507595e4de2a00a19c6b1a058249c64d2e822f226e5c1afc",
+  "pack_sha256": "8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840",
+  "connections_sha256": "4609be258f563a5ed9e0657566aff10a183dfafa4b28c9dda49a952e98170e72",
+  "split": "holdout",
+  "n": 400,
+  "dictionary_top1_rate": 1,
+  "dictionary_mrr": 1,
+  "ranker_top1_rate": 0.5,
+  "ranker_mrr": 0.6916369047619049,
+  "gate": {
+   "gated": false,
+   "max_top1_drop": 0,
+   "max_mrr_drop": 0,
+   "max_whole_sentence_drop": 0,
+   "note": "baseline number, not a target: references are dictionary preference, not human annotation"
+  }
+ }
+}
