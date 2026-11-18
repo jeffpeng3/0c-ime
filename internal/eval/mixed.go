@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 
@@ -130,14 +131,25 @@ type MixedExpectSegment struct {
 
 // MixedPrediction 是受測系統對一個 case 的輸出。
 //
-// MergedSegments 與 UnorderedDirectKeys 是 runner 回報的結構觀察，不是分數：
-// 前者表示一個輸出片段跨過兩個以上的 input 邊界（長詞合併），後者表示
-// 使用者在組字中打到沒有被引擎接收的字元（由應用程式直接插入）。
+// MergedSegments 與 UnorderedDirectKeys 是 runner 回報的結構觀察；Merged 記錄
+// 哪些輸出片段跨過多個 input（長詞合併），評分時把這些 input 視為同一個片段，
+// 不再把被合併的後段當成缺段。UnorderedDirectKeys 表示使用者在組字中打到
+// 沒有被引擎接收的字元（由應用程式直接插入）。
 type MixedPrediction struct {
 	Text                string                  `json:"text"`
 	Segments            []MixedPredictedSegment `json:"segments"`
 	MergedSegments      int                     `json:"merged_segments,omitempty"`
+	Merged              []MixedMergedSpan       `json:"merged,omitempty"`
 	UnorderedDirectKeys int                     `json:"unordered_direct_keys,omitempty"`
+}
+
+// MixedMergedSpan 是一個輸出片段覆蓋的連續 input 範圍。
+//
+// First 是預測片段所在的 input 索引；Last 是同一片段實際覆蓋到的最後一個
+// input。First == Last 表示沒有合併，通常不會出現在清單裡。
+type MixedMergedSpan struct {
+	First int `json:"first"`
+	Last  int `json:"last"`
 }
 
 // MixedPredictedSegment 是預測輸出中的一段，以 input_index 對回題庫。
@@ -563,17 +575,35 @@ func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 		}
 	}
 	cr.Smoke.Run = err == nil && !panicked
-	cr.Smoke.MissingSegments = len(cs.Expect) - len(byIndex)
+	units := mixedScoringUnits(cs, byIndex, pred.Merged)
+	for _, u := range units {
+		if !u.ok {
+			cr.Smoke.MissingSegments++
+		}
+	}
 	cr.Smoke.Complete = cr.Smoke.Run && cr.Smoke.MissingSegments == 0 && cr.Smoke.DuplicateSegments == 0 && cr.Smoke.UnknownIndex == 0
 	cr.Smoke.FinalTextNonEmpty = cr.Output != ""
-	cr.Smoke.TextMatchesSegments = cr.Smoke.Complete && joinedSurfaces(cs, byIndex) == cr.Output
+	cr.Smoke.TextMatchesSegments = cr.Smoke.Complete && joinedUnitSurfaces(units) == cr.Output
 
 	langs := map[lang.ID]MixedSegmentMetrics{}
-	for i, ex := range cs.Expect {
-		p, ok := byIndex[i]
-		surfaceOK := ok && mixedSurfaceMatch(p.Surface, ex)
-		langOK := ok && p.Language == ex.Language
-		variantOK := ok && p.Variant == ex.Variant
+	for _, u := range units {
+		surfaceOK := u.ok && mixedUnitSurfaceMatch(u.pred, cs.Expect[u.first:u.last+1])
+		langOK, variantOK := false, false
+		unitLang := cs.Expect[u.first].Language
+		if u.ok {
+			langOK, variantOK = true, true
+			for i := u.first; i <= u.last; i++ {
+				if u.pred.Language != cs.Expect[i].Language {
+					langOK = false
+				}
+				if u.pred.Variant != cs.Expect[i].Variant {
+					variantOK = false
+				}
+				if unitLang != cs.Expect[i].Language {
+					unitLang = lang.Und
+				}
+			}
+		}
 		cr.Segment.N++
 		if surfaceOK {
 			cr.Segment.SurfaceCorrect++
@@ -587,7 +617,7 @@ func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 		if surfaceOK && langOK && variantOK {
 			cr.Segment.JointCorrect++
 		}
-		lm := langs[ex.Language]
+		lm := langs[unitLang]
 		lm.N++
 		if surfaceOK {
 			lm.SurfaceCorrect++
@@ -601,7 +631,7 @@ func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 		if surfaceOK && langOK && variantOK {
 			lm.JointCorrect++
 		}
-		langs[ex.Language] = lm
+		langs[unitLang] = lm
 	}
 	finalizeSegment(&cr.Segment)
 	cr.byLanguage = finalizeLanguages(langs)
@@ -630,6 +660,84 @@ func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 	cr.SwitchExact = cr.Switch.TP == cr.Switch.Expected && cr.Switch.FP == 0 && cr.Switch.FN == 0
 	cr.TextCorrect = cr.Output == cr.Reference
 	return cr
+}
+
+// mixedScoringUnit 是一個評分單位：單一 input，或被長詞合併的一組 input。
+type mixedScoringUnit struct {
+	first, last int
+	pred        MixedPredictedSegment
+	ok          bool
+}
+
+// mixedScoringUnits 依 runner 回報的合併範圍把 input 分組。合併片段只在
+// 第一個 input 有預測；後段不再算缺段。沒有合併的 input 仍是一對一單位。
+func mixedScoringUnits(cs MixedCase, byIndex map[int]MixedPredictedSegment, merged []MixedMergedSpan) []mixedScoringUnit {
+	mergedEnd := map[int]int{}
+	for _, m := range merged {
+		if m.First < 0 || m.Last <= m.First || m.Last >= len(cs.Expect) {
+			continue
+		}
+		if _, exists := mergedEnd[m.First]; exists {
+			continue
+		}
+		mergedEnd[m.First] = m.Last
+	}
+	covered := make([]bool, len(cs.Expect))
+	units := make([]mixedScoringUnit, 0, len(cs.Expect))
+	for i := 0; i < len(cs.Expect); {
+		if covered[i] {
+			i++
+			continue
+		}
+		last := i
+		p, ok := byIndex[i]
+		if end, has := mergedEnd[i]; has && ok {
+			last = end
+		}
+		for j := i; j <= last; j++ {
+			covered[j] = true
+		}
+		units = append(units, mixedScoringUnit{first: i, last: last, pred: p, ok: ok})
+		i = last + 1
+	}
+	return units
+}
+
+// mixedUnitSurfaceMatch 比對一個單位。合併單位的參考詞面是各 input 詞面依序
+// 串接；accept 也以同樣方式組合，維持「合併只算一個片段」的定義。
+func mixedUnitSurfaceMatch(pred MixedPredictedSegment, expect []MixedExpectSegment) bool {
+	target := ""
+	for _, ex := range expect {
+		target += ex.Surface
+	}
+	if pred.Surface == target {
+		return true
+	}
+	variants := []string{""}
+	for _, ex := range expect {
+		next := make([]string, 0, len(variants)*(1+len(ex.Accept)))
+		for _, prefix := range variants {
+			next = append(next, prefix+ex.Surface)
+			for _, alt := range ex.Accept {
+				next = append(next, prefix+alt)
+			}
+		}
+		if len(next) > 256 {
+			next = next[:256]
+		}
+		variants = next
+	}
+	return slices.Contains(variants, pred.Surface)
+}
+
+func joinedUnitSurfaces(units []mixedScoringUnit) string {
+	var b strings.Builder
+	for _, u := range units {
+		if u.ok {
+			b.WriteString(u.pred.Surface)
+		}
+	}
+	return b.String()
 }
 
 func safeMixedPredict(runner MixedRunner, cs MixedCase) (pred MixedPrediction, err error, panicked bool) {

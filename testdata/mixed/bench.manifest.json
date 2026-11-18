@@ -8,7 +8,7 @@
    "name": "mixed-scenario-a",
    "scenario": "A",
    "count": 5,
-   "sha256": "8e7d1e83be48cf1f5c85b54211d1ee30182ac2ba925b7b6406819c1e70140ca1"
+   "sha256": "10df13959f77b53729e9898903236faab133822efa65b1297f3415744efd9bfe"
   },
   {
    "file": "scenario_b.json",

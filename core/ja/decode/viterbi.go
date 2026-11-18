@@ -29,6 +29,8 @@ type Decoder struct {
 	Learning Learning
 	Verifier Verifier
 	Reranker Reranker
+	// PreferHiragana 對平假名讀音套用詞面書寫系統偏好（見 Builder）。
+	PreferHiragana bool
 }
 
 // hypothesis 是在某個（位置, 詞性）狀態上的一條部分路徑。
@@ -126,11 +128,12 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 		return nil
 	}
 	lat := Builder{
-		Lex:          d.Lex,
-		MaxWordUnits: d.MaxWordUnits,
-		UnknownCost:  d.UnknownCost,
-		Learning:     d.Learning,
-		Context:      ctx,
+		Lex:            d.Lex,
+		MaxWordUnits:   d.MaxWordUnits,
+		UnknownCost:    d.UnknownCost,
+		Learning:       d.Learning,
+		Context:        ctx,
+		PreferHiragana: d.PreferHiragana,
 	}.Build(seq)
 	states := make([]*stateSet, len(seq)+1)
 	for i := range states {

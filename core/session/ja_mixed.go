@@ -106,6 +106,50 @@ func (s *Session) englishPrior(raw string) bool {
 	return false
 }
 
+// leaveLiteralJapanese 在推斷出來的日文片段整段變成字面英數時回到注音。
+//
+// 推斷只看按鍵前綴：kubectl 的前四個鍵 kube 是合法羅馬字，因此會先進入日文
+// runtime；下一個鍵 c 讓 kubec 不再是合法羅馬字，整段就只剩字面英數。這時
+// 留在日文會把 kubectl 標成 ja，空白又會被日文的変換鍵吃掉。回到注音後，
+// mixed 待定按鍵照原文保留，空白由中英混打的路徑送出，後續英文詞也各自
+// 成為獨立片段。
+//
+// 只有小寫 ASCII 字母讓整段失效時才回退：かな後面接大寫或數字是刻意的字面
+// 尾端，不能把前面的かな還原成羅馬字。
+func (s *Session) leaveLiteralJapanese(k string) bool {
+	if s == nil || !s.japaneseOn || !s.japaneseRun || s.Language() != lang.Ja {
+		return false
+	}
+	if len(k) != 1 || k[0] < 'a' || k[0] > 'z' {
+		return false
+	}
+	r, ok := s.activeRuntime()
+	if !ok || r.composer == nil || r.converting {
+		return false
+	}
+	var b strings.Builder
+	for _, u := range r.composer.Units() {
+		b.WriteString(string(u))
+	}
+	b.WriteString(r.composer.Pending())
+	text := b.String()
+	// 還有かな，或整段仍是合法羅馬字（kyou、gakkou）就留在日文。
+	if !asciiLetters(text) {
+		return false
+	}
+	if jlang.IsKana(text, s.japaneseCfg) {
+		return false
+	}
+	r.reset()
+	s.languageID = lang.Zh
+	s.japaneseRun = false
+	s.mixed = pendingKeys{raw: text}
+	s.mixedOrigins = nil
+	s.cand = nil
+	s.refresh()
+	return true
+}
+
 // startJapaneseRun 把目前的待定按鍵原樣交給日文 runtime。呼叫端已確認
 // japanesePending 為 true，且注音狀態是空的。
 func (s *Session) startJapaneseRun() bool {

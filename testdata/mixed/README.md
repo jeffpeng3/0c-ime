@@ -23,11 +23,12 @@ manifest 與跨情境彙總。
 | `noisy:no-space` | 注音與英文之間沒有空白 |
 | `noisy:mixed-case` | 英文大小寫混用，不得被改成小寫或另一語言 |
 | `noisy:digits` | 數字與英數版本字串保留原文 |
-| `noisy:long-match` | 長詞跨過 input 片段合併；用 `merged_segments`／`missing_segments` 觀察 |
+| `noisy:long-match` | 長詞跨過 input 片段合併；合併後算一個片段，用 `merged_segments` 觀察 |
 
 `noisy:long-match` 不是「應該兩段都對」的題目。詞庫把 `麻婆豆腐`、`東京大学`
-合成一個片段時，後一個 input 沒有自己的輸出片段；benchmark 如實計入合併與
-缺段，而不是把合併後的字串重複算兩次。
+合成一個片段時，runner 回報 `merged` 範圍；benchmark 把被覆蓋的 input 視為
+同一個評分片段，參考詞面是各段依序串接。合併只算一次，不會重複計分，也不
+再把後段算成缺段。
 
 ## Schema
 
@@ -111,8 +112,8 @@ manifest 與跨情境彙總。
 | `sent` | 整句送出文字完全等於參考文字（`whole-sentence exact`）。`accept` 不影響這一項。 |
 | `runs` | 成功跑完的案例數；runner 回傳錯誤或 panic 都算失敗。 |
 | `done` | 每個 input 恰好一個預測片段、沒有重複／未知 index 的案例數。 |
-| `miss` | 沒有預測片段的 input 數。 |
-| `merged` | 一個輸出片段跨過多個 input 邊界的次數。 |
+| `miss` | 沒有預測片段的評分單位數；合併的後段不算缺段。 |
+| `merged` | 一個輸出片段跨過多個 input 邊界的次數；該範圍只算一個評分片段。 |
 
 `by_language` 另外依參考語言分組同一組片段指標。`invalid_segments` 檢查空
 詞面、無效語言、無效變體與語言／變體不相容。
