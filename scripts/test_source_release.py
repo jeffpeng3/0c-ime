@@ -517,6 +517,40 @@ class SourceReleaseTests(unittest.TestCase):
         self.assertEqual((out / "keep").read_text(), "old")
         self.assertEqual((out / "placeholder").read_text(), "new")
 
+    def test_build_ja_reads_an_imported_runtime_source(self):
+        root = self.work / "ja-import-tree"
+        source = root / "build/ja-import"
+        (source / "lexicon").mkdir(parents=True)
+        (source / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n")
+        (source / "connection.tsv").write_text("<s>\tnoun\t0.1\n")
+        out = root / "build/ja"
+        commands = []
+
+        def run(command, cwd, check):
+            commands.append(command)
+            if command[:3] == ["go", "run", "./cmd/0c-compile"]:
+                self.assertIn("-ja-data", command)
+                self.assertEqual(command[command.index("-ja-data") + 1], "build/ja-import")
+                stage = Path(command[command.index("-out") + 1])
+                stage.mkdir(parents=True)
+                (stage / "manifest.json").write_text('{"format":2,"language":"ja"}\n')
+            else:
+                stage = Path(command[command.index("-out") + 1])
+                (stage / "lexicon").mkdir()
+                (stage / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n")
+                (stage / "connection.tsv").write_text("<s>\tnoun\t0.1\n")
+
+        with patch.object(fetch_assets.subprocess, "run", side_effect=run):
+            self.assertEqual(fetch_assets.build_ja(root, out, source=source), out)
+        self.assertEqual(len(commands), 2)
+
+    def test_build_ja_rejects_incomplete_imported_source(self):
+        root = self.work / "ja-bad-import"
+        source = root / "build/ja-import"
+        source.mkdir(parents=True)
+        with self.assertRaisesRegex(ValueError, "missing lexicon/words.tsv or connection.tsv"):
+            fetch_assets.build_ja(root, root / "build/ja", source=source)
+
     def test_fetch_assets_dictionary_only_and_legacy_release(self):
         tarball = self.build()
         root = self.source_tree()
