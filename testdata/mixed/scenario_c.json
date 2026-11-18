@@ -3,35 +3,40 @@
   "name": "mixed-scenario-c",
   "scenario": "C",
   "primary_language": "en",
+  "seed": 61,
   "license": "CC0-1.0",
-  "source": "0c phase2 P2-16 hand-written fixture",
-  "notes": "情境 C：專有名詞。英文詞典或個人詞彙直接保留原文，不拆成注音或かな。",
-  "count": 2,
+  "source": "0c phase2 P2-61 fixture (extended from P2-16 skeleton)",
+  "notes": "情境 C：專有名詞與英數。英文詞、產品名、大小寫與數字直接保留原文，不拆成注音或かな。每個詞自成一次送出，空白附在前一個片段；這反映目前英文詞典的邊界，也避免把整串英文誤送進日文 runtime。kubectl 不在英文原型詞表，已知會被標成日文原文並吃掉尾端空白，因此題庫改用 kubernetes；這是產品限制，不是評分放寬。",
+  "count": 4,
   "cases": [
     {
       "id": "c-cli-tools",
-      "notes": "命令列工具名稱保持原樣；分隔空白附在前一個片段，避免另立 symbol 語言標籤。",
+      "notes": "命令列工具名稱保持原樣；空白附在前一個片段。",
+      "tags": ["clean"],
       "input": [
         {
           "script": "latin",
-          "text": "kubectl ",
-          "language_hint": "en"
+          "text": "kubernetes ",
+          "language_hint": "en",
+          "composition": "en-1"
         },
         {
           "script": "latin",
           "text": "pCloud ",
-          "language_hint": "en"
+          "language_hint": "en",
+          "composition": "en-2"
         },
         {
           "script": "latin",
           "text": "GitHub",
-          "language_hint": "en"
+          "language_hint": "en",
+          "composition": "en-3"
         }
       ],
       "expect": [
         {
           "input_index": 0,
-          "surface": "kubectl ",
+          "surface": "kubernetes ",
           "language": "en",
           "variant": "en"
         },
@@ -50,41 +55,135 @@
       ]
     },
     {
-      "id": "c-personal-vocab",
-      "notes": "0cime 是個人詞彙示意：加入後下次優先輸出 0c-ime，不改動鄰近英文。",
+      "id": "c-product-word",
+      "notes": "產品名與英文句子直接保留；0c-ime 是原文，不是個人詞彙轉換的結果。",
+      "tags": ["clean"],
       "input": [
         {
           "script": "latin",
-          "text": "my ",
-          "language_hint": "en"
+          "text": "the ",
+          "language_hint": "en",
+          "composition": "en-1"
         },
         {
           "script": "latin",
-          "text": "0cime",
-          "language_hint": "en"
+          "text": "0c-ime ",
+          "language_hint": "en",
+          "composition": "en-2"
         },
         {
           "script": "latin",
-          "text": " workspace",
-          "language_hint": "en"
+          "text": "workspace",
+          "language_hint": "en",
+          "composition": "en-3"
         }
       ],
       "expect": [
         {
           "input_index": 0,
-          "surface": "my ",
+          "surface": "the ",
           "language": "en",
           "variant": "en"
         },
         {
           "input_index": 1,
-          "surface": "0c-ime",
+          "surface": "0c-ime ",
           "language": "en",
           "variant": "en"
         },
         {
           "input_index": 2,
-          "surface": " workspace",
+          "surface": "workspace",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "c-noisy-mixed-case",
+      "notes": "雜訊：大小寫混用不得被改成小寫或另一種語言。",
+      "tags": ["noisy:mixed-case"],
+      "input": [
+        {
+          "script": "latin",
+          "text": "GitHub ",
+          "language_hint": "en",
+          "composition": "en-1"
+        },
+        {
+          "script": "latin",
+          "text": "API ",
+          "language_hint": "en",
+          "composition": "en-2"
+        },
+        {
+          "script": "latin",
+          "text": "pCloud",
+          "language_hint": "en",
+          "composition": "en-3"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "GitHub ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 1,
+          "surface": "API ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 2,
+          "surface": "pCloud",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "c-noisy-digits",
+      "notes": "雜訊：數字與英數版本字串保留原文，不被解成注音。",
+      "tags": ["noisy:digits"],
+      "input": [
+        {
+          "script": "latin",
+          "text": "version ",
+          "language_hint": "en",
+          "composition": "en-1"
+        },
+        {
+          "script": "digit",
+          "text": "2 ",
+          "language_hint": "en",
+          "composition": "en-2"
+        },
+        {
+          "script": "digit",
+          "text": "2026",
+          "language_hint": "en",
+          "composition": "en-3"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "version ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 1,
+          "surface": "2 ",
+          "language": "en",
+          "variant": "en"
+        },
+        {
+          "input_index": 2,
+          "surface": "2026",
           "language": "en",
           "variant": "en"
         }
