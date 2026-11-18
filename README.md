@@ -96,7 +96,7 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - Windows TSF 只有一個 Mixed profile。注音、日文羅馬字與英文在同一個組字區，不再有 ja-JP「靈犀日本語」profile；舊版留下的 ja-JP 會在升級時清掉。
 - `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
 
-repo 內的日文資料包是 140 行（138 筆詞條）的種子包。完整的 0c-jadic public-core pack（1,147,021 筆、870,298 surfaces）不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。這份完整詞典的統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
+repo 內的日文資料包是 140 行（137 筆詞條）的種子包。完整的 0c-jadic public-core pack（1,147,021 筆、870,298 surfaces）不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。匯入後是 1,137,895 筆詞條、861,582 個 surface；統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
 
 ```sh
 make assets LANG=zh                 # 注音字典與模型
@@ -113,7 +113,11 @@ python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 
 ### 量測
 
-T33 在凍結的題庫上量測目前的統計轉換。分數低是因為 137 詞條種子包覆蓋不足，不代表轉換器上限，也不能拿來和注音的 86.0% 或 Mozc 比較。
+量測分成兩組，不能混用。repo 內的 `data/ja` 種子包是 CI gate 的 baseline；安裝包使用的完整 public-core 詞典另外量。兩組都只走統計轉換，沒有接 reranker。
+
+**CI baseline：repo 內種子包**
+
+T33 在凍結的題庫上量測種子包。分數低是因為種子包覆蓋不足，不代表轉換器上限，也不能拿來和注音的 86.0% 或 Mozc 比較。
 
 | 題庫 | n | 首選 top-1 | 前 5 名 top-5 | 文節邊界 exact | 邊界 F1 |
 |---|---:|---:|---:|---:|---:|
@@ -122,7 +126,28 @@ T33 在凍結的題庫上量測目前的統計轉換。分數低是因為 137 �
 | `anthy-corpus1` | 200 | 2.5% | 2.5% | 1.5% | 0.253 |
 | `ajimee-200` | 200 | 1.5% | 1.5% | 不計 | 不計 |
 
-規則、題庫雜湊與 CI 門檻見 [testdata/ja/README.md](testdata/ja/README.md)。延遲只在同一台機器比較，不進 CI 門檻。
+**安裝包詞典：public-core（P2-47B 實測）**
+
+使用 `ja-lexicon-public-core.pack`，SHA-256 `8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest SHA-256 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。匯入後 `words.tsv` 是 1,137,895 筆詞條、861,582 個 surface、SHA-256 `830f6783cb6931751d719dd602c327164f7a72a8443871d153f8948a142c723d`；連接成本仍用 `data/ja/connection.tsv`。量測指令：
+
+```sh
+go run ./cmd/0c-jadic import \
+  -pack /home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack \
+  -out build/ja-import \
+  -connections data/ja/connection.tsv -force
+go run ./cmd/0c-eval-ja --data build/ja-import
+```
+
+| 題庫 | n | 首選 top-1 | 前 5 名 top-5 | 文節邊界 exact | 邊界 F1 |
+|---|---:|---:|---:|---:|---:|
+| `modern-500` | 500 | 0.0%（0） | 0.0%（0） | 0.8%（4/500） | 0.280 |
+| `hard-cases` | 35 | 2.9%（1） | 5.7%（2） | 2.9%（1/35） | 0.302 |
+| `anthy-corpus1` | 200 | 1.0%（2） | 3.5%（7） | 6.0%（12/199） | 0.327 |
+| `ajimee-200` | 200 | 1.0%（2） | 3.5%（7） | 不計 | 不計 |
+
+和種子包 baseline 相比，完整詞典的 top-1 沒有上升：`modern-500` 23.2%→0.0%、`hard-cases` 14.3%→2.9%、`anthy-corpus1` 2.5%→1.0%、`ajimee-200` 1.5%→1.0%。top-5 只在 Anthy 與 AJIMEE 增加，邊界 F1 在 Anthy 與 hard-cases 增加。擴充詞條沒有轉成 top-1 改善，和 [日文資料 README](data/ja/README.md#完整公開核心詞典p2-45b) 記錄的成本尺度與連接矩陣問題一致。
+
+`testdata/ja/baseline.json` 仍綁定種子包。CI 沒有 public-core pack，`TestJARegressionGate` 會直接跑 `data/ja`，所以不能把 baseline 換成上表而不破壞 CI。規則、題庫雜湊與 CI 門檻見 [testdata/ja/README.md](testdata/ja/README.md)。延遲只在同一台機器比較，不進 CI 門檻。
 
 ## 📈 評測：首選錯誤少約六成
 
