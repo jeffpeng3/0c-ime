@@ -38,6 +38,18 @@ func Describe(w io.Writer, p *Pack, opt DescribeOptions) error {
 		h.POSLength, h.POSOffset,
 		h.ConjLength, h.ConjOffset)
 
+	caps := p.Capabilities()
+	if caps.ConnectionMatrix {
+		fmt.Fprintln(w, "connections: pack 內含 context-ID 連接成本矩陣")
+	} else {
+		fmt.Fprintf(w, "connections: none（pack v%d 沒有連接成本矩陣；需外部 POS 矩陣）\n", h.FormatVersion)
+	}
+	if caps.ContextIDs {
+		fmt.Fprintln(w, "context ids: entry 帶有 left/right context ID")
+	} else {
+		fmt.Fprintln(w, "context ids: none（entry 只有 POS、活用與詞成本）")
+	}
+
 	st := p.Stats()
 	fmt.Fprintf(w, "cost: min=%d max=%d negative=%d（越小越優先）\n", st.CostMin, st.CostMax, st.NegativeCosts)
 	fmt.Fprintf(w, "split: C=%d A=%d B=%d\n", st.SplitCounts[0], st.SplitCounts[1], st.SplitCounts[2])

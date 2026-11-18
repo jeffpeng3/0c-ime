@@ -56,6 +56,9 @@ func TestReferencePack(t *testing.T) {
 	if h.FormatVersion != 1 || h.POSCount != 71 || h.ConjTypeCount != 140 || h.ConjFormCount != 62 {
 		t.Fatalf("header = %+v", h)
 	}
+	if caps := p.Capabilities(); caps.ContextIDs || caps.ConnectionMatrix {
+		t.Fatalf("參考 pack 不應帶 context ID 或連接矩陣：%+v", caps)
+	}
 	st := p.Stats()
 	if st.CostMin != -8313 || st.CostMax != 23263 || st.NegativeCosts != 114 {
 		t.Fatalf("stats = %+v", st)

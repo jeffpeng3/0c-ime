@@ -152,6 +152,9 @@ func TestImportWritesDataDir(t *testing.T) {
 	if r.Schema != ImportSchema || r.Pack.SHA256 != p.FileSHA256() || r.Pack.Path != packPath {
 		t.Fatalf("receipt = %+v", r)
 	}
+	if r.Pack.ContextIDs || r.Pack.ConnectionMatrix {
+		t.Fatalf("pack capabilities = %+v，v1 不應回報 context ID 或矩陣", r.Pack)
+	}
 	if r.Import.Origin != "ja-jadic-test" || r.Import.CostScale != 0.002 || r.Import.NegativeCosts != 1 {
 		t.Fatalf("receipt import = %+v", r.Import)
 	}
@@ -189,5 +192,11 @@ func TestImportWithoutConnectionsRecordsNeed(t *testing.T) {
 	}
 	if len(res.Receipt.Import.Needs) != 1 || !strings.Contains(res.Receipt.Import.Needs[0], "connection.tsv") {
 		t.Fatalf("needs = %v", res.Receipt.Import.Needs)
+	}
+	if !strings.Contains(res.Receipt.Import.Needs[0], "context ID") {
+		t.Fatalf("needs 應說明 entry 沒有 context ID：%v", res.Receipt.Import.Needs)
+	}
+	if res.Receipt.Pack.ConnectionMatrix || res.Receipt.Pack.ContextIDs {
+		t.Fatalf("receipt pack = %+v", res.Receipt.Pack)
 	}
 }

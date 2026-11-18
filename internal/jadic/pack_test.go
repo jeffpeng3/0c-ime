@@ -64,6 +64,38 @@ func TestParseSamplePack(t *testing.T) {
 	}
 }
 
+func TestCapabilitiesV1HasNoContextCosts(t *testing.T) {
+	p, err := Parse(samplePack(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	caps := p.Capabilities()
+	if caps.ContextIDs || caps.ConnectionMatrix {
+		t.Fatalf("v1 capabilities = %+v，預期兩者皆 false", caps)
+	}
+}
+
+func TestDescribeReportsMissingContextCosts(t *testing.T) {
+	p, err := Parse(samplePack(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf strings.Builder
+	if err := Describe(&buf, p, DescribeOptions{PackPath: "sample.pack"}); err != nil {
+		t.Fatal(err)
+	}
+	out := buf.String()
+	for _, want := range []string{
+		"connections: none",
+		"context ids: none",
+		"entry 只有 POS、活用與詞成本",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("inspect 輸出缺少 %q：\n%s", want, out)
+		}
+	}
+}
+
 func TestParseRejectsStructuralCorruption(t *testing.T) {
 	base := samplePack(t)
 	cases := []struct {
