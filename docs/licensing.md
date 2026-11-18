@@ -27,7 +27,7 @@ Copyright (C) 2026 Funmula Co., Limited
 
 這不是通用通行證。新來源要逐案審查，並在 `data/sources/corpus/public-core.tsv` 留下允許理由。
 
-日文 `ja-public-core` 模型組在模型組清單標示 CC BY 4.0。目前注音 `select/`、`punct/` 兩個隨套件出貨的模型依各自上游模型卡標示 MIT，屬於 notice-only 類；實際檔案與授權以 `models/select/LICENSE`、`models/punct/LICENSE` 與 [models/README.md](../models/README.md) 為準。
+日文 `ja-public-core` 模型組在模型組清單標示 MIT。注音 `select/`、`punct/` 與日文模型的檔案與授權以各模型 `LICENSE` 與 [models/README.md](../models/README.md) 為準。
 
 公開核心不使用 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN 或 NEologd 來源。
 
@@ -40,7 +40,7 @@ CC BY-SA 資料與模型是**另一個 experimental set**：
 - 不混進公開核心，也不把 public-core 與 cc-by-sa 的模型配成同一組。
 - 保留來源的原始授權版本與署名，例如 Wikipedia 文字是 CC BY-SA 4.0，部分 LLM-jp 語料是 CC BY-SA 3.0。
 
-日文的 `ja-cc-by-sa` 模型組標示 CC BY-SA 4.0，目前是未訓練 placeholder，預設不載入。這一組不得與 `ja-public-core` 混用。
+日文的 `ja-cc-by-sa` 模型組標示 CC BY-SA 4.0，只進 experimental，預設不載入。這一組不得與 `ja-public-core` 混用。
 
 ## 個別來源的散布義務
 
@@ -106,6 +106,6 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 ## 品質與驗證狀態
 
-- 日文模型仍在評測，兩組日文模型組都是未訓練 placeholder，沒有品質承諾。
+- 日文模型仍在評測，兩組模型組尚未 pin 正式 revision，沒有品質承諾。placeholder 只留在 `testdata/models/placeholder/`，不進正式 lock 或 release bundle。
 - Windows Phase 2 VM 驗收是 **NOT RUN**，不能寫成已通過。
 - 注音、混合語言 benchmark 與延遲數字只在有量測來源時引用；沒有數字的項目代表未驗證。

@@ -38,8 +38,8 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 | 模型組 ID | Variant | 授權 | 目前狀態 |
 |---|---|---|---|
-| `ja-public-core` | `public-core` | CC BY 4.0 | placeholder，未訓練 |
-| `ja-cc-by-sa` | `cc-by-sa` | CC BY-SA 4.0 | placeholder，未訓練 |
+| `ja-public-core` | `public-core` | MIT | 已訓練，HF 來源，尚未 pin revision |
+| `ja-cc-by-sa` | `cc-by-sa` | CC BY-SA 4.0 | 已訓練 experimental，HF 來源，尚未 pin revision |
 
 兩組不得混用，也不能把 public-core 的 reranker 配 cc-by-sa 的 punctuation。模型組清單在 `models/pairing.lock.json` 的 `model_sets`。
 
@@ -48,8 +48,8 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 Windows 設定程式的「Mixed 輸入」頁有「日文模型組」：
 
 - `public-core` 是預設。
-- `cc-by-sa` 標示為實驗組，目前整組是未訓練 placeholder，預設不會載入。
-- 「允許 placeholder 模型」預設關閉。開啟前要確認模型組狀態是 placeholder；這個開關只適合驗證管線與量測記憶體。
+- `cc-by-sa` 標示為實驗組，只進 experimental，預設不會載入。
+- 「允許 placeholder 模型」預設關閉；placeholder 只存在 `testdata/models/placeholder/`，正式 lock 不含 placeholder。
 
 設定會寫進 `settings.json`。在日文模型尚未接入推論前，切換模型組不會改變目前日文轉換的結果。
 
@@ -98,6 +98,6 @@ go run ./cmd/0c-model-set install -set ja-public-core \
 ## 目前限制
 
 - 日文 reranker／punctuation 尚未接入產品推論，`model-set` 目前只影響設定與模型報告。這項接線是 P2-30 之後的工作。
-- 兩組日文模型都是未訓練 placeholder，沒有品質數字，不能當成模型比較結果。
+- 兩組日文模型尚未 pin 正式 revision，沒有品質數字，不能當成模型比較結果。placeholder 只作測試 fixture，不能進入 release bundle。
 - Windows Phase 2 VM 驗收 NOT RUN，模型與候選的實機行為還沒有 Windows 實機通過紀錄。
 - 注音模型的下載與配對只在支援的 Linux 系統安裝提供；Windows 套件內附模型，macOS 套件依打包內容提供。

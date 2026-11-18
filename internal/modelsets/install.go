@@ -48,6 +48,7 @@ type InstallOptions struct {
 	DestRoot                  string
 	Format                    string
 	AllowPlaceholders         bool
+	Release                   bool
 	InstalledDictionarySHA256 string
 	InstalledDictionaryPackID string
 	Force                     bool
@@ -88,6 +89,7 @@ func Install(lock Lock, setID string, opts InstallOptions) (Selection, error) {
 	}
 	_, err = set.Validate(Options{
 		AllowPlaceholders:         opts.AllowPlaceholders,
+		Release:                   opts.Release,
 		InstalledDictionarySHA256: opts.InstalledDictionarySHA256,
 		InstalledDictionaryPackID: opts.InstalledDictionaryPackID,
 		ArtifactRoot:              opts.SourceRoot,

@@ -50,6 +50,10 @@ var (
 	ErrFileMismatch        = errors.New("model set file mismatch")
 	ErrLicenseMixed        = errors.New("model set license does not match variant")
 	ErrSelection           = errors.New("model set selection is invalid")
+	ErrUnpinned            = errors.New("model set Hugging Face revision is not pinned")
+	ErrHFSource            = errors.New("model set Hugging Face source is invalid")
+	ErrChecksum            = errors.New("model file checksum mismatch")
+	ErrOffline             = errors.New("model is not available offline")
 )
 
 // Lock 是 models/pairing.lock.json 中 P2-27 讀取的部分。ModelSets 以外的鍵（既有
@@ -112,7 +116,9 @@ type Source struct {
 	Fingerprint  string   `json:"fingerprint"`
 }
 
-// Artifact 是模型組內的一個模型檔集合。Files 以 fp32／int8 為鍵。
+// Artifact 是模型組內的一個模型檔集合。Files 以 fp32／int8 為鍵；HF 記錄同一個
+// 模型在 Hugging Face 上的 repo、revision 與逐檔大小／SHA-256。Git 只保存這份清單，
+// 不下載權重。
 type Artifact struct {
 	Manifest                 string                  `json:"manifest"`
 	ArtifactID               string                  `json:"artifact_id"`
@@ -128,15 +134,46 @@ type Artifact struct {
 	Attribution              []string                `json:"attribution"`
 	Source                   Source                  `json:"source"`
 	Files                    map[string]ArtifactFile `json:"files"`
+	HF                       *HFSource               `json:"hf,omitempty"`
 	IO                       TensorIO                `json:"io"`
 }
 
-// ArtifactFile 是一個實際的 ONNX 檔。Path 相對於模型根目錄。
+// ArtifactFile 是一個實際的 ONNX 檔。Path 相對於模型根目錄；未 pin 的官方模型組
+// 允許 Bytes=0、SHA256=""，pin 之後由 pin 指令填入。
 type ArtifactFile struct {
 	Path         string `json:"path"`
 	Bytes        int64  `json:"bytes"`
 	SHA256       string `json:"sha256"`
 	Quantization string `json:"quantization"`
+}
+
+// HFSource 是模型檔在 Hugging Face 的來源。Revision 必須是 commit 雜湊；空的
+// revision 只在 development 模式可接受，release 模式會拒絕。
+type HFSource struct {
+	Repository string            `json:"repository"`
+	Revision   string            `json:"revision"`
+	License    string            `json:"license"`
+	Files      map[string]HFFile `json:"files"`
+}
+
+// HFFile 是 HF repo 內一個檔案的名字、大小與 SHA-256。
+type HFFile struct {
+	Name   string `json:"name"`
+	Bytes  int64  `json:"bytes"`
+	SHA256 string `json:"sha256"`
+}
+
+// Pinned 回報 HF 來源是否已有合法 revision 與逐檔大小／雜湊。
+func (h *HFSource) Pinned() bool {
+	if h == nil || h.Repository == "" || !validRevision(h.Revision) || len(h.Files) == 0 {
+		return false
+	}
+	for _, f := range h.Files {
+		if f.Name == "" || f.Bytes <= 0 || !validHex(f.SHA256) {
+			return false
+		}
+	}
+	return true
 }
 
 // TensorIO 是模型檔的輸入輸出契約。
@@ -156,6 +193,7 @@ type Tensor struct {
 // Options 控制驗證範圍。InstalledDictionarySHA256 必須是實際安裝的字典包 manifest 雜湊。
 type Options struct {
 	AllowPlaceholders         bool
+	Release                   bool
 	InstalledDictionarySHA256 string
 	InstalledDictionaryPackID string
 	ArtifactRoot              string
@@ -260,8 +298,40 @@ func (l Lock) Set(id string) (*Set, error) {
 }
 
 // ValidateStructure 只驗證 manifest 本身：variant 分離、模型組完整、授權與張量契約。
-// 不讀取已安裝字典包或 ONNX 檔案。
+// 不讀取已安裝字典包或 ONNX 檔案。未 pin 的 HF revision 與空的大小／雜湊在這裡只做
+// 形狀檢查；正式發行前要再呼叫 ValidateRelease。
 func (s *Set) ValidateStructure() error {
+	return s.validateStructure(false)
+}
+
+// ValidateRelease 是正式發行前的嚴格驗證：HF revision 必須已 pin、每個 HF 檔案的
+// 大小與 SHA-256 必須齊全，placeholder 與 production_eligible=false 一律拒絕。
+func (s *Set) ValidateRelease() error {
+	return s.validateStructure(true)
+}
+
+// Unpinned 列出尚未 pin 的 HF 來源，development 模式用它產生警告。
+func (s *Set) Unpinned() []string {
+	var out []string
+	for i := range s.Artifacts {
+		artifact := &s.Artifacts[i]
+		if artifact.HF == nil {
+			continue
+		}
+		if artifact.HF.Revision == "" {
+			out = append(out, fmt.Sprintf("%s（%s）缺少 revision", artifact.ArtifactID, artifact.HF.Repository))
+			continue
+		}
+		for format, file := range artifact.HF.Files {
+			if file.Bytes == 0 || file.SHA256 == "" {
+				out = append(out, fmt.Sprintf("%s/%s 缺少大小或 SHA-256", artifact.ArtifactID, format))
+			}
+		}
+	}
+	return out
+}
+
+func (s *Set) validateStructure(release bool) error {
 	if s.ID == "" {
 		return fmt.Errorf("%w: 模型組沒有 ID", ErrSchema)
 	}
@@ -330,7 +400,10 @@ func (s *Set) ValidateStructure() error {
 					ErrPlaceholderUnmarked, artifact.ArtifactID, artifact.Quality, artifact.ProductionEligible)
 			}
 		}
-		if err := validateFiles(artifact); err != nil {
+		if err := validateHF(artifact, release); err != nil {
+			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
+		}
+		if err := validateFiles(artifact, release); err != nil {
 			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
 		}
 		if err := validateIO(artifact.Kind, artifact.IO); err != nil {
@@ -349,6 +422,14 @@ func (s *Set) ValidateStructure() error {
 	if s.Placeholder && s.ProductionEligible {
 		return fmt.Errorf("%w: placeholder 模型組不得 production_eligible", ErrPlaceholderUnmarked)
 	}
+	if release {
+		if s.Placeholder {
+			return fmt.Errorf("%w: %s 是 placeholder，不得進入正式發行", ErrPlaceholder, s.ID)
+		}
+		if !s.ProductionEligible {
+			return fmt.Errorf("%w: %s 沒有標示 production_eligible", ErrHFSource, s.ID)
+		}
+	}
 	if kinds[KindReranker] != 1 || kinds[KindPunctuation] != 1 {
 		return fmt.Errorf("%w: 需要各一個 reranker 與 punctuation，目前 reranker=%d punctuation=%d",
 			ErrIncompleteSet, kinds[KindReranker], kinds[KindPunctuation])
@@ -359,7 +440,7 @@ func (s *Set) ValidateStructure() error {
 // Validate 驗證模型組可以安裝或成為使用中的模型組：結構、已安裝字典包雜湊、placeholder
 // 設定，以及（可選）實際檔案大小與 SHA-256。
 func (s *Set) Validate(opts Options) (Result, error) {
-	if err := s.ValidateStructure(); err != nil {
+	if err := s.validateStructure(opts.Release); err != nil {
 		return Result{}, err
 	}
 	if opts.InstalledDictionarySHA256 == "" {
@@ -489,18 +570,79 @@ func checkLicense(variant string, l License) error {
 	return nil
 }
 
-func validateFiles(a *Artifact) error {
+// validateHF 檢查 HF 來源。development 模式允許 revision 與大小／雜湊尚未 pin；
+// release 模式缺任何一項都失敗，避免把未綁定的模型放進正式安裝包。
+func validateHF(a *Artifact, release bool) error {
+	h := a.HF
+	if h == nil {
+		if release {
+			return fmt.Errorf("%w: %s 缺少 hf 來源", ErrHFSource, a.ArtifactID)
+		}
+		return nil
+	}
+	if a.Placeholder {
+		return fmt.Errorf("%w: %s 是 placeholder，不能有 HF 來源", ErrHFSource, a.ArtifactID)
+	}
+	if h.Repository == "" {
+		return fmt.Errorf("%w: %s 缺少 repository", ErrHFSource, a.ArtifactID)
+	}
+	if h.Revision == "" {
+		if release {
+			return fmt.Errorf("%w: %s（%s）缺少 revision；先執行 0c-model-set pin --repo %s --revision <commit>",
+				ErrUnpinned, a.ArtifactID, h.Repository, h.Repository)
+		}
+	} else if !validRevision(h.Revision) {
+		return fmt.Errorf("%w: %s 的 revision %q 不是 commit 雜湊", ErrHFSource, a.ArtifactID, h.Revision)
+	}
+	if h.License == "" {
+		return fmt.Errorf("%w: %s 缺少 HF license", ErrHFSource, a.ArtifactID)
+	}
+	if len(h.Files) == 0 {
+		if release {
+			return fmt.Errorf("%w: %s 缺少 hf.files", ErrHFSource, a.ArtifactID)
+		}
+		return nil
+	}
+	for format, hfFile := range h.Files {
+		file, ok := a.Files[format]
+		if !ok {
+			return fmt.Errorf("%w: %s 的 hf 檔 %s 沒有對應的本機格式", ErrHFSource, a.ArtifactID, format)
+		}
+		if hfFile.Name == "" || filepath.Base(hfFile.Name) != hfFile.Name {
+			return fmt.Errorf("%w: %s/%s 的檔名 %q 不合法", ErrHFSource, a.ArtifactID, format, hfFile.Name)
+		}
+		if hfFile.Bytes == 0 && hfFile.SHA256 == "" {
+			if release {
+				return fmt.Errorf("%w: %s/%s 尚未 pin 大小與 SHA-256", ErrUnpinned, a.ArtifactID, format)
+			}
+			continue
+		}
+		if hfFile.Bytes <= 0 || !validHex(hfFile.SHA256) {
+			return fmt.Errorf("%w: %s/%s 的大小或 SHA-256 不正確", ErrHFSource, a.ArtifactID, format)
+		}
+		if file.Bytes != 0 && file.Bytes != hfFile.Bytes {
+			return fmt.Errorf("%w: %s/%s 的本機大小與 hf 不符", ErrHFSource, a.ArtifactID, format)
+		}
+		if file.SHA256 != "" && file.SHA256 != hfFile.SHA256 {
+			return fmt.Errorf("%w: %s/%s 的本機 SHA-256 與 hf 不符", ErrHFSource, a.ArtifactID, format)
+		}
+	}
+	return nil
+}
+
+func validateFiles(a *Artifact, release bool) error {
 	if len(a.Files) == 0 {
 		return fmt.Errorf("%w: 沒有檔案", ErrSchema)
 	}
 	if _, ok := a.Files[FormatInt8]; !ok {
 		return fmt.Errorf("%w: 缺少 %s 檔案", ErrSchema, FormatInt8)
 	}
+	unpinned := a.HF != nil && !a.HF.Pinned() && !release
 	for format, file := range a.Files {
 		if format != FormatInt8 && format != FormatFP32 {
 			return fmt.Errorf("%w: 未知格式 %q", ErrSchema, format)
 		}
-		if err := validateFile(file); err != nil {
+		if err := validateFile(file, unpinned); err != nil {
 			return err
 		}
 		if strings.Contains(file.Path, ".placeholder.") && !a.Placeholder {
@@ -510,17 +652,33 @@ func validateFiles(a *Artifact) error {
 	return nil
 }
 
-func validateFile(f ArtifactFile) error {
+func validateFile(f ArtifactFile, unpinned bool) error {
 	if f.Path == "" || filepath.IsAbs(f.Path) || !filepath.IsLocal(filepath.FromSlash(f.Path)) {
 		return fmt.Errorf("%w: 路徑 %q 不是模型根目錄內的相對路徑", ErrSchema, f.Path)
 	}
 	if filepath.Ext(f.Path) != ".onnx" {
 		return fmt.Errorf("%w: %q 不是 ONNX 檔", ErrSchema, f.Path)
 	}
+	if unpinned && f.Bytes == 0 && f.SHA256 == "" {
+		return nil
+	}
 	if f.Bytes <= 0 || !validHex(f.SHA256) {
 		return fmt.Errorf("%w: %q 的大小或 SHA-256 不正確", ErrSchema, f.Path)
 	}
 	return nil
+}
+
+// validRevision：Hugging Face 的 revision 是提交的雜湊（小寫十六進位）。
+func validRevision(r string) bool {
+	if len(r) < 7 || len(r) > 64 {
+		return false
+	}
+	for _, c := range r {
+		if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func validateIO(kind string, io TensorIO) error {

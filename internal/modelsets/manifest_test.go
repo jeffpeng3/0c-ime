@@ -305,6 +305,52 @@ func TestInstallRefusesPlaceholderWithoutSetting(t *testing.T) {
 	}
 }
 
+func TestRepositoryLockIsOfficialAndNotPlaceholder(t *testing.T) {
+	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range lock.SetIDs() {
+		set, _ := lock.Set(id)
+		if set.Placeholder {
+			t.Fatalf("%s 仍在正式 lock 標示 placeholder", id)
+		}
+		for i := range set.Artifacts {
+			artifact := &set.Artifacts[i]
+			if artifact.Placeholder {
+				t.Fatalf("%s 仍在正式 lock 標示 placeholder", artifact.ArtifactID)
+			}
+			if artifact.HF == nil || artifact.HF.Repository == "" || artifact.HF.License == "" {
+				t.Fatalf("%s 缺少 HF 來源", artifact.ArtifactID)
+			}
+		}
+		// 目前尚未 pin：development 模式可接受並應列出警告，release 模式必須失敗。
+		if warnings := set.Unpinned(); len(warnings) == 0 {
+			t.Fatalf("%s 應該有未 pin 警告", id)
+		}
+		if err := set.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
+			t.Fatalf("release 模式應拒絕未 pin 的 %s：%v", id, err)
+		}
+	}
+}
+
+func TestPlaceholderFixtureStillRequiresExplicitAllow(t *testing.T) {
+	lock, err := LoadLock(filepath.Join("..", "..", "testdata", "models", "placeholder", "pairing.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := lock.Set("ja-public-core")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !set.Placeholder {
+		t.Fatal("placeholder fixture 應保留 placeholder 標記")
+	}
+	if _, err := set.Validate(Options{InstalledDictionarySHA256: set.Dictionary.ManifestSHA256}); !errors.Is(err, ErrPlaceholder) {
+		t.Fatalf("未允許 placeholder 應被拒絕：%v", err)
+	}
+}
+
 func TestDictionaryPackID(t *testing.T) {
 	pack, _ := syntheticPack(t)
 	if got := DictionaryPackID(pack); got != "ja-test" {

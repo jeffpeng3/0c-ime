@@ -201,22 +201,43 @@ class ModelSetTests(unittest.TestCase):
         self.assertEqual(variants["ja-public-core"], "public-core")
         self.assertEqual(variants["ja-cc-by-sa"], "cc-by-sa")
         for name in variants:
-            chosen = package_windows.check_model_set(name, "int8", True)
+            chosen = package_windows.check_model_set(name, "int8", True, preview=True)
             self.assertNotIn(name, ("", None))
             self.assertEqual({a["variant"] for a in chosen["artifacts"]}, {chosen["variant"]})
 
-    def test_placeholder_is_not_the_default(self):
+    def test_official_lock_has_hf_sources_and_no_placeholders(self):
         section = package_windows.load_model_sets()
+        repos = set()
         for name, chosen in section["sets"].items():
-            if chosen["placeholder"]:
-                with self.assertRaisesRegex(ValueError, "placeholder"):
-                    package_windows.check_model_set(name, "int8", False)
+            self.assertFalse(chosen["placeholder"], name)
+            self.assertTrue(chosen["production_eligible"], name)
+            for artifact in chosen["artifacts"]:
+                self.assertFalse(artifact["placeholder"], artifact["artifact_id"])
+                hf = artifact["hf"]
+                repos.add(hf["repository"])
+                self.assertEqual(hf["license"], "MIT" if chosen["variant"] == "public-core" else "CC-BY-SA-4.0")
+                self.assertIn("int8", hf["files"])
+                self.assertIn("fp32", hf["files"])
+        self.assertEqual(repos, {"jeffpeng3/0c-ja-reranker", "jeffpeng3/0c-ja-punct",
+                                 "jeffpeng3/0c-ja-reranker-extra", "jeffpeng3/0c-ja-punct-extra"})
+
+    def test_release_rejects_unpinned_official_lock(self):
+        with self.assertRaisesRegex(ValueError, "尚未 pin|revision"):
+            package_windows.check_model_set("ja-public-core", "int8", False)
+
+    def test_placeholder_cannot_enter_a_release_bundle(self):
+        fixture = Path(__file__).resolve().parents[1] / "testdata/models/placeholder/pairing.lock.json"
+        with self.assertRaisesRegex(ValueError, "placeholder"):
+            package_windows.check_model_set("ja-public-core", "int8", False, path=fixture)
+        # 明確允許且是 preview 時才可出貨測試用 placeholder。
+        chosen = package_windows.check_model_set("ja-public-core", "int8", True, path=fixture, preview=True)
+        self.assertTrue(chosen["placeholder"])
 
     def test_unknown_set_and_bad_format_rejected(self):
         with self.assertRaisesRegex(ValueError, "未知的模型組"):
-            package_windows.check_model_set("ja-english", "int8", True)
+            package_windows.check_model_set("ja-english", "int8", True, preview=True)
         with self.assertRaisesRegex(ValueError, "沒有"):
-            package_windows.check_model_set("ja-public-core", "bf16", True)
+            package_windows.check_model_set("ja-public-core", "bf16", True, preview=True)
 
 
 class ModelPairTests(unittest.TestCase):
