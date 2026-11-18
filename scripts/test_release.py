@@ -2495,6 +2495,11 @@ class ReleaseTests(unittest.TestCase):
         for pe32 in (False, True):
             file.write_bytes(fake_pe(static, ("oleacc.dll",), pe32))
             package_windows.check_static_crt(file)
+        # GNU target 也要拒絕 MinGW 的共享執行階段；那些 DLL 不會隨安裝程式出貨。
+        for name in ("libgcc_s_seh-1.dll", "libstdc++-6.dll", "libwinpthread-1.dll"):
+            file.write_bytes(fake_pe(("kernel32.dll", name)))
+            with self.assertRaisesRegex(ValueError, "MinGW"):
+                package_windows.check_static_crt(file)
         file.write_bytes(fake_pe(()))  # Go 程式只匯入 kernel32；沒有匯入也不算錯
         self.assertEqual(package_windows.pe_imports(file), [])
         file.write_bytes(b"MZ" + bytes(80))
@@ -2596,11 +2601,10 @@ Successfully verified: 0c-update.exe
         with self.assertRaisesRegex(ValueError, '未列出'):
             package_windows_installer.read_bundle(archive)
         del payload['unexpected.dll']
-        # 沒有 32 位元 DLL 的套件做不出能給 32 位元應用程式用的安裝精靈（#112）。
+        # 32 位元 DLL 是選填的：沒有它的套件仍可做出安裝精靈，32 位元應用程式不載入輸入法。
         saved = payload.pop('x86/0c_tsf.dll'), release['files'].pop('x86/0c_tsf.dll')
         save()
-        with self.assertRaisesRegex(ValueError, '缺少必要檔案'):
-            package_windows_installer.read_bundle(archive)
+        package_windows_installer.read_bundle(archive)
         payload['x86/0c_tsf.dll'], release['files']['x86/0c_tsf.dll'] = saved
         for name in ('TERMS.md', 'LICENSE', 'legal/README.md'):
             with self.subTest(missing=name):

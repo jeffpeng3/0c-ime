@@ -78,7 +78,8 @@ def install(tarball, root, models=None, with_models=True):
             with tarfile.open(models) as archive:
                 release.extract(archive, stage)
         (source,) = stage.iterdir()
-        for lock in LOCKS:
+        locks = LOCKS if with_models else (release_dictionary.LOCK,)
+        for lock in locks:
             if release.digest(source / lock) != release.digest(root / lock):
                 raise ValueError(f"{lock} differs from {record['tag']}: this tree's dictionary or models "
                                  "are not in that release; use a matching release or rebuild the dictionary")
@@ -172,6 +173,15 @@ def build_ja(root, output, go="go", source=None):
         symbols = root / "data" / "ja" / "symbols"
         if symbols.is_dir():
             shutil.copytree(symbols, stage / "symbols")
+        # An imported pack carries jadic 記号 in its own symbols/ directory. Copy those too so
+        # the routed entries reach the runtime layout instead of staying in build/ja-import.
+        imported_symbols = source / "symbols"
+        if imported and imported_symbols.is_dir():
+            for path in sorted(imported_symbols.rglob("*")):
+                if path.is_file():
+                    copy = stage / "symbols" / path.relative_to(imported_symbols)
+                    copy.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(path, copy)
         if output.exists():
             shutil.rmtree(output)
         os.rename(stage, output)

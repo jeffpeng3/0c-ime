@@ -523,6 +523,8 @@ class SourceReleaseTests(unittest.TestCase):
         (source / "lexicon").mkdir(parents=True)
         (source / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n")
         (source / "connection.tsv").write_text("<s>\tnoun\t0.1\n")
+        (source / "symbols").mkdir()
+        (source / "symbols/jadic.tsv").write_text("きごう\t※\t記号\t記号\n")
         out = root / "build/ja"
         commands = []
 
@@ -543,6 +545,7 @@ class SourceReleaseTests(unittest.TestCase):
         with patch.object(fetch_assets.subprocess, "run", side_effect=run):
             self.assertEqual(fetch_assets.build_ja(root, out, source=source), out)
         self.assertEqual(len(commands), 2)
+        self.assertEqual((out / "symbols/jadic.tsv").read_text(), "きごう\t※\t記号\t記号\n")
 
     def test_build_ja_rejects_incomplete_imported_source(self):
         root = self.work / "ja-bad-import"
@@ -550,6 +553,13 @@ class SourceReleaseTests(unittest.TestCase):
         source.mkdir(parents=True)
         with self.assertRaisesRegex(ValueError, "missing lexicon/words.tsv or connection.tsv"):
             fetch_assets.build_ja(root, root / "build/ja", source=source)
+
+    def test_fetch_assets_dictionary_only_ignores_model_lock_changes(self):
+        tarball = self.build()
+        root = self.source_tree()
+        (root / "models/models.lock.json").write_text("{}\n")
+        fetch_assets.install(tarball, root, with_models=False)
+        self.assertTrue(fetch_assets.installed(root, models=False))
 
     def test_fetch_assets_dictionary_only_and_legacy_release(self):
         tarball = self.build()

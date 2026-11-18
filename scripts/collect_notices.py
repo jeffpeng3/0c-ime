@@ -57,8 +57,12 @@ def read(path):
 
 
 def go_license(goroot):
-    # Homebrew 的 GOROOT 是 Cellar/go/<版本>/libexec，LICENSE 在上一層；Debian 的 golang-go 不放在 GOROOT（在 /usr/share/doc）。
-    return next((p for p in (Path(goroot) / "LICENSE", Path(goroot).parent / "LICENSE") if p.is_file()), None)
+    # Homebrew 的 GOROOT 是 Cellar/go/<版本>/libexec，LICENSE 在上一層；Debian／Fedora 的 golang 套件
+    # 不把 LICENSE 放在 GOROOT，改放在 /usr/share/licenses 或 /usr/share/doc。
+    candidates = [Path(goroot) / "LICENSE", Path(goroot).parent / "LICENSE",
+                  Path("/usr/share/licenses/golang/LICENSE"), Path("/usr/share/licenses/go/LICENSE"),
+                  Path("/usr/share/doc/golang/LICENSE")]
+    return next((p for p in candidates if p.is_file()), None)
 
 
 def go_sections(go, goos, packages, goarch="amd64"):

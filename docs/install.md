@@ -15,6 +15,8 @@
 
 個人詞庫在 `%LOCALAPPDATA%\Zuin\user.json`，設定在 `%LOCALAPPDATA%\Zuin\settings.json`。安裝不需要 Python、numpy 或 onnxruntime Python 套件；產品出貨或使用原生 `onnxruntime.dll`，沒有原生執行階段時退回統計引擎，詳見 [授權頁](licensing.md)。
 
+目前只支援 64 位元應用程式；沒有 32 位元的 `x86/0c_tsf.dll`，32 位元 Office、HCL Notes 等程式不會載入靈犀注音。完整日文詞典與神經模型常駐時，記憶體用量可能接近 1 GB；一般注音使用較低，記憶體不足時可關閉模型常駐或改用統計選字。內部預覽版的安裝程式沒有數位簽章，Windows 可能顯示「未知的發行者」或 SmartScreen 警告；請核對 SHA-256 後再執行。
+
 安裝後如果語言列找不到，到 Windows 設定 → 時間與語言 → 語言與地區 → 中文（台灣）→ 新增鍵盤 →「Mixed」。舊版的「靈犀日本語」ja-JP profile 會在升級時移除，不需要重新加入。
 
 ### 升級

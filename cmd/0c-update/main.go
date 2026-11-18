@@ -279,6 +279,8 @@ func run(args []string) error {
 	out := flags.String("out", "", "下載保存目錄")
 	backup := flags.String("backup", "", "Linux 回復用備份目錄；Windows 依安裝收據回復上一版")
 	allowDowngrade := flags.Bool("allow-downgrade", false, "明確允許安裝較舊版本")
+	targetOS := flags.String("target-os", runtime.GOOS, "verify：要核對的套件作業系統（交叉建置時指定 windows）")
+	targetArch := flags.String("target-arch", runtime.GOARCH, "verify：要核對的套件架構（交叉建置時指定 amd64）")
 	asJSON := flags.Bool("json", false, "status、check：以 JSON 輸出（輸入法選單與設定程式讀取）")
 	diagnostics := flags.Bool("diagnostics", false, "status -json：另附平台診斷（macOS 版本、正在執行的輸入法 App；Windows 的註冊位置、最近用過輸入法的程式與判定），供匯出狀態摘要；輸入法選單的輪詢不帶")
 	online := flags.Bool("online", false, "install：從已簽章索引下載並安裝（一行安裝）")
@@ -386,7 +388,7 @@ func run(args []string) error {
 			}
 			defer cleanup()
 		}
-		r, err := update.Verify(root, runtime.GOOS, runtime.GOARCH)
+		r, err := update.Verify(root, *targetOS, *targetArch)
 		if err != nil {
 			return err
 		}
