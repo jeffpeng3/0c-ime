@@ -61,7 +61,7 @@ func usage() {
   list      列出日文模型包
   show      輸出模型包的 manifest（JSON）
   validate  驗證模型包、字典包與檔案
-  install   安裝模型包並寫出 active.json
+  install   安裝模型包（權重、manifest、vocab、tokenizer）並寫出 active.json
   pin       把 HF repo 的 revision 與逐檔大小／SHA-256 寫進 lock
   fetch     從 HF（或快取）下載模型包到目錄
   check     只驗證 lock schema 與雜湊欄位，不讀模型、不連網
@@ -93,6 +93,7 @@ pin：
 fetch：
   -format int8|fp32、-out DIR
   -base-url、-cache、-offline 同上
+  下載權重、manifest.json、vocab.json 與 tokenizer.model，逐檔核對後放到 lock 的相對路徑。
 
 check：
   -release            缺 revision／雜湊或 placeholder 直接失敗；development 只警告

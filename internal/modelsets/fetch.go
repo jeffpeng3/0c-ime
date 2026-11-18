@@ -102,6 +102,38 @@ func (f *Fetcher) FetchPackage(ctx context.Context, lock Lock, format, dest stri
 		if artifact.HF == nil {
 			return nil, fmt.Errorf("%w: %s 缺少 hf 來源", ErrHFSource, artifact.ArtifactID)
 		}
+		// Fetch every non-weight asset first (manifest, vocab, tokenizer), then
+		// the selected weight. The installed artifact directory therefore
+		// always has the files its manifest names.
+		for _, asset := range artifact.Assets {
+			remote, ok := artifact.HF.Assets[asset.Name]
+			if !ok {
+				return nil, fmt.Errorf("%w: %s 沒有 %s 的 hf asset", ErrHFSource, artifact.ArtifactID, asset.Name)
+			}
+			remote.Name = strings.TrimSpace(remote.Name)
+			if remote.Name == "" {
+				return nil, fmt.Errorf("%w: %s/%s 缺少 hf 檔名", ErrHFSource, artifact.ArtifactID, asset.Name)
+			}
+			source, err := f.Resolve(ctx, artifact.HF.Repository, artifact.HF.Revision, remote.Name, remote)
+			if err != nil {
+				return nil, fmt.Errorf("%s/%s: %w", artifact.ArtifactID, asset.Name, err)
+			}
+			target, err := localTarget(dest, asset.Path)
+			if err != nil {
+				return nil, err
+			}
+			want := ArtifactFile{Path: asset.Path, Bytes: asset.Bytes, SHA256: asset.SHA256}
+			if err := materialize(source, target, want); err != nil {
+				return nil, err
+			}
+			if ok, got, digest := matchFile(target, HFFile{Bytes: asset.Bytes, SHA256: asset.SHA256}); !ok {
+				return nil, fmt.Errorf("%w: %s 寫入後與 lock 不符（大小 %d、SHA-256 %s）", ErrChecksum, target, got, digest)
+			}
+			out = append(out, FetchedFile{
+				ArtifactID: artifact.ArtifactID, Format: "asset", Name: remote.Name,
+				Path: target, Bytes: asset.Bytes, SHA256: asset.SHA256,
+			})
+		}
 		remote, ok := artifact.HF.Files[format]
 		if !ok {
 			return nil, fmt.Errorf("%w: %s 沒有 %s 的 hf 檔案", ErrHFSource, artifact.ArtifactID, format)

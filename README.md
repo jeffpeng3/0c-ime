@@ -109,7 +109,7 @@ python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 
 系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64。安裝後直接從中文（台灣）的鍵盤清單選「Mixed」，不需要另裝 ja-JP 語言。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。
 
-`make assets LANG=ja` 會把 `data/ja` 編譯成 `build/ja`，並用 `0c-japack` 從 `lexicon.bin` 匯出引擎載入的 `lexicon/words.tsv` 與 `connection.tsv`。Windows 套件的 `--ja-data` 會把這些執行期檔案連同編譯產物放進 `data/ja/`。日文模型包由 Hugging Face 提供已 pin 的 reranker（CC BY-SA 4.0）與 punctuation（MIT）；產品只有這一個模型包，沒有其他選擇。尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
+`make assets LANG=ja` 會把 `data/ja` 編譯成 `build/ja`，並用 `0c-japack` 從 `lexicon.bin` 匯出引擎載入的 `lexicon/words.tsv` 與 `connection.tsv`。Windows 套件的 `--ja-data` 會把這些執行期檔案連同編譯產物放進 `data/ja/`。日文模型包由 Hugging Face 提供已 pin 的 reranker（CC BY-SA 4.0）與 punctuation（MIT）；產品只有這一個模型包，沒有其他選擇。日文 reranker 與標點模型已接入引擎；模型不可用時保留統計轉換。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
 
 ### 量測
 

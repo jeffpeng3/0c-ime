@@ -132,8 +132,61 @@ type Artifact struct {
 	Attribution              []string                `json:"attribution"`
 	Source                   Source                  `json:"source"`
 	Files                    map[string]ArtifactFile `json:"files"`
+	Assets                   []ArtifactAsset         `json:"assets,omitempty"`
 	HF                       *HFSource               `json:"hf,omitempty"`
 	IO                       TensorIO                `json:"io"`
+}
+
+// ArtifactAsset is a non-weight file that must be installed beside the ONNX
+// weights: the exported manifest, the tokenizer vocabulary and (for the
+// Japanese artifacts) the SentencePiece tokenizer model. Name is the stable
+// logical key; Path is relative to the model package root.
+type ArtifactAsset struct {
+	Name   string `json:"name"`
+	Path   string `json:"path"`
+	Bytes  int64  `json:"bytes"`
+	SHA256 string `json:"sha256"`
+}
+
+// PackageDir is the artifact directory (the directory that contains its
+// manifest.json). The weights and assets must all live below this directory so
+// the runtime can load one artifact without touching its sibling.
+func (a *Artifact) PackageDir() string {
+	if a == nil || a.Manifest == "" {
+		return ""
+	}
+	return filepath.ToSlash(filepath.Dir(a.Manifest))
+}
+
+// PackageRoot returns the absolute artifact directory below an install root.
+func (a *Artifact) PackageRoot(root string) string {
+	dir := a.PackageDir()
+	if dir == "" {
+		return root
+	}
+	return filepath.Join(root, filepath.FromSlash(dir))
+}
+
+// AssetPath returns the absolute installed path of a named asset.
+func (a *Artifact) AssetPath(root, name string) string {
+	asset, ok := a.Asset(name)
+	if !ok {
+		return ""
+	}
+	return filepath.Join(root, filepath.FromSlash(asset.Path))
+}
+
+// Asset returns the named non-weight file.
+func (a *Artifact) Asset(name string) (ArtifactAsset, bool) {
+	if a == nil {
+		return ArtifactAsset{}, false
+	}
+	for _, asset := range a.Assets {
+		if asset.Name == name {
+			return asset, true
+		}
+	}
+	return ArtifactAsset{}, false
 }
 
 // ArtifactFile 是一個實際的 ONNX 檔。Path 相對於模型根目錄；未 pin 時允許
@@ -152,6 +205,9 @@ type HFSource struct {
 	Revision   string            `json:"revision"`
 	License    string            `json:"license"`
 	Files      map[string]HFFile `json:"files"`
+	// Assets maps an ArtifactAsset.Name to its remote file. It is pinned with
+	// the same revision and checksum rules as the weights.
+	Assets map[string]HFFile `json:"assets,omitempty"`
 }
 
 // HFFile 是 HF repo 內一個檔案的名字、大小與 SHA-256。
@@ -167,11 +223,20 @@ func (h *HFSource) Pinned() bool {
 		return false
 	}
 	for _, f := range h.Files {
-		if f.Name == "" || f.Bytes <= 0 || !validHex(f.SHA256) {
+		if !pinnedFile(f) {
+			return false
+		}
+	}
+	for _, f := range h.Assets {
+		if !pinnedFile(f) {
 			return false
 		}
 	}
 	return true
+}
+
+func pinnedFile(f HFFile) bool {
+	return f.Name != "" && f.Bytes > 0 && validHex(f.SHA256)
 }
 
 // TensorIO 是模型檔的輸入輸出契約。
@@ -366,6 +431,9 @@ func (p *Package) validateStructure(release bool) error {
 		if err := validateFiles(artifact, release); err != nil {
 			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
 		}
+		if err := validateAssets(artifact, release); err != nil {
+			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
+		}
 		if err := validateIO(artifact.Kind, artifact.IO); err != nil {
 			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
 		}
@@ -447,6 +515,11 @@ func (p *Package) Validate(opts Options) (Result, error) {
 				return Result{}, fmt.Errorf("%s: %w", artifact.ArtifactID, err)
 			}
 			status.Bytes, status.SHA256 = actual.Bytes, actual.SHA256
+			for _, asset := range artifact.Assets {
+				if _, err := verifyFile(opts.ArtifactRoot, ArtifactFile{Path: asset.Path, Bytes: asset.Bytes, SHA256: asset.SHA256}); err != nil {
+					return Result{}, fmt.Errorf("%s/%s: %w", artifact.ArtifactID, asset.Name, err)
+				}
+			}
 		}
 		result.Artifacts = append(result.Artifacts, status)
 	}
@@ -596,6 +669,33 @@ func validateHF(a *Artifact, release bool) error {
 			return fmt.Errorf("%w: %s/%s 的本機 SHA-256 與 hf 不符", ErrHFSource, a.ArtifactID, format)
 		}
 	}
+	if len(a.Assets) == 0 {
+		return nil
+	}
+	for _, asset := range a.Assets {
+		hfFile, ok := h.Assets[asset.Name]
+		if !ok {
+			if release {
+				return fmt.Errorf("%w: %s/%s 缺少 hf asset", ErrHFSource, a.ArtifactID, asset.Name)
+			}
+			continue
+		}
+		if hfFile.Name == "" || filepath.Base(hfFile.Name) != hfFile.Name {
+			return fmt.Errorf("%w: %s/%s 的 hf 檔名 %q 不合法", ErrHFSource, a.ArtifactID, asset.Name, hfFile.Name)
+		}
+		if hfFile.Bytes == 0 && hfFile.SHA256 == "" {
+			if release {
+				return fmt.Errorf("%w: %s/%s 尚未 pin 大小與 SHA-256", ErrUnpinned, a.ArtifactID, asset.Name)
+			}
+			continue
+		}
+		if hfFile.Bytes <= 0 || !validHex(hfFile.SHA256) {
+			return fmt.Errorf("%w: %s/%s 的大小或 SHA-256 不正確", ErrHFSource, a.ArtifactID, asset.Name)
+		}
+		if asset.Bytes != hfFile.Bytes || asset.SHA256 != hfFile.SHA256 {
+			return fmt.Errorf("%w: %s/%s 的本機大小或 SHA-256 與 hf 不符", ErrHFSource, a.ArtifactID, asset.Name)
+		}
+	}
 	return nil
 }
 
@@ -616,6 +716,50 @@ func validateFiles(a *Artifact, release bool) error {
 		}
 		if strings.Contains(file.Path, ".placeholder.") && !a.Placeholder {
 			return fmt.Errorf("%w: %s 的檔名標示 placeholder，但 manifest 沒有標記", ErrPlaceholderUnmarked, file.Path)
+		}
+	}
+	return nil
+}
+
+func validateAssets(a *Artifact, release bool) error {
+	seenName := map[string]bool{}
+	seenPath := map[string]bool{}
+	dir := a.PackageDir()
+	for _, asset := range a.Assets {
+		if asset.Name == "" || seenName[asset.Name] {
+			return fmt.Errorf("%w: asset 名稱空白或重複：%q", ErrSchema, asset.Name)
+		}
+		seenName[asset.Name] = true
+		if asset.Path == "" || filepath.IsAbs(asset.Path) || !filepath.IsLocal(filepath.FromSlash(asset.Path)) {
+			return fmt.Errorf("%w: asset %s 路徑 %q 不是相對路徑", ErrSchema, asset.Name, asset.Path)
+		}
+		if seenPath[asset.Path] {
+			return fmt.Errorf("%w: asset 路徑重複：%s", ErrSchema, asset.Path)
+		}
+		seenPath[asset.Path] = true
+		if dir != "" && filepath.ToSlash(filepath.Dir(filepath.FromSlash(asset.Path))) != dir {
+			return fmt.Errorf("%w: asset %s 必須與 manifest 同在 %s", ErrSchema, asset.Name, dir)
+		}
+		if asset.Bytes == 0 && asset.SHA256 == "" && !release {
+			continue
+		}
+		if asset.Bytes <= 0 || !validHex(asset.SHA256) {
+			return fmt.Errorf("%w: asset %s 的大小或 SHA-256 不正確", ErrSchema, asset.Name)
+		}
+	}
+	if len(a.Assets) == 0 {
+		if release {
+			return fmt.Errorf("%w: 缺少 manifest/vocab/tokenizer assets", ErrIncompleteSet)
+		}
+		return nil
+	}
+	for _, name := range []string{"manifest.json", "vocab.json", "tokenizer.model"} {
+		asset, ok := a.Asset(name)
+		if !ok {
+			return fmt.Errorf("%w: 缺少 asset %s", ErrIncompleteSet, name)
+		}
+		if a.Manifest != "" && asset.Name == "manifest.json" && asset.Path != a.Manifest {
+			return fmt.Errorf("%w: manifest asset 路徑 %q 與 manifest=%q 不符", ErrSchema, asset.Path, a.Manifest)
 		}
 	}
 	return nil

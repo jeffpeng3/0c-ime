@@ -112,6 +112,21 @@ func TestFrameRoundTrip(t *testing.T) {
 	}
 }
 
+// Poll is an explicit operation for the asynchronous candidate path: it is
+// valid only for a session owned by this connection, and an empty result means
+// "keep the displayed order" (no pending, stale, timed out or failed work).
+func TestPollWithoutCurrentResultKeepsOrder(t *testing.T) {
+	srv := &Server{Engine: toyEngine(t)}
+	sessions := map[uint64]bool{}
+	open := srv.do(Envelope{Op: OpOpen, Version: proto.Version}, sessions, new(bool))
+	if r := srv.do(Envelope{Op: OpPoll, Session: open.Session}, sessions, new(bool)); !r.OK || r.Snapshot != nil {
+		t.Fatalf("empty poll: %+v", r)
+	}
+	if r := srv.do(Envelope{Op: OpPoll, Session: open.Session + 100}, sessions, new(bool)); r.OK {
+		t.Fatal("poll accepted a session from another connection")
+	}
+}
+
 func TestForgetSchedulesPersistenceWithoutCommit(t *testing.T) {
 	saves := 0
 	srv := &Server{Engine: toyEngine(t), OnCommit: func() { saves++ }}

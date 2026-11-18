@@ -24,6 +24,17 @@ type Selection struct {
 	Quality     string              `json:"quality"`
 	Dictionary  Dictionary          `json:"dictionary"`
 	Artifacts   []SelectionArtifact `json:"artifacts"`
+	Assets      []SelectionAsset    `json:"assets,omitempty"`
+}
+
+// SelectionAsset records a manifest, vocabulary or tokenizer file installed
+// beside the weights. Path is relative to the model root.
+type SelectionAsset struct {
+	ArtifactID string `json:"artifact_id"`
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Bytes      int64  `json:"bytes"`
+	SHA256     string `json:"sha256"`
 }
 
 // SelectionArtifact 是使用中的模型檔。Path 相對於模型根目錄。
@@ -112,6 +123,7 @@ func Install(lock Lock, opts InstallOptions) (Selection, error) {
 		Schema: SelectionSchema, Version: pkg.Version,
 		Format: format, Placeholder: pkg.Placeholder, Quality: pkg.Quality, Dictionary: pkg.Dictionary,
 		Artifacts: make([]SelectionArtifact, 0, len(pkg.Artifacts)),
+		Assets:    make([]SelectionAsset, 0),
 	}
 	for i := range pkg.Artifacts {
 		artifact := &pkg.Artifacts[i]
@@ -126,25 +138,41 @@ func Install(lock Lock, opts InstallOptions) (Selection, error) {
 			Format: format, Path: file.Path, Bytes: file.Bytes, SHA256: file.SHA256,
 			Placeholder: artifact.Placeholder, Quality: artifact.Quality,
 		})
+		for _, asset := range artifact.Assets {
+			from := filepath.Join(opts.SourceRoot, filepath.FromSlash(asset.Path))
+			to := filepath.Join(stage, filepath.FromSlash(asset.Path))
+			if err := copyFile(from, to, asset.Bytes); err != nil {
+				return Selection{}, err
+			}
+			selection.Assets = append(selection.Assets, SelectionAsset{
+				ArtifactID: artifact.ArtifactID, Name: asset.Name, Path: asset.Path,
+				Bytes: asset.Bytes, SHA256: asset.SHA256,
+			})
+		}
 	}
 
 	moved := map[string]bool{}
 	for _, artifact := range pkg.Artifacts {
-		file := artifact.Files[format]
-		top := topDir(file.Path)
-		if top == "" || moved[top] {
-			continue
+		paths := []string{artifact.Files[format].Path}
+		for _, asset := range artifact.Assets {
+			paths = append(paths, asset.Path)
 		}
-		moved[top] = true
-		target := filepath.Join(opts.DestRoot, filepath.FromSlash(top))
-		if _, err := os.Stat(target); err == nil && !opts.Force {
-			return Selection{}, fmt.Errorf("%w: %s 已存在（重裝請加 -force）", ErrSelection, target)
-		}
-		if err := os.RemoveAll(target); err != nil {
-			return Selection{}, err
-		}
-		if err := os.Rename(filepath.Join(stage, filepath.FromSlash(top)), target); err != nil {
-			return Selection{}, err
+		for _, path := range paths {
+			top := topDir(path)
+			if top == "" || moved[top] {
+				continue
+			}
+			moved[top] = true
+			target := filepath.Join(opts.DestRoot, filepath.FromSlash(top))
+			if _, err := os.Stat(target); err == nil && !opts.Force {
+				return Selection{}, fmt.Errorf("%w: %s 已存在（重裝請加 -force）", ErrSelection, target)
+			}
+			if err := os.RemoveAll(target); err != nil {
+				return Selection{}, err
+			}
+			if err := os.Rename(filepath.Join(stage, filepath.FromSlash(top)), target); err != nil {
+				return Selection{}, err
+			}
 		}
 	}
 	if err := atomicfile.WriteJSON(SelectionPath(opts.DestRoot), selection); err != nil {
@@ -155,6 +183,11 @@ func Install(lock Lock, opts InstallOptions) (Selection, error) {
 		file := artifact.Files[format]
 		if _, err := verifyFile(opts.DestRoot, file); err != nil {
 			return Selection{}, err
+		}
+		for _, asset := range artifact.Assets {
+			if _, err := verifyFile(opts.DestRoot, ArtifactFile{Path: asset.Path, Bytes: asset.Bytes, SHA256: asset.SHA256}); err != nil {
+				return Selection{}, err
+			}
 		}
 	}
 	return selection, nil

@@ -27,7 +27,7 @@
 
 日文不以可選模型組出貨，而是**一個固定模型包**，綁定同一個日文詞典包的 manifest SHA-256。模型包直接包含 `reranker`（CC BY-SA 4.0，HF `jeffpeng3/0c-ja-reranker` revision `7450e10f…`）與 `punctuation-public-core`（MIT，HF `jeffpeng3/0c-ja-punct` revision `ff9166ab…`）。安裝 `reranker` 時必須帶 CC BY-SA 4.0 notice；punctuation 保持 MIT 並附 UniDic／IPADic notice。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。清單在 [pairing.lock.json](pairing.lock.json) 的 `model_package` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。舊的 `0c-ja-reranker-extra` repo 名稱只作暫時 redirect，產品一律使用新名稱 `jeffpeng3/0c-ja-reranker`。
 
-產品只有這一個模型包，沒有其他模型組或 variant。兩個模型分別來自 `jeffpeng3/0c-ja-reranker`（CC BY-SA 4.0）與 `jeffpeng3/0c-ja-punct`（MIT）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；模型檔由 `0c-model-set fetch` 從 HF 下載、逐檔核對後放進安裝包。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
+產品只有這一個模型包，沒有其他模型組或 variant。兩個模型分別來自 `jeffpeng3/0c-ja-reranker`（CC BY-SA 4.0）與 `jeffpeng3/0c-ja-punct`（MIT）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；`0c-model-set fetch` 從 HF 下載權重、`manifest.json`、`vocab.json` 與 `tokenizer.model`，逐檔核對後放進安裝包。每個 artifact 是獨立目錄，manifest、字表、分詞器與權重必須同在一處。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
 
 產品側 manifest schema 在 [model-package.schema.json](model-package.schema.json)（JSON Schema 2020-12）。每個模型記錄：
 
@@ -92,4 +92,4 @@ go run ./cmd/0c-model-set install \
   -model-package-lock models/pairing.lock.json
 ```
 
-沒有 `active.json` 時 `model_package.active` 為 `false`。報告會列出模型包版本、placeholder、字典包雜湊是否相符、模型檔是否通過大小與 SHA-256 核對；設定或檔案有問題時只在報告裡說明，不影響注音與日文統計轉換。日文模型正式接上推論仍是 P2-30 之後的工作。
+沒有 `active.json` 時 `model_package.active` 為 `false`。報告會列出模型包版本、placeholder、字典包雜湊是否相符、模型檔是否通過大小與 SHA-256 核對；設定或檔案有問題時只在報告裡說明，不影響注音與日文統計轉換。日文 reranker 與標點已接入引擎；沒有 `active.json` 或檔案核對失敗時，日文轉換保留統計順序。

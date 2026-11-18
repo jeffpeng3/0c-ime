@@ -292,6 +292,16 @@ func (s *Server) do(env Envelope, sessions map[uint64]bool, startDrain *bool) Re
 	case OpDrain:
 		*startDrain = s.markDrain()
 		return Reply{OK: true, Info: s.health()} // 交接在回覆寫出後才開始（handle）
+	case OpPoll:
+		if !sessions[env.Session] {
+			return Reply{Error: "session 不存在或不屬於這個連線"}
+		}
+		snap, ok := s.Engine.Poll(env.Session)
+		if !ok {
+			// No current result: stale, timed out, failed or still running.
+			return Reply{OK: true}
+		}
+		return Reply{OK: true, Snapshot: &snap}
 	case OpOpen:
 		if env.Version != proto.Version {
 			return Reply{Error: "協定版本不符"}

@@ -80,7 +80,23 @@
             "int8": { "$ref": "#/$defs/hf_file" },
             "fp32": { "$ref": "#/$defs/hf_file" }
           }
+        },
+        "assets": {
+          "type": "object",
+          "description": "Remote non-weight files keyed by ArtifactAsset.Name.",
+          "additionalProperties": { "$ref": "#/$defs/hf_file" }
         }
+      }
+    },
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "path", "bytes", "sha256"],
+      "properties": {
+        "name": { "enum": ["manifest.json", "vocab.json", "tokenizer.model"] },
+        "path": { "type": "string", "minLength": 1, "description": "相對於模型根目錄；必須與 artifact manifest 同一個目錄。" },
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
       }
     },
     "hf_file": {
@@ -141,6 +157,11 @@
         "license": { "$ref": "#/$defs/license" },
         "attribution": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
         "source": { "$ref": "#/$defs/source" },
+        "assets": {
+          "type": "array",
+          "description": "Non-weight files installed beside the ONNX: manifest.json, vocab.json and tokenizer.model.",
+          "items": { "$ref": "#/$defs/asset" }
+        },
         "hf": { "$ref": "#/$defs/hf" },
         "files": {
           "type": "object",

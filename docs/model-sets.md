@@ -89,6 +89,29 @@ go run ./cmd/0c-model-set install \
 go run ./cmd/0c-model-set check -lock models/pairing.lock.json -release
 ```
 
+`fetch` 從 HF（或 `-offline` 的 cache）下載模型包，逐檔核對大小與 SHA-256，並把 `manifest.json`、`vocab.json`、`tokenizer.model` 與選定的 ONNX 放進 lock 的相對路徑：
+
+```sh
+go run ./cmd/0c-model-set fetch -format int8 \
+  -out build/ja-models -cache build/cache/ja-models
+```
+
+安裝後的模型根目錄固定為：
+
+```text
+<root>/active.json
+<root>/reranker-extra/manifest.json
+<root>/reranker-extra/model.int8.onnx
+<root>/reranker-extra/vocab.json
+<root>/reranker-extra/tokenizer.model
+<root>/punctuation-public-core/manifest.json
+<root>/punctuation-public-core/punctuation-public-core.int8.onnx
+<root>/punctuation-public-core/vocab.json
+<root>/punctuation-public-core/tokenizer.model
+```
+
+每個 artifact 自己一個目錄，manifest、字表、分詞器與權重必須同在該目錄；路徑由 lock 的 `manifest`、`files[format].path` 與 `assets[]` 明確記錄，安裝與 `-model-report` 都會逐檔核對。
+
 同一份模型包重裝要加 `-force`。模型檔不進 Git，工具只搬運已下載或已匯出的檔案。
 
 引擎回報使用中的模型包：
@@ -110,7 +133,8 @@ go run ./cmd/0c-model-set check -lock models/pairing.lock.json -release
 
 ## 目前限制
 
-- 日文 reranker／punctuation 尚未接入產品推論，模型包目前只影響安裝與模型報告。這項接線是 P2-30 之後的工作。
+- 日文 reranker 與 punctuation 已接入 session：模型包 `active.json` 有效且字典相符時，`0c-server` 建立 `ja-rerank`／`ja-punct` role；日文候選視窗會經過 reranker，提交時使用日文標點模型。模型缺檔、逾時或取消時保留統計順序與原文。
+- 上游 HF repo 目前沒有獨立的 tokenizer 檔；lock 記錄 `public_core_ja.model` 的名稱、大小與 SHA-256，線上 fetch 需要該檔已在 cache 或由 `-from` 提供。
 - 模型包的 reranker 與 punctuation 已 pin HF revision、大小與 SHA-256，但還沒有產品驗收的品質承諾。placeholder 只作測試 fixture，不能進入 release bundle。
 - Windows Phase 2 VM 驗收 NOT RUN，模型與候選的實機行為還沒有 Windows 實機通過紀錄。
 - 注音模型的下載與配對只在支援的 Linux 系統安裝提供；Windows 套件內附模型，macOS 套件依打包內容提供。

@@ -23,6 +23,7 @@ const (
 	OpOpen          = "open"           // 開一個 session，回傳 Session
 	OpClose         = "close"          // 關閉 Session
 	OpHandle        = "handle"         // 在 Session 上處理 Req，回傳 Snapshot
+	OpPoll          = "poll"           // 取得已完成且仍有效的背景候選評分；沒有結果時不回 Snapshot
 	OpPing          = "ping"           // 健康檢查
 	OpHealth        = "health"         // 運作版本與狀態（不含文字），供更新協調器與 E2E 核對
 	OpApplySettings = "apply_settings" // 等所有輸入框組字完成後套用設定，不因等待逾時取消

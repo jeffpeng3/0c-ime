@@ -34,6 +34,7 @@ type Engine struct {
 	// DisableModelScoring 由宿主依「不用模型」設定：新 session 同步與非同步評分都停用。
 	DisableModelScoring   bool
 	Punct                 punct.Punctuator  // 宿主在建立 session 前設定；提交時補標點，nil 停用。
+	JaPunct               punct.Punctuator  // Japanese punctuation model; nil falls back to Punct on Japanese commits.
 	DocumentContextOff    bool              // 使用者關閉前文時由宿主設定；外殼的前文確認一律忽略。
 	EscKeepComposition    bool              // 使用者關閉「按 Esc 清除整段組字」時由宿主設定。
 	SpaceInsertsSpace     bool              // 使用者關閉「空白鍵選字」時由宿主設定。
@@ -142,6 +143,7 @@ func (e *Engine) OpenSession() uint64 {
 	e.sessions[e.next].Rerank = e.Rerank
 	e.sessions[e.next].DisableModelScoring = e.DisableModelScoring
 	e.sessions[e.next].Punct = e.Punct
+	e.sessions[e.next].JaPunct = e.JaPunct
 	e.sessions[e.next].DocumentContextOff = e.DocumentContextOff
 	e.sessions[e.next].EscKeepComposition = e.EscKeepComposition
 	e.sessions[e.next].SpaceInsertsSpace = e.SpaceInsertsSpace
@@ -315,6 +317,19 @@ func (e *Engine) Do(id uint64, req proto.Request) (proto.Snapshot, error) {
 	}
 	e.modeSeen[id] = e.modeGen
 	return snap, nil
+}
+
+// Poll applies a completed asynchronous candidate reorder to the session. It
+// returns false when no current result is ready; stale, timed-out and failed
+// results are discarded by the session.
+func (e *Engine) Poll(id uint64) (proto.Snapshot, bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	s, ok := e.sessions[id]
+	if !ok {
+		return proto.Snapshot{}, false
+	}
+	return s.Poll()
 }
 
 // Handle 處理一個 JSON 編碼的請求，回傳 JSON 編碼的快照。

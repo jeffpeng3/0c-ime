@@ -115,10 +115,57 @@ func (d *Decoder) Candidates(seq reading.Sequence, span lang.Span, ctx lang.Cont
 		}
 		return cands[i].Surface < cands[j].Surface
 	})
+	if d.Reranker != nil && len(cands) > 0 {
+		cands = d.rerankCandidates(sub, cands, ctx)
+	}
 	if len(cands) > limit {
 		cands = cands[:limit]
 	}
 	return cands, nil
+}
+
+// rerankCandidates applies the same draft/verify/rerank hook to the candidate
+// window. results() already reranks the N-best before dictionary exact entries
+// are appended; reranking again after the merge keeps the final candidate list
+// in the model's order instead of letting the statistical score sort them back.
+func (d *Decoder) rerankCandidates(seq reading.Sequence, cands []lang.Candidate, ctx lang.Context) []lang.Candidate {
+	drafts := make([]lang.Result, 0, len(cands))
+	bySurface := make(map[string]lang.Candidate, len(cands))
+	for _, cand := range cands {
+		if cand.Surface == "" {
+			continue
+		}
+		clauses := cand.Clauses
+		if len(clauses) == 0 {
+			clauses = []lang.Clause{{Reading: append(reading.Sequence(nil), cand.Reading...), Surface: cand.Surface}}
+		}
+		drafts = append(drafts, lang.Result{Clauses: clauses, Score: cand.Score})
+		bySurface[cand.Surface] = cand
+	}
+	if len(drafts) == 0 {
+		return cands
+	}
+	reranked := d.Reranker.Rerank(seq, drafts, ctx)
+	if len(reranked) == 0 {
+		return cands
+	}
+	out := make([]lang.Candidate, 0, len(cands))
+	seen := make(map[string]bool, len(cands))
+	for _, res := range reranked {
+		surface := ResultSurface(res.Clauses)
+		cand, ok := bySurface[surface]
+		if !ok || seen[surface] {
+			continue
+		}
+		seen[surface] = true
+		out = append(out, cand)
+	}
+	for _, cand := range cands {
+		if !seen[cand.Surface] {
+			out = append(out, cand)
+		}
+	}
+	return out
 }
 
 // Prefixes 回傳讀音以 seq 開頭的較長詞條，供預測補全。
