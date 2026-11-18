@@ -43,8 +43,8 @@ htmlcov/
 *.whl
 /platforms/windows/installer/0c-installer.exe
 /platforms/windows/installer/payload.zip
-/models/ja-public-core/
-/models/ja-cc-by-sa/
+/models/reranker-extra/
+/models/punctuation-public-core/
 /models/active.json
 /SOURCE-RELEASE.json
 

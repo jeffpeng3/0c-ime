@@ -49,88 +49,81 @@ func Pin(ctx context.Context, raw []byte, opts PinOptions) ([]byte, []PinnedFile
 	if err := json.Unmarshal(raw, &doc); err != nil {
 		return nil, nil, fmt.Errorf("%w: %v", ErrSchema, err)
 	}
-	modelSets, ok := doc["model_sets"].(map[string]any)
+	modelPackage, ok := doc["model_package"].(map[string]any)
 	if !ok {
-		return nil, nil, fmt.Errorf("%w: 缺少 model_sets", ErrSchema)
+		return nil, nil, fmt.Errorf("%w: 缺少 model_package", ErrSchema)
 	}
-	sets, ok := modelSets["sets"].(map[string]any)
-	if !ok || len(sets) == 0 {
-		return nil, nil, fmt.Errorf("%w: 沒有模型組", ErrSchema)
+	artifacts, _ := modelPackage["artifacts"].([]any)
+	if len(artifacts) == 0 {
+		return nil, nil, fmt.Errorf("%w: 沒有模型", ErrSchema)
 	}
 
 	fetcher := &Fetcher{BaseURL: opts.BaseURL, CacheDir: opts.CacheDir, Offline: opts.Offline, Client: opts.Client}
 	var pinned []PinnedFile
 	found := false
-	for _, setValue := range sets {
-		set, ok := setValue.(map[string]any)
+	for _, artifactValue := range artifacts {
+		artifact, ok := artifactValue.(map[string]any)
 		if !ok {
 			continue
 		}
-		artifacts, _ := set["artifacts"].([]any)
-		for _, artifactValue := range artifacts {
-			artifact, ok := artifactValue.(map[string]any)
+		hf, ok := artifact["hf"].(map[string]any)
+		if !ok || hf["repository"] != repository {
+			continue
+		}
+		found = true
+		artifactID, _ := artifact["artifact_id"].(string)
+		hfFiles, ok := hf["files"].(map[string]any)
+		if !ok || len(hfFiles) == 0 {
+			return nil, nil, fmt.Errorf("%w: %s 缺少 hf.files", ErrHFSource, artifactID)
+		}
+		localFiles, _ := artifact["files"].(map[string]any)
+		if localFiles == nil {
+			localFiles = map[string]any{}
+			artifact["files"] = localFiles
+		}
+		for format, fileValue := range hfFiles {
+			entry, ok := fileValue.(map[string]any)
 			if !ok {
-				continue
+				return nil, nil, fmt.Errorf("%w: %s/%s 不是物件", ErrHFSource, artifactID, format)
 			}
-			hf, ok := artifact["hf"].(map[string]any)
-			if !ok || hf["repository"] != repository {
-				continue
+			name, _ := entry["name"].(string)
+			if name == "" || filepath.Base(name) != name {
+				return nil, nil, fmt.Errorf("%w: %s/%s 缺少合法檔名", ErrHFSource, artifactID, format)
 			}
-			found = true
-			artifactID, _ := artifact["artifact_id"].(string)
-			hfFiles, ok := hf["files"].(map[string]any)
-			if !ok || len(hfFiles) == 0 {
-				return nil, nil, fmt.Errorf("%w: %s 缺少 hf.files", ErrHFSource, artifactID)
+			if !opts.Offline {
+				// 重新 pin 時不要沿用舊快取，避免把損壞或不同 revision 的檔案寫進 lock。
+				os.Remove(fetcher.cacheDir(repository, revision, name))
 			}
-			localFiles, _ := artifact["files"].(map[string]any)
-			if localFiles == nil {
-				localFiles = map[string]any{}
-				artifact["files"] = localFiles
+			source, err := fetcher.Resolve(ctx, repository, revision, name, HFFile{Name: name})
+			if err != nil {
+				return nil, nil, fmt.Errorf("%s/%s: %w", artifactID, format, err)
 			}
-			for format, fileValue := range hfFiles {
-				entry, ok := fileValue.(map[string]any)
-				if !ok {
-					return nil, nil, fmt.Errorf("%w: %s/%s 不是物件", ErrHFSource, artifactID, format)
-				}
-				name, _ := entry["name"].(string)
-				if name == "" || filepath.Base(name) != name {
-					return nil, nil, fmt.Errorf("%w: %s/%s 缺少合法檔名", ErrHFSource, artifactID, format)
-				}
-				if !opts.Offline {
-					// 重新 pin 時不要沿用舊快取，避免把損壞或不同 revision 的檔案寫進 lock。
-					os.Remove(fetcher.cacheDir(repository, revision, name))
-				}
-				source, err := fetcher.Resolve(ctx, repository, revision, name, HFFile{Name: name})
-				if err != nil {
-					return nil, nil, fmt.Errorf("%s/%s: %w", artifactID, format, err)
-				}
-				size, digest, err := DigestFile(source)
-				if err != nil {
-					return nil, nil, err
-				}
-				entry["bytes"] = size
-				entry["sha256"] = digest
-				local, _ := localFiles[format].(map[string]any)
-				if local == nil {
-					local = map[string]any{"path": artifactID + "/" + name, "quantization": format}
-					localFiles[format] = local
-				}
-				local["bytes"] = size
-				local["sha256"] = digest
-				pinned = append(pinned, PinnedFile{ArtifactID: artifactID, Format: format, Name: name, Bytes: size, SHA256: digest})
+			size, digest, err := DigestFile(source)
+			if err != nil {
+				return nil, nil, err
 			}
-			hf["revision"] = revision
-			if opts.Version != "" {
-				artifact["version"] = opts.Version
-				set["version"] = opts.Version
+			entry["bytes"] = size
+			entry["sha256"] = digest
+			local, _ := localFiles[format].(map[string]any)
+			if local == nil {
+				local = map[string]any{"path": artifactID + "/" + name, "quantization": format}
+				localFiles[format] = local
 			}
+			local["bytes"] = size
+			local["sha256"] = digest
+			pinned = append(pinned, PinnedFile{ArtifactID: artifactID, Format: format, Name: name, Bytes: size, SHA256: digest})
+		}
+		hf["revision"] = revision
+		if opts.Version != "" {
+			artifact["version"] = opts.Version
+			modelPackage["version"] = opts.Version
 		}
 	}
 	if !found {
 		return nil, nil, fmt.Errorf("%w: lock 沒有 repository %q 的模型", ErrHFSource, repository)
 	}
 	if opts.Updated != "" {
-		modelSets["updated"] = opts.Updated
+		modelPackage["updated"] = opts.Updated
 	}
 	out, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {

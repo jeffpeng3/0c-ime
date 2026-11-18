@@ -1,9 +1,10 @@
 // Package settings 是使用者可切換的引擎設定；Linux 標準目錄使用 0c/settings.json，缺檔時相容 zuin/settings.json。
 // 引擎只在啟動時讀取；檔案不存在或欄位缺漏時使用預設值。
 //
-// P2-42：Mixed profile 的主要語言、輸出變體、模型模式／預算與日文模型組也在這裡。
+// P2-42：Mixed profile 的主要語言、輸出變體、模型模式／預算也在這裡。日文模型包固定，
+// 使用者不需要也不會在設定裡選擇模型包。
 // 舊的 English profile 與分開的輸入語言（language、language_*、output_simplified）讀檔時遷移，
-// 存檔後只留 primary_language、output_variant 與 model_set。
+// 存檔後只留 primary_language 與 output_variant。
 //
 // 檔案前後相容：較新版本寫入本版不認得的欄位、已知欄位的未知值，都不會讓整份設定被拒收或重設，
 // 只有讀不懂的那個欄位退回預設；存檔時原文保留，回復到舊版再改任何設定，新版的設定也不會消失。
@@ -57,11 +58,8 @@ const (
 	VariantShinjitai   = "shinjitai"   // 日文新字體
 )
 
-// Mixed profile 的日文模型組（P2-27／P2-42）。混用規則以 artifact 為單位，CC BY-SA artifact 不得進 public-core 組；預設是 cc-by-sa（extra reranker + public punctuation），placeholder 預設不載入。
-const (
-	ModelSetPublicCore = "public-core" // MIT-only 替代模型組
-	ModelSetCCBYSA     = "cc-by-sa"    // 預設：CC BY-SA reranker-extra，共用 public-core punctuation
-)
+// Mixed profile 的模型常駐設定（P2-27／P2-42）。產品只有一個固定的日文模型包，
+// 沒有模型包選項；placeholder 預設不載入。
 
 // 日文輸入方式（T27）；值與 lang.InputMethod.ID 相同。
 const (
@@ -202,9 +200,6 @@ type Settings struct {
 	// AllowPlaceholders 允許載入 placeholder 模型（P2-25P）。預設 false：placeholder 權重未訓練，
 	// 不得當成正式模型；開啟只供 Phase 2 管線與記憶體量測使用。
 	AllowPlaceholders bool `json:"allow_placeholders"`
-	// ModelSet 是 Mixed profile 使用的日文模型組（P2-42）：cc-by-sa（預設，extra reranker）或 public-core（MIT-only 替代）。
-	// cc-by-sa 是 reranker-only，透過 shared_punctuation 共用 public-core punctuation；CC BY-SA artifact 不得安裝進 public-core 組。
-	ModelSet string `json:"model_set"`
 
 	// 0.2.0 開發期間的內部開關 preview_0_2（#128）已拿掉：自訂詞彙、加詞按鍵、「我的片語」、本機 API 等
 	// 入口 0.2.0 起所有人都有。舊檔裡的 preview_0_2 不論值為何都忽略，存檔時移除（retiredKeys）。
@@ -350,7 +345,7 @@ func Default() Settings {
 		ToggleKey: defaultToggleKey(runtime.GOOS), ModeMemory: defaultModeMemory(runtime.GOOS), StartMode: StartZhuyin,
 		OutputVariant: VariantTraditional,
 		JaInputMethod: JaInputRomaji, JaLiveConversion: false, JaSymbols: true, JaLearning: true, JaModel: true,
-		ModelMode: ModelModeAuto, PrimaryLanguage: LanguageZh, ModelResidencyMB: ModelResidencyAutoMB, AllowPlaceholders: false, ModelSet: ModelSetCCBYSA}
+		ModelMode: ModelModeAuto, PrimaryLanguage: LanguageZh, ModelResidencyMB: ModelResidencyAutoMB, AllowPlaceholders: false}
 	s.Language = s.PrimaryLanguage // 相容投影（P2-42）
 	s.LeftShift = s.TogglesLeft()  // 舊欄位跟著切換鍵：Windows 預設左右 Shift 時是 true（#206）
 	return s
@@ -536,7 +531,6 @@ func (s *Settings) UnmarshalJSON(b []byte) error {
 		{"model_mode", &s.ModelMode, []string{ModelModeAuto, ModelModeAll, ModelModePrimary, ModelModeNone}},
 		{"primary_language", &s.PrimaryLanguage, []string{LanguageZh, LanguageJa}},
 		{"output_variant", &s.OutputVariant, []string{VariantTraditional, VariantSimplified, VariantShinjitai}},
-		{"model_set", &s.ModelSet, []string{ModelSetPublicCore, ModelSetCCBYSA}},
 	} {
 		if raw, ok := take(field.key); ok {
 			var value string
@@ -638,7 +632,7 @@ func (s Settings) MarshalJSON() ([]byte, error) {
 	for _, field := range []struct {
 		key   string
 		value any
-	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_variant", s.effectiveOutputVariant()}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}, {"ja_input_method", s.JaInputMethod}, {"ja_live_conversion", s.JaLiveConversion}, {"ja_symbols", s.JaSymbols}, {"ja_learning", s.JaLearning}, {"ja_model", s.JaModel}, {"model_mode", s.ModelMode}, {"primary_language", s.effectivePrimaryLanguage()}, {"model_residency_mb", s.ModelResidencyMB}, {"allow_placeholders", s.AllowPlaceholders}, {"model_set", s.effectiveModelSet()}} {
+	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_variant", s.effectiveOutputVariant()}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}, {"ja_input_method", s.JaInputMethod}, {"ja_live_conversion", s.JaLiveConversion}, {"ja_symbols", s.JaSymbols}, {"ja_learning", s.JaLearning}, {"ja_model", s.JaModel}, {"model_mode", s.ModelMode}, {"primary_language", s.effectivePrimaryLanguage()}, {"model_residency_mb", s.ModelResidencyMB}, {"allow_placeholders", s.AllowPlaceholders}} {
 		if err := typed(field.key, field.value); err != nil {
 			return nil, err
 		}
@@ -693,7 +687,7 @@ func (s Settings) notes() []string {
 	if s.extra != "" {
 		_ = json.Unmarshal([]byte(s.extra), &kept)
 	}
-	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_variant", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless", "ja_input_method", "ja_live_conversion", "ja_symbols", "ja_learning", "ja_model", "model_mode", "primary_language", "model_residency_mb", "allow_placeholders", "model_set"} {
+	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_variant", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless", "ja_input_method", "ja_live_conversion", "ja_symbols", "ja_learning", "ja_model", "model_mode", "primary_language", "model_residency_mb", "allow_placeholders"} {
 		if raw, ok := kept[key]; ok {
 			out = append(out, fmt.Sprintf("%s：本版不認得 %s，暫用預設值，存檔時保留原值", strings.ReplaceAll(key, "_", "-"), raw))
 			delete(kept, key)
@@ -917,8 +911,6 @@ func (s Settings) valueLabels(key string) map[string]string {
 		return map[string]string{ModelModeAuto: "自動（預設）", ModelModeAll: "全部載入", ModelModePrimary: "只載入主要語言", ModelModeNone: "關閉模型"}
 	case "model-residency-mb":
 		return map[string]string{ModelResidencyAutoValue: "自動（單語言 250／雙語言 400 MB）"}
-	case "model-set":
-		return map[string]string{ModelSetPublicCore: "Public Core MIT 替代組", ModelSetCCBYSA: "CC BY-SA 預設（extra reranker）"}
 	}
 	return nil
 }
@@ -1133,7 +1125,7 @@ func languageSpecs() []spec {
 	}
 }
 
-// modelSpecs 是 P2-33／P2-42 的模型常駐與模型組設定。P2-42 起列進 Items，
+// modelSpecs 是 P2-33／P2-42 的模型常駐設定。P2-42 起列進 Items，
 // 設定程式的 Mixed 頁與命令列使用同一份描述與持久化欄位。
 func modelSpecs() []spec {
 	return []spec{
@@ -1148,9 +1140,7 @@ func modelSpecs() []spec {
 				}
 				return strconv.Itoa(s.ModelResidencyMB)
 			}},
-		{"model-set", "日文模型組", "cc-by-sa 是預設：CC BY-SA reranker-extra 加共用 public-core punctuation，安裝時帶 CC BY-SA 4.0 notice；public-core 是 MIT-only 替代組（reranker HF repo 尚未發布）。CC BY-SA artifact 不得進 public-core 組，兩組不會一起計分；placeholder 預設不會載入。", ModelSetCCBYSA, []string{ModelSetPublicCore, ModelSetCCBYSA},
-			func(s Settings) string { return s.effectiveModelSet() }},
-		{"allow-placeholders", "允許 placeholder 模型", "placeholder 模型的權重未訓練，只能用來驗證管線與量測記憶體；預設關閉，關閉時不載入 placeholder 模型，保留統計轉換。開啟前請確認模型組狀態標示為 placeholder。", "off", []string{"on", "off"},
+		{"allow-placeholders", "允許 placeholder 模型", "placeholder 模型的權重未訓練，只能用來驗證管線與量測記憶體；預設關閉，關閉時不載入 placeholder 模型，保留統計轉換。開啟前請確認模型包狀態標示為 placeholder。", "off", []string{"on", "off"},
 			func(s Settings) string { return onOff(s.AllowPlaceholders) }},
 	}
 }
@@ -1196,14 +1186,6 @@ func (s Settings) effectiveOutputVariant() string {
 	return VariantTraditional
 }
 
-// effectiveModelSet 把空值或讀不懂的模型組收斂成 cc-by-sa 預設；設定檔只會寫這兩個值之一。
-func (s Settings) effectiveModelSet() string {
-	if s.ModelSet == ModelSetPublicCore {
-		return ModelSetPublicCore
-	}
-	return ModelSetCCBYSA
-}
-
 // effectivePrimaryLanguage 把空值或讀不懂的主要語言收斂成注音，與舊設定檔一致。
 func (s Settings) effectivePrimaryLanguage() string {
 	if s.PrimaryLanguage == LanguageJa {
@@ -1234,7 +1216,7 @@ func itemLanguages(key string) []string {
 // 設定程式用它標示日文選項；引擎沒有 japanese 時外殼不送日文按鍵，這裡的值照樣保留。
 func itemCapabilities(key string) []string {
 	switch key {
-	case "ja-input-method", "ja-symbols", "ja-learning", "ja-model", "model-set":
+	case "ja-input-method", "ja-symbols", "ja-learning", "ja-model":
 		return []string{proto.CapJapanese}
 	case "ja-live-conversion":
 		return []string{proto.CapJapanese, proto.CapLiveConversion}
@@ -1447,7 +1429,7 @@ func (s Settings) buildItem(sp spec) Item {
 }
 
 // Items 依固定順序列出所有可修改的設定：引擎、混合輸入、輸出與模型。
-// P2-42 起模型模式、主要語言、常駐預算與模型組也在這裡，設定程式才能顯示與修改。
+// P2-42 起模型模式、主要語言與常駐預算也在這裡，設定程式才能顯示與修改。
 func (s Settings) Items() []Item {
 	list := append(specs(), modelSpecs()...)
 	out := make([]Item, 0, len(list))
@@ -1652,9 +1634,6 @@ func (s *Settings) set(key, value string) error {
 	case "allow-placeholders":
 		s.AllowPlaceholders = value == "on"
 		s.forget("allow_placeholders")
-	case "model-set":
-		s.ModelSet = value
-		s.forget("model_set")
 	case "mixed-input":
 		s.MixedInput = value == "on"
 		s.forget("mixed_input")

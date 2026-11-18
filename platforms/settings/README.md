@@ -29,7 +29,7 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 
 | 頁面（`--page`） | 項目 |
 |---|---|
-| 語言與中英切換（`mode`） | P2-42 Mixed profile：主要語言、混合輸入（混打、英文補字、中英之間加空格）、模型模式／常駐預算／模型組／placeholder；日文輸入方式、ライブ変換、記号與顔文字、日文學習、日文神經模型。其他平台仍顯示中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
+| 語言與中英切換（`mode`） | P2-42 Mixed profile：主要語言、混合輸入（混打、英文補字、中英之間加空格）、模型模式／常駐預算／placeholder；日文輸入方式、ライブ変換、記号與顔文字、日文學習、日文神經模型。沒有模型包選擇。其他平台仍顯示中英切換鍵、開始時的中英模式、切換視窗後的中英模式、中英混打、英文模式自動補字、Caps Lock 開著時直接打英文（Windows、Linux） |
 | 選字（`candidates`） | 選字方式（神經選字）、依前文選字、空白鍵選字、修改字詞的位置、選字後游標移到下一個字、選字排列、選字鍵、按 Esc 清除整段組字，另一張卡是模糊音總開關 |
 | 鍵盤與符號（`keyboard`） | 鍵盤排列、Ctrl＋標點打全形、標點寬度、提交時補標點（Beta）、Emoji 選單（子選項「將 = 放在第一項」） |
 
@@ -61,12 +61,12 @@ Windows 只有一個 TSF profile「Mixed」（P2-40），設定程式的第一�
 
 - **主要語言**（`primary-language`，`zh`／`ja`）：影響先驗、切換成本、輸出變體與 auto／primary 模式先常駐的模型；不阻擋其他語言。
 - **混合輸入**：`mixed-input` 在 Mixed 固定開啟，畫面顯示「固定開啟」；`english-autocomplete`、`cjk-latin-space` 照舊可調。
-- **模型**：`model-mode`（auto／all／primary／none）、`model-residency-mb`（auto、250、400、512、1024）、`model-set`（`cc-by-sa` 預設：CC BY-SA extra reranker 加 public 標點；`public-core` 是 MIT-only 替代組）、`allow-placeholders`（預設關閉）。`cc-by-sa` 已 pin HF revision，安裝時帶 CC BY-SA notice；`public-core` 的 reranker HF repo 尚未發布。
+- **模型**：`model-mode`（auto／all／primary／none）、`model-residency-mb`（auto、250、400、512、1024）、`allow-placeholders`（預設關閉）。日文模型包固定為 `models/pairing.lock.json` 的唯一 `model_package`；畫面沒有選擇。reranker 是 CC BY-SA 4.0，punctuation 是 MIT，安裝時帶對應 notice。
 - **輸出變體**（`output-variant`，放在「輸出設定」）：`traditional` 繁中、`simplified` 簡中、`shinjitai` 日文新字體。舊的 `output-simplified` 只留給命令列與外殼選單，設定檔存檔只寫新欄位；「用快捷鍵切換簡體字」只在 `simplified` 時作用。
 - **English profile 設定移除**：`language`、`language-memory`、`language-hotkey`、`start-mode` 不再出現在 Mixed 畫面。設定檔的舊值由 Go 端遷移：`language` 併入 `primary_language`，`output_simplified` 併入 `output_variant`，`language_*`、`english_profile` 與舊鍵在存檔時移除；`start-mode`、`toggle-key`、`mode-memory` 仍有引擎使用，只從 Mixed 畫面收起。
 - **注音專屬但不適用的選項**：`mixed-input`、`space-selects`、`toneless`、`zhuyin-error-hint` 在 Mixed 畫面標示「Mixed 模式不適用」並停用控制項，設定值保留，切到其他平台或關閉混打時照舊。
 
-「模型」頁多了「模型組與常駐」卡：Tauri 指令 `model_report` 以 0c-update status／settings 找使用中的安裝、字典與個人資料檔，再執行 `0c-server -model-report`（獨立 socket、`-lock-wait 0s`，30 秒逾時），把 `model_set`（`set_id`、`variant`、`placeholder`）、`resident_bytes`、`budget_bytes` 與 `within_budget` 交給 `ZcMixed.reportFacts` 顯示。`ZC_SERVER`／`ZC_DATA`／`ZC_USER` 可覆寫路徑，`ZC_MODEL_REPORT` 直接回一份現成 JSON（測試用）。找不到 0c-server 或報告失敗時只顯示錯誤，不影響上面的 0c-update 狀態。
+「模型」頁多了「模型包與常駐」卡：Tauri 指令 `model_report` 以 0c-update status／settings 找使用中的安裝、字典與個人資料檔，再執行 `0c-server -model-report`（獨立 socket、`-lock-wait 0s`，30 秒逾時），把 `model_package`（`version`、`placeholder`）、`resident_bytes`、`budget_bytes` 與 `within_budget` 交給 `ZcMixed.reportFacts` 顯示。`ZC_SERVER`／`ZC_DATA`／`ZC_USER` 可覆寫路徑，`ZC_MODEL_REPORT` 直接回一份現成 JSON（測試用）。找不到 0c-server 或報告失敗時只顯示錯誤，不影響上面的 0c-update 狀態。
 
 UI 測試：`test/mixed_test.js` 驗證 English profile 收起清單、不適用標示、分組與模型報告摘要；`test/language_test.js` 驗證主要語言與舊契約讀法。Go 測試在 `internal/settings/mixed_profile_test.go`：舊鍵遷移、移除、模型與輸出設定持久化。
 

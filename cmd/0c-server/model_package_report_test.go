@@ -17,9 +17,10 @@ func testDigest(b []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// writeModelSetFixture 建一個可驗證的模型組安裝目錄與 lock。
-func writeModelSetFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
+// writeModelPackageFixture 建一個可驗證的模型包安裝目錄與 lock。
+func writeModelPackageFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
 	t.Helper()
+	source := t.TempDir()
 	root, dataDir = t.TempDir(), t.TempDir()
 	if err := os.MkdirAll(filepath.Join(dataDir, "ja"), 0o755); err != nil {
 		t.Fatal(err)
@@ -35,18 +36,17 @@ func writeModelSetFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
 		Bytes  int64  `json:"bytes"`
 		SHA256 string `json:"sha256"`
 	}
-	files := map[string]file{}
 	artifacts := []map[string]any{}
 	for _, spec := range []struct {
-		id, kind, output string
-		shape            []any
+		id, kind, variant, license, output string
+		shape                              []any
 	}{
-		{"reranker-public-core", modelsets.KindReranker, "scores", []any{"batch"}},
-		{"punctuation-public-core", modelsets.KindPunctuation, "logits", []any{"batch", "seq", 4}},
+		{"reranker-extra", modelsets.KindReranker, "cc-by-sa", "CC-BY-SA-4.0", "scores", []any{"batch"}},
+		{"punctuation-public-core", modelsets.KindPunctuation, "public-core", "MIT", "logits", []any{"batch", "seq", 4}},
 	} {
 		body := []byte("onnx:" + spec.id)
 		rel := spec.id + "/" + spec.id + ".placeholder.int8.onnx"
-		path := filepath.Join(root, filepath.FromSlash(rel))
+		path := filepath.Join(source, filepath.FromSlash(rel))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -54,14 +54,17 @@ func writeModelSetFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
 			t.Fatal(err)
 		}
 		f := file{Path: rel, Bytes: int64(len(body)), SHA256: testDigest(body)}
-		files[spec.kind] = f
+		scope, notice, dist := "public-core", "legal/MIT.txt", "public install"
+		if spec.variant == "cc-by-sa" {
+			scope, notice, dist = "cc-by-sa", "legal/CC-BY-SA-4.0.txt", "carry notice"
+		}
 		artifacts = append(artifacts, map[string]any{
 			"manifest": spec.id + "/manifest.json", "artifact_id": spec.id, "kind": spec.kind,
-			"variant": "public-core", "version": "test-1", "parameters": 42,
+			"variant": spec.variant, "version": "test-1", "parameters": 42,
 			"placeholder": true, "quality": "untrained", "production_eligible": false,
 			"dictionary_manifest_sha256": shot,
-			"license": map[string]any{"id": "CC-BY-4.0", "scope": "public-core",
-				"distribution": "public install", "notice": "legal/CC-BY-4.0.txt"},
+			"license": map[string]any{"id": spec.license, "scope": scope,
+				"distribution": dist, "notice": notice},
 			"attribution": []any{"legal/copyright"},
 			"source":      map[string]any{"training_data": "none", "generator": "test"},
 			"files":       map[string]any{"int8": f},
@@ -76,17 +79,14 @@ func writeModelSetFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
 	}
 	doc := map[string]any{
 		"schema": 1,
-		"model_sets": map[string]any{
-			"schema": modelsets.Schema, "sets": map[string]any{
-				"ja-public-core": map[string]any{
-					"variant": "public-core", "language": "ja", "version": "test-1",
-					"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
-						"version": "test", "manifest_sha256": shot, "source": "test"},
-					"license":     map[string]any{"id": "CC-BY-4.0", "scope": "public-core", "distribution": "public install", "notice": "legal/CC-BY-4.0.txt"},
-					"attribution": []any{"legal/copyright"}, "placeholder": true, "quality": "untrained",
-					"production_eligible": false, "artifacts": artifacts,
-				},
-			},
+		"model_package": map[string]any{
+			"schema": modelsets.Schema, "version": "test-1",
+			"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
+				"version": "test", "manifest_sha256": shot, "source": "test"},
+			"license": map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa",
+				"distribution": "carry notice", "notice": "legal/CC-BY-SA-4.0.txt"},
+			"attribution": []any{"legal/copyright"}, "placeholder": true, "quality": "untrained",
+			"production_eligible": false, "artifacts": artifacts,
 		},
 	}
 	b, err := json.MarshalIndent(doc, "", "  ")
@@ -97,17 +97,24 @@ func writeModelSetFixture(t *testing.T) (lockPath, root, dataDir, shot string) {
 	if err := os.WriteFile(lockPath, b, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := modelsets.LoadLock(lockPath); err != nil {
+	lock, err := modelsets.LoadLock(lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := modelsets.Install(lock, modelsets.InstallOptions{
+		SourceRoot: source, DestRoot: root, Format: modelsets.FormatInt8,
+		AllowPlaceholders: true, InstalledDictionarySHA256: shot,
+	}); err != nil {
 		t.Fatal(err)
 	}
 	return lockPath, root, dataDir, shot
 }
 
-func TestBuildModelSetReport(t *testing.T) {
-	lockPath, root, dataDir, shot := writeModelSetFixture(t)
-	report := buildModelSetReport("ja-public-core", lockPath, root, dataDir, true)
+func TestBuildModelPackageReport(t *testing.T) {
+	lockPath, root, dataDir, shot := writeModelPackageFixture(t)
+	report := buildModelPackageReport(lockPath, root, dataDir, true)
 	if !report.Active || !report.Valid || !report.FilesVerified || !report.DictionaryMatches ||
-		report.SetID != "ja-public-core" || report.Variant != "public-core" || !report.Placeholder {
+		report.Version != "test-1" || !report.Placeholder {
 		t.Fatalf("報告 %+v", report)
 	}
 	if report.Dictionary.ManifestSHA256 != shot || report.Dictionary.InstalledManifestSHA256 != shot {
@@ -118,7 +125,7 @@ func TestBuildModelSetReport(t *testing.T) {
 	}
 
 	// placeholder 未允許：仍然是使用中的設定，但報告要說明無效原因。
-	refused := buildModelSetReport("ja-public-core", lockPath, root, dataDir, false)
+	refused := buildModelPackageReport(lockPath, root, dataDir, false)
 	if !refused.Active || refused.Valid || !strings.Contains(refused.Reason, "placeholder") {
 		t.Fatalf("placeholder 報告 %+v", refused)
 	}
@@ -127,16 +134,16 @@ func TestBuildModelSetReport(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dataDir, "ja", "manifest.json"), []byte("{\"format\":2,\"language\":\"ja\",\"lexicon\":\"other\"}\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	mismatch := buildModelSetReport("ja-public-core", lockPath, root, dataDir, true)
+	mismatch := buildModelPackageReport(lockPath, root, dataDir, true)
 	if mismatch.Valid || mismatch.DictionaryMatches || !strings.Contains(mismatch.Reason, "字典") {
 		t.Fatalf("字典不符報告 %+v", mismatch)
 	}
 }
 
-func TestBuildModelSetReportWithoutActiveSelection(t *testing.T) {
-	lockPath, root, dataDir, _ := writeModelSetFixture(t)
-	report := buildModelSetReport("", lockPath, root, dataDir, true)
+func TestBuildModelPackageReportWithoutActiveSelection(t *testing.T) {
+	lockPath, _, dataDir, _ := writeModelPackageFixture(t)
+	report := buildModelPackageReport(lockPath, t.TempDir(), dataDir, true)
 	if report.Active || report.Valid || report.Reason != "not_configured" {
-		t.Fatalf("沒有選定模型組時 %+v", report)
+		t.Fatalf("沒有安裝模型包時 %+v", report)
 	}
 }

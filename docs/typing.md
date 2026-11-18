@@ -96,7 +96,7 @@ Windows TSF 外殼在候選窗**沒有開著**時，按 Home／End／←／→ �
 - 日文輸入方式 `ja-input-method`：設定可保存 `romaji`／`kana`，引擎目前沒有讀取這個值來切換 composer。
 - ライブ変換 `ja-live-conversion`：`core/ja/live` 有控制器與測試，產品 session 還沒有接上。
 - 記号開關 `ja-symbols`、日文學習 `ja-learning`、日文神經模型 `ja-model`：設定可保存，引擎目前沒有對應的 health／open 能力旗標來套用。`core/ja/rewrite` 的記号載入器與 `core/ja/personal` 的學習鉤子還沒有接到 `newJaLanguage` 的正式路徑。
-- 日文模型組 `model-set`：可選擇並回報，但日文 reranker／punct 尚未接入推論，兩組目前都是未訓練 placeholder。
+- 日文模型包：設定畫面沒有模型包選項；日文 reranker／punct 尚未接入推論，產品固定使用 `models/pairing.lock.json` 的單一模型包。
 - Windows 套件以 `--ja-data` 放入的是編譯後的 `data/ja/`，引擎的日文載入路徑目前讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`；在 P2-30／整合工作接上編譯包之前，不能假設 shipped package 的日文轉換已完成。
 
 原始碼的 `data/ja` 目錄有 `lexicon/words.tsv` 與 `connection.tsv`，開發時可以直接讓引擎載入。這是目前驗證日文轉換的路徑，不是已完成的 Windows 套件資料路徑。

@@ -83,9 +83,9 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - **主要語言只是偏好**：`zh`／`ja` 影響先驗、切換成本與模型常駐順序，不阻擋其他語言。
 - **逐片段候選**：候選範圍跟著游標所在片段。Windows 在候選窗沒開時用 Home／End／←／→ 換片段，會自動為新片段重開候選。
 - **長詞是一項候選**：詞庫長詞跨過多個輸入片段時合併成一個片段，候選只出現一次。
-- **目前限制**：日文預設模型組（extra reranker + public 標點）已 pin HF revision，但日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
+- **目前限制**：日文模型包（extra reranker + public 標點）已 pin HF revision，但日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
 
-操作、按鍵與未接上的日文設定見 [輸入與候選](docs/typing.md)；模型組切換見 [模型與模型組](docs/model-sets.md)。
+操作、按鍵與未接上的日文設定見 [輸入與候選](docs/typing.md)；日文模型包見 [模型與模型包](docs/model-sets.md)。
 
 ## 🇯🇵 日文輸入（預覽）
 
@@ -108,7 +108,7 @@ python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 
 系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64。安裝後直接從中文（台灣）的鍵盤清單選「Mixed」，不需要另裝 ja-JP 語言。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。
 
-**目前限制**：Windows 套件放入的是編譯後的 `data/ja/`，但引擎的日文載入路徑目前讀 `lexicon/words.tsv` 與 `connection.tsv`；在整合接上編譯包之前，不能假設 shipped package 的日文轉換已完成。日文預設模型組 `ja-cc-by-sa` 由 Hugging Face 提供已 pin 的 `reranker-extra`（CC BY-SA 4.0）與 `punctuation-public-core`（MIT）；MIT-only `ja-public-core` 保留為替代組，reranker repo 尚未發布。尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
+**目前限制**：Windows 套件放入的是編譯後的 `data/ja/`，但引擎的日文載入路徑目前讀 `lexicon/words.tsv` 與 `connection.tsv`；在整合接上編譯包之前，不能假設 shipped package 的日文轉換已完成。日文模型包由 Hugging Face 提供已 pin 的 reranker（CC BY-SA 4.0）與 punctuation（MIT）；產品只有這一個模型包，沒有其他選擇。尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
 
 ### 量測
 
@@ -212,7 +212,7 @@ bridge/       引擎與外殼之間的行程間通訊（IPC）
 internal/     設定、自動更新、神經推論 worker、詞庫編譯與評測等共用程式
 cmd/          執行檔入口：0c-server、0c-ibus、0c-update、0c-cli、0c-compile、0c-eval…
 platforms/    Linux／macOS／Windows 外殼、設定程式、神經推論
-docs/         使用者文件：安裝、輸入與候選、模型組、授權
+docs/         使用者文件：安裝、輸入與候選、模型包、授權
 data/         詞庫來源、來源帳本與授權聲明
 models/       上游模型與字典配對的固定清單
 scripts/      建置、打包與回歸測試工具

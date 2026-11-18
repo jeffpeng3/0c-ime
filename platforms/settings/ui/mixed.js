@@ -31,7 +31,7 @@
   const GROUPS = [
     { title: '主要語言', keys: ['primary-language'] },
     { title: '混合輸入', keys: ['mixed-input', 'english-autocomplete', 'cjk-latin-space'] },
-    { title: '模型', keys: ['model-mode', 'model-residency-mb', 'model-set', 'allow-placeholders'] },
+    { title: '模型', keys: ['model-mode', 'model-residency-mb', 'allow-placeholders'] },
     { title: '日文', keys: ['ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'] },
   ];
 
@@ -59,35 +59,27 @@
   }
   const outputVariantLabel = (value) => label(OUTPUT_VARIANTS, value);
 
-  const MODEL_SETS = [
-    { id: 'public-core', label: 'Public Core 公開核心' },
-    { id: 'cc-by-sa', label: 'CC BY-SA 實驗' },
-  ];
-  const modelSetLabel = (value) => label(MODEL_SETS, value);
-
   const mb = (bytes) => (Math.max(0, bytes || 0) / (1024 * 1024)).toLocaleString('zh-TW', { maximumFractionDigits: 1 }) + ' MB';
 
   // -model-report 的摘要（P2-33／P2-27）。resident_bytes 是模型檔常駐量；placeholder
-  // 一定要寫明未訓練，cc-by-sa 目前整組都是 placeholder。
+  // 一定要寫明未訓練。產品只有一個模型包，沒有可選的 variant。
   function reportFacts(report) {
     if (!report) return [];
     if (report.ok === false) {
       const message = (report.error && (report.error.message || report.error.code)) || '未知錯誤';
       return [{ label: '模型報告', value: '無法讀取：' + message, tone: 'warn' }];
     }
-    const set = report.model_set || {};
+    const pkg = report.model_package || {};
     const facts = [];
-    if (!set.active) {
-      facts.push({ label: '使用中的模型組', value: '未選定' + (set.reason ? '（' + set.reason + '）' : ''), tone: 'muted' });
+    if (!pkg.active) {
+      facts.push({ label: '日文模型包', value: '未安裝' + (pkg.reason ? '（' + pkg.reason + '）' : ''), tone: 'muted' });
     } else {
-      const variant = set.variant ? modelSetLabel(set.variant) : '未知變體';
-      facts.push({ label: '使用中的模型組', value: (set.set_id || '未命名') + '（' + variant + '）', tone: 'ok' });
-      facts.push({ label: '模型組變體', value: variant + (set.version ? ' · ' + set.version : ''), tone: 'ok' });
+      facts.push({ label: '日文模型包', value: (pkg.version || '未知版本'), tone: 'ok' });
     }
     facts.push({
       label: 'placeholder',
-      value: set.placeholder ? '是（未訓練，預設不會載入）' : (set.active ? '否' : '未知'),
-      tone: set.placeholder ? 'warn' : 'ok',
+      value: pkg.placeholder ? '是（未訓練，預設不會載入）' : (pkg.active ? '否' : '未知'),
+      tone: pkg.placeholder ? 'warn' : 'ok',
     });
     const resident = { label: '模型常駐', value: mb(report.resident_bytes), tone: 'muted' };
     if (report.budget_bytes > 0) {
@@ -95,17 +87,17 @@
       resident.tone = report.within_budget === false ? 'warn' : 'ok';
     }
     facts.push(resident);
-    if (set.active && set.valid === false) {
-      facts.push({ label: '模型組檢查', value: set.reason || '沒有通過核對', tone: 'warn' });
-    } else if (set.active && set.placeholder && !report.allow_placeholders) {
+    if (pkg.active && pkg.valid === false) {
+      facts.push({ label: '模型包檢查', value: pkg.reason || '沒有通過核對', tone: 'warn' });
+    } else if (pkg.active && pkg.placeholder && !report.allow_placeholders) {
       facts.push({ label: '載入政策', value: 'placeholder 未允許，使用統計轉換', tone: 'warn' });
     }
     return facts;
   }
 
   window.ZcMixed = {
-    HIDDEN, ZHUYIN_ONLY, OUTPUT_VARIANTS, MODEL_SETS, GROUPS, MIXED_KEYS,
+    HIDDEN, ZHUYIN_ONLY, OUTPUT_VARIANTS, GROUPS, MIXED_KEYS,
     isMixed, hidden, hiddenReason, visible, zhuyinOnly, zhuyinReason, keys, groups,
-    outputVariantLabel, modelSetLabel, reportFacts, mb,
+    outputVariantLabel, reportFacts, mb,
   };
 })();

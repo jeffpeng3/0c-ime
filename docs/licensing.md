@@ -27,20 +27,20 @@ Copyright (C) 2026 Funmula Co., Limited
 
 這不是通用通行證。新來源要逐案審查，並在 `data/sources/corpus/public-core.tsv` 留下允許理由。
 
-日文 `ja-public-core` 模型組在模型組清單標示 MIT，是保留的 MIT-only 替代組；它的 reranker HF repo 尚未發布，因此不是目前的 release 候選。正式預設安裝組是 `ja-cc-by-sa`，其授權與 notice 見下一節。注音 `select/`、`punct/` 與日文模型的檔案與授權以各模型 `LICENSE` 與 [models/README.md](../models/README.md) 為準。
+日文產品只有一個固定的模型包：reranker 是 CC BY-SA 4.0，punctuation 是 MIT。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。注音 `select/`、`punct/` 與日文模型的檔案與授權以各模型 `LICENSE` 與 [models/README.md](../models/README.md) 為準。
 
 公開核心不使用 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN 或 NEologd 來源。
 
 ## CC BY-SA 實驗資料與模型
 
-CC BY-SA 資料與模型是**另一個 experimental set**：
+CC BY-SA 資料與模型以 **CC BY-SA 4.0** 釋出，與公開核心分開 manifest、checkpoint 與安裝包：
 
-- 衍生語料與模型以 **CC BY-SA 4.0** 釋出。
-- 與公開核心分開 manifest、checkpoint、安裝包與模型組。
-- 不混進公開核心。混用規則以 artifact 為單位：CC BY-SA artifact 不得安裝進 public-core 組；CC BY-SA reranker 可與共用 public-core punctuation 配對。
-- 保留來源的原始授權版本與署名，例如 Wikipedia 文字是 CC BY-SA 4.0，部分 LLM-jp 語料是 CC BY-SA 3.0。
+- 日文模型包的 `reranker-extra` 使用 Wikipedia 與 Stack Exchange 的 CC BY-SA 實驗語料，衍生模型以 CC BY-SA 4.0 釋出。
+- 保留來源的原始授權版本與署名，例如 Wikipedia 文字是 CC BY-SA 4.0、Stack Exchange 需要逐帖作者與原問題 URL，部分 LLM-jp 語料是 CC BY-SA 3.0。
+- 安裝或散布日文模型包時一定帶 `legal/CC-BY-SA-4.0.txt`，打包後的套件另附 `MODEL-PACKAGE-CC-BY-SA-4.0.txt` 與 `MODEL-PACKAGE-NOTICES.txt`。
+- 同一模型包的 punctuation 保持 MIT，不會因與 CC BY-SA reranker 一起出貨而變成 CC BY-SA。它附 UniDic BSD 與 IPADic 的 notice，詳見下一節。
 
-日文的預設安裝組 `ja-cc-by-sa` 包含 `reranker-extra`（CC BY-SA 4.0）與共用的 `punctuation-public-core`（MIT）。`reranker-extra` 來自 CC BY-SA 實驗語料，安裝或散布這個模型組時一定帶 `legal/CC-BY-SA-4.0.txt`，打包後的套件另附 `MODEL-SET-CC-BY-SA-4.0.txt` 與 `MODEL-SET-NOTICES.txt`；`punctuation-public-core` 保持 MIT，不會因共用而變成 CC BY-SA。MIT-only 的 `ja-public-core` 保留為替代組，等它的 HF reranker 發布並 pin 後才可能成為 release 選項。混用規則以 artifact 為單位：CC BY-SA artifact 不得安裝進 public-core 組。
+產品不安裝只供評估的 reranker，也不提供其他模型包選擇。
 
 ## 個別來源的散布義務
 
@@ -106,6 +106,6 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 ## 品質與驗證狀態
 
-- 日文預設組的 `reranker-extra` 與 `punctuation-public-core` 已 pin HF revision 與逐檔 SHA-256；MIT-only 的 `ja-public-core` reranker 尚未發布。模型仍在評測，沒有品質承諾。placeholder 只留在 `testdata/models/placeholder/`，不進正式 lock 或 release bundle。
+- 日文模型包的 reranker 與 punctuation 已 pin HF revision 與逐檔 SHA-256。模型仍在評測，沒有品質承諾。placeholder 只留在 `testdata/models/placeholder/`，不進正式 lock 或 release bundle。
 - Windows Phase 2 VM 驗收是 **NOT RUN**，不能寫成已通過。
 - 注音、混合語言 benchmark 與延遲數字只在有量測來源時引用；沒有數字的項目代表未驗證。

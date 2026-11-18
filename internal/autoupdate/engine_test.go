@@ -229,10 +229,10 @@ func TestPrepareCoreCopiesMCPAndRecordsItsHash(t *testing.T) {
 	}
 }
 
-// P2-43：原生 ONNX Runtime 必須跟著核心更新一起換；models/ 的模型組也是核心檔。
-func TestPrepareCoreCopiesNativeRuntimeAndModelSets(t *testing.T) {
+// P2-43：原生 ONNX Runtime 必須跟著核心更新一起換；models/ 的模型包也是核心檔。
+func TestPrepareCoreCopiesNativeRuntimeAndModelPackage(t *testing.T) {
 	runtime := []string{"onnxruntime.dll", "vcruntime140.dll", "vcruntime140_1.dll", "msvcp140.dll", "msvcp140_1.dll"}
-	extra := map[string]string{"models/active.json": `{"schema":"0c.model-set.selection/1"}`, "models/ja-public-core/x.onnx": "onnx"}
+	extra := map[string]string{"models/active.json": `{"schema":"0c.model-package.selection/1"}`, "models/reranker-extra/x.onnx": "onnx"}
 	for _, name := range runtime {
 		extra[name] = "runtime " + name
 	}
@@ -244,7 +244,7 @@ func TestPrepareCoreCopiesNativeRuntimeAndModelSets(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, name := range append(runtime, "models/active.json", "models/ja-public-core/x.onnx") {
+	for _, name := range append(runtime, "models/active.json", "models/reranker-extra/x.onnx") {
 		if _, err := os.Stat(filepath.Join(base, dir, filepath.FromSlash(name))); err != nil {
 			t.Fatalf("核心目錄缺少 %s: %v", name, err)
 		}

@@ -1,22 +1,27 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://0c.biggo.com/schema/0c.model-sets/1",
-  "title": "0C product model sets",
-  "description": "P2-27 產品側模型 manifest。models/pairing.lock.json 的 model_sets 區段；外層既有注音字典配對欄位不在本 schema。default_set 目前是 ja-cc-by-sa（extra reranker + public punctuation），release 只驗這一組。public-core 固定一個 reranker 與一個 punctuation；cc-by-sa 是 reranker-only，透過 shared_punctuation 共用 public-core punctuation。混用規則以 artifact 為單位：CC BY-SA artifact 不得進 public-core 組。每個模型組綁定一個日文詞典包的 manifest SHA-256；deployment 記錄 seq 124、每側 60 tokens 與 top-3 gating。",
+  "$id": "https://0c.biggo.com/schema/0c.model-package/1",
+  "title": "0C product model package",
+  "description": "P2-27 產品側日文模型包。models/pairing.lock.json 的 model_package 區段；外層既有注音字典配對欄位不在本 schema。產品只有一個模型包：CC BY-SA reranker-extra 加 MIT punctuation-public-core，沒有模型組、default_set 或 variant 選擇。每個模型包綁定一個日文詞典包的 manifest SHA-256；deployment 記錄 seq 124、每側 60 tokens 與 top-3 gating。",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "sets"],
+  "required": ["schema", "version", "dictionary", "license", "attribution", "placeholder", "quality", "production_eligible", "artifacts"],
   "properties": {
-    "schema": { "const": "0c.model-sets/1" },
+    "schema": { "const": "0c.model-package/1" },
     "updated": { "type": "string", "description": "YYYY-MM-DD；最後一次人工審查日期。" },
-    "mixing_policy": { "type": "string", "description": "artifact-level 混用規則：CC BY-SA artifact 不得進 public-core 組；reranker-extra 安裝時必須帶 CC BY-SA 4.0 notice。" },
-    "default_set": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "預設安裝組 ID；release 只驗這一組，替代組可保留但不必 pin。正式 lock 為 ja-cc-by-sa（extra reranker + public punctuation）。" },
+    "version": { "type": "string", "minLength": 1 },
+    "dictionary": { "$ref": "#/$defs/dictionary" },
     "deployment": { "$ref": "#/$defs/deployment" },
-    "sets": {
-      "type": "object",
-      "minProperties": 1,
-      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
-      "additionalProperties": { "$ref": "#/$defs/set" }
+    "license": { "$ref": "#/$defs/license" },
+    "attribution": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "placeholder": { "type": "boolean" },
+    "quality": { "type": "string", "minLength": 1 },
+    "production_eligible": { "type": "boolean" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/artifact" }
     }
   },
   "$defs": {
@@ -39,10 +44,10 @@
       "additionalProperties": false,
       "required": ["id", "scope", "distribution", "notice"],
       "properties": {
-        "id": { "type": "string", "minLength": 1, "description": "SPDX 風格 ID；public-core 不得含 -SA／-NC，cc-by-sa 必須含 CC-BY-SA。" },
+        "id": { "type": "string", "minLength": 1, "description": "SPDX 風格 ID。" },
         "scope": { "type": "string", "minLength": 1, "description": "public-core 或 cc-by-sa。" },
         "distribution": { "type": "string", "minLength": 1, "description": "散布邊界。" },
-        "notice": { "type": "string", "minLength": 1, "description": "repo 內授權全文參考，例如 legal/CC-BY-4.0.txt。" }
+        "notice": { "type": "string", "minLength": 1, "description": "repo 內授權全文參考。" }
       }
     },
     "dictionary": {
@@ -54,7 +59,7 @@
         "language": { "const": "ja" },
         "format": { "type": "integer", "minimum": 1 },
         "version": { "type": "string", "minLength": 1 },
-        "manifest_sha256": { "$ref": "#/$defs/sha256", "description": "安裝後 <data>/ja/manifest.json 的 SHA-256；不符時拒絕模型組。" },
+        "manifest_sha256": { "$ref": "#/$defs/sha256", "description": "安裝後 <data>/ja/manifest.json 的 SHA-256；不符時拒絕模型包。" },
         "source": { "type": "string", "minLength": 1 }
       }
     },
@@ -63,9 +68,9 @@
       "additionalProperties": false,
       "required": ["repository", "revision", "license", "files"],
       "properties": {
-        "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", "description": "Hugging Face repo，例如 jeffpeng3/0c-ja-reranker。" },
+        "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
         "revision": { "type": "string", "pattern": "^$|^[0-9a-f]{7,64}$", "description": "HF commit 雜湊；空字串只在 development 模式可接受，release 前必須 pin。" },
-        "license": { "type": "string", "minLength": 1, "description": "HF repo 的 SPDX 風格授權 ID；public-core 為 MIT，extra 為 CC-BY-SA-4.0。" },
+        "license": { "type": "string", "minLength": 1 },
         "files": {
           "type": "object",
           "additionalProperties": false,
@@ -93,7 +98,7 @@
       "additionalProperties": false,
       "required": ["training_data", "generator"],
       "properties": {
-        "training_data": { "type": "string", "minLength": 1, "description": "public-core、cc-by-sa 或 placeholder 的來源說明。" },
+        "training_data": { "type": "string", "minLength": 1 },
         "datasets": { "type": "array", "items": { "type": "string" } },
         "checkpoint": { "type": "string" },
         "generator": { "type": "string", "minLength": 1 },
@@ -177,38 +182,6 @@
         "bytes": { "type": "integer", "minimum": 0, "description": "0 表示尚未 pin；release 模式要求大於 0。" },
         "sha256": { "type": "string", "pattern": "^$|^[0-9a-f]{64}$", "description": "空字串表示尚未 pin；release 模式要求 64 字元。" },
         "quantization": { "type": "string" }
-      }
-    },
-    "set": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "variant", "language", "version", "dictionary", "license", "attribution",
-        "placeholder", "quality", "production_eligible", "artifacts"
-      ],
-      "properties": {
-        "variant": { "$ref": "#/$defs/variant" },
-        "language": { "const": "ja" },
-        "version": { "type": "string", "minLength": 1 },
-        "description": { "type": "string" },
-        "dictionary": { "$ref": "#/$defs/dictionary" },
-        "license": { "$ref": "#/$defs/license" },
-        "attribution": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-        "placeholder": { "type": "boolean" },
-        "quality": { "type": "string", "minLength": 1 },
-        "production_eligible": { "type": "boolean" },
-        "shared_punctuation": {
-          "type": "string",
-          "minLength": 1,
-          "description": "cc-by-sa reranker-only 組共用的 public-core punctuation artifact ID；public-core 組不得設定。"
-        },
-        "artifacts": {
-          "type": "array",
-          "minItems": 1,
-          "maxItems": 2,
-          "description": "public-core 各一個 reranker 與 punctuation；cc-by-sa 只有一個 reranker。validator 另外檢查 shared_punctuation。",
-          "items": { "$ref": "#/$defs/artifact" }
-        }
       }
     }
   }

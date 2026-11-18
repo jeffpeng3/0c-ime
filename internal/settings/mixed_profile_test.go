@@ -20,8 +20,8 @@ func TestMixedProfileDefaults(t *testing.T) {
 	if s.ModelMode != ModelModeAuto || s.ModelResidencyMB != ModelResidencyAutoMB {
 		t.Fatalf("模型模式或預算預設不對：%+v", s)
 	}
-	if s.ModelSet != ModelSetCCBYSA || s.AllowPlaceholders {
-		t.Fatalf("模型組或 placeholder 預設不對：%+v", s)
+	if s.AllowPlaceholders {
+		t.Fatalf("placeholder 預設不對：%+v", s)
 	}
 }
 
@@ -62,7 +62,7 @@ func TestMixedProfileMigratesAndRemovesEnglishProfileKeys(t *testing.T) {
 			t.Fatalf("English profile 舊鍵應移除 %s：\n%s", key, b)
 		}
 	}
-	for _, key := range []string{`"primary_language": "ja"`, `"output_variant": "simplified"`, `"model_set": "cc-by-sa"`, `"future": {`} {
+	for _, key := range []string{`"primary_language": "ja"`, `"output_variant": "simplified"`, `"future": {`} {
 		if !strings.Contains(string(b), key) {
 			t.Fatalf("存檔應有 %s：\n%s", key, b)
 		}
@@ -96,7 +96,6 @@ func TestMixedProfileSettingsPersist(t *testing.T) {
 		{"output-variant", VariantShinjitai},
 		{"model-mode", ModelModePrimary},
 		{"model-residency-mb", "512"},
-		{"model-set", ModelSetCCBYSA},
 		{"allow-placeholders", "on"},
 		{"mixed-input", "on"},
 		{"english-autocomplete", "on"},
@@ -114,7 +113,7 @@ func TestMixedProfileSettingsPersist(t *testing.T) {
 		t.Fatalf("來回不一致：%+v %v", back, err)
 	}
 	if back.PrimaryLanguage != LanguageJa || back.OutputVariant != VariantShinjitai || back.ModelMode != ModelModePrimary ||
-		back.ModelResidencyMB != 512 || back.ModelSet != ModelSetCCBYSA || !back.AllowPlaceholders ||
+		back.ModelResidencyMB != 512 || !back.AllowPlaceholders ||
 		!back.MixedInput || !back.EnglishAutocomplete || !back.CJKLatinSpace {
 		t.Fatalf("Mixed 設定沒有持久化：%+v", back)
 	}
@@ -135,7 +134,7 @@ func TestMixedProfileHidesEnglishProfileItemsAndMarksZhuyinOnly(t *testing.T) {
 			t.Fatalf("English profile 設定不應出現在契約：%s", key)
 		}
 	}
-	for _, key := range []string{"primary-language", "output-variant", "model-mode", "model-residency-mb", "model-set", "allow-placeholders", "mixed-input", "english-autocomplete", "cjk-latin-space"} {
+	for _, key := range []string{"primary-language", "output-variant", "model-mode", "model-residency-mb", "allow-placeholders", "mixed-input", "english-autocomplete", "cjk-latin-space"} {
 		if _, ok := items[key]; !ok {
 			t.Fatalf("Mixed 設定應出現在契約：%s", key)
 		}
@@ -155,12 +154,10 @@ func TestMixedProfileHidesEnglishProfileItemsAndMarksZhuyinOnly(t *testing.T) {
 }
 
 func TestMixedProfileReportShapeRoundTrips(t *testing.T) {
-	// -model-report 的欄位由 cmd/0c-server 提供；設定檔只保存選擇。這裡確認新欄位能穩定序列化，
-	// 設定程式可把它和報告的 set_id／variant／placeholder／resident_bytes 一起顯示。
+	// -model-report 的模型包欄位由 cmd/0c-server 提供；設定檔不再保存模型組選擇。
 	s := Default()
-	s.ModelSet = ModelSetCCBYSA
 	b, err := json.Marshal(s)
-	if err != nil || !strings.Contains(string(b), `"model_set":"cc-by-sa"`) {
-		t.Fatalf("序列化模型組：%s %v", b, err)
+	if err != nil || strings.Contains(string(b), `"model_set"`) {
+		t.Fatalf("設定檔不應序列化模型組選擇：%s %v", b, err)
 	}
 }

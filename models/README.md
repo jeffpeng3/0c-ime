@@ -23,20 +23,18 @@ Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定
 
 推論 worker 在 `platforms/neural/runtime/`。Linux 與 macOS 的發行版提供 Python、NumPy 與 ONNX Runtime 執行環境；Windows 產品不內建 Python，改出貨固定版本的 `onnxruntime.dll` 與 MSVC 執行階段（[models/runtime.lock.json](runtime.lock.json)）。兩個 tarball 都不攜帶可攜 Python、wheel、訓練 checkpoint 或訓練環境。啟動方式見 [神經推論](../platforms/neural/README.md)。
 
-## 日文模型組與版本分離（P2-27）
+## 日文模型包（P2-27）
 
-日文模型不以「單一模型檔」出貨，而是以**模型組**為單位，並綁定同一個日文詞典包的 manifest SHA-256。預設安裝組是 `ja-cc-by-sa`：`reranker-extra`（CC BY-SA 4.0，HF `jeffpeng3/0c-ja-reranker-extra` revision `7450e10f…`）透過 `shared_punctuation` 與 `punctuation-public-core`（MIT，HF `jeffpeng3/0c-ja-punct` revision `ff9166ab…`）配對；安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice。`ja-public-core` 是 MIT-only 替代組，保留 `reranker-public-core` 與 `punctuation-public-core`；它的 reranker HF repo 尚未發布，`production_eligible` 為 false。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
+日文不以可選模型組出貨，而是**一個固定模型包**，綁定同一個日文詞典包的 manifest SHA-256。模型包直接包含 `reranker-extra`（CC BY-SA 4.0，HF `jeffpeng3/0c-ja-reranker-extra` revision `7450e10f…`）與 `punctuation-public-core`（MIT，HF `jeffpeng3/0c-ja-punct` revision `ff9166ab…`）。安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice；punctuation 保持 MIT 並附 UniDic／IPADic notice。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。清單在 [pairing.lock.json](pairing.lock.json) 的 `model_package` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
 
-混用規則以 artifact 為單位：CC BY-SA 4.0 artifact 不得安裝進 public-core 組。`cc-by-sa` 組不得擁有自己的 punctuation，也不能把 `reranker-public-core` 放進 experimental 組。
+產品只有這一個模型包，沒有其他模型組或 variant。兩個模型分別來自 `jeffpeng3/0c-ja-reranker-extra`（CC BY-SA 4.0）與 `jeffpeng3/0c-ja-punct`（MIT）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；模型檔由 `0c-model-set fetch` 從 HF 下載、逐檔核對後放進安裝包。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
 
-三個模型分別來自 `jeffpeng3/0c-ja-reranker`、`jeffpeng3/0c-ja-punct`（MIT）與 `jeffpeng3/0c-ja-reranker-extra`（CC BY-SA 4.0）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；模型檔由 `0c-model-set fetch` 從 HF 下載、逐檔核對後放進安裝包。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
+產品側 manifest schema 在 [model-package.schema.json](model-package.schema.json)（JSON Schema 2020-12）。每個模型記錄：
 
-產品側 manifest schema 在 [model-set.schema.json](model-set.schema.json)（JSON Schema 2020-12）。每個模型記錄：
-
-- `artifact_id`、`kind`（`reranker`／`punctuation`）、`variant`、版本與參數數。正式 lock 共三個 artifact：`reranker-public-core`、`punctuation-public-core`、`reranker-extra`。
+- `artifact_id`、`kind`（`reranker`／`punctuation`）、`variant`、版本與參數數。正式 lock 共兩個 artifact：`reranker-extra`（cc-by-sa）與 `punctuation-public-core`（public-core）。
 - 每個檔案格式（`int8`、`fp32`）的相對路徑、大小、SHA-256 與量化方式。
 - `io`：`input_ids`／`attention_mask` 都是 `int64 [batch, seq]`；reranker 輸出 `scores` 為 `float32 [batch]`，punctuation 輸出 `logits` 為 `float32 [batch, seq, 4]`。
-- `license`、`notice`、`attribution` 參考（授權全文與來源帳本）。
+- `license`、`notice`、`attribution` 參考（授權全文與來源帳本）。reranker 的 attribution 含 Wikipedia 與 Stack Exchange 的 experimental 語料；punctuation 的 attribution 含 UniDic 與 IPADic notice。
 - `source`（訓練資料、generator、fingerprint）與 `placeholder`／`quality`／`production_eligible`。
 - `hf`：Hugging Face repo、commit `revision`、授權，以及每個格式的檔名、大小與 SHA-256。
 
@@ -48,7 +46,7 @@ HF 的 revision 與逐檔雜湊用 `pin` 寫進 lock。`pin` 會下載該 repo �
 
 ```sh
 go run ./cmd/0c-model-set pin \
-  --lock models/pairing.lock.json --repo jeffpeng3/0c-ja-reranker \
+  --lock models/pairing.lock.json --repo jeffpeng3/0c-ja-reranker-extra \
   --revision <commit> --cache build/cache/ja-models
 ```
 
@@ -59,38 +57,39 @@ go run ./cmd/0c-model-set check --lock models/pairing.lock.json
 go run ./cmd/0c-model-set check --lock models/pairing.lock.json -release
 ```
 
-`fetch` 從 HF 下載所選模型組，逐檔核對大小與 SHA-256，並把結果放到 lock 的相對路徑；`-offline` 只用 cache，缺檔或雜湊不符都直接失敗：
+`fetch` 從 HF 下載模型包，逐檔核對大小與 SHA-256，並把結果放到 lock 的相對路徑；`-offline` 只用 cache，缺檔或雜湊不符都直接失敗：
 
 ```sh
-go run ./cmd/0c-model-set fetch -set ja-cc-by-sa -format int8 \
+go run ./cmd/0c-model-set fetch -format int8 \
   -out build/ja-models -cache build/cache/ja-models
 ```
 
-### 選擇與安裝
+### 安裝
 
 ```sh
-# 列出模型組（含 placeholder 狀態與 default 標記）
+# 列出模型包（含 placeholder 狀態）
 go run ./cmd/0c-model-set list
 
-# 只驗證預設組，不搬檔案
+# 只驗證，不搬檔案
 go run ./cmd/0c-model-set validate \
   -from /path/to/reference/models -pack build/ja
 
-# 安裝預設組；-to 會寫出 active.json
+# 安裝模型包；-to 會寫出 active.json
 go run ./cmd/0c-model-set install \
   -from /path/to/reference/models -to ~/.local/share/zuin/models \
   -pack build/ja
 ```
 
-`install` 只會放入所選模型組的 artifacts。`ja-cc-by-sa` 會放入 `reranker-extra` 與共用的 `punctuation-public-core`，並移除另一組留在安裝目錄的 reranker；不會留下 CC BY-SA punctuation。省略 `-set` 時用 lock 的 `default_set`；同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
+`install` 只會放入模型包的兩個 artifacts：`reranker-extra` 與 `punctuation-public-core`。同一模型包重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
 
 ### 引擎回報
 
-`0c-server -model-report` 沿用 P2-33 的 JSON 輸出，另外加上 `model_set` 區段：
+`0c-server -model-report` 沿用 P2-33 的 JSON 輸出，另外加上 `model_package` 區段：
 
 ```sh
-0c-server -model-report -model-set ja-cc-by-sa \
-  -model-set-root ~/.local/share/zuin/models -model-set-lock models/pairing.lock.json
+0c-server -model-report \
+  -model-package-root ~/.local/share/zuin/models \
+  -model-package-lock models/pairing.lock.json
 ```
 
-沒有指定 `-model-set` 時會讀 `<model-set-root>/active.json`；兩者都沒有時 `model_set.active` 為 `false`。報告會列出使用中的 set／variant／placeholder、字典包雜湊是否相符、模型檔是否通過大小與 SHA-256 核對；設定或檔案有問題時只在報告裡說明，不影響注音與日文統計轉換。日文模型正式接上推論仍是 P2-30 之後的工作。
+沒有 `active.json` 時 `model_package.active` 為 `false`。報告會列出模型包版本、placeholder、字典包雜湊是否相符、模型檔是否通過大小與 SHA-256 核對；設定或檔案有問題時只在報告裡說明，不影響注音與日文統計轉換。日文模型正式接上推論仍是 P2-30 之後的工作。
