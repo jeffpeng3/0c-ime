@@ -4,6 +4,7 @@
 //
 //	0c-jadic inspect -pack ja-lexicon-public-core.pack [-manifest manifest.json] [-surface 明日]
 //	0c-jadic import  -pack ja-lexicon-public-core.pack -out build/ja-jadic [-connections data/ja/connection.tsv]
+//	0c-jadic convert -data build/ja-jadic kyouha ashita
 //
 // 匯入只寫入指定的輸出目錄，不修改 repo 內 checked-in 的 data/ja。
 package main
@@ -30,6 +31,8 @@ func main() {
 		err = runInspect(os.Args[2:])
 	case "import":
 		err = runImport(os.Args[2:])
+	case "convert":
+		err = runConvert(os.Args[2:])
 	case "-h", "--help", "help":
 		usage()
 		return
@@ -53,6 +56,10 @@ func usage() {
          [-connections <data/ja/connection.tsv>] [-force]
       把 pack 寫成產品可編譯的 lexicon/words.tsv 與 jadic-import.json。
       預設輸出 build/ja-jadic；不寫入 checked-in data/。
+
+  convert -data <執行期目錄> [-top 5] <讀音>...
+      用 core/ja 引擎載入 lexicon/words.tsv 與 connection.tsv，印出候選文節。
+      匯入後的煙霧測試；讀音只接受平假名與長音符。
 `)
 }
 

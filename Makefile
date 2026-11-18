@@ -1,4 +1,4 @@
-.PHONY: help assets upgrade test-upgrade test-release test-source-release test-windows-package test-sim
+.PHONY: help assets ja-import upgrade test-upgrade test-release test-source-release test-windows-package test-sim
 .DEFAULT_GOAL := help
 
 PULL ?= 1
@@ -7,6 +7,11 @@ LANG := zh
 MODELS ?= 1
 MODELS_ONLY ?= 0
 JA_OUT ?= build/ja
+# 日文來源：空白為 checked-in data/ja（140 筆種子）；指定 build/ja-import 則用 0c-jadic 匯入的完整 pack。
+JA_SRC ?=
+# 0c-jadic 匯入的來源 pack 與輸出目錄（pack 檔不進 Git）。
+JA_PACK ?=
+JA_IMPORT ?= build/ja-import
 
 help:
 	@echo 'make assets           下載與這份原始碼相符的字典與模型（RELEASE=vX.Y.Z 指定版本，MODELS=0 只取字典）'
@@ -14,6 +19,8 @@ help:
 	@echo 'make assets LANG=ja   從 data/ja 編譯日文資料包到 build/ja（公開模式）'
 	@echo 'make assets LANG=all  同時取得注音字典與模型，並編譯日文資料包'
 	@echo 'make assets LANG=ja JA_OUT=build/ja  指定日文資料包輸出目錄'
+	@echo 'make ja-import JA_PACK=<ja-lexicon-public-core.pack>  匯入完整公開核心詞典到 build/ja-import'
+	@echo 'make assets LANG=ja JA_SRC=build/ja-import  用匯入的詞典產生 Windows 日文包'
 	@echo 'make upgrade          更新已安裝的 Linux Fcitx5 輸入法（含 git pull）'
 	@echo 'make upgrade PULL=0   使用目前工作目錄，略過 git pull'
 	@echo 'make test-release     驗證套件檢查與隔離安裝／回復流程'
@@ -28,8 +35,14 @@ help:
 	@echo 'go run ./cmd/0c-update status  檢查套件版本'
 
 assets:
-	python3 scripts/fetch_assets.py --lang $(LANG) --ja-out $(JA_OUT) $(if $(RELEASE),--release $(RELEASE),) \
+	python3 scripts/fetch_assets.py --lang $(LANG) --ja-out $(JA_OUT) $(if $(JA_SRC),--ja-source $(JA_SRC),) \
+		$(if $(RELEASE),--release $(RELEASE),) \
 		$(if $(filter 1,$(MODELS_ONLY)),--models-only,$(if $(filter 0,$(MODELS)),--no-models,))
+
+# 把外部 0c-jadic pack 轉成執行期布局。connection.tsv 仍取自 data/ja 的 curated 矩陣。
+ja-import:
+	@test -n "$(JA_PACK)" || { echo '需要 JA_PACK=<ja-lexicon-public-core.pack>；pack 不進 Git' >&2; exit 2; }
+	go run ./cmd/0c-jadic import -pack "$(JA_PACK)" -out "$(JA_IMPORT)" -connections data/ja/connection.tsv -force
 
 upgrade:
 	python3 scripts/upgrade.py $(if $(filter 0,$(PULL)),--no-pull,)

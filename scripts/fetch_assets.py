@@ -11,7 +11,9 @@ to 0.2.2 bundle the models in the source tarball.
 The Japanese pack has no published tarball yet: --lang ja compiles data/ja with
 0c-compile -public and copies its symbols/ directory. 0c-japack then exports the
 lexicon/words.tsv and connection.tsv files that 0c-server actually loads. --lang all
-installs the Chinese assets and builds the Japanese pack in one run.
+installs the Chinese assets and builds the Japanese pack in one run. --ja-source
+compiles an imported runtime directory (for example build/ja-import produced by
+0c-jadic import) instead of the checked-in seed.
 """
 
 import argparse
@@ -130,15 +132,24 @@ def install_models(tarball, models, root):
     return record
 
 
-def build_ja(root, output, go="go"):
+def build_ja(root, output, go="go", source=None):
     """Compile the Japanese data pack from this tree and replace output only after success.
 
     A git checkout carries data/ja sources but no compiled pack. The compiler is deterministic,
     so rebuilding is the way to get the same bytes as a release. 0c-server reads
     lexicon/words.tsv and connection.tsv, not lexicon.bin, so 0c-japack exports that runtime
     layout from the same compiled pack. Symbols and kaomoji live beside the pack because the
-    runtime reads them as TSV files, not from lexicon.bin."""
+    runtime reads them as TSV files, not from lexicon.bin.
+
+    source overrides data/ja with an imported runtime directory. The directory must already
+    contain lexicon/words.tsv and connection.tsv; 0c-compile -ja-data reads it as the source."""
     output = Path(output)
+    imported = source is not None
+    source = Path(source) if imported else root / "data/ja"
+    if not source.is_absolute():
+        source = root / source
+    if imported and (not (source / "lexicon/words.tsv").is_file() or not (source / "connection.tsv").is_file()):
+        raise ValueError(f"Japanese source is missing lexicon/words.tsv or connection.tsv: {source}")
     if not output.is_absolute():
         output = root / output
     if output.is_symlink() or (output.exists() and not output.is_dir()):
@@ -146,8 +157,10 @@ def build_ja(root, output, go="go"):
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".ja-assets-", dir=output.parent) as temp:
         stage = Path(temp) / "ja"
-        subprocess.run([go, "run", "./cmd/0c-compile", "-lang", "ja", "-public", "-out", str(stage)],
-                       cwd=root, check=True)
+        command = [go, "run", "./cmd/0c-compile", "-lang", "ja", "-public", "-out", str(stage)]
+        if source.resolve() != (root / "data/ja").resolve():
+            command += ["-ja-data", os.path.relpath(source, root)]
+        subprocess.run(command, cwd=root, check=True)
         manifest = json.loads((stage / "manifest.json").read_text(encoding="utf-8"))
         if manifest.get("format") != 2 or manifest.get("language") != "ja":
             raise ValueError("0c-compile did not write a format 2 Japanese pack")
@@ -221,6 +234,9 @@ def main():
                         help=" zh: download the Chinese dictionary and models; ja: compile data/ja; all: both")
     parser.add_argument("--ja-out", type=Path, default=Path("build/ja"),
                         help="Japanese pack output directory (default: build/ja)")
+    parser.add_argument("--ja-source", type=Path,
+                        help="compile this imported runtime directory instead of data/ja "
+                             "(for example build/ja-import)")
     parser.add_argument("--no-models", action="store_true", help="install only the Chinese dictionary (MODELS=0)")
     parser.add_argument("--models-only", action="store_true",
                         help="install only the Chinese models; assets/data must already be present (MODELS_ONLY=1)")
@@ -263,8 +279,10 @@ def main():
                 print(f"Installed the dictionary{' and paired models' if with_models else ''} from {record['tag']} into "
                       f"{', '.join(t + '/' for t in targets)}.")
         if args.lang in ("ja", "all"):
-            output = build_ja(root, args.ja_out)
-            print(f"Compiled the Japanese data pack from data/ja into {output.relative_to(root)}/"
+            source = args.ja_source
+            output = build_ja(root, args.ja_out, source=source)
+            label = os.path.relpath((root / source) if source and not source.is_absolute() else (source or root / "data/ja"), root)
+            print(f"Compiled the Japanese data pack from {label} into {output.relative_to(root)}/"
                   if output.is_relative_to(root) else f"Compiled the Japanese data pack into {output}/")
     except (ValueError, OSError, KeyError, subprocess.CalledProcessError,
             urllib.error.URLError, tarfile.TarError) as error:

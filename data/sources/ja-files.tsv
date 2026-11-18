@@ -40,3 +40,5 @@ ja-ajimee	JWTD_v2/v1/evaluation_items.json	日本語Wikipedia入力誤りデー�
 ja-ajimee	utils.py	azooKey 評測程式	CC0-1.0	yes	可自由使用；不進資料包。
 ja-ajimee	test_utils.py	azooKey 評測程式測試	CC0-1.0	yes	可自由使用；不進資料包。
 ja-wiki	jawiki-20261101-pages-articles.xml.bz2	日本語版 Wikipedia 條目文字	CC-BY-SA-4.0	yes	衍生詞頻與 n-gram 維持 CC-BY-SA-4.0；附作者、來源與版本。
+ja-jadic-public-core	ja-lexicon-public-core.pack	UniDic + IPADic + curated 編譯的 0c-jadic v1 pack	BSD-3-Clause AND NAIST-IPAdic AND ICOT-Free-Software AND CC-BY-4.0	yes	1,147,021 筆、870,298 surfaces、57.6 MB；不進 Git。以 0c-jadic import 產生 build/ja-import/lexicon/words.tsv 與 connection.tsv。
+ja-jadic-public-core	manifest.json	pack 的數量、來源與雜湊	同上	yes	pack 配對用；不含連接成本矩陣。pack 與 manifest 的 SHA-256 記在 data/sources/ledger.tsv。

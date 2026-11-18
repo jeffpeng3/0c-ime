@@ -170,6 +170,37 @@ P2-22E 固定了 `internal/jadic` 的讀音與排序契約，完整量測與成�
 - 成本：P2-22F 起採用 P2-22E 的 mapping D，`words.tsv` 的成本是 `pack_i16_cost * 0.001`，保留正負號，不 clamp、不 offset。單位是 0.001／MeCab・Sudachi 成本單位，越小越優先；負成本是原資料的語意，不是錯誤。114 筆負成本（最低 `-8.313`）原樣寫入，例如「研究所」的 `けんきゅうじょ -4.215` 排在 `けんきゅうしょ -3.955` 之前。
 - 與連接成本結合：解碼器對每條路徑累加「每個詞的詞成本 + 相鄰詞性的 `connection.tsv` 成本」，再取最低總成本。詞成本與連接成本共用同一尺度，可以直接相加；mapping D 不改變任何一筆的相對權重，也不引入每詞固定偏移。connection 的中位數是 `0.4`，若用 `+8.313` offset 會是它的 20.8 倍，會系統性偏向短分割。
 
+### 完整公開核心詞典（P2-45B）
+
+repo 內的 `lexicon/words.tsv` 只有 140 行（138 筆）curated 種子。完整的 0c-jadic public-core pack 放在外部，不進 Git；匯入後才是 1,147,021 筆詞條、870,298 個 surface。匯入命令是：
+
+```sh
+go run ./cmd/0c-jadic import \
+  -pack /path/to/ja-lexicon-public-core.pack \
+  -out build/ja-import \
+  -connections data/ja/connection.tsv
+```
+
+本次使用的 pack 位於 `/home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack`；換機器時用同一個 SHA-256 的副本。pack 的 SHA-256 是 `8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest 是 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。匯入使用 importer 預設：成本 scale `0.001`，signed 成本不 clamp、不 offset。`build/ja-import/lexicon/words.tsv` 是 80,582,634 bytes，`connection.tsv` 是 1,667 bytes；兩者都在 `/build` 的忽略範圍，不進 Git。可重跑同一命令重新產生，位元組相同。
+
+要編成 Windows 套件用的完整資料包，再跑：
+
+```sh
+go run ./cmd/0c-compile -lang ja -public -ja-data build/ja-import -out build/ja
+go run ./cmd/0c-japack -pack build/ja -out build/ja
+```
+
+`0c-compile` 會把同 surface、同讀音、同詞性的重複詞條合併，manifest 的 `entries` 是 918,925，surface 仍是 870,298。匯入後可以直接用引擎檢查候選：
+
+```sh
+go run ./cmd/0c-jadic convert -data build/ja-import -romaji -top 5 kyouha ashita
+```
+`make ja-import JA_PACK=...` 與 `make assets LANG=ja JA_SRC=build/ja-import` 是這兩個步驟的包裝。
+
+**連接成本來自種子。** pack 沒有連接成本矩陣，匯入與打包都用 `data/ja/connection.tsv` 的 82 筆 curated 成本。它是為 1～3 的 curated 詞成本設計的；public-core 的詞成本中位數約 10，兩者尺度不同。repo 內沒有 Mozc 或 IPADic 的完整連接矩陣，這不是可替換的既有來源。
+
+**目前不是可出貨的日文轉換品質。** 用這份資料跑 `core/ja` 統計引擎，`kyouha` 的第一名是「教派」，`ashita` 的第一名是「アシタ」；`東京大学` 這類長詞可以正確合併。`0c-eval-ja --data build/ja-import` 的 top1：hard-cases 2.9%、anthy-corpus1 1.0%、ajimee-200 1.0%、modern-500 0.0%。候選與量測細節見本節。原因是 public-core 的 UniDic 詞成本偏向かな與片假名，加上 curated 連接矩陣尺度不合；在補上 IME 用的詞成本或連接矩陣前，`JA_SRC` 只適合驗證與內部打包，不應當成正式日文輸入品質。
+
 ### 資料包內容
 
 ```text

@@ -96,11 +96,12 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - Windows TSF 只有一個 Mixed profile。注音、日文羅馬字與英文在同一個組字區，不再有 ja-JP「靈犀日本語」profile；舊版留下的 ja-JP 會在升級時清掉。
 - `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
 
-目前 repo 的日文資料包是 137 詞條的種子包，不是 Mozc 全量詞典；`make assets LANG=ja` 會編譯這份資料。Windows 套件可選擇內附 `data/ja/`：
+repo 內的日文資料包是 140 行（138 筆詞條）的種子包。完整的 0c-jadic public-core pack（1,147,021 筆、870,298 surfaces）不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。這份完整詞典的統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
 
 ```sh
 make assets LANG=zh                 # 注音字典與模型
-make assets LANG=ja                 # 日文資料包，輸出 build/ja
+make ja-import JA_PACK=<pack>       # 匯入完整 public-core 詞典到 build/ja-import
+make assets LANG=ja JA_SRC=build/ja-import  # 用完整詞典編譯 build/ja
 make assets LANG=all                # 注音與日文一起準備
 make assets MODELS_ONLY=1           # 只換注音模型，需已有 assets/data
 python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
