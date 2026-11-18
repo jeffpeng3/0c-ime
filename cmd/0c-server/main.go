@@ -92,6 +92,7 @@ func serve() string {
 	punctThreads := flag.Int("punct-threads", neural.DefaultThreads(), "補標點 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
 	flag.Parse()
 	lg := log.New(os.Stderr, "0c-server: ", log.LstdFlags)
+	jaLoadWarnf = lg.Printf
 	if *checkData {
 		if _, err := datadir.Open(*data); err != nil {
 			lg.Fatal(err)
