@@ -19,7 +19,7 @@ func TestPlaceholderInt8ResidencyBudgets(t *testing.T) {
 	}
 	groups := map[string][]string{
 		"public-core": {"reranker-public-core", "punctuation-public-core"},
-		"cc-by-sa":    {"reranker-cc-by-sa", "punctuation-cc-by-sa"},
+		"cc-by-sa":    {"reranker-extra", "punctuation-public-core"},
 	}
 	const mib = 1 << 20
 	sizes := map[string]int64{}

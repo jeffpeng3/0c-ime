@@ -29,14 +29,40 @@ func TestValidateSelectsOneSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// 正式 lock 目前尚未 pin：development 驗證通過，release 必須明確失敗。
+	if err := run([]string{"check", "-lock", lockPath}); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"check", "-lock", lockPath, "-release"}); err == nil {
+		t.Fatal("未 pin 的 lock 在 release 模式應失敗")
+	}
+	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
+		"-pack-sha256", set.Dictionary.ManifestSHA256}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestValidateAllowsFixturePlaceholderOnlyWhenExplicit(t *testing.T) {
+	lockPath := filepath.Join("..", "..", "testdata", "models", "placeholder", "pairing.lock.json")
+	lock, err := modelsets.LoadLock(lockPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := lock.Set("ja-public-core")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
+		"-pack-sha256", set.Dictionary.ManifestSHA256}); err == nil {
+		t.Fatal("placeholder 未允許時應失敗")
+	}
 	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
 		"-pack-sha256", set.Dictionary.ManifestSHA256, "-allow-placeholders"}); err != nil {
 		t.Fatal(err)
 	}
-	// 沒有 -allow-placeholders 必須拒絕 placeholder 模型組。
 	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
-		"-pack-sha256", set.Dictionary.ManifestSHA256}); err == nil {
-		t.Fatal("placeholder 未允許時應失敗")
+		"-pack-sha256", set.Dictionary.ManifestSHA256, "-allow-placeholders", "-release"}); err == nil {
+		t.Fatal("placeholder 不得通過 release 驗證")
 	}
 }
 

@@ -201,22 +201,69 @@ class ModelSetTests(unittest.TestCase):
         self.assertEqual(variants["ja-public-core"], "public-core")
         self.assertEqual(variants["ja-cc-by-sa"], "cc-by-sa")
         for name in variants:
-            chosen = package_windows.check_model_set(name, "int8", True)
+            chosen = package_windows.check_model_set(name, "int8", True, preview=True)
             self.assertNotIn(name, ("", None))
             self.assertEqual({a["variant"] for a in chosen["artifacts"]}, {chosen["variant"]})
 
-    def test_placeholder_is_not_the_default(self):
+    def test_official_lock_has_hf_sources_and_no_placeholders(self):
         section = package_windows.load_model_sets()
+        repos = set()
+        ids = []
         for name, chosen in section["sets"].items():
-            if chosen["placeholder"]:
-                with self.assertRaisesRegex(ValueError, "placeholder"):
-                    package_windows.check_model_set(name, "int8", False)
+            self.assertFalse(chosen["placeholder"], name)
+            self.assertTrue(chosen["production_eligible"], name)
+            for artifact in package_windows.model_set_artifacts(section, chosen):
+                if artifact["artifact_id"] not in ids:
+                    ids.append(artifact["artifact_id"])
+                self.assertFalse(artifact["placeholder"], artifact["artifact_id"])
+                hf = artifact["hf"]
+                repos.add(hf["repository"])
+                self.assertEqual(hf["license"], "MIT" if artifact["variant"] == "public-core" else "CC-BY-SA-4.0")
+                self.assertIn("int8", hf["files"])
+                self.assertIn("fp32", hf["files"])
+        self.assertEqual(sorted(ids), ["punctuation-public-core", "reranker-extra", "reranker-public-core"])
+        self.assertEqual(repos, {"jeffpeng3/0c-ja-reranker", "jeffpeng3/0c-ja-punct",
+                                 "jeffpeng3/0c-ja-reranker-extra"})
+        extra = section["sets"]["ja-cc-by-sa"]
+        self.assertEqual(len(extra["artifacts"]), 1)
+        self.assertEqual(extra["artifacts"][0]["artifact_id"], "reranker-extra")
+        self.assertEqual(extra["shared_punctuation"], "punctuation-public-core")
+        self.assertNotIn("punctuation-extra", json.dumps(section))
+
+    def test_extra_set_carries_cc_by_sa_notice_and_keeps_punctuation_mit(self):
+        section = package_windows.load_model_sets()
+        chosen = package_windows.check_model_set("ja-cc-by-sa", "int8", False, preview=True)
+        manifest = package_windows.model_set_manifest("ja-cc-by-sa", chosen, "int8")
+        self.assertEqual(manifest["artifacts"], ["reranker-extra", "punctuation-public-core"])
+        licenses = {item["artifact_id"]: item["id"] for item in manifest["licenses"]}
+        self.assertEqual(licenses["reranker-extra"], "CC-BY-SA-4.0")
+        self.assertEqual(licenses["punctuation-public-core"], "MIT")
+        stage = Path(tempfile.mkdtemp(prefix="model-notices-"))
+        package_windows.write_model_set_notices(stage, "ja-cc-by-sa", chosen)
+        notices = (stage / "MODEL-SET-NOTICES.txt").read_text(encoding="utf-8")
+        self.assertIn("reranker-extra", notices)
+        self.assertIn("CC-BY-SA-4.0", notices)
+        self.assertIn("punctuation-public-core", notices)
+        self.assertIn("MIT", notices)
+        self.assertIn("Attribution-ShareAlike", (stage / "MODEL-SET-CC-BY-SA-4.0.txt").read_text(encoding="utf-8"))
+
+    def test_release_rejects_unpinned_official_lock(self):
+        with self.assertRaisesRegex(ValueError, "尚未 pin|revision"):
+            package_windows.check_model_set("ja-public-core", "int8", False)
+
+    def test_placeholder_cannot_enter_a_release_bundle(self):
+        fixture = Path(__file__).resolve().parents[1] / "testdata/models/placeholder/pairing.lock.json"
+        with self.assertRaisesRegex(ValueError, "placeholder"):
+            package_windows.check_model_set("ja-public-core", "int8", False, path=fixture)
+        # 明確允許且是 preview 時才可出貨測試用 placeholder。
+        chosen = package_windows.check_model_set("ja-public-core", "int8", True, path=fixture, preview=True)
+        self.assertTrue(chosen["placeholder"])
 
     def test_unknown_set_and_bad_format_rejected(self):
         with self.assertRaisesRegex(ValueError, "未知的模型組"):
-            package_windows.check_model_set("ja-english", "int8", True)
+            package_windows.check_model_set("ja-english", "int8", True, preview=True)
         with self.assertRaisesRegex(ValueError, "沒有"):
-            package_windows.check_model_set("ja-public-core", "bf16", True)
+            package_windows.check_model_set("ja-public-core", "bf16", True, preview=True)
 
 
 class ModelPairTests(unittest.TestCase):

@@ -1,7 +1,8 @@
 name: Windows
 
 # Phase 2 功能性 CI（P2-05）：Phase 2 契約套件、Go 測試與 Windows 原生／交叉編譯、
-# Rust TSF 與候選窗編譯、32 位元 DLL、ONNX Runtime 可用性、引擎與 CLI 的 Windows 建置。
+# Rust TSF 與候選窗編譯、32 位元 DLL、引擎與 CLI 的 Windows 建置。
+# P2-27B：CI 不跑 ONNX 推論、不下載模型；推論驗證留在 DGX。lock 只驗 schema 與雜湊欄位。
 # 正式產品的推論只用 ONNX Runtime；llama.cpp／GGUF／zenz 已由 P2-01 從正式路徑移除，
 # 這個 workflow 不建置、不快取、也不下載它們（spike 只留在 scripts/spike/，非產品路徑）。
 # 不覆蓋（由 platforms/windows/test 的腳本與使用者手動驗收補上，見 P2-44）：
@@ -61,14 +62,6 @@ jobs:
           mkdir -p build/windows
           go build -tags onnxruntime -trimpath -ldflags "-X main.buildVersion=ci" \
             -o build/windows/0c-server-native.exe ./cmd/0c-server 2>&1 | tee go-build-cgo.log
-      - name: Test with the onnxruntime tag
-        shell: bash
-        env:
-          CGO_ENABLED: '1'
-          CC: gcc
-        run: |
-          set -o pipefail
-          go test -count=1 -tags onnxruntime ./internal/neural/... 2>&1 | tee go-test-cgo.log
       - name: Verify the native backend is compiled in
         shell: bash
         env:
@@ -77,14 +70,12 @@ jobs:
         run: |
           test -f build/windows/0c-server-native.exe
           go version -m build/windows/0c-server-native.exe | grep -q 'build.*tags=.*onnxruntime' || echo "tags are not recorded in this Go build"
-      - name: Upload CGO logs
+      - name: Upload CGO build log
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-cgo-logs
-          path: |
-            go-build-cgo.log
-            go-test-cgo.log
+          path: go-build-cgo.log
           if-no-files-found: warn
           retention-days: 14
 
@@ -145,6 +136,10 @@ jobs:
         run: |
           mkdir -p build/windows
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -o build/windows/0c-server.exe ./cmd/0c-server
+      - name: Check Rust
+        shell: bash
+        working-directory: platforms/windows
+        run: cargo check --locked
       - name: Build Rust x64
         shell: bash
         working-directory: platforms/windows
@@ -232,48 +227,5 @@ jobs:
           path: |
             build/windows/0c-server.exe
             build/windows/0c-cli.exe
-          if-no-files-found: warn
-          retention-days: 14
-
-  onnx-runtime:
-    # P2-05：正式推論只用 ONNX Runtime。這裡在 Windows 上安裝 platforms/neural/requirements.txt
-    # 鎖定的 numpy／onnxruntime，再跑一次最小推論，確認 wheel 的原生 DLL 在 Windows 載得起來，
-    # 讓 Phase 2 之後需要真模型的測試有可用的 runtime（模型檔本身不進 Git）。
-    runs-on: windows-2022
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
-        with:
-          # 與內附的 CPython 同版（安裝包的 neural/python 是 python314.zip）。
-          python-version: '3.14'
-          cache: pip
-          cache-dependency-path: platforms/neural/requirements.txt
-      - name: Install ONNX Runtime
-        shell: bash
-        run: |
-          set -o pipefail
-          python -m pip install --disable-pip-version-check \
-            --requirement platforms/neural/requirements.txt 2>&1 | tee onnx-pip.log
-          # onnx 只在 CI 用來產生最小模型；產品執行期不依賴它。
-          python -m pip install --disable-pip-version-check onnx 2>&1 | tee -a onnx-pip.log
-      - name: Run an ONNX Runtime inference
-        shell: bash
-        env:
-          # 關掉 onnxruntime 的遙測，與 internal/neural.NoTelemetryEnv 一致。
-          ORT_RUNNING_UNIT_TESTS: '1'
-        run: |
-          set -o pipefail
-          python scripts/ci_onnx_smoke.py 2>&1 | tee onnx-smoke.log
-      - name: Upload ONNX Runtime logs
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: onnx-runtime-logs
-          path: |
-            onnx-pip.log
-            onnx-smoke.log
           if-no-files-found: warn
           retention-days: 14

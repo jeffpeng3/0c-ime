@@ -26,6 +26,10 @@ jobs:
           cache: false
       - name: Check public source paths
         run: python3 scripts/check_public_tree.py
+      - name: Validate the model lock schema and hash fields
+        # P2-27B：只驗 schema 與雜湊欄位，不連網、不下載、不跑推論。development
+        # 模式允許尚未 pin 的 HF revision 並印出警告；release 打包前必須 pin。
+        run: go run ./cmd/0c-model-set check -lock models/pairing.lock.json
       - name: Test Go code
         run: go test ./...
       - name: Vet Go code
@@ -34,5 +38,7 @@ jobs:
         run: make -C platforms/linux-fcitx5 test
       - name: Test upgrades
         run: make test-upgrade
+      - name: Test Windows packaging and model-set rules
+        run: make test-windows-package
       - name: Test release packaging
         run: make test-release

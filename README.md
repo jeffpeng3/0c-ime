@@ -35,7 +35,7 @@
 
 > **English** — 0C (靈犀注音) is a Zhuyin (Bopomofo) input method for Traditional Chinese. An on-device Transformer language model reads what you have just written and picks the right homophones, so you can type a whole sentence without stopping to choose characters. It runs entirely on your computer, and ships shells for Fcitx5, IBus, macOS InputMethodKit and Windows TSF.
 
-> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと、Windows の単一 Mixed プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。日文モデルは未学習の placeholder で、Windows の Phase 2 VM 検証は NOT RUN です。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
+> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと、Windows の単一 Mixed プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。日文モデルはまだ revision 未固定で、Windows の Phase 2 VM 検証は NOT RUN です。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
 
 ## ✨ 特色
 
@@ -83,7 +83,7 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - **主要語言只是偏好**：`zh`／`ja` 影響先驗、切換成本與模型常駐順序，不阻擋其他語言。
 - **逐片段候選**：候選範圍跟著游標所在片段。Windows 在候選窗沒開時用 Home／End／←／→ 換片段，會自動為新片段重開候選。
 - **長詞是一項候選**：詞庫長詞跨過多個輸入片段時合併成一個片段，候選只出現一次。
-- **目前限制**：日文模型組是未訓練 placeholder，日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
+- **目前限制**：日文模型組尚未 pin 正式 revision，日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
 
 操作、按鍵與未接上的日文設定見 [輸入與候選](docs/typing.md)；模型組切換見 [模型與模型組](docs/model-sets.md)。
 
@@ -108,7 +108,7 @@ python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 
 系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64。安裝後直接從中文（台灣）的鍵盤清單選「Mixed」，不需要另裝 ja-JP 語言。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。
 
-**目前限制**：Windows 套件放入的是編譯後的 `data/ja/`，但引擎的日文載入路徑目前讀 `lexicon/words.tsv` 與 `connection.tsv`；在整合接上編譯包之前，不能假設 shipped package 的日文轉換已完成。日文 `ja-public-core` 與 `ja-cc-by-sa` 兩組模型也都還是未訓練 placeholder，尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
+**目前限制**：Windows 套件放入的是編譯後的 `data/ja/`，但引擎的日文載入路徑目前讀 `lexicon/words.tsv` 與 `connection.tsv`；在整合接上編譯包之前，不能假設 shipped package 的日文轉換已完成。日文 `ja-public-core` 與 `ja-cc-by-sa` 模型已改由 Hugging Face 提供；cc-by-sa 是 reranker-only，共用 public-core punctuation。尚未 pin revision，也尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
 
 ### 量測
 
@@ -238,4 +238,4 @@ make test-release
 
 ## 📄 授權
 
-自有程式採 AGPL-3.0-only，另可洽談商業授權；自有圖示與圖片採 CC BY-SA 4.0。公開核心資料與模型用 CC BY 4.0、公共領域或 permissive notice-only；CC BY-SA 資料與模型是另一個 experimental set；UniDic BSD 與 IPADic 的聲明義務、Windows 的 ONNX Runtime／MSVC runtime 邊界見 [授權頁](docs/licensing.md)。逐來源與逐檔說明見 [授權說明](legal/README.md)。
+自有程式採 AGPL-3.0-only，另可洽談商業授權；自有圖示與圖片採 CC BY-SA 4.0。公開核心資料用 CC BY 4.0、公共領域或 permissive notice-only，模型用 MIT；CC BY-SA 資料與模型是另一個 experimental set；UniDic BSD 與 IPADic 的聲明義務、Windows 的 ONNX Runtime／MSVC runtime 邊界見 [授權頁](docs/licensing.md)。逐來源與逐檔說明見 [授權說明](legal/README.md)。
