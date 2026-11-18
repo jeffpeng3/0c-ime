@@ -8,8 +8,9 @@ import (
 	"path/filepath"
 )
 
-// ImportSchema 是匯入回執的格式版本。v3 起 Entries 只算 words.tsv，記号另計。
-const ImportSchema = "0c-jadic-import/3"
+// ImportSchema 是匯入回執的格式版本。v3 起 Entries 只算 words.tsv，記号另計；
+// v4 另計非日文詞面，並在回執帶出丟棄樣本。
+const ImportSchema = "0c-jadic-import/4"
 
 // ImportOptions 控制把 pack 寫進產品資料目錄。
 type ImportOptions struct {
@@ -62,6 +63,8 @@ type ReceiptImport struct {
 	Surfaces            int            `json:"surfaces"`
 	SymbolEntries       int            `json:"symbol_entries"`
 	FilteredSymbols     int            `json:"filtered_symbols"`
+	FilteredNonJapanese int            `json:"filtered_non_japanese"`
+	NonJapaneseSurfaces []string       `json:"non_japanese_surfaces,omitempty"`
 	SymbolNegativeCosts int            `json:"symbol_negative_costs"`
 	NegativeCosts       int            `json:"negative_costs"`
 	UnknownPOS          int            `json:"unknown_pos"`
@@ -211,6 +214,8 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 			Surfaces:            stats.Surfaces,
 			SymbolEntries:       stats.SymbolEntries,
 			FilteredSymbols:     stats.FilteredSymbols,
+			FilteredNonJapanese: stats.FilteredNonJapanese,
+			NonJapaneseSurfaces: stats.NonJapaneseSurfaces,
 			SymbolNegativeCosts: stats.SymbolNegativeCosts,
 			NegativeCosts:       stats.NegativeCosts,
 			UnknownPOS:          stats.UnknownPOS,
