@@ -136,3 +136,9 @@ OC_PLACEHOLDER_MODELS=/path/to/reference/models \
 - `baseline.json`
 - 產生器與 runner：`cmd/0c-eval-single`、`internal/eval/zh_gold.go`、
   `internal/eval/ja_lexicon.go`、`internal/eval/single_baseline.go`
+
+## 模糊輸入（P2-62）
+
+`testdata/fuzzy/fuzzy-input.json` 從上面兩份凍結題庫衍生錯鍵、漏鍵、重複鍵
+與注音近音案例；指標、分母與重現方式見 `testdata/fuzzy/README.md`。模糊
+題庫不改這兩份題庫或 `baseline.json`。

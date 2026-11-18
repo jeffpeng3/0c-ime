@@ -1,0 +1,38 @@
+{
+ "schema": 1,
+ "corpus": "fuzzy-input",
+ "path": "fuzzy-input.json",
+ "sha256": "865f2eb34b9dc7d0ccfc69298851d6eec0e73e3522e2f90c4b292fdceac93644",
+ "count": 919,
+ "seed": 62,
+ "generator": "cmd/0c-eval-fuzzy build",
+ "sources": [
+  {
+   "name": "zhuyin-golden",
+   "path": "zhuyin-golden.json",
+   "sha256": "77989561d5eac04db6aa7f343db6ef34bb99c248f99a37d49485979d6f827400",
+   "count": 92
+  },
+  {
+   "name": "ja-lexicon-ambiguous",
+   "path": "ja-lexicon-ambiguous.json",
+   "sha256": "57cca4ea310cb4e5507595e4de2a00a19c6b1a058249c64d2e822f226e5c1afc",
+   "count": 200
+  }
+ ],
+ "kinds": {
+  "doubled-key": 292,
+  "missing-key": 292,
+  "near-sound": 43,
+  "wrong-key": 292
+ },
+ "languages": {
+  "ja": 600,
+  "zh": 319
+ },
+ "models": {
+  "used": false,
+  "note": "no model is loaded; placeholder int8 ONNX files are never used by this corpus or runner"
+ },
+ "quality": "observational fuzzy-input robustness on synthetic typos; references are the frozen source corpora, not human annotations"
+}
