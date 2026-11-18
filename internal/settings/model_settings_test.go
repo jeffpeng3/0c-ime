@@ -18,8 +18,8 @@ func TestModelSettingsDefaults(t *testing.T) {
 	if s.ModelResidencyMB != ModelResidencyAutoMB || s.AllowPlaceholders {
 		t.Fatalf("預算或 placeholder 預設不對：%+v", s)
 	}
-	if s.ModelSet != ModelSetPublicCore {
-		t.Fatalf("模型組預設應是 public-core：%q", s.ModelSet)
+	if s.ModelSet != ModelSetCCBYSA {
+		t.Fatalf("模型組預設應是 cc-by-sa：%q", s.ModelSet)
 	}
 	if got := s.ModelBudgetMB(false); got != ModelResidencySingleMB {
 		t.Fatalf("單語言預算 %d", got)
@@ -56,7 +56,7 @@ func TestOldSettingsFileMigratesModelFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	b, _ := os.ReadFile(path)
-	for _, key := range []string{`"model_mode": "auto"`, `"primary_language": "ja"`, `"model_residency_mb": 0`, `"allow_placeholders": false`, `"model_set": "public-core"`, `"future": "x"`} {
+	for _, key := range []string{`"model_mode": "auto"`, `"primary_language": "ja"`, `"model_residency_mb": 0`, `"allow_placeholders": false`, `"model_set": "cc-by-sa"`, `"future": "x"`} {
 		if !strings.Contains(string(b), key) {
 			t.Fatalf("存檔應補上或保留 %s：\n%s", key, b)
 		}
@@ -126,7 +126,7 @@ func TestUnusableModelResidencyValueIsKeptUntilSet(t *testing.T) {
 			t.Fatal(err)
 		}
 		s := r.Settings
-		if s.ModelResidencyMB != 0 || s.ModelMode != ModelModeAuto || s.PrimaryLanguage != LanguageZh || s.AllowPlaceholders || s.ModelSet != ModelSetPublicCore {
+		if s.ModelResidencyMB != 0 || s.ModelMode != ModelModeAuto || s.PrimaryLanguage != LanguageZh || s.AllowPlaceholders || s.ModelSet != ModelSetCCBYSA {
 			t.Fatalf("%s：讀不懂的值應只退回該欄位預設：%+v", raw, s)
 		}
 		if len(r.Notes) == 0 {
@@ -174,7 +174,7 @@ func TestModelSettingsAreListedInItems(t *testing.T) {
 			t.Fatalf("%s 的契約不完整：%+v", key, item)
 		}
 	}
-	if labels := found["model-set"].ValueLabels; labels[ModelSetCCBYSA] != "CC BY-SA 實驗（placeholder）" {
-		t.Fatalf("cc-by-sa 要清楚標示 placeholder：%v", labels)
+	if labels := found["model-set"].ValueLabels; labels[ModelSetCCBYSA] != "CC BY-SA 預設（extra reranker）" {
+		t.Fatalf("cc-by-sa 要標示為預設：%v", labels)
 	}
 }

@@ -207,11 +207,16 @@ class ModelSetTests(unittest.TestCase):
 
     def test_official_lock_has_hf_sources_and_no_placeholders(self):
         section = package_windows.load_model_sets()
+        self.assertEqual(section["default_set"], "ja-cc-by-sa")
         repos = set()
         ids = []
         for name, chosen in section["sets"].items():
             self.assertFalse(chosen["placeholder"], name)
-            self.assertTrue(chosen["production_eligible"], name)
+            if name == section["default_set"]:
+                self.assertTrue(chosen["production_eligible"], name)
+            else:
+                # MIT-only 替代組的 reranker repo 尚未發布，不能當 release 候選。
+                self.assertFalse(chosen["production_eligible"], name)
             for artifact in package_windows.model_set_artifacts(section, chosen):
                 if artifact["artifact_id"] not in ids:
                     ids.append(artifact["artifact_id"])
@@ -229,6 +234,25 @@ class ModelSetTests(unittest.TestCase):
         self.assertEqual(extra["artifacts"][0]["artifact_id"], "reranker-extra")
         self.assertEqual(extra["shared_punctuation"], "punctuation-public-core")
         self.assertNotIn("punctuation-extra", json.dumps(section))
+        # 預設組與共用 punctuation 的 revision／逐檔雜湊都要 pinned。
+        self.assertEqual(extra["artifacts"][0]["hf"]["revision"],
+                         "7450e10fe8b673560044c5db08ad3006a06d7a6e")
+        self.assertEqual(extra["artifacts"][0]["hf"]["files"]["int8"]["sha256"],
+                         "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3")
+        punct = package_windows.model_artifact(section, "punctuation-public-core")
+        self.assertEqual(punct["hf"]["revision"], "ff9166abc620b6716ac7de73cfa67335e6b985d2")
+        self.assertEqual(punct["hf"]["files"]["int8"]["sha256"],
+                         "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b")
+
+    def test_default_set_selection(self):
+        section = package_windows.load_model_sets()
+        for set_id in ("", "default"):
+            chosen = package_windows.check_model_set(set_id, "int8", False)
+            self.assertEqual(chosen["variant"], "cc-by-sa")
+            artifacts = [a["artifact_id"] for a in package_windows.model_set_artifacts(section, chosen)]
+            self.assertEqual(artifacts, ["reranker-extra", "punctuation-public-core"])
+        manifest = package_windows.model_set_manifest("default", chosen, "int8")
+        self.assertEqual(manifest["set_id"], "ja-cc-by-sa")
 
     def test_extra_set_carries_cc_by_sa_notice_and_keeps_punctuation_mit(self):
         section = package_windows.load_model_sets()
@@ -247,8 +271,12 @@ class ModelSetTests(unittest.TestCase):
         self.assertIn("MIT", notices)
         self.assertIn("Attribution-ShareAlike", (stage / "MODEL-SET-CC-BY-SA-4.0.txt").read_text(encoding="utf-8"))
 
-    def test_release_rejects_unpinned_official_lock(self):
-        with self.assertRaisesRegex(ValueError, "尚未 pin|revision"):
+    def test_release_pins_default_and_rejects_unpublished_alternative(self):
+        # 預設組（extra reranker + public punctuation）已 pin，release 檢查通過；
+        # key 留空或 "default" 都選 default_set。
+        chosen = package_windows.check_model_set("ja-cc-by-sa", "int8", False)
+        self.assertEqual(chosen["variant"], "cc-by-sa")
+        with self.assertRaisesRegex(ValueError, "尚未 pin|revision|production_eligible"):
             package_windows.check_model_set("ja-public-core", "int8", False)
 
     def test_placeholder_cannot_enter_a_release_bundle(self):

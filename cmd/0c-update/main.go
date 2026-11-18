@@ -108,7 +108,7 @@ func listSettings(w io.Writer, r settings.Report, path string) {
 	fmt.Fprintf(w, "model-mode=%s（模型常駐模式：auto 自動；all 全部載入；primary 只主要語言；none 關閉）\n", modelMode)
 	fmt.Fprintf(w, "primary-language=%s（主要語言：zh 中文；ja 日文；只影響先驗、切換成本與輸出變體，不阻擋其他語言）\n", primary)
 	fmt.Fprintf(w, "model-residency-mb=%s（模型常駐預算：auto 依單／雙語言選 250／400 MB；其他為明確上限）\n", residency)
-	fmt.Fprintf(w, "model-set=%s（日文模型組：public-core 公開核心；cc-by-sa 實驗，目前只有 placeholder；兩組不混用）\n", modelSet)
+	fmt.Fprintf(w, "model-set=%s（日文模型組：cc-by-sa 預設，CC BY-SA extra reranker 加 public 標點；public-core 是 MIT-only 替代組；兩組不混用）\n", modelSet)
 	fmt.Fprintf(w, "allow-placeholders=%s（允許未訓練的 placeholder 模型；預設關閉）\n", onOff(s.AllowPlaceholders))
 	for _, it := range s.Items() {
 		if strings.HasPrefix(it.Key, "style-") {

@@ -63,12 +63,25 @@ type Lock struct {
 	ModelSets *Section `json:"model_sets"`
 }
 
-// Section 是 model_sets 區段。
+// Section 是 model_sets 區段。DefaultSet 指向預設安裝組；Deployment 記錄與模型選擇
+// 一起出貨的推論設定（seq 長度、單側 context token 數與 gating）。
 type Section struct {
 	Schema       string          `json:"schema"`
 	Updated      string          `json:"updated"`
 	MixingPolicy string          `json:"mixing_policy"`
+	DefaultSet   string          `json:"default_set,omitempty"`
+	Deployment   *Deployment     `json:"deployment,omitempty"`
 	Sets         map[string]*Set `json:"sets"`
+}
+
+// Deployment 是預設模型組的推論設定。ContextTokensPerSide 是候選左側與右側各自最多
+// 送入的 token 數；GatingTopK 是只送進模型的統計候選數。
+type Deployment struct {
+	SequenceLength       int    `json:"sequence_length,omitempty"`
+	ContextTokensPerSide int    `json:"context_tokens_per_side,omitempty"`
+	GatingTopK           int    `json:"gating_top_k,omitempty"`
+	Format               string `json:"format,omitempty"`
+	GatingPolicy         string `json:"gating_policy,omitempty"`
 }
 
 // Set 是一個可安裝的模型組，綁定同一字典包。public-core 固定一個 reranker 與一個
@@ -260,6 +273,19 @@ func ParseLock(b []byte) (Lock, error) {
 	if len(lock.ModelSets.Sets) == 0 {
 		return Lock{}, fmt.Errorf("%w: 沒有模型組", ErrSchema)
 	}
+	if deployment := lock.ModelSets.Deployment; deployment != nil {
+		if deployment.SequenceLength <= 0 || deployment.ContextTokensPerSide <= 0 || deployment.GatingTopK <= 0 {
+			return Lock{}, fmt.Errorf("%w: deployment 需要正數的 sequence_length、context_tokens_per_side 與 gating_top_k", ErrSchema)
+		}
+		if deployment.Format != "" && deployment.Format != FormatInt8 && deployment.Format != FormatFP32 {
+			return Lock{}, fmt.Errorf("%w: deployment.format=%q", ErrSchema, deployment.Format)
+		}
+	}
+	if lock.ModelSets.DefaultSet != "" {
+		if _, ok := lock.ModelSets.Sets[lock.ModelSets.DefaultSet]; !ok {
+			return Lock{}, fmt.Errorf("%w: default_set %q 不存在", ErrSchema, lock.ModelSets.DefaultSet)
+		}
+	}
 	seen := map[string]*Artifact{}
 	owner := map[string]string{}
 	for id, set := range lock.ModelSets.Sets {
@@ -336,6 +362,44 @@ func (l Lock) Set(id string) (*Set, error) {
 		return nil, fmt.Errorf("%w: 沒有模型組 %q（可用：%s）", ErrSchema, id, strings.Join(l.SetIDs(), ", "))
 	}
 	return set, nil
+}
+
+// DefaultSetID 回傳 model_sets.default_set。預設安裝組由 lock 明示，不依 map 順序或
+// 硬編碼的模型組名稱猜測。
+func (l Lock) DefaultSetID() (string, error) {
+	if l.ModelSets == nil || l.ModelSets.DefaultSet == "" {
+		return "", fmt.Errorf("%w: 缺少 model_sets.default_set", ErrSchema)
+	}
+	if _, ok := l.ModelSets.Sets[l.ModelSets.DefaultSet]; !ok {
+		return "", fmt.Errorf("%w: default_set %q 不存在", ErrSchema, l.ModelSets.DefaultSet)
+	}
+	return l.ModelSets.DefaultSet, nil
+}
+
+// DefaultSet 取得預設安裝組。
+func (l Lock) DefaultSet() (*Set, error) {
+	id, err := l.DefaultSetID()
+	if err != nil {
+		return nil, err
+	}
+	return l.Set(id)
+}
+
+// ValidateRelease 驗證預設安裝組可以進入正式發行。替代模型組（例如尚未發布的
+// MIT-only public-core reranker）可以保留在 lock 裡，但不阻擋預設組的 release 檢查。
+func (l Lock) ValidateRelease() error {
+	id, err := l.DefaultSetID()
+	if err != nil {
+		return err
+	}
+	set := l.ModelSets.Sets[id]
+	if set == nil {
+		return fmt.Errorf("%w: default_set %q 是空的模型組", ErrSchema, id)
+	}
+	if err := set.ValidateRelease(); err != nil {
+		return fmt.Errorf("%s: %w", id, err)
+	}
+	return nil
 }
 
 // ValidateStructure 只驗證 manifest 本身：variant 分離、模型組完整、授權與張量契約。

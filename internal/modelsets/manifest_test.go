@@ -313,53 +313,172 @@ func TestInstallRefusesPlaceholderWithoutSetting(t *testing.T) {
 	}
 }
 
-func TestRepositoryLockIsOfficialAndNotPlaceholder(t *testing.T) {
+func TestRepositoryLockDefaultSetIsPinned(t *testing.T) {
 	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	seenIDs := map[string]bool{}
-	for _, id := range lock.SetIDs() {
-		set, _ := lock.Set(id)
-		if set.Placeholder {
-			t.Fatalf("%s 仍在正式 lock 標示 placeholder", id)
+	defaultID, err := lock.DefaultSetID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if defaultID != "ja-cc-by-sa" {
+		t.Fatalf("default_set=%q，應為 ja-cc-by-sa", defaultID)
+	}
+	set, err := lock.DefaultSet()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if set.Variant != VariantCCBYSA || len(set.Artifacts) != 1 ||
+		set.Artifacts[0].ArtifactID != "reranker-extra" ||
+		set.SharedPunctuation != "punctuation-public-core" || set.Companion == nil {
+		t.Fatalf("預設模型組配置不符：%+v", set)
+	}
+	if set.Companion.License.ID != "MIT" || set.Artifacts[0].License.ID != "CC-BY-SA-4.0" {
+		t.Fatalf("授權配置不符：extra=%s punctuation=%s", set.Artifacts[0].License.ID, set.Companion.License.ID)
+	}
+	if set.License.Notice != "legal/CC-BY-SA-4.0.txt" || set.Artifacts[0].License.Notice != "legal/CC-BY-SA-4.0.txt" {
+		t.Fatalf("預設組必須帶 CC BY-SA notice：set=%q artifact=%q", set.License.Notice, set.Artifacts[0].License.Notice)
+	}
+	if warnings := set.Unpinned(); len(warnings) != 0 {
+		t.Fatalf("預設組仍有未 pin 的來源：%v", warnings)
+	}
+	if err := lock.ValidateRelease(); err != nil {
+		t.Fatalf("release 模式應接受已 pin 的預設組：%v", err)
+	}
+	deployment := lock.ModelSets.Deployment
+	if deployment == nil || deployment.SequenceLength != 124 || deployment.ContextTokensPerSide != 60 ||
+		deployment.GatingTopK != 3 || deployment.Format != FormatInt8 {
+		t.Fatalf("deployment 不符：%+v", deployment)
+	}
+
+	want := map[string]struct {
+		revision, fp32, fp32SHA, int8, int8SHA string
+		fp32Bytes, int8Bytes                   int64
+	}{
+		"reranker-extra": {
+			revision: "7450e10fe8b673560044c5db08ad3006a06d7a6e",
+			fp32:     "model.onnx", fp32Bytes: 135613420,
+			fp32SHA: "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
+			int8:    "model.int8.onnx", int8Bytes: 34268510,
+			int8SHA: "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3",
+		},
+		"punctuation-public-core": {
+			revision: "ff9166abc620b6716ac7de73cfa67335e6b985d2",
+			fp32:     "model.onnx", fp32Bytes: 135599640,
+			fp32SHA: "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06",
+			int8:    "model.int8.onnx", int8Bytes: 34240656,
+			int8SHA: "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b",
+		},
+	}
+	for _, artifact := range set.AllArtifacts() {
+		expected, ok := want[artifact.ArtifactID]
+		if !ok {
+			t.Fatalf("預設組出現未預期的 artifact %s", artifact.ArtifactID)
 		}
-		all := set.AllArtifacts()
-		for i := range all {
-			artifact := &all[i]
-			if artifact.Placeholder {
-				t.Fatalf("%s 仍在正式 lock 標示 placeholder", artifact.ArtifactID)
+		if artifact.HF == nil || artifact.HF.Revision != expected.revision || !artifact.HF.Pinned() {
+			t.Fatalf("%s 未 pin 到 %s：%+v", artifact.ArtifactID, expected.revision, artifact.HF)
+		}
+		for format, file := range map[string]ArtifactFile{
+			FormatFP32: artifact.Files[FormatFP32],
+			FormatInt8: artifact.Files[FormatInt8],
+		} {
+			remote, ok := artifact.HF.Files[format]
+			if !ok {
+				t.Fatalf("%s 缺少 hf %s", artifact.ArtifactID, format)
 			}
-			if artifact.HF == nil || artifact.HF.Repository == "" || artifact.HF.License == "" {
-				t.Fatalf("%s 缺少 HF 來源", artifact.ArtifactID)
+			name, size, digest := expected.fp32, expected.fp32Bytes, expected.fp32SHA
+			if format == FormatInt8 {
+				name, size, digest = expected.int8, expected.int8Bytes, expected.int8SHA
 			}
-			seenIDs[artifact.ArtifactID] = true
-		}
-		// 目前尚未 pin：development 模式可接受並應列出警告，release 模式必須失敗。
-		if warnings := set.Unpinned(); len(warnings) == 0 {
-			t.Fatalf("%s 應該有未 pin 警告", id)
-		}
-		if err := set.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
-			t.Fatalf("release 模式應拒絕未 pin 的 %s：%v", id, err)
+			if remote.Name != name || remote.Bytes != size || remote.SHA256 != digest {
+				t.Fatalf("%s/%s hf=%+v，應為 %s %d %s", artifact.ArtifactID, format, remote, name, size, digest)
+			}
+			if file.Bytes != size || file.SHA256 != digest {
+				t.Fatalf("%s/%s 本機=%+v，應為 %d %s", artifact.ArtifactID, format, file, size, digest)
+			}
 		}
 	}
-	ids := make([]string, 0, len(seenIDs))
-	for id := range seenIDs {
+
+	// MIT-only public-core 仍是替代組，但 reranker repo 尚未發布，不得是 release 候選。
+	public, err := lock.Set("ja-public-core")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if public.Variant != VariantPublicCore || len(public.Artifacts) != 2 || public.ProductionEligible {
+		t.Fatalf("MIT-only 替代組配置不符：%+v", public)
+	}
+	if public.Artifacts[0].ArtifactID != "reranker-public-core" || public.Artifacts[0].License.ID != "MIT" {
+		t.Fatalf("MIT-only 替代組應保留 public-core reranker：%+v", public.Artifacts[0])
+	}
+	if err := public.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
+		t.Fatalf("未發布的替代組在 release 模式應被拒絕：%v", err)
+	}
+
+	ids := make([]string, 0, 3)
+	for _, id := range lock.SetIDs() {
 		ids = append(ids, id)
 	}
 	sort.Strings(ids)
-	if got, want := strings.Join(ids, ","), "punctuation-public-core,reranker-extra,reranker-public-core"; got != want {
+	if got, want := strings.Join(ids, ","), "ja-cc-by-sa,ja-public-core"; got != want {
+		t.Fatalf("模型組清單 %q，應為 %q", got, want)
+	}
+	seenArtifacts := map[string]bool{}
+	for _, id := range lock.SetIDs() {
+		set, _ := lock.Set(id)
+		for _, artifact := range set.AllArtifacts() {
+			seenArtifacts[artifact.ArtifactID] = true
+		}
+	}
+	artifacts := make([]string, 0, len(seenArtifacts))
+	for id := range seenArtifacts {
+		artifacts = append(artifacts, id)
+	}
+	sort.Strings(artifacts)
+	if got, want := strings.Join(artifacts, ","), "punctuation-public-core,reranker-extra,reranker-public-core"; got != want {
 		t.Fatalf("artifact 清單 %q，應為 %q", got, want)
 	}
-	public, _ := lock.Set("ja-public-core")
-	extra, _ := lock.Set("ja-cc-by-sa")
-	if len(public.Artifacts) != 2 || len(extra.Artifacts) != 1 ||
-		extra.Artifacts[0].ArtifactID != "reranker-extra" ||
-		extra.SharedPunctuation != "punctuation-public-core" || extra.Companion == nil {
-		t.Fatalf("模型組配置不符：public=%d extra=%d shared=%q", len(public.Artifacts), len(extra.Artifacts), extra.SharedPunctuation)
+}
+
+func TestReleaseRejectsRemovedRevision(t *testing.T) {
+	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if extra.Companion.License.ID != "MIT" || extra.Artifacts[0].License.ID != "CC-BY-SA-4.0" {
-		t.Fatalf("授權配置不符：extra=%s punctuation=%s", extra.Artifacts[0].License.ID, extra.Companion.License.ID)
+	set, err := lock.DefaultSet()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := lock.ValidateRelease(); err != nil {
+		t.Fatalf("基準應通過：%v", err)
+	}
+	set.Artifacts[0].HF.Revision = ""
+	if err := lock.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
+		t.Fatalf("移除預設組 revision 後 release 應失敗：%v", err)
+	}
+	set.Artifacts[0].HF.Revision = "7450e10fe8b673560044c5db08ad3006a06d7a6e"
+	set.Companion.HF.Files[FormatInt8] = HFFile{Name: "model.int8.onnx"}
+	if err := lock.ValidateRelease(); err == nil {
+		t.Fatal("移除共用 punctuation 的大小／雜湊後 release 應失敗")
+	}
+}
+
+func TestDefaultSetSelectionRequiresMetadata(t *testing.T) {
+	f := newFixture(t)
+	if _, err := f.lock.DefaultSetID(); !errors.Is(err, ErrSchema) {
+		t.Fatalf("沒有 default_set 應被拒絕：%v", err)
+	}
+	if _, err := f.lock.DefaultSet(); !errors.Is(err, ErrSchema) {
+		t.Fatalf("沒有 default_set 應被拒絕：%v", err)
+	}
+	f.lock.ModelSets.DefaultSet = "missing"
+	if _, err := f.lock.DefaultSetID(); !errors.Is(err, ErrSchema) {
+		t.Fatalf("不存在的 default_set 應被拒絕：%v", err)
+	}
+	f.lock.ModelSets.DefaultSet = "ja-cc-by-sa"
+	set, err := f.lock.DefaultSet()
+	if err != nil || set.ID != "ja-cc-by-sa" {
+		t.Fatalf("default_set 選擇失敗：%+v %v", set, err)
 	}
 }
 

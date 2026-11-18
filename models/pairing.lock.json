@@ -1,8 +1,16 @@
 {
   "dictionary_manifest_sha256": "4e4c4cdf7681b48de2004927745c2adc03f53b0c7b776e9258c39a7f5b0f4075",
   "model_sets": {
-    "mixing_policy": "Artifact-level rule: a CC BY-SA 4.0 artifact must never be installed into the public-core set. ja-public-core contains reranker-public-core and punctuation-public-core, both MIT. ja-cc-by-sa is reranker-only: it installs reranker-extra (CC BY-SA 4.0) together with the shared punctuation-public-core (MIT), and the CC BY-SA 4.0 notice must be carried whenever reranker-extra is installed. punctuation-public-core remains MIT.",
+    "mixing_policy": "Artifact-level rule: a CC BY-SA 4.0 artifact must never be installed into the public-core set. ja-cc-by-sa is the default install set: it installs reranker-extra (CC BY-SA 4.0) together with the shared punctuation-public-core (MIT), and the CC BY-SA 4.0 notice must be carried whenever reranker-extra is installed. ja-public-core remains the MIT-only alternative (reranker-public-core + punctuation-public-core) and is not production eligible until its Hugging Face repository is published and pinned. punctuation-public-core remains MIT in both sets.",
     "schema": "0c.model-sets/1",
+    "default_set": "ja-cc-by-sa",
+    "deployment": {
+      "sequence_length": 124,
+      "context_tokens_per_side": 60,
+      "gating_top_k": 3,
+      "format": "int8",
+      "gating_policy": "Score only the statistics top-3 candidates with the reranker; keep dictionary order on timeout, cancellation or an unavailable model."
+    },
     "sets": {
       "ja-cc-by-sa": {
         "artifacts": [
@@ -17,14 +25,14 @@
             "files": {
               "fp32": {
                 "path": "reranker-extra/model.onnx",
-                "bytes": 0,
-                "sha256": "",
+                "bytes": 135613420,
+                "sha256": "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
                 "quantization": "none (fp32)"
               },
               "int8": {
                 "path": "reranker-extra/model.int8.onnx",
-                "bytes": 0,
-                "sha256": "",
+                "bytes": 34268510,
+                "sha256": "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3",
                 "quantization": "dynamic-quint8"
               }
             },
@@ -64,7 +72,7 @@
             "license": {
               "id": "CC-BY-SA-4.0",
               "scope": "cc-by-sa",
-              "distribution": "experimental only, never inside the public-core install",
+              "distribution": "default install set; carry the CC BY-SA 4.0 notice; never inside the public-core set",
               "notice": "legal/CC-BY-SA-4.0.txt"
             },
             "manifest": "reranker-extra/manifest.json",
@@ -85,18 +93,18 @@
             "version": "cc-by-sa-2026.11.0",
             "hf": {
               "repository": "jeffpeng3/0c-ja-reranker-extra",
-              "revision": "",
+              "revision": "7450e10fe8b673560044c5db08ad3006a06d7a6e",
               "license": "CC-BY-SA-4.0",
               "files": {
                 "fp32": {
                   "name": "model.onnx",
-                  "bytes": 0,
-                  "sha256": ""
+                  "bytes": 135613420,
+                  "sha256": "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9"
                 },
                 "int8": {
                   "name": "model.int8.onnx",
-                  "bytes": 0,
-                  "sha256": ""
+                  "bytes": 34268510,
+                  "sha256": "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3"
                 }
               }
             }
@@ -108,7 +116,7 @@
           "data/sources/corpus/experimental.tsv",
           "data/sources/licenses/ja-wiki.txt"
         ],
-        "description": "Experimental CC BY-SA reranker-only set. It pairs reranker-extra (CC BY-SA 4.0) with the shared punctuation-public-core model (MIT); no CC BY-SA artifact may be installed into the public-core set.",
+        "description": "Default product install set. It pairs reranker-extra (CC BY-SA 4.0) with the shared punctuation-public-core model (MIT); the CC BY-SA 4.0 notice is carried with this set, and no CC BY-SA artifact may be installed into the public-core set.",
         "dictionary": {
           "format": 2,
           "language": "ja",
@@ -121,7 +129,7 @@
         "license": {
           "id": "CC-BY-SA-4.0",
           "scope": "cc-by-sa",
-          "distribution": "experimental only, never inside the public-core install",
+          "distribution": "default install set; carry the CC BY-SA 4.0 notice; never inside the public-core set",
           "notice": "legal/CC-BY-SA-4.0.txt"
         },
         "placeholder": false,
@@ -190,13 +198,13 @@
             "license": {
               "id": "MIT",
               "scope": "public-core",
-              "distribution": "public-core install only; model weights are not distributed in the Git repository",
+              "distribution": "public-core MIT model; weights are not distributed in the Git repository",
               "notice": "legal/MIT.txt"
             },
             "manifest": "reranker-public-core/manifest.json",
             "parameters": 32691713,
             "placeholder": false,
-            "production_eligible": true,
+            "production_eligible": false,
             "quality": "trained",
             "source": {
               "training_data": "public-core Japanese corpus (P2-21A) and lexicon (P2-22)",
@@ -237,14 +245,14 @@
             "files": {
               "fp32": {
                 "path": "punctuation-public-core/model.onnx",
-                "bytes": 0,
-                "sha256": "",
+                "bytes": 135599640,
+                "sha256": "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06",
                 "quantization": "none (fp32)"
               },
               "int8": {
                 "path": "punctuation-public-core/model.int8.onnx",
-                "bytes": 0,
-                "sha256": "",
+                "bytes": 34240656,
+                "sha256": "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b",
                 "quantization": "dynamic-quint8"
               }
             },
@@ -286,7 +294,7 @@
             "license": {
               "id": "MIT",
               "scope": "public-core",
-              "distribution": "public-core install only; model weights are not distributed in the Git repository",
+              "distribution": "public-core MIT model; weights are not distributed in the Git repository",
               "notice": "legal/MIT.txt"
             },
             "manifest": "punctuation-public-core/manifest.json",
@@ -307,18 +315,18 @@
             "version": "public-core-2026.11.0",
             "hf": {
               "repository": "jeffpeng3/0c-ja-punct",
-              "revision": "",
+              "revision": "ff9166abc620b6716ac7de73cfa67335e6b985d2",
               "license": "MIT",
               "files": {
                 "fp32": {
                   "name": "model.onnx",
-                  "bytes": 0,
-                  "sha256": ""
+                  "bytes": 135599640,
+                  "sha256": "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06"
                 },
                 "int8": {
                   "name": "model.int8.onnx",
-                  "bytes": 0,
-                  "sha256": ""
+                  "bytes": 34240656,
+                  "sha256": "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b"
                 }
               }
             }
@@ -328,7 +336,7 @@
           "legal/copyright",
           "data/sources/corpus/public-core.tsv"
         ],
-        "description": "Public-core reranker and punctuation models; the only set eligible for the default product install once trained.",
+        "description": "MIT-only alternative set with reranker-public-core and punctuation-public-core. It remains available for inspection and for the public-core punctuation shared by the default set, but it is not production eligible until jeffpeng3/0c-ja-reranker is published and pinned.",
         "dictionary": {
           "format": 2,
           "language": "ja",
@@ -341,17 +349,17 @@
         "license": {
           "id": "MIT",
           "scope": "public-core",
-          "distribution": "public-core install only; model weights are not distributed in the Git repository",
+          "distribution": "MIT-only alternative; model weights are not distributed in the Git repository",
           "notice": "legal/MIT.txt"
         },
         "placeholder": false,
-        "production_eligible": true,
+        "production_eligible": false,
         "quality": "trained",
         "variant": "public-core",
         "version": "public-core-2026.11.0"
       }
     },
-    "updated": "2026-11-18"
+    "updated": "2026-11-19"
   },
   "models_lock_sha256": "84f5195065b5b4e3124d2af0e09c874b08a0be9eec0db354f61f7e3647adfdb7",
   "packages": {

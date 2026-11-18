@@ -61,7 +61,7 @@ Windows 只有一個 TSF profile「Mixed」（P2-40），設定程式的第一�
 
 - **主要語言**（`primary-language`，`zh`／`ja`）：影響先驗、切換成本、輸出變體與 auto／primary 模式先常駐的模型；不阻擋其他語言。
 - **混合輸入**：`mixed-input` 在 Mixed 固定開啟，畫面顯示「固定開啟」；`english-autocomplete`、`cjk-latin-space` 照舊可調。
-- **模型**：`model-mode`（auto／all／primary／none）、`model-residency-mb`（auto、250、400、512、1024）、`model-set`（`public-core` 公開核心／`cc-by-sa` 實驗）、`allow-placeholders`（預設關閉）。`cc-by-sa` 目前整組是未訓練的 placeholder，名稱與說明都直接標示，預設不載入。
+- **模型**：`model-mode`（auto／all／primary／none）、`model-residency-mb`（auto、250、400、512、1024）、`model-set`（`cc-by-sa` 預設：CC BY-SA extra reranker 加 public 標點；`public-core` 是 MIT-only 替代組）、`allow-placeholders`（預設關閉）。`cc-by-sa` 已 pin HF revision，安裝時帶 CC BY-SA notice；`public-core` 的 reranker HF repo 尚未發布。
 - **輸出變體**（`output-variant`，放在「輸出設定」）：`traditional` 繁中、`simplified` 簡中、`shinjitai` 日文新字體。舊的 `output-simplified` 只留給命令列與外殼選單，設定檔存檔只寫新欄位；「用快捷鍵切換簡體字」只在 `simplified` 時作用。
 - **English profile 設定移除**：`language`、`language-memory`、`language-hotkey`、`start-mode` 不再出現在 Mixed 畫面。設定檔的舊值由 Go 端遷移：`language` 併入 `primary_language`，`output_simplified` 併入 `output_variant`，`language_*`、`english_profile` 與舊鍵在存檔時移除；`start-mode`、`toggle-key`、`mode-memory` 仍有引擎使用，只從 Mixed 畫面收起。
 - **注音專屬但不適用的選項**：`mixed-input`、`space-selects`、`toneless`、`zhuyin-error-hint` 在 Mixed 畫面標示「Mixed 模式不適用」並停用控制項，設定值保留，切到其他平台或關閉混打時照舊。

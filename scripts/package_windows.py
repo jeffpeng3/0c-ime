@@ -320,6 +320,9 @@ def load_model_sets(path=None):
     section = lock.get("model_sets")
     if not section or section.get("schema") != "0c.model-sets/1" or not section.get("sets"):
         raise ValueError(f"模型組清單沒有 model_sets：{path}")
+    default = section.get("default_set")
+    if default and default not in section["sets"]:
+        raise ValueError(f"模型組清單的 default_set {default!r} 不存在：{path}")
     return section
 
 
@@ -349,6 +352,17 @@ def model_set_artifacts(section, chosen):
     return artifacts
 
 
+def resolve_model_set_id(section, set_id):
+    """Resolve an explicit set ID, or the lock's default_set."""
+    if set_id in ("", "default"):
+        set_id = section.get("default_set", "")
+        if not set_id:
+            raise ValueError("模型組清單沒有 model_sets.default_set")
+    if set_id not in section["sets"]:
+        raise ValueError(f"未知的模型組 {set_id!r}；可用：{', '.join(sorted(section['sets']))}")
+    return set_id
+
+
 def check_model_set(set_id, format, allow_placeholders, path=None, preview=False):
     """Validate one pairing-lock model set before staging it.
 
@@ -360,11 +374,14 @@ def check_model_set(set_id, format, allow_placeholders, path=None, preview=False
     Mixing is checked per artifact: a CC BY-SA artifact may never enter the
     public-core set. The cc-by-sa set is reranker-only and pairs reranker-extra
     with the shared public-core punctuation model.
+
+    An empty set_id (or "default") selects model_sets.default_set. The default
+    is ja-cc-by-sa: reranker-extra (CC BY-SA 4.0) plus punctuation-public-core
+    (MIT), with the CC BY-SA notice carried into the bundle.
     """
     section = load_model_sets(path)
+    set_id = resolve_model_set_id(section, set_id)
     sets = section["sets"]
-    if set_id not in sets:
-        raise ValueError(f"未知的模型組 {set_id!r}；可用：{', '.join(sorted(sets))}")
     chosen = sets[set_id]
     if chosen.get("variant") not in ("public-core", "cc-by-sa"):
         raise ValueError(f"模型組 {set_id} 的 variant 不正確：{chosen.get('variant')}")
@@ -457,6 +474,7 @@ def copy_model_pair(source, stage):
 def model_set_manifest(set_id, chosen, format):
     """Stable release.json record; makes placeholder and artifact licenses visible."""
     section = load_model_sets()
+    set_id = resolve_model_set_id(section, set_id)
     artifacts = model_set_artifacts(section, chosen)
     licenses = []
     for artifact in artifacts:
@@ -487,6 +505,7 @@ def write_model_set_notices(stage, set_id, chosen):
     """
     stage = Path(stage)
     section = load_model_sets()
+    set_id = resolve_model_set_id(section, set_id)
     artifacts = model_set_artifacts(section, chosen)
     lines = [f"set_id: {set_id}", f"variant: {chosen['variant']}", ""]
     cc_by_sa = None
@@ -744,7 +763,7 @@ def main():
     parser.add_argument("--statistical-only", action="store_true",
                         help="診斷用純統計套件：不建置 CGO 原生後端、不出貨 ONNX Runtime（不得用於正式發行）")
     parser.add_argument("--cc", default="gcc", help="CGO 使用的 C 編譯器（Windows 上是 mingw 的 gcc）")
-    parser.add_argument("--model-set", help="pairing.lock 的模型組 ID（ja-public-core、ja-cc-by-sa）；不指定則不出貨日文模型組")
+    parser.add_argument("--model-set", help="pairing.lock 的模型組 ID（預設 ja-cc-by-sa；可用 default、ja-public-core）；不指定則不出貨日文模型組")
     parser.add_argument("--model-pair", type=Path,
                         help="hf_models.py pair 產生的注音 select/、punct/ 與 pairing.lock.json；原生產品必要")
     parser.add_argument("--model-source", type=Path,

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -29,16 +30,51 @@ func TestValidateSelectsOneSet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// 正式 lock 目前尚未 pin：development 驗證通過，release 必須明確失敗。
+	if id, err := lock.DefaultSetID(); err != nil || id != "ja-cc-by-sa" {
+		t.Fatalf("default_set=%q %v", id, err)
+	}
+	// 預設組已 pin：development 與 release 都應通過。
 	if err := run([]string{"check", "-lock", lockPath}); err != nil {
 		t.Fatal(err)
 	}
-	if err := run([]string{"check", "-lock", lockPath, "-release"}); err == nil {
-		t.Fatal("未 pin 的 lock 在 release 模式應失敗")
+	if err := run([]string{"check", "-lock", lockPath, "-release"}); err != nil {
+		t.Fatalf("已 pin 的 default_set 應通過 release：%v", err)
 	}
 	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
 		"-pack-sha256", set.Dictionary.ManifestSHA256}); err != nil {
 		t.Fatal(err)
+	}
+	// 省略 -set 時驗證 default_set，且 release 模式同樣通過。
+	if err := run([]string{"validate", "-lock", lockPath, "-release",
+		"-pack-sha256", set.Dictionary.ManifestSHA256}); err != nil {
+		t.Fatalf("validate 省略 -set 應驗 default_set：%v", err)
+	}
+}
+
+func TestReleaseCheckFailsWhenDefaultRevisionRemoved(t *testing.T) {
+	raw, err := os.ReadFile(repoLock(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	revision := "7450e10fe8b673560044c5db08ad3006a06d7a6e"
+	if !bytes.Contains(raw, []byte(revision)) {
+		t.Fatalf("正式 lock 缺少預期 revision %s", revision)
+	}
+	withoutRevision := bytes.Replace(raw, []byte(revision), nil, 1)
+	path := filepath.Join(t.TempDir(), "pairing.lock.json")
+	if err := os.WriteFile(path, withoutRevision, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"check", "-lock", path, "-release"}); err == nil {
+		t.Fatal("移除 default_set 的 revision 後 release 檢查應失敗")
+	}
+
+	withoutDefault := bytes.Replace(raw, []byte(`    "default_set": "ja-cc-by-sa",`+"\n"), nil, 1)
+	if err := os.WriteFile(path, withoutDefault, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"check", "-lock", path, "-release"}); err == nil {
+		t.Fatal("缺少 default_set 時 release 檢查應失敗")
 	}
 }
 

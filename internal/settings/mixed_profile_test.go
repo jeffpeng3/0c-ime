@@ -20,7 +20,7 @@ func TestMixedProfileDefaults(t *testing.T) {
 	if s.ModelMode != ModelModeAuto || s.ModelResidencyMB != ModelResidencyAutoMB {
 		t.Fatalf("模型模式或預算預設不對：%+v", s)
 	}
-	if s.ModelSet != ModelSetPublicCore || s.AllowPlaceholders {
+	if s.ModelSet != ModelSetCCBYSA || s.AllowPlaceholders {
 		t.Fatalf("模型組或 placeholder 預設不對：%+v", s)
 	}
 }
@@ -62,7 +62,7 @@ func TestMixedProfileMigratesAndRemovesEnglishProfileKeys(t *testing.T) {
 			t.Fatalf("English profile 舊鍵應移除 %s：\n%s", key, b)
 		}
 	}
-	for _, key := range []string{`"primary_language": "ja"`, `"output_variant": "simplified"`, `"model_set": "public-core"`, `"future": {`} {
+	for _, key := range []string{`"primary_language": "ja"`, `"output_variant": "simplified"`, `"model_set": "cc-by-sa"`, `"future": {`} {
 		if !strings.Contains(string(b), key) {
 			t.Fatalf("存檔應有 %s：\n%s", key, b)
 		}

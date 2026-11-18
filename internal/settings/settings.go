@@ -57,10 +57,10 @@ const (
 	VariantShinjitai   = "shinjitai"   // 日文新字體
 )
 
-// Mixed profile 的日文模型組（P2-27／P2-42）。混用規則以 artifact 為單位，CC BY-SA artifact 不得進 public-core 組；placeholder 預設不載入。
+// Mixed profile 的日文模型組（P2-27／P2-42）。混用規則以 artifact 為單位，CC BY-SA artifact 不得進 public-core 組；預設是 cc-by-sa（extra reranker + public punctuation），placeholder 預設不載入。
 const (
-	ModelSetPublicCore = "public-core" // 公開核心模型組（預設）
-	ModelSetCCBYSA     = "cc-by-sa"    // CC BY-SA reranker-only 實驗模型組，共用 public-core punctuation
+	ModelSetPublicCore = "public-core" // MIT-only 替代模型組
+	ModelSetCCBYSA     = "cc-by-sa"    // 預設：CC BY-SA reranker-extra，共用 public-core punctuation
 )
 
 // 日文輸入方式（T27）；值與 lang.InputMethod.ID 相同。
@@ -202,7 +202,7 @@ type Settings struct {
 	// AllowPlaceholders 允許載入 placeholder 模型（P2-25P）。預設 false：placeholder 權重未訓練，
 	// 不得當成正式模型；開啟只供 Phase 2 管線與記憶體量測使用。
 	AllowPlaceholders bool `json:"allow_placeholders"`
-	// ModelSet 是 Mixed profile 使用的日文模型組（P2-42）：public-core（預設）或 cc-by-sa。
+	// ModelSet 是 Mixed profile 使用的日文模型組（P2-42）：cc-by-sa（預設，extra reranker）或 public-core（MIT-only 替代）。
 	// cc-by-sa 是 reranker-only，透過 shared_punctuation 共用 public-core punctuation；CC BY-SA artifact 不得安裝進 public-core 組。
 	ModelSet string `json:"model_set"`
 
@@ -350,7 +350,7 @@ func Default() Settings {
 		ToggleKey: defaultToggleKey(runtime.GOOS), ModeMemory: defaultModeMemory(runtime.GOOS), StartMode: StartZhuyin,
 		OutputVariant: VariantTraditional,
 		JaInputMethod: JaInputRomaji, JaLiveConversion: false, JaSymbols: true, JaLearning: true, JaModel: true,
-		ModelMode: ModelModeAuto, PrimaryLanguage: LanguageZh, ModelResidencyMB: ModelResidencyAutoMB, AllowPlaceholders: false, ModelSet: ModelSetPublicCore}
+		ModelMode: ModelModeAuto, PrimaryLanguage: LanguageZh, ModelResidencyMB: ModelResidencyAutoMB, AllowPlaceholders: false, ModelSet: ModelSetCCBYSA}
 	s.Language = s.PrimaryLanguage // 相容投影（P2-42）
 	s.LeftShift = s.TogglesLeft()  // 舊欄位跟著切換鍵：Windows 預設左右 Shift 時是 true（#206）
 	return s
@@ -918,7 +918,7 @@ func (s Settings) valueLabels(key string) map[string]string {
 	case "model-residency-mb":
 		return map[string]string{ModelResidencyAutoValue: "自動（單語言 250／雙語言 400 MB）"}
 	case "model-set":
-		return map[string]string{ModelSetPublicCore: "Public Core 公開核心", ModelSetCCBYSA: "CC BY-SA 實驗（placeholder）"}
+		return map[string]string{ModelSetPublicCore: "Public Core MIT 替代組", ModelSetCCBYSA: "CC BY-SA 預設（extra reranker）"}
 	}
 	return nil
 }
@@ -1148,9 +1148,9 @@ func modelSpecs() []spec {
 				}
 				return strconv.Itoa(s.ModelResidencyMB)
 			}},
-		{"model-set", "日文模型組", "public-core 是公開核心模型組（預設）；cc-by-sa 是 CC BY-SA reranker-only 實驗模型組，共用 public-core punctuation。CC BY-SA artifact 不得進 public-core 組，兩組不會一起計分；placeholder 預設不會載入。", ModelSetPublicCore, []string{ModelSetPublicCore, ModelSetCCBYSA},
+		{"model-set", "日文模型組", "cc-by-sa 是預設：CC BY-SA reranker-extra 加共用 public-core punctuation，安裝時帶 CC BY-SA 4.0 notice；public-core 是 MIT-only 替代組（reranker HF repo 尚未發布）。CC BY-SA artifact 不得進 public-core 組，兩組不會一起計分；placeholder 預設不會載入。", ModelSetCCBYSA, []string{ModelSetPublicCore, ModelSetCCBYSA},
 			func(s Settings) string { return s.effectiveModelSet() }},
-		{"allow-placeholders", "允許 placeholder 模型", "placeholder 模型（含 cc-by-sa 實驗組）的權重未訓練，只能用來驗證管線與量測記憶體；預設關閉，關閉時不載入 placeholder 模型，保留統計轉換。開啟前請確認模型組狀態標示為 placeholder。", "off", []string{"on", "off"},
+		{"allow-placeholders", "允許 placeholder 模型", "placeholder 模型的權重未訓練，只能用來驗證管線與量測記憶體；預設關閉，關閉時不載入 placeholder 模型，保留統計轉換。開啟前請確認模型組狀態標示為 placeholder。", "off", []string{"on", "off"},
 			func(s Settings) string { return onOff(s.AllowPlaceholders) }},
 	}
 }
@@ -1196,12 +1196,12 @@ func (s Settings) effectiveOutputVariant() string {
 	return VariantTraditional
 }
 
-// effectiveModelSet 把空值或讀不懂的模型組收斂成公開核心；設定檔只會寫這兩個值之一。
+// effectiveModelSet 把空值或讀不懂的模型組收斂成 cc-by-sa 預設；設定檔只會寫這兩個值之一。
 func (s Settings) effectiveModelSet() string {
-	if s.ModelSet == ModelSetCCBYSA {
-		return ModelSetCCBYSA
+	if s.ModelSet == ModelSetPublicCore {
+		return ModelSetPublicCore
 	}
-	return ModelSetPublicCore
+	return ModelSetCCBYSA
 }
 
 // effectivePrimaryLanguage 把空值或讀不懂的主要語言收斂成注音，與舊設定檔一致。

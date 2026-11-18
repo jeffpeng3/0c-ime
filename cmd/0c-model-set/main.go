@@ -71,7 +71,7 @@ func usage() {
   -lock PATH          模型組清單（預設 models/pairing.lock.json）
 
 validate／install：
-  -set ID             模型組 ID
+  -set ID             模型組 ID；省略時使用 lock 的 model_sets.default_set（validate 可用 all 驗證全部）
   -from DIR           模型來源根目錄（validate 指定時核對檔案；install 必填）
   -pack PATH          已安裝字典包目錄或 manifest.json
   -pack-sha256 SHA    直接指定字典包 manifest 的 SHA-256（取代 -pack）
@@ -124,9 +124,11 @@ func list(args []string) error {
 			Version     string   `json:"version"`
 			Placeholder bool     `json:"placeholder"`
 			Quality     string   `json:"quality"`
+			Default     bool     `json:"default"`
 			Artifacts   []string `json:"artifacts"`
 		}
 		rows := []row{}
+		defaultID := lock.ModelSets.DefaultSet
 		for _, id := range lock.SetIDs() {
 			set, _ := lock.Set(id)
 			ids := make([]string, 0, len(set.Artifacts))
@@ -135,7 +137,7 @@ func list(args []string) error {
 			}
 			sort.Strings(ids)
 			rows = append(rows, row{ID: id, Variant: set.Variant, Version: set.Version,
-				Placeholder: set.Placeholder, Quality: set.Quality, Artifacts: ids})
+				Placeholder: set.Placeholder, Quality: set.Quality, Default: id == defaultID, Artifacts: ids})
 		}
 		return writeJSON(rows)
 	}
@@ -146,7 +148,11 @@ func list(args []string) error {
 		for _, artifact := range set.Artifacts {
 			ids = append(ids, artifact.ArtifactID)
 		}
-		fmt.Printf("%-18s %-12s %-18s %-12v %s\n", id, set.Variant, set.Version, set.Placeholder, strings.Join(ids, ", "))
+		marker := ""
+		if id == lock.ModelSets.DefaultSet {
+			marker = " (default)"
+		}
+		fmt.Printf("%-18s %-12s %-18s %-12v %s%s\n", id, set.Variant, set.Version, set.Placeholder, strings.Join(ids, ", "), marker)
 	}
 	return nil
 }
@@ -155,18 +161,21 @@ func show(args []string) error {
 	fs := flag.NewFlagSet("show", flag.ContinueOnError)
 	var lockPath string
 	commonFlags(fs, &lockPath)
-	setID := fs.String("set", "", "模型組 ID")
+	setID := fs.String("set", "", "模型組 ID；空值使用 default_set")
 	if err := fs.Parse(args); err != nil {
 		return err
-	}
-	if *setID == "" {
-		return errors.New("需要 -set")
 	}
 	lock, err := modelsets.LoadLock(lockPath)
 	if err != nil {
 		return err
 	}
-	set, err := lock.Set(*setID)
+	id := *setID
+	if id == "" {
+		if id, err = lock.DefaultSetID(); err != nil {
+			return err
+		}
+	}
+	set, err := lock.Set(id)
 	if err != nil {
 		return err
 	}
@@ -177,7 +186,7 @@ func validate(args []string) error {
 	fs := flag.NewFlagSet("validate", flag.ContinueOnError)
 	var lockPath string
 	commonFlags(fs, &lockPath)
-	setID := fs.String("set", "", "模型組 ID；空值驗證全部")
+	setID := fs.String("set", "", "模型組 ID；空值驗證 default_set，all 驗證全部")
 	from := fs.String("from", "", "模型來源根目錄（指定時一併核對檔案）")
 	pack := fs.String("pack", "", "已安裝字典包目錄或 manifest.json")
 	packSHA := fs.String("pack-sha256", "", "直接指定字典包 manifest SHA-256")
@@ -196,7 +205,16 @@ func validate(args []string) error {
 		return err
 	}
 	ids := lock.SetIDs()
-	if *setID != "" {
+	switch *setID {
+	case "":
+		defaultID, err := lock.DefaultSetID()
+		if err != nil {
+			return err
+		}
+		ids = []string{defaultID}
+	case "all":
+		// 保持所有模型組的清單，供 development 檢查替代組。
+	default:
 		ids = []string{*setID}
 	}
 	for _, id := range ids {
@@ -239,18 +257,24 @@ func install(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *setID == "" || *from == "" || *to == "" {
-		return errors.New("install 需要 -set、-from 與 -to")
+	if *from == "" || *to == "" {
+		return errors.New("install 需要 -from 與 -to")
 	}
 	lock, err := modelsets.LoadLock(lockPath)
 	if err != nil {
 		return err
 	}
+	setIDValue := *setID
+	if setIDValue == "" {
+		if setIDValue, err = lock.DefaultSetID(); err != nil {
+			return err
+		}
+	}
 	sha, packID, err := dictionary(*pack, *packSHA)
 	if err != nil {
 		return err
 	}
-	selection, err := modelsets.Install(lock, *setID, modelsets.InstallOptions{
+	selection, err := modelsets.Install(lock, setIDValue, modelsets.InstallOptions{
 		SourceRoot: *from, DestRoot: *to, Format: *format, AllowPlaceholders: *allow, Release: *release,
 		InstalledDictionarySHA256: sha, InstalledDictionaryPackID: packID, Force: *force,
 	})
@@ -308,19 +332,25 @@ func fetch(args []string) error {
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *setID == "" || *out == "" {
-		return errors.New("fetch 需要 -set 與 -out")
+	if *out == "" {
+		return errors.New("fetch 需要 -out")
 	}
 	lock, err := modelsets.LoadLock(lockPath)
 	if err != nil {
 		return err
 	}
+	setIDValue := *setID
+	if setIDValue == "" {
+		if setIDValue, err = lock.DefaultSetID(); err != nil {
+			return err
+		}
+	}
 	fetcher := &modelsets.Fetcher{BaseURL: *base, CacheDir: *cache, Offline: *offline}
-	files, err := fetcher.FetchSet(context.Background(), lock, *setID, *format, *out)
+	files, err := fetcher.FetchSet(context.Background(), lock, setIDValue, *format, *out)
 	if err != nil {
 		return err
 	}
-	return writeJSON(map[string]any{"set_id": *setID, "format": *format, "files": files})
+	return writeJSON(map[string]any{"set_id": setIDValue, "format": *format, "files": files})
 }
 
 func check(args []string) error {
@@ -362,19 +392,23 @@ func check(args []string) error {
 			return err
 		}
 		if *release {
-			if err := set.ValidateRelease(); err != nil {
-				return fmt.Errorf("%s: %w", id, err)
-			}
-		} else {
-			if err := set.ValidateStructure(); err != nil {
-				return fmt.Errorf("%s: %w", id, err)
-			}
-			for _, warning := range set.Unpinned() {
-				addWarning(warning)
-			}
-			if set.Placeholder {
-				addWarning(id + ": placeholder 模型組不得進入正式發行")
-			}
+			// Release 只驗 default_set；替代組（例如尚未發布的 MIT-only reranker）
+			// 留在 lock 供開發與檢查，不阻擋預設組的出貨驗證。
+			continue
+		}
+		if err := set.ValidateStructure(); err != nil {
+			return fmt.Errorf("%s: %w", id, err)
+		}
+		for _, warning := range set.Unpinned() {
+			addWarning(warning)
+		}
+		if set.Placeholder {
+			addWarning(id + ": placeholder 模型組不得進入正式發行")
+		}
+	}
+	if *release {
+		if err := lock.ValidateRelease(); err != nil {
+			return err
 		}
 	}
 	for _, warning := range warnings {

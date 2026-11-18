@@ -25,7 +25,7 @@ Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定
 
 ## 日文模型組與版本分離（P2-27）
 
-日文模型不以「單一模型檔」出貨，而是以**模型組**為單位，並綁定同一個日文詞典包的 manifest SHA-256。`ja-public-core` 包含 `reranker-public-core` 與 `punctuation-public-core`，兩個 artifact 都是 MIT，資料依公開核心的 CC BY 4.0／公共領域／permissive notice-only 三類授權。`ja-cc-by-sa` 是 reranker-only 實驗組，只包含 `reranker-extra`（CC BY-SA 4.0），透過 `shared_punctuation` 與 `ja-public-core` 共用 `punctuation-public-core`（MIT）；安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
+日文模型不以「單一模型檔」出貨，而是以**模型組**為單位，並綁定同一個日文詞典包的 manifest SHA-256。預設安裝組是 `ja-cc-by-sa`：`reranker-extra`（CC BY-SA 4.0，HF `jeffpeng3/0c-ja-reranker-extra` revision `7450e10f…`）透過 `shared_punctuation` 與 `punctuation-public-core`（MIT，HF `jeffpeng3/0c-ja-punct` revision `ff9166ab…`）配對；安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice。`ja-public-core` 是 MIT-only 替代組，保留 `reranker-public-core` 與 `punctuation-public-core`；它的 reranker HF repo 尚未發布，`production_eligible` 為 false。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
 
 混用規則以 artifact 為單位：CC BY-SA 4.0 artifact 不得安裝進 public-core 組。`cc-by-sa` 組不得擁有自己的 punctuation，也不能把 `reranker-public-core` 放進 experimental 組。
 
@@ -62,34 +62,34 @@ go run ./cmd/0c-model-set check --lock models/pairing.lock.json -release
 `fetch` 從 HF 下載所選模型組，逐檔核對大小與 SHA-256，並把結果放到 lock 的相對路徑；`-offline` 只用 cache，缺檔或雜湊不符都直接失敗：
 
 ```sh
-go run ./cmd/0c-model-set fetch -set ja-public-core -format int8 \
+go run ./cmd/0c-model-set fetch -set ja-cc-by-sa -format int8 \
   -out build/ja-models -cache build/cache/ja-models
 ```
 
 ### 選擇與安裝
 
 ```sh
-# 列出模型組（含 placeholder 狀態）
+# 列出模型組（含 placeholder 狀態與 default 標記）
 go run ./cmd/0c-model-set list
 
-# 只驗證，不搬檔案
-go run ./cmd/0c-model-set validate -set ja-public-core \
-  -from /path/to/reference/models -pack build/ja -allow-placeholders
+# 只驗證預設組，不搬檔案
+go run ./cmd/0c-model-set validate \
+  -from /path/to/reference/models -pack build/ja
 
-# 安裝所選的一組；-to 會寫出 active.json
-go run ./cmd/0c-model-set install -set ja-public-core \
+# 安裝預設組；-to 會寫出 active.json
+go run ./cmd/0c-model-set install \
   -from /path/to/reference/models -to ~/.local/share/zuin/models \
-  -pack build/ja -allow-placeholders
+  -pack build/ja
 ```
 
-`install` 只會放入所選模型組的 artifacts。`ja-cc-by-sa` 會放入 `reranker-extra` 與共用的 `punctuation-public-core`，並移除另一組留在安裝目錄的 reranker；不會留下 CC BY-SA punctuation。同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
+`install` 只會放入所選模型組的 artifacts。`ja-cc-by-sa` 會放入 `reranker-extra` 與共用的 `punctuation-public-core`，並移除另一組留在安裝目錄的 reranker；不會留下 CC BY-SA punctuation。省略 `-set` 時用 lock 的 `default_set`；同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
 
 ### 引擎回報
 
 `0c-server -model-report` 沿用 P2-33 的 JSON 輸出，另外加上 `model_set` 區段：
 
 ```sh
-0c-server -model-report -model-set ja-public-core \
+0c-server -model-report -model-set ja-cc-by-sa \
   -model-set-root ~/.local/share/zuin/models -model-set-lock models/pairing.lock.json
 ```
 
