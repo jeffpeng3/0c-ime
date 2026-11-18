@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 )
 
-// ImportSchema 是匯入回執的格式版本。
-const ImportSchema = "0c-jadic-import/2"
+// ImportSchema 是匯入回執的格式版本。v3 起 Entries 只算 words.tsv，記号另計。
+const ImportSchema = "0c-jadic-import/3"
 
 // ImportOptions 控制把 pack 寫進產品資料目錄。
 type ImportOptions struct {
@@ -55,23 +55,27 @@ type ReceiptManifest struct {
 
 // ReceiptImport 是匯入參數與結果。
 type ReceiptImport struct {
-	Origin          string         `json:"origin"`
-	CostScale       float64        `json:"cost_scale"`
-	CostRule        string         `json:"cost_rule"`
-	Entries         int            `json:"entries"`
-	Surfaces        int            `json:"surfaces"`
-	NegativeCosts   int            `json:"negative_costs"`
-	UnknownPOS      int            `json:"unknown_pos"`
-	UnknownConj     int            `json:"unknown_conj"`
-	MaxReadingUnits int            `json:"max_reading_units"`
-	POSCounts       map[string]int `json:"pos_counts"`
-	Files           []string       `json:"files"`
-	Needs           []string       `json:"needs,omitempty"`
+	Origin              string         `json:"origin"`
+	CostScale           float64        `json:"cost_scale"`
+	CostRule            string         `json:"cost_rule"`
+	Entries             int            `json:"entries"`
+	Surfaces            int            `json:"surfaces"`
+	SymbolEntries       int            `json:"symbol_entries"`
+	FilteredSymbols     int            `json:"filtered_symbols"`
+	SymbolNegativeCosts int            `json:"symbol_negative_costs"`
+	NegativeCosts       int            `json:"negative_costs"`
+	UnknownPOS          int            `json:"unknown_pos"`
+	UnknownConj         int            `json:"unknown_conj"`
+	MaxReadingUnits     int            `json:"max_reading_units"`
+	POSCounts           map[string]int `json:"pos_counts"`
+	Files               []string       `json:"files"`
+	Needs               []string       `json:"needs,omitempty"`
 }
 
 // ImportResult 是匯入後的路徑與統計。
 type ImportResult struct {
 	WordsPath   string
+	SymbolsPath string
 	ReceiptPath string
 	Stats       ConvertStats
 	Receipt     ImportReceipt
@@ -94,8 +98,9 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 		opt.MaxReadingUnits = 64
 	}
 	wordsPath := filepath.Join(opt.OutDir, "lexicon", "words.tsv")
+	symbolsPath := filepath.Join(opt.OutDir, "symbols", "jadic.tsv")
 	receiptPath := filepath.Join(opt.OutDir, "jadic-import.json")
-	checked := []string{wordsPath, receiptPath}
+	checked := []string{wordsPath, symbolsPath, receiptPath}
 	if opt.ConnectionsPath != "" {
 		checked = append(checked, filepath.Join(opt.OutDir, "connection.tsv"))
 	}
@@ -106,40 +111,61 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 			}
 		}
 	}
-	if err := os.MkdirAll(filepath.Join(opt.OutDir, "lexicon"), 0o755); err != nil {
-		return res, err
+	for _, dir := range []string{filepath.Join(opt.OutDir, "lexicon"), filepath.Join(opt.OutDir, "symbols")} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return res, err
+		}
 	}
 
-	tmp := wordsPath + ".tmp"
-	f, err := os.Create(tmp)
+	wordsTmp := wordsPath + ".tmp"
+	f, err := os.Create(wordsTmp)
 	if err != nil {
+		return res, err
+	}
+	symbolsTmp := symbolsPath + ".tmp"
+	sf, err := os.Create(symbolsTmp)
+	if err != nil {
+		f.Close()
+		os.Remove(wordsTmp)
+		return res, err
+	}
+	fail := func(err error) (ImportResult, error) {
+		f.Close()
+		sf.Close()
+		os.Remove(wordsTmp)
+		os.Remove(symbolsTmp)
 		return res, err
 	}
 	stats, err := Convert(f, p, ConvertOptions{
 		Origin:          opt.Origin,
 		CostScale:       opt.CostScale,
 		MaxReadingUnits: opt.MaxReadingUnits,
+		Symbols:         sf,
 	})
 	if err != nil {
-		f.Close()
-		os.Remove(tmp)
+		return fail(err)
+	}
+	for _, out := range []*os.File{f, sf} {
+		if err := out.Sync(); err != nil {
+			return fail(err)
+		}
+		if err := out.Close(); err != nil {
+			os.Remove(wordsTmp)
+			os.Remove(symbolsTmp)
+			return res, err
+		}
+	}
+	if err := os.Rename(wordsTmp, wordsPath); err != nil {
+		os.Remove(wordsTmp)
+		os.Remove(symbolsTmp)
 		return res, err
 	}
-	if err := f.Sync(); err != nil {
-		f.Close()
-		os.Remove(tmp)
-		return res, err
-	}
-	if err := f.Close(); err != nil {
-		os.Remove(tmp)
-		return res, err
-	}
-	if err := os.Rename(tmp, wordsPath); err != nil {
-		os.Remove(tmp)
+	if err := os.Rename(symbolsTmp, symbolsPath); err != nil {
+		os.Remove(symbolsTmp)
 		return res, err
 	}
 
-	files := []string{"lexicon/words.tsv", "jadic-import.json"}
+	files := []string{"lexicon/words.tsv", "symbols/jadic.tsv", "jadic-import.json"}
 	needs := []string{"connection.tsv：pack 不含連接成本矩陣"}
 	if opt.ConnectionsPath != "" {
 		if err := copyFile(opt.ConnectionsPath, filepath.Join(opt.OutDir, "connection.tsv")); err != nil {
@@ -178,24 +204,28 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 			AllowedSources: append([]string(nil), m.Allowed...),
 		},
 		Import: ReceiptImport{
-			Origin:          origin,
-			CostScale:       scale,
-			CostRule:        CostRule,
-			Entries:         stats.Entries,
-			Surfaces:        stats.Surfaces,
-			NegativeCosts:   stats.NegativeCosts,
-			UnknownPOS:      stats.UnknownPOS,
-			UnknownConj:     stats.UnknownConj,
-			MaxReadingUnits: stats.MaxReadingUnits,
-			POSCounts:       stats.POSCounts,
-			Files:           files,
-			Needs:           needs,
+			Origin:              origin,
+			CostScale:           scale,
+			CostRule:            CostRule,
+			Entries:             stats.Entries,
+			Surfaces:            stats.Surfaces,
+			SymbolEntries:       stats.SymbolEntries,
+			FilteredSymbols:     stats.FilteredSymbols,
+			SymbolNegativeCosts: stats.SymbolNegativeCosts,
+			NegativeCosts:       stats.NegativeCosts,
+			UnknownPOS:          stats.UnknownPOS,
+			UnknownConj:         stats.UnknownConj,
+			MaxReadingUnits:     stats.MaxReadingUnits,
+			POSCounts:           stats.POSCounts,
+			Files:               files,
+			Needs:               needs,
 		},
 	}
 	if err := writeJSON(receiptPath, res.Receipt); err != nil {
 		return res, err
 	}
 	res.WordsPath = wordsPath
+	res.SymbolsPath = symbolsPath
 	res.ReceiptPath = receiptPath
 	return res, nil
 }

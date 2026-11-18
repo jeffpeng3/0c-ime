@@ -15,9 +15,20 @@ import (
 // ja-lexicon-public-core.pack（manifest.json 放在旁邊）才會執行。
 const referencePackEnv = "OC_JADIC_REFERENCE_PACK"
 
-// referenceWordsSHA256 是參考 pack 以 mapping D 匯入兩次都必須相同的 words.tsv 雜湊。
-// 它同時固定 signed 成本、同 surface 排序與 bytes 輸出格式。
-const referenceWordsSHA256 = "5b6718fdf558d3883a1b807f63b1dce17485c86276ab54dda98bfbe99ef99f5f"
+// referenceWordsSHA256 是參考 pack 在 P2-45E 記号過濾後，以 mapping D 匯入兩次都
+// 必須相同的 words.tsv 雜湊。它同時固定 signed 成本、同 surface 排序與 bytes 輸出格式。
+const referenceWordsSHA256 = "b0ff5cbdeaab714b3ce780f7f0ba57f89269b452b3eb84fad9759a89fc4d3557"
+
+// P2-45E 之後，words.tsv 不再包含 POS 為記号的 334 筆；其中 1 筆負成本記号丟棄，
+// 333 筆寫進 symbols/jadic.tsv。只有記号的 surface 也從 words.tsv 消失。
+const (
+	referenceWordEntries   = 1146687
+	referenceWordSurfaces  = 870064
+	referenceSymbolEntries = 333
+	referenceFilteredSyms  = 334
+	referenceSymbolNeg     = 1
+	referenceWordNegatives = 113
+)
 
 func TestReferencePack(t *testing.T) {
 	path := os.Getenv(referencePackEnv)
@@ -104,11 +115,38 @@ func TestReferencePackImportStable(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if res.Stats.Entries != 1147021 || res.Stats.Surfaces != 870298 {
+		if res.Stats.Entries != referenceWordEntries || res.Stats.Surfaces != referenceWordSurfaces {
 			t.Fatalf("run %d counts = %d / %d", run, res.Stats.Entries, res.Stats.Surfaces)
 		}
-		if res.Stats.NegativeCosts != 114 {
-			t.Fatalf("run %d 負成本 = %d，want 114", run, res.Stats.NegativeCosts)
+		if res.Stats.FilteredSymbols != referenceFilteredSyms ||
+			res.Stats.SymbolEntries != referenceSymbolEntries ||
+			res.Stats.SymbolNegativeCosts != referenceSymbolNeg {
+			t.Fatalf("run %d symbol stats = %+v", run, res.Stats)
+		}
+		if res.Stats.NegativeCosts != referenceWordNegatives {
+			t.Fatalf("run %d 負成本 = %d，want %d", run, res.Stats.NegativeCosts, referenceWordNegatives)
+		}
+
+		symbols, err := os.ReadFile(res.SymbolsPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		symbolLines := 0
+		for _, line := range strings.Split(string(symbols), "\n") {
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			symbolLines++
+			f := strings.Split(line, "\t")
+			if len(f) != 4 || f[3] != SymbolCategory {
+				t.Fatalf("symbols 欄位不符：%q", line)
+			}
+		}
+		if symbolLines != referenceSymbolEntries {
+			t.Fatalf("run %d symbols 行數 = %d，want %d", run, symbolLines, referenceSymbolEntries)
+		}
+		if strings.Contains(string(symbols), "𝕏") {
+			t.Fatalf("run %d 負成本記号 𝕏 不應輸出", run)
 		}
 
 		data, err := os.ReadFile(res.WordsPath)
@@ -139,8 +177,8 @@ func TestReferencePackImportStable(t *testing.T) {
 				institute = append(institute, line)
 			}
 		}
-		if negatives != 114 {
-			t.Fatalf("run %d words.tsv 負成本列 = %d，want 114", run, negatives)
+		if negatives != referenceWordNegatives {
+			t.Fatalf("run %d words.tsv 負成本列 = %d，want %d", run, negatives, referenceWordNegatives)
 		}
 		if len(institute) != 2 || !strings.HasPrefix(institute[0], "研究所\tけ ん き ゅ う じ ょ\t-4.215\t") {
 			t.Fatalf("研究所 順序 = %#v", institute)
