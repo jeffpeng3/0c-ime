@@ -140,6 +140,9 @@ type ModelSpec struct {
 	// ORTLibrary overrides the ONNX Runtime shared library used by the native
 	// backend. Empty uses the platform default (onnxruntime.so/.dll).
 	ORTLibrary string
+	// Tokenizer is the SentencePiece model for a Japanese punctuation package.
+	// Empty searches the package and the manifest's tokenizer dataset.
+	Tokenizer string
 }
 
 // Prepared 是同步核對過的套件 metadata。Bytes 只計算 manifest 列出的模型與字表檔案。
@@ -373,24 +376,17 @@ func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded
 			Placeholder: prepared.Placeholder, Quality: prepared.Quality,
 			Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats, Restarts: w.Restarts}, nil
 	case RolePunct, RoleJAPunct:
-		command := func() *exec.Cmd {
-			return pythonCommand(spec.Python, spec.Script, "--package", spec.Package, "--threads", fmt.Sprint(spec.Threads))
+		if spec.Backend == BackendNative {
+			return loadNativePunct(spec, prepared)
 		}
-		w, err := openPunctPrepared(PunctConfig{Python: spec.Python, Script: spec.Script, Package: spec.Package,
-			Threads: spec.Threads, Timeout: spec.Timeout}, prepared.PunctPath, command)
-		if err != nil {
-			return nil, err
-		}
-		return &Loaded{Punctuator: w, ResidentBytes: prepared.Bytes,
-			Placeholder: prepared.Placeholder, Quality: prepared.Quality,
-			Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats}, nil
+		return loadPythonPunct(spec, prepared)
 	}
 	return nil, &ModelError{Reason: ReasonFailed, Err: fmt.Errorf("unsupported role %q", spec.Role)}
 }
 
 // loadNative uses the same manifest and vocab.json as the Python worker; only
-// the executor changes. Native is only implemented for sequence/reranker
-// roles; punctuation stays on the Python path for now.
+// the executor changes. Punctuation has a separate native scorer because its
+// tensor contract and insertion rule are different.
 func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 	b, err := native.Open(native.Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
 		Threads: spec.Threads, Timeout: spec.Timeout, LibraryPath: spec.ORTLibrary})
@@ -406,6 +402,46 @@ func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 				Unavailable: st.Unavailable, TotalUS: st.TotalUS}
 		},
 		Restarts: func() int { return 0 }}, nil
+}
+
+// loadPythonPunct keeps the legacy worker as the only fallback path. It is
+// used when the build has no native backend; a native package that fails to
+// load reports its own error instead of silently starting Python.
+func loadPythonPunct(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
+	command := func() *exec.Cmd {
+		return pythonCommand(spec.Python, spec.Script, "--package", spec.Package, "--threads", fmt.Sprint(spec.Threads))
+	}
+	w, err := openPunctPrepared(PunctConfig{Python: spec.Python, Script: spec.Script, Package: spec.Package,
+		Threads: spec.Threads, Timeout: spec.Timeout}, prepared.PunctPath, command)
+	if err != nil {
+		return nil, err
+	}
+	return &Loaded{Punctuator: w, ResidentBytes: prepared.Bytes,
+		Placeholder: prepared.Placeholder, Quality: prepared.Quality,
+		Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats}, nil
+}
+
+// loadNativePunct runs a zh character package or a 0c.model.manifest/1
+// punctuation package through ONNX Runtime. Python is only tried when this
+// build has no native backend at all.
+func loadNativePunct(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
+	b, err := native.OpenPunct(native.Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
+		Threads: spec.Threads, Timeout: spec.Timeout, LibraryPath: spec.ORTLibrary, Tokenizer: spec.Tokenizer})
+	if err != nil {
+		if (errors.Is(err, native.ErrNativeUnavailable) || errors.Is(err, native.ErrRuntimeMissing)) &&
+			spec.Python != "" && spec.Script != "" {
+			return loadPythonPunct(spec, prepared)
+		}
+		return nil, wrapNativeError(err)
+	}
+	return &Loaded{Punctuator: b, ResidentBytes: prepared.Bytes,
+		Placeholder: prepared.Placeholder, Quality: prepared.Quality,
+		Close: b.Close, State: b.State, Reason: b.Reason,
+		Stats: func() Stats {
+			st := b.Stats()
+			return Stats{Calls: st.Calls, Scored: st.Scored, Timeouts: st.Timeouts, Errors: st.Errors,
+				Unavailable: st.Unavailable, TotalUS: st.TotalUS}
+		}}, nil
 }
 
 func wrapNativeError(err error) error {
@@ -445,7 +481,7 @@ func prepareModel(spec ModelSpec) (*Prepared, error) {
 		}
 		return &Prepared{Manifest: m, ModelSHA: m.Files["model.onnx"], Bytes: packageBytes(spec.Package, m.Files),
 			Options: optionsFor(m), Placeholder: m.Placeholder, Quality: m.Quality}, nil
-	case RolePunct, RoleJAPunct:
+	case RolePunct:
 		c := PunctConfig{Python: spec.Python, Script: spec.Script, Package: spec.Package, Threads: spec.Threads, Timeout: spec.Timeout}
 		model, bytes, placeholder, quality, err := loadPunctManifest(c)
 		if err != nil {
@@ -457,6 +493,17 @@ func prepareModel(spec ModelSpec) (*Prepared, error) {
 			}
 		}
 		return &Prepared{PunctPath: model, Bytes: bytes, Placeholder: placeholder, Quality: quality}, nil
+	case RoleJAPunct:
+		manifestPath := filepath.Join(spec.Package, "manifest.json")
+		artifact, err := ValidateArtifact(manifestPath, "", "")
+		if err != nil {
+			return nil, wrapPrepareError(err)
+		}
+		if err := checkPunctuationArtifact(artifact.Manifest); err != nil {
+			return nil, wrapPrepareError(err)
+		}
+		return &Prepared{PunctPath: artifact.SHA256, Bytes: artifact.Bytes,
+			Placeholder: artifact.Manifest.Placeholder, Quality: artifact.Manifest.Quality}, nil
 	}
 	return nil, &ModelError{Reason: ReasonFailed, Err: fmt.Errorf("unsupported role %q", spec.Role)}
 }

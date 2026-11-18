@@ -96,7 +96,7 @@ python3 scripts/source_release.py verify build/source-release/<版本>/0c-ime-<�
 
 Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。**產品不內嵌 CPython、numpy 或 onnxruntime Python 套件**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查一次沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。授權邊界與第三方聲明見 [授權頁](docs/licensing.md)。
 
-`0c-server` 預設 `-neural-backend auto`：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 `onnxruntime.dll` 時使用 native；DLL 不在或載入失敗時直接退回統計轉換，不會啟動 Python。原生後端目前支援選字／reranker 的模型形狀；模型形狀不受支援時回報 `unsupported_model` 並保留統計排序。補標點仍只有 Python worker，因此 Python-free 套件提交時保留原文。
+`0c-server` 預設 `-neural-backend auto`：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 `onnxruntime.dll` 時使用 native；DLL 不在或載入失敗時直接退回統計轉換，不會啟動 Python。原生後端支援選字／reranker 與補標點的模型形狀；模型形狀不受支援時回報 `unsupported_model` 並保留統計結果。Python-free 套件的補標點也走 native，只有建置完全沒有原生後端時才退回 Python worker。
 
 完整套件需要外部文件目錄的 `INSTALL.md`、`PRIVACY.md`、`UPDATING.md`：
 

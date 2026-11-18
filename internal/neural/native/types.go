@@ -15,6 +15,9 @@ type Config struct {
 	// LibraryPath is the ONNX Runtime shared library. Empty uses the binding's
 	// default (onnxruntime.so / onnxruntime.dll next to the executable).
 	LibraryPath string
+	// Tokenizer is the SentencePiece model for a 0c.model.manifest/1
+	// punctuation package. Empty searches the package and manifest datasets.
+	Tokenizer string
 }
 
 // Stats mirrors neural.Stats so the residency manager can report either
