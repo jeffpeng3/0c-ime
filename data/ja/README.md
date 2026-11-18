@@ -201,6 +201,8 @@ go run ./cmd/0c-jadic convert -data build/ja-import -romaji -top 5 kyouha ashita
 
 **連接成本來自種子。** pack 沒有連接成本矩陣，匯入與打包都用 `data/ja/connection.tsv` 的 82 筆 curated 成本。它是為 1～3 的 curated 詞成本設計的；public-core 的詞成本中位數約 10，兩者尺度不同。repo 內沒有 Mozc 或 IPADic 的完整連接矩陣，這不是可替換的既有來源。
 
+P2-45C 檢查過 public-core pack：v1 的 entry 固定 20 位元組，只有 surface／reading offset、POS、活用型、活用形、成本與 split flags，沒有 `left_id`／`right_id`；檔頭與 section 也沒有矩陣。`0c-jadic inspect` 會明確印出 `connections: none` 與 `context ids: none`，匯入回執的 `pack.context_ids`／`pack.connection_matrix` 都是 `false`。即使另外取得 UniDic `matrix.bin`，`legal/unidic/README.md` 也規定原始 `matrix.bin` 與整份連接矩陣不進 Git、不隨詞典包散布；沒有 entry 的 context ID 時，POS 聚合矩陣會丟掉 matrix 真正有用的下位分類，無法重現 context-ID 成本。因此 runtime 維持 POS 矩陣，等有可散布的 context-ID 詞典來源再處理。
+
 **目前不是可出貨的日文轉換品質。** 用這份資料跑 `core/ja` 統計引擎，`kyouha` 的第一名是「教派」，`ashita` 的第一名是「アシタ」；`東京大学` 這類長詞可以正確合併。`0c-eval-ja --data build/ja-import` 的 top1：hard-cases 2.9%、anthy-corpus1 1.0%、ajimee-200 1.0%、modern-500 0.0%。候選與量測細節見本節。原因是 public-core 的 UniDic 詞成本偏向かな與片假名，加上 curated 連接矩陣尺度不合；在補上 IME 用的詞成本或連接矩陣前，`JA_SRC` 只適合驗證與內部打包，不應當成正式日文輸入品質。
 
 ### 資料包內容

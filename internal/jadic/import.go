@@ -9,8 +9,9 @@ import (
 )
 
 // ImportSchema 是匯入回執的格式版本。v3 起 Entries 只算 words.tsv，記号另計；
-// v4 另計非日文詞面，並在回執帶出丟棄樣本。
-const ImportSchema = "0c-jadic-import/4"
+// v4 另計非日文詞面，並在回執帶出丟棄樣本；v5 記錄 pack 是否帶 context ID 與
+// 連接成本矩陣，讓「使用外部 POS 矩陣」不再是隱含假設。
+const ImportSchema = "0c-jadic-import/5"
 
 // ImportOptions 控制把 pack 寫進產品資料目錄。
 type ImportOptions struct {
@@ -35,10 +36,12 @@ type ImportReceipt struct {
 
 // ReceiptPack 是來源 pack 的識別與雜湊。
 type ReceiptPack struct {
-	Path          string `json:"path"`
-	Bytes         int64  `json:"bytes"`
-	SHA256        string `json:"sha256"`
-	PayloadSHA256 string `json:"payload_sha256"`
+	Path             string `json:"path"`
+	Bytes            int64  `json:"bytes"`
+	SHA256           string `json:"sha256"`
+	PayloadSHA256    string `json:"payload_sha256"`
+	ContextIDs       bool   `json:"context_ids"`
+	ConnectionMatrix bool   `json:"connection_matrix"`
 }
 
 // ReceiptManifest 是來源 manifest 的識別與雜湊。
@@ -100,6 +103,7 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 	if opt.MaxReadingUnits == 0 {
 		opt.MaxReadingUnits = 64
 	}
+	caps := p.Capabilities()
 	wordsPath := filepath.Join(opt.OutDir, "lexicon", "words.tsv")
 	symbolsPath := filepath.Join(opt.OutDir, "symbols", "jadic.tsv")
 	receiptPath := filepath.Join(opt.OutDir, "jadic-import.json")
@@ -169,7 +173,7 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 	}
 
 	files := []string{"lexicon/words.tsv", "symbols/jadic.tsv", "jadic-import.json"}
-	needs := []string{"connection.tsv：pack 不含連接成本矩陣"}
+	needs := []string{"connection.tsv：pack 不含連接成本矩陣，entry 也沒有 left/right context ID"}
 	if opt.ConnectionsPath != "" {
 		if err := copyFile(opt.ConnectionsPath, filepath.Join(opt.OutDir, "connection.tsv")); err != nil {
 			return res, fmt.Errorf("jadic: 複製 connection.tsv：%w", err)
@@ -190,10 +194,12 @@ func Import(p *Pack, m *Manifest, opt ImportOptions) (ImportResult, error) {
 	res.Receipt = ImportReceipt{
 		Schema: ImportSchema,
 		Pack: ReceiptPack{
-			Path:          opt.PackPath,
-			Bytes:         p.Bytes(),
-			SHA256:        p.FileSHA256(),
-			PayloadSHA256: p.PayloadSHA256(),
+			Path:             opt.PackPath,
+			Bytes:            p.Bytes(),
+			SHA256:           p.FileSHA256(),
+			PayloadSHA256:    p.PayloadSHA256(),
+			ContextIDs:       caps.ContextIDs,
+			ConnectionMatrix: caps.ConnectionMatrix,
 		},
 		Manifest: ReceiptManifest{
 			Path:           opt.ManifestPath,

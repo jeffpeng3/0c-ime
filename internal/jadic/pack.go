@@ -78,6 +78,17 @@ type Entry struct {
 	Split    uint8
 }
 
+// Capabilities 描述 pack 能提供的執行期資料。0c-jadic v1 的 entry 固定 20 位元組，
+// 只有 surface／reading offset、POS id、活用型、活用形、詞成本與 flags；檔頭與
+// section 也沒有 left/right context ID 或連接成本矩陣。因此 v1 的連接成本只能來自
+// 外部 POS 矩陣。未來格式若新增這些欄位，必須升 FormatVersion 並在這裡回報。
+type Capabilities struct {
+	// ContextIDs 表示每筆 entry 帶有 left/right context ID。
+	ContextIDs bool
+	// ConnectionMatrix 表示 pack 內含 left×right 的連接成本矩陣。
+	ConnectionMatrix bool
+}
+
 // Stats 是解析時算出的 pack 統計，供 inspect 與匯入回執使用。
 type Stats struct {
 	CostMin        int16
@@ -129,6 +140,12 @@ func (p *Pack) ConjForms() []string { return append([]string(nil), p.conjForms..
 
 // Stats 回傳解析時算出的統計。
 func (p *Pack) Stats() Stats { return p.stats }
+
+// Capabilities 回傳這個 pack 能提供的連接成本資料。v1 一律回報 false：
+// entry 沒有 context ID，pack 也沒有矩陣 section。
+func (p *Pack) Capabilities() Capabilities {
+	return Capabilities{ContextIDs: false, ConnectionMatrix: false}
+}
 
 // PayloadSHA256 回傳 trailer 內的 payload 雜湊。
 func (p *Pack) PayloadSHA256() string { return hex.EncodeToString(p.payloadSum[:]) }
