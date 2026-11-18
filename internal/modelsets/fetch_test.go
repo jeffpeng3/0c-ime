@@ -29,9 +29,9 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 		revision = testRevision
 	}
 	artifacts := []any{}
-	for i, spec := range []struct{ id, kind, name string }{
-		{"reranker-test", KindReranker, "reranker.int8.onnx"},
-		{"punctuation-test", KindPunctuation, "punctuation.int8.onnx"},
+	for i, spec := range []struct{ id, kind, variant, license, name string }{
+		{"reranker-extra", KindReranker, VariantCCBYSA, "CC-BY-SA-4.0", "reranker.int8.onnx"},
+		{"punctuation-public-core", KindPunctuation, VariantPublicCore, "MIT", "punctuation.int8.onnx"},
 	} {
 		body := bodies[spec.name]
 		entry := map[string]any{"name": spec.name, "bytes": 0, "sha256": ""}
@@ -44,17 +44,21 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 		if i == 1 {
 			output = map[string]any{"name": "logits", "dtype": "float32", "shape": []any{"batch", "seq", 4}}
 		}
+		license := map[string]any{"id": "MIT", "scope": "public-core", "distribution": "test", "notice": "legal/MIT.txt"}
+		if spec.variant == VariantCCBYSA {
+			license = map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"}
+		}
 		artifacts = append(artifacts, map[string]any{
 			"manifest": spec.id + "/manifest.json", "artifact_id": spec.id, "kind": spec.kind,
-			"variant": VariantPublicCore, "version": "test-1", "parameters": 42,
+			"variant": spec.variant, "version": "test-1", "parameters": 42,
 			"placeholder": false, "quality": "trained", "production_eligible": true,
 			"dictionary_manifest_sha256": dict,
-			"license":                    map[string]any{"id": "MIT", "scope": "public-core", "distribution": "test", "notice": "legal/MIT.txt"},
+			"license":                    license,
 			"attribution":                []any{"legal/copyright"},
 			"source":                     map[string]any{"training_data": "test", "datasets": []any{}, "checkpoint": "", "generator": "test", "fingerprint": ""},
 			"files":                      map[string]any{"int8": local},
 			"hf": map[string]any{
-				"repository": testRepo, "revision": revision, "license": "MIT",
+				"repository": testRepo, "revision": revision, "license": spec.license,
 				"files": map[string]any{"int8": entry},
 			},
 			"io": map[string]any{
@@ -68,18 +72,13 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 	}
 	doc := map[string]any{
 		"schema": 1,
-		"model_sets": map[string]any{
-			"schema": Schema, "updated": "2026-11-18", "mixing_policy": "never mix",
-			"sets": map[string]any{
-				"ja-public-core": map[string]any{
-					"variant": VariantPublicCore, "language": "ja", "version": "test-1",
-					"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
-						"version": "test", "manifest_sha256": dict, "source": "test"},
-					"license":     map[string]any{"id": "MIT", "scope": "public-core", "distribution": "test", "notice": "legal/MIT.txt"},
-					"attribution": []any{"legal/copyright"}, "placeholder": false, "quality": "trained",
-					"production_eligible": true, "artifacts": artifacts,
-				},
-			},
+		"model_package": map[string]any{
+			"schema": Schema, "updated": "2026-11-19", "version": "test-1",
+			"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
+				"version": "test", "manifest_sha256": dict, "source": "test"},
+			"license":     map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"},
+			"attribution": []any{"legal/copyright"}, "placeholder": false, "quality": "trained",
+			"production_eligible": true, "artifacts": artifacts,
 		},
 	}
 	raw, err := json.MarshalIndent(doc, "", "  ")
@@ -103,7 +102,7 @@ func fakeHub(t *testing.T, bodies map[string][]byte) *httptest.Server {
 	return server
 }
 
-func TestFetchSetDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
+func TestFetchPackageDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
 	bodies := map[string][]byte{
 		"reranker.int8.onnx":    []byte("reranker-onnx"),
 		"punctuation.int8.onnx": []byte("punctuation-onnx"),
@@ -115,7 +114,7 @@ func TestFetchSetDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
 		t.Fatal(err)
 	}
 	fetcher := &Fetcher{BaseURL: server.URL, CacheDir: cache, Client: server.Client()}
-	files, err := fetcher.FetchSet(t.Context(), lock, "ja-public-core", FormatInt8, out)
+	files, err := fetcher.FetchPackage(t.Context(), lock, FormatInt8, out)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,10 +130,9 @@ func TestFetchSetDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
 			t.Fatalf("%s 寫入內容不符", file.Path)
 		}
 	}
-	// 快取命中後離線仍可再產生一份。
 	offline := &Fetcher{BaseURL: "https://invalid.example", CacheDir: cache, Offline: true}
 	again := t.TempDir()
-	if _, err := offline.FetchSet(t.Context(), lock, "ja-public-core", FormatInt8, again); err != nil {
+	if _, err := offline.FetchPackage(t.Context(), lock, FormatInt8, again); err != nil {
 		t.Fatalf("離線快取應可用：%v", err)
 	}
 }
@@ -154,12 +152,12 @@ func TestFetchRejectsHashMismatchAndOfflineMiss(t *testing.T) {
 	}
 	server := fakeHub(t, bad)
 	fetcher := &Fetcher{BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client()}
-	if _, err := fetcher.FetchSet(t.Context(), lock, "ja-public-core", FormatInt8, t.TempDir()); err == nil || !containsErr(err, ErrChecksum) {
+	if _, err := fetcher.FetchPackage(t.Context(), lock, FormatInt8, t.TempDir()); err == nil || !containsErr(err, ErrChecksum) {
 		t.Fatalf("雜湊不符應失敗：%v", err)
 	}
 
 	offline := &Fetcher{CacheDir: t.TempDir(), Offline: true}
-	if _, err := offline.FetchSet(t.Context(), lock, "ja-public-core", FormatInt8, t.TempDir()); err == nil || !containsErr(err, ErrOffline) {
+	if _, err := offline.FetchPackage(t.Context(), lock, FormatInt8, t.TempDir()); err == nil || !containsErr(err, ErrOffline) {
 		t.Fatalf("離線缺檔應失敗：%v", err)
 	}
 }
@@ -184,7 +182,7 @@ func TestFetchFromFileBaseURL(t *testing.T) {
 		t.Fatal(err)
 	}
 	fetcher := &Fetcher{BaseURL: "file://" + root, CacheDir: t.TempDir()}
-	if _, err := fetcher.FetchSet(t.Context(), lock, "ja-public-core", FormatInt8, t.TempDir()); err != nil {
+	if _, err := fetcher.FetchPackage(t.Context(), lock, FormatInt8, t.TempDir()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -199,13 +197,13 @@ func TestPinTransitionsFromDevelopmentToRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	set, _ := lock.Set("ja-public-core")
-	if err := set.ValidateRelease(); !containsErr(err, ErrUnpinned) {
+	pkg := lock.ModelPackage
+	if err := pkg.ValidateRelease(); !containsErr(err, ErrUnpinned) {
 		t.Fatalf("pin 前 release 應失敗：%v", err)
 	}
 	server := fakeHub(t, bodies)
 	pinned, files, err := Pin(t.Context(), raw, PinOptions{
-		Repository: testRepo, Revision: testRevision, Updated: "2026-11-18",
+		Repository: testRepo, Revision: testRevision, Updated: "2026-11-19",
 		BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client(),
 	})
 	if err != nil {
@@ -218,12 +216,12 @@ func TestPinTransitionsFromDevelopmentToRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	set, _ = lock.Set("ja-public-core")
-	if err := set.ValidateRelease(); err != nil {
+	pkg = lock.ModelPackage
+	if err := pkg.ValidateRelease(); err != nil {
 		t.Fatalf("pin 後 release 應通過：%v", err)
 	}
-	for i := range set.Artifacts {
-		artifact := &set.Artifacts[i]
+	for i := range pkg.Artifacts {
+		artifact := &pkg.Artifacts[i]
 		if artifact.HF.Revision != testRevision || !artifact.HF.Pinned() {
 			t.Fatalf("artifact 未 pin：%+v", artifact.HF)
 		}
@@ -231,9 +229,8 @@ func TestPinTransitionsFromDevelopmentToRelease(t *testing.T) {
 			t.Fatalf("本機與 HF 雜湊不同：%+v", artifact.Files)
 		}
 	}
-	// 再跑一次 pin 不會改變結果。
 	again, _, err := Pin(t.Context(), pinned, PinOptions{
-		Repository: testRepo, Revision: testRevision, Updated: "2026-11-18",
+		Repository: testRepo, Revision: testRevision, Updated: "2026-11-19",
 		BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client(),
 	})
 	if err != nil {
@@ -259,49 +256,4 @@ func containsErr(err error, target error) bool {
 		err = unwrapped.Unwrap()
 	}
 	return false
-}
-
-func TestExtraSetFetchesSharedPublicPunctuation(t *testing.T) {
-	bodies := map[string][]byte{
-		"reranker.int8.onnx":    []byte("reranker-onnx"),
-		"punctuation.int8.onnx": []byte("punctuation-onnx"),
-	}
-	server := fakeHub(t, bodies)
-	raw := testLockDoc(t, true, bodies)
-	var doc map[string]any
-	if err := json.Unmarshal(raw, &doc); err != nil {
-		t.Fatal(err)
-	}
-	sets := doc["model_sets"].(map[string]any)["sets"].(map[string]any)
-	public := sets["ja-public-core"].(map[string]any)
-	publicArtifacts := public["artifacts"].([]any)
-	original, _ := json.Marshal(publicArtifacts[0])
-	var reranker map[string]any
-	json.Unmarshal(original, &reranker)
-	reranker["artifact_id"] = "reranker-extra"
-	reranker["variant"] = VariantCCBYSA
-	reranker["license"] = map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"}
-	reranker["files"].(map[string]any)["int8"].(map[string]any)["path"] = "reranker-extra/model.int8.onnx"
-	reranker["hf"].(map[string]any)["license"] = "CC-BY-SA-4.0"
-	extra := map[string]any{
-		"variant": VariantCCBYSA, "language": "ja", "version": "test-1",
-		"dictionary": public["dictionary"], "attribution": []any{"legal/copyright"},
-		"license":     map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"},
-		"placeholder": false, "quality": "trained", "production_eligible": true,
-		"shared_punctuation": "punctuation-test", "artifacts": []any{reranker},
-	}
-	sets["ja-cc-by-sa"] = extra
-	raw, _ = json.Marshal(doc)
-	lock, err := ParseLock(raw)
-	if err != nil {
-		t.Fatal(err)
-	}
-	fetcher := &Fetcher{BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client()}
-	files, err := fetcher.FetchSet(t.Context(), lock, "ja-cc-by-sa", FormatInt8, t.TempDir())
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(files) != 2 || files[0].ArtifactID != "reranker-extra" || files[1].ArtifactID != "punctuation-test" {
-		t.Fatalf("extra fetch 應含共用 punctuation：%+v", files)
-	}
 }

@@ -312,101 +312,55 @@ def python_free(stage):
     windows_runtime.check_python_free(stage)
 
 
-def load_model_sets(path=None):
-    """Read models/pairing.lock.json's P2-27 model_sets section."""
+def load_model_package(path=None):
+    """Read models/pairing.lock.json's P2-27 model_package section."""
     path = Path(path) if path else ROOT / "models" / "pairing.lock.json"
     with open(path, encoding="utf-8") as stream:
         lock = json.load(stream)
-    section = lock.get("model_sets")
-    if not section or section.get("schema") != "0c.model-sets/1" or not section.get("sets"):
-        raise ValueError(f"模型組清單沒有 model_sets：{path}")
-    return section
+    pkg = lock.get("model_package")
+    if not pkg or pkg.get("schema") != "0c.model-package/1" or not pkg.get("artifacts"):
+        raise ValueError(f"模型包清單沒有 model_package：{path}")
+    if "sets" in pkg or "default_set" in pkg:
+        raise ValueError(f"model_package 不得包含模型組選擇欄位：{path}")
+    return pkg
 
 
-def model_artifact(section, artifact_id):
-    """Find an artifact by ID in any set."""
-    for candidate in section["sets"].values():
-        for artifact in candidate.get("artifacts", []):
-            if artifact.get("artifact_id") == artifact_id:
-                return artifact
-    return None
+def check_model_package(format, allow_placeholders, path=None, preview=False):
+    """Validate the single pairing-lock Japanese model package before staging it.
 
-
-def model_set_artifacts(section, chosen):
-    """The artifacts a set actually installs: its own plus the shared punctuation.
-
-    public-core owns reranker-public-core and punctuation-public-core. The
-    cc-by-sa set owns reranker-extra only and references the same
-    punctuation-public-core through shared_punctuation.
-    """
-    artifacts = list(chosen.get("artifacts", []))
-    shared = chosen.get("shared_punctuation")
-    if shared:
-        companion = model_artifact(section, shared)
-        if companion is None:
-            raise ValueError(f"模型組 {chosen.get('variant')} 的 shared_punctuation {shared!r} 不存在")
-        artifacts.append(companion)
-    return artifacts
-
-
-def check_model_set(set_id, format, allow_placeholders, path=None, preview=False):
-    """Validate one pairing-lock model set before staging it.
-
-    Placeholder (untrained) sets are test fixtures: a preview bundle may carry
+    Placeholder (untrained) packages are test fixtures: a preview bundle may carry
     one only with an explicit --allow-placeholders, while a public release
     rejects placeholders even when the flag is present. A release also requires
     a pinned HF revision and per-file size/SHA-256 for the selected format.
 
-    Mixing is checked per artifact: a CC BY-SA artifact may never enter the
-    public-core set. The cc-by-sa set is reranker-only and pairs reranker-extra
-    with the shared public-core punctuation model.
+    The package contains exactly one CC BY-SA reranker and one MIT public-core
+    punctuation artifact. There is no model-set selection.
     """
-    section = load_model_sets(path)
-    sets = section["sets"]
-    if set_id not in sets:
-        raise ValueError(f"未知的模型組 {set_id!r}；可用：{', '.join(sorted(sets))}")
-    chosen = sets[set_id]
-    if chosen.get("variant") not in ("public-core", "cc-by-sa"):
-        raise ValueError(f"模型組 {set_id} 的 variant 不正確：{chosen.get('variant')}")
-    if chosen.get("placeholder"):
+    pkg = load_model_package(path)
+    if pkg.get("placeholder"):
         if not allow_placeholders:
-            raise ValueError(f"模型組 {set_id} 是 placeholder（quality={chosen.get('quality')}）；"
+            raise ValueError(f"模型包是 placeholder（quality={pkg.get('quality')}）；"
                              "要出貨必須明確加 --allow-placeholders")
         if not preview:
-            raise ValueError(f"模型組 {set_id} 是 placeholder；placeholder 不得進入正式 release bundle")
-    elif not preview and not chosen.get("production_eligible"):
-        raise ValueError(f"模型組 {set_id} 沒有標示 production_eligible，不得進入正式 release bundle")
+            raise ValueError("模型包是 placeholder；placeholder 不得進入正式 release bundle")
+    elif not preview and not pkg.get("production_eligible"):
+        raise ValueError("模型包沒有標示 production_eligible，不得進入正式 release bundle")
 
-    own = list(chosen.get("artifacts", []))
-    if chosen["variant"] == "public-core":
-        if chosen.get("shared_punctuation"):
-            raise ValueError(f"public-core 模型組 {set_id} 不得共用其他模型")
-        if any(a.get("variant") != "public-core" for a in own):
-            raise ValueError(f"模型組 {set_id} 混入非 public-core artifact")
-        kinds = {a.get("kind") for a in own}
-        if kinds != {"reranker", "punctuation"} or len(own) != 2:
-            raise ValueError(f"public-core 模型組 {set_id} 需要一個 reranker 與一個 punctuation")
-    else:
-        if any(a.get("variant") != "cc-by-sa" for a in own):
-            raise ValueError(f"模型組 {set_id} 混入非 cc-by-sa artifact")
-        if any(a.get("kind") == "punctuation" for a in own):
-            raise ValueError(f"模型組 {set_id} 是 reranker-only；punctuation 只允許 public-core")
-        if len(own) != 1 or own[0].get("kind") != "reranker":
-            raise ValueError(f"模型組 {set_id} 需要恰好一個 cc-by-sa reranker")
-        if not chosen.get("shared_punctuation"):
-            raise ValueError(f"模型組 {set_id} 缺少 shared_punctuation")
-    artifacts = model_set_artifacts(section, chosen)
-    shared = chosen.get("shared_punctuation")
-    if shared:
-        companion = model_artifact(section, shared)
-        if companion.get("kind") != "punctuation" or companion.get("variant") != "public-core":
-            raise ValueError(f"模型組 {set_id} 的 shared_punctuation 必須是 public-core punctuation")
-        if companion.get("dictionary_manifest_sha256") != chosen.get("dictionary", {}).get("manifest_sha256"):
-            raise ValueError(f"模型組 {set_id} 與共用 punctuation 綁定的字典不同")
+    artifacts = list(pkg.get("artifacts", []))
+    by_kind = {a.get("kind"): a for a in artifacts}
+    if len(artifacts) != 2 or set(by_kind) != {"reranker", "punctuation"}:
+        raise ValueError("模型包需要恰好一個 reranker 與一個 punctuation")
+    if by_kind["reranker"].get("variant") != "cc-by-sa":
+        raise ValueError("模型包的 reranker 必須是 cc-by-sa")
+    if by_kind["punctuation"].get("variant") != "public-core":
+        raise ValueError("模型包的 punctuation 必須是 public-core")
+    if any(a.get("dictionary_manifest_sha256") != pkg.get("dictionary", {}).get("manifest_sha256")
+           for a in artifacts):
+        raise ValueError("模型包的 artifacts 與字典 manifest 不一致")
 
     for artifact in artifacts:
         if format not in artifact.get("files", {}):
-            raise ValueError(f"模型組 {set_id} 沒有 {format} 檔案")
+            raise ValueError(f"模型包沒有 {format} 檔案：{artifact.get('artifact_id')}")
         if preview:
             continue
         hf = artifact.get("hf") or {}
@@ -422,7 +376,7 @@ def check_model_set(set_id, format, allow_placeholders, path=None, preview=False
             raise ValueError(f"{artifact.get('artifact_id')}/{format} 缺少 HF 大小或 SHA-256")
         if int(local.get("bytes", 0)) != int(remote["bytes"]) or local.get("sha256") != remote["sha256"]:
             raise ValueError(f"{artifact.get('artifact_id')}/{format} 的本機大小或 SHA-256 與 HF 不符")
-    return chosen
+    return pkg
 
 
 def check_model_pair(directory, data):
@@ -454,57 +408,54 @@ def copy_model_pair(source, stage):
         shutil.copy2(path, target)
 
 
-def model_set_manifest(set_id, chosen, format):
+def model_package_manifest(pkg, format):
     """Stable release.json record; makes placeholder and artifact licenses visible."""
-    section = load_model_sets()
-    artifacts = model_set_artifacts(section, chosen)
     licenses = []
-    for artifact in artifacts:
+    for artifact in pkg.get("artifacts", []):
         license = artifact.get("license") or {}
         item = {"artifact_id": artifact.get("artifact_id"), "variant": artifact.get("variant"),
                 "id": license.get("id", ""), "notice": license.get("notice", "")}
         if item not in licenses:
             licenses.append(item)
     return {
-        "set_id": set_id,
-        "variant": chosen["variant"],
-        "version": chosen.get("version", ""),
+        "version": pkg.get("version", ""),
         "format": format,
-        "placeholder": bool(chosen.get("placeholder")),
-        "quality": chosen.get("quality", ""),
-        "production_eligible": bool(chosen.get("production_eligible")),
-        "dictionary": chosen.get("dictionary", {}),
-        "artifacts": [a.get("artifact_id") for a in artifacts],
+        "placeholder": bool(pkg.get("placeholder")),
+        "quality": pkg.get("quality", ""),
+        "production_eligible": bool(pkg.get("production_eligible")),
+        "dictionary": pkg.get("dictionary", {}),
+        "artifacts": [a.get("artifact_id") for a in pkg.get("artifacts", [])],
         "licenses": licenses,
     }
 
 
-def write_model_set_notices(stage, set_id, chosen):
-    """Carry every model artifact license into the bundle.
+def write_model_package_notices(stage, pkg):
+    """Carry every artifact license into the bundle.
 
-    reranker-extra is CC BY-SA 4.0, so selecting ja-cc-by-sa must ship the
-    CC BY-SA notice even though the shared punctuation-public-core stays MIT.
+    reranker-extra is CC BY-SA 4.0, so the package must ship the CC BY-SA
+    notice even though punctuation-public-core stays MIT.
     """
     stage = Path(stage)
-    section = load_model_sets()
-    artifacts = model_set_artifacts(section, chosen)
-    lines = [f"set_id: {set_id}", f"variant: {chosen['variant']}", ""]
+    lines = [f"version: {pkg.get('version', '')}", ""]
     cc_by_sa = None
-    for artifact in artifacts:
+    for artifact in pkg.get("artifacts", []):
         license = artifact.get("license") or {}
         lines += [f"artifact: {artifact.get('artifact_id')}", f"variant: {artifact.get('variant')}",
-                  f"license: {license.get('id', '')}", f"notice: {license.get('notice', '')}", ""]
+                  f"license: {license.get('id', '')}", f"notice: {license.get('notice', '')}"]
+        for ref in artifact.get("attribution", []):
+            lines.append(f"attribution: {ref}")
+        lines.append("")
         if "CC-BY-SA" in str(license.get("id", "")).upper():
             cc_by_sa = (artifact, license)
-    (stage / "MODEL-SET-NOTICES.txt").write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    (stage / "MODEL-PACKAGE-NOTICES.txt").write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
     if cc_by_sa:
         artifact, license = cc_by_sa
         notice = license.get("notice", "")
         source = ROOT / notice
         if not notice or not source.is_file():
-            raise ValueError(f"模型組 {set_id} 缺少 CC BY-SA 授權全文：{notice}")
-        (stage / "MODEL-SET-CC-BY-SA-4.0.txt").write_text(
-            f"{set_id}/{artifact.get('artifact_id', '')} uses {license.get('id', '')}\n\n"
+            raise ValueError(f"模型包缺少 CC BY-SA 授權全文：{notice}")
+        (stage / "MODEL-PACKAGE-CC-BY-SA-4.0.txt").write_text(
+            f"{artifact.get('artifact_id', '')} uses {license.get('id', '')}\n\n"
             + source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
@@ -548,15 +499,16 @@ def build(args):
     settings, settings_notices = check_settings(args.settings) if args.settings else (None, "")
     runtime_plan(getattr(args, "ort_runtime", None), getattr(args, "statistical_only", False), getattr(args, "neural", None))
     runtime = check_runtime(args.ort_runtime) if getattr(args, "ort_runtime", None) else None
-    model_set = None
-    if getattr(args, "model_set", None):
+    model_package = None
+    if getattr(args, "ja_model", False):
         if not args.ja_data:
-            raise ValueError("--model-set 需要 --ja-data：模型組綁定日文資料包的 manifest")
-        model_set = check_model_set(args.model_set, getattr(args, "model_format", "int8"),
-                                    getattr(args, "allow_placeholders", False),
-                                    preview=getattr(args, "preview", False))
+            raise ValueError("--ja-model 需要 --ja-data：模型包綁定日文資料包的 manifest")
+        model_package = check_model_package(getattr(args, "model_format", "int8"),
+                                            getattr(args, "allow_placeholders", False),
+                                            path=getattr(args, "model_package_lock", None),
+                                            preview=getattr(args, "preview", False))
     elif getattr(args, "model_source", None) or getattr(args, "allow_placeholders", False):
-        raise ValueError("--model-source／--allow-placeholders 必須搭配 --model-set")
+        raise ValueError("--model-source／--allow-placeholders 必須搭配 --ja-model")
     model_pair = None
     if getattr(args, "model_pair", None):
         model_pair = check_model_pair(args.model_pair, data)
@@ -636,41 +588,42 @@ def build(args):
             copy_model_pair(model_pair, stage)
         if args.ja_data:
             copy_ja_data(args.ja_data, stage / "data", public=not args.preview)
-        if model_set:
-            # P2-27B：只安裝 pairing lock 選中的那一組；public-core 與 cc-by-sa 不混用。
+        if model_package:
+            # P2-27：安裝唯一的 pairing lock 模型包。
             # 沒有 --model-source 時從 HF 下載並逐檔核對；下載、雜湊不符或離線缺檔都直接失敗。
             # 0c-model-set 會再核對一次大小與 SHA-256 並寫出 active.json。
             tool = Path(temp) / "0c-model-set.exe"
             subprocess.run([args.go, "build", "-trimpath", "-o", str(tool), "./cmd/0c-model-set"],
                            cwd=ROOT, env=env, check=True)
+            lock_path = str(getattr(args, "model_package_lock", None) or ROOT / "models" / "pairing.lock.json")
             source = getattr(args, "model_source", None)
             if source is None:
                 source = Path(temp) / "model-source"
-                fetch = [str(tool), "fetch", "-set", args.model_set, "-format", getattr(args, "model_format", "int8"),
-                         "-out", str(source), "-lock", str(ROOT / "models" / "pairing.lock.json"),
+                fetch = [str(tool), "fetch", "-format", getattr(args, "model_format", "int8"),
+                         "-out", str(source), "-lock", lock_path,
                          "-base-url", getattr(args, "model_base_url", None) or hf_models.HF,
                          "-cache", str(getattr(args, "model_cache", None) or ROOT / "build/cache/ja-models")]
                 if getattr(args, "model_offline", False):
                     fetch.append("-offline")
                 subprocess.run(fetch, cwd=ROOT, env=env, check=True)
-            command = [str(tool), "install", "-set", args.model_set, "-from", str(Path(source).resolve()),
+            command = [str(tool), "install", "-from", str(Path(source).resolve()),
                        "-to", str(stage / "models"), "-format", getattr(args, "model_format", "int8"),
-                       "-lock", str(ROOT / "models" / "pairing.lock.json"), "-pack", str(args.ja_data.resolve())]
+                       "-lock", lock_path, "-pack", str(args.ja_data.resolve())]
             if getattr(args, "allow_placeholders", False):
                 command.append("-allow-placeholders")
             if not args.preview:
                 command.append("-release")
             subprocess.run(command, cwd=ROOT, env=env, check=True)
-            shutil.copy2(ROOT / "models" / "pairing.lock.json", stage / "models" / "pairing.lock.json")
-            marker = model_set_manifest(args.model_set, model_set, getattr(args, "model_format", "int8"))
-            (stage / "MODEL-SET.txt").write_text(
-                f"set_id: {marker['set_id']}\nvariant: {marker['variant']}\nversion: {marker['version']}\n"
+            shutil.copy2(lock_path, stage / "models" / "pairing.lock.json")
+            marker = model_package_manifest(model_package, getattr(args, "model_format", "int8"))
+            (stage / "MODEL-PACKAGE.txt").write_text(
+                f"version: {marker['version']}\n"
                 f"format: {marker['format']}\nplaceholder: {'yes' if marker['placeholder'] else 'no'}\n"
                 f"quality: {marker['quality']}\n", encoding="utf-8")
-            write_model_set_notices(stage, args.model_set, model_set)
+            write_model_package_notices(stage, model_package)
             if marker["placeholder"]:
-                (stage / "MODEL-SET-PLACEHOLDER.txt").write_text(
-                    "本套件的模型組是未訓練 placeholder（quality=" + marker["quality"] + "），"
+                (stage / "MODEL-PACKAGE-PLACEHOLDER.txt").write_text(
+                    "本套件的模型包是未訓練 placeholder（quality=" + marker["quality"] + "），"
                     "僅供安裝、更新與回退流程驗證，不是正式模型。\n", encoding="utf-8")
         if runtime:
             for dll in RUNTIME_DLLS:
@@ -701,8 +654,8 @@ def build(args):
             release["native_runtime"] = windows_runtime.describe(runtime)
         else:
             release["native_runtime"] = {"backend": "statistical", "onnxruntime": None}
-        if model_set:
-            release["model_set"] = model_set_manifest(args.model_set, model_set, getattr(args, "model_format", "int8"))
+        if model_package:
+            release["model_package"] = model_package_manifest(model_package, getattr(args, "model_format", "int8"))
         if model_pair:
             release["model_pair"] = {"dictionary_manifest_sha256": digest(stage / "data/manifest.json"),
                                      "pairing_lock_sha256": digest(stage / "neural" / "pairing.lock.json")}
@@ -744,18 +697,19 @@ def main():
     parser.add_argument("--statistical-only", action="store_true",
                         help="診斷用純統計套件：不建置 CGO 原生後端、不出貨 ONNX Runtime（不得用於正式發行）")
     parser.add_argument("--cc", default="gcc", help="CGO 使用的 C 編譯器（Windows 上是 mingw 的 gcc）")
-    parser.add_argument("--model-set", help="pairing.lock 的模型組 ID（ja-public-core、ja-cc-by-sa）；不指定則不出貨日文模型組")
+    parser.add_argument("--ja-model", action="store_true", help="出貨唯一的日文模型包（reranker + punctuation）；需要 --ja-data")
+    parser.add_argument("--model-package-lock", type=Path, help="模型包 lock（預設 models/pairing.lock.json）")
     parser.add_argument("--model-pair", type=Path,
                         help="hf_models.py pair 產生的注音 select/、punct/ 與 pairing.lock.json；原生產品必要")
     parser.add_argument("--model-source", type=Path,
-                        help="已下載的模型根目錄（搭配 --model-set）；省略時從 Hugging Face 依 lock 下載")
+                        help="已下載的模型根目錄（搭配 --ja-model）；省略時從 Hugging Face 依 lock 下載")
     parser.add_argument("--model-cache", type=Path, default=ROOT / "build/cache/ja-models",
                         help="HF 模型下載快取")
     parser.add_argument("--model-base-url", help="HF 或鏡像 URL（預設 https://huggingface.co）")
     parser.add_argument("--model-offline", action="store_true", help="只用模型快取，不連網")
     parser.add_argument("--model-format", choices=("int8", "fp32"), default="int8")
     parser.add_argument("--allow-placeholders", action="store_true",
-                        help="明確允許安裝未訓練 placeholder 模型組；完成品會標記 MODEL-SET-PLACEHOLDER.txt")
+                        help="明確允許安裝未訓練 placeholder 模型包；完成品會標記 MODEL-PACKAGE-PLACEHOLDER.txt")
     parser.add_argument("--cargo", default="cargo")
     parser.add_argument("--settings", type=Path, help="scripts/build_settings_windows.py 產生的目錄（0c-settings.exe 與 NOTICES.txt）；省略則不內附設定程式")
     parser.add_argument("--signtool", type=Path, help="Windows SDK x64 signtool.exe")

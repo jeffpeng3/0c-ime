@@ -38,7 +38,7 @@ jobs:
         run: make -C platforms/linux-fcitx5 test
       - name: Test upgrades
         run: make test-upgrade
-      - name: Test Windows packaging and model-set rules
+      - name: Test Windows packaging and model-package rules
         run: make test-windows-package
       - name: Test release packaging
         run: make test-release

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,28 +18,60 @@ func TestListReadsProductLock(t *testing.T) {
 	if err := run([]string{"list", "-lock", repoLock(t)}); err != nil {
 		t.Fatal(err)
 	}
+	if err := run([]string{"list", "-json", "-lock", repoLock(t)}); err != nil {
+		t.Fatal(err)
+	}
 }
 
-func TestValidateSelectsOneSet(t *testing.T) {
+func TestReleaseCheckUsesSinglePinnedPackage(t *testing.T) {
 	lockPath := repoLock(t)
 	lock, err := modelsets.LoadLock(lockPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	set, err := lock.Set("ja-public-core")
-	if err != nil {
-		t.Fatal(err)
+	pkg := lock.ModelPackage
+	if pkg == nil || len(pkg.Artifacts) != 2 {
+		t.Fatalf("正式 lock 應只有一個模型包：%+v", pkg)
 	}
-	// 正式 lock 目前尚未 pin：development 驗證通過，release 必須明確失敗。
+	// 模型包已 pin：development 與 release 都應通過。
 	if err := run([]string{"check", "-lock", lockPath}); err != nil {
 		t.Fatal(err)
 	}
-	if err := run([]string{"check", "-lock", lockPath, "-release"}); err == nil {
-		t.Fatal("未 pin 的 lock 在 release 模式應失敗")
+	if err := run([]string{"check", "-lock", lockPath, "-release"}); err != nil {
+		t.Fatalf("已 pin 的模型包應通過 release：%v", err)
 	}
-	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
-		"-pack-sha256", set.Dictionary.ManifestSHA256}); err != nil {
+	if err := run([]string{"validate", "-lock", lockPath, "-release",
+		"-pack-sha256", pkg.Dictionary.ManifestSHA256}); err != nil {
+		t.Fatalf("validate release 應通過：%v", err)
+	}
+	if err := run([]string{"show", "-lock", lockPath}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestReleaseCheckFailsWhenRevisionOrHashRemoved(t *testing.T) {
+	raw, err := os.ReadFile(repoLock(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	revision := "7450e10fe8b673560044c5db08ad3006a06d7a6e"
+	hash := "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9"
+	path := filepath.Join(t.TempDir(), "pairing.lock.json")
+
+	if !bytes.Contains(raw, []byte(revision)) || !bytes.Contains(raw, []byte(hash)) {
+		t.Fatal("正式 lock 缺少預期 revision 或 SHA-256")
+	}
+	if err := os.WriteFile(path, bytes.Replace(raw, []byte(revision), nil, 1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"check", "-lock", path, "-release"}); err == nil {
+		t.Fatal("移除 revision 後 release 檢查應失敗")
+	}
+	if err := os.WriteFile(path, bytes.Replace(raw, []byte(hash), nil, 1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"check", "-lock", path, "-release"}); err == nil {
+		t.Fatal("移除檔案 SHA-256 後 release 檢查應失敗")
 	}
 }
 
@@ -48,20 +81,17 @@ func TestValidateAllowsFixturePlaceholderOnlyWhenExplicit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	set, err := lock.Set("ja-public-core")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
-		"-pack-sha256", set.Dictionary.ManifestSHA256}); err == nil {
+	pkg := lock.ModelPackage
+	if err := run([]string{"validate", "-lock", lockPath,
+		"-pack-sha256", pkg.Dictionary.ManifestSHA256}); err == nil {
 		t.Fatal("placeholder 未允許時應失敗")
 	}
-	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
-		"-pack-sha256", set.Dictionary.ManifestSHA256, "-allow-placeholders"}); err != nil {
+	if err := run([]string{"validate", "-lock", lockPath,
+		"-pack-sha256", pkg.Dictionary.ManifestSHA256, "-allow-placeholders"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := run([]string{"validate", "-lock", lockPath, "-set", "ja-public-core",
-		"-pack-sha256", set.Dictionary.ManifestSHA256, "-allow-placeholders", "-release"}); err == nil {
+	if err := run([]string{"validate", "-lock", lockPath,
+		"-pack-sha256", pkg.Dictionary.ManifestSHA256, "-allow-placeholders", "-release"}); err == nil {
 		t.Fatal("placeholder 不得通過 release 驗證")
 	}
 }

@@ -76,14 +76,14 @@ func (f *Fetcher) Resolve(ctx context.Context, repository, revision, name string
 	return cache, nil
 }
 
-// FetchSet 下載一個模型組在 format 的 ONNX 檔，複製到 dest 的 lock 相對路徑。
+// FetchPackage 下載模型包在 format 的 ONNX 檔，複製到 dest 的 lock 相對路徑。
 // 呼叫前必須先 pin；未 pin 的 lock 會回傳 ErrUnpinned，不做任何猜測。
-func (f *Fetcher) FetchSet(ctx context.Context, lock Lock, setID, format, dest string) ([]FetchedFile, error) {
-	set, err := lock.Set(setID)
-	if err != nil {
-		return nil, err
+func (f *Fetcher) FetchPackage(ctx context.Context, lock Lock, format, dest string) ([]FetchedFile, error) {
+	pkg := lock.ModelPackage
+	if pkg == nil {
+		return nil, fmt.Errorf("%w: 缺少 model_package", ErrSchema)
 	}
-	if err := set.ValidateRelease(); err != nil {
+	if err := pkg.ValidateRelease(); err != nil {
 		return nil, err
 	}
 	if format == "" {
@@ -93,9 +93,8 @@ func (f *Fetcher) FetchSet(ctx context.Context, lock Lock, setID, format, dest s
 		return nil, err
 	}
 	var out []FetchedFile
-	all := set.AllArtifacts()
-	for i := range all {
-		artifact := &all[i]
+	for i := range pkg.Artifacts {
+		artifact := &pkg.Artifacts[i]
 		local, ok := artifact.Files[format]
 		if !ok {
 			return nil, fmt.Errorf("%w: %s 沒有 %s 檔案", ErrSchema, artifact.ArtifactID, format)

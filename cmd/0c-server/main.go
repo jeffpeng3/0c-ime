@@ -80,9 +80,8 @@ func serve() string {
 	primaryLanguage := flag.String("primary-language", "zh", "主要語言（auto／primary 決定哪些模型先常駐）：zh 或 ja；未指定時依 settings.json")
 	modelResidencyMB := flag.Int("model-residency-mb", -1, "模型常駐預算（MB）：-1 依 settings.json，0 不限制，其他為明確上限")
 	allowPlaceholders := flag.Bool("allow-placeholders", false, "允許載入 placeholder 模型（P2-25P）；未指定時依 settings.json，預設關閉")
-	modelSetID := flag.String("model-set", "", "回報為使用中的日文模型組 ID（P2-27）；空值時讀取 -model-set-root/active.json")
-	modelSetLock := flag.String("model-set-lock", "models/pairing.lock.json", "日文模型組清單（P2-27）")
-	modelSetRoot := flag.String("model-set-root", "", "已安裝模型組的根目錄（P2-27）；空值時使用個人目錄下的 models")
+	modelPackageLock := flag.String("model-package-lock", "models/pairing.lock.json", "日文模型包清單（P2-27）")
+	modelPackageRoot := flag.String("model-package-root", "", "已安裝模型包的根目錄（P2-27）；空值時使用個人目錄下的 models")
 	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
 	neuralBackend := flag.String("neural-backend", string(neural.BackendAuto), "模型執行後端：auto（預設；有原生 ONNX Runtime 就用 native，否則退回統計）、native、python（僅開發／Linux）")
 	neuralORTLib := flag.String("neural-ort-lib", os.Getenv("ZUIN_ORT_LIBRARY"), "native 後端使用的 ONNX Runtime 共享函式庫（.so／.dll）；空值用執行檔旁的 onnxruntime.dll／onnxruntime.so 或 runtime/ 子目錄")
@@ -459,11 +458,11 @@ func serve() string {
 			r = waitForResidency(modelManager, 15*time.Second)
 		}
 		report := buildResidencyReport(mode, primary, allowPlaceholderModels, budgetMB, budgetSource, r)
-		modelRoot := *modelSetRoot
+		modelRoot := *modelPackageRoot
 		if modelRoot == "" {
 			modelRoot = filepath.Join(filepath.Dir(*user), "models")
 		}
-		report.ModelSet = buildModelSetReport(*modelSetID, *modelSetLock, modelRoot, *data, allowPlaceholderModels)
+		report.ModelPackage = buildModelPackageReport(*modelPackageLock, modelRoot, *data, allowPlaceholderModels)
 		if err := writeResidencyReport(os.Stdout, report); err != nil {
 			lg.Printf("輸出模型報告：%v", err)
 		}

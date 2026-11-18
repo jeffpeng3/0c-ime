@@ -179,7 +179,7 @@ func TestLanguageSetRejectsUnknownValuesAndKeepsOldOnes(t *testing.T) {
 	s := Default()
 	for _, c := range []struct{ key, value string }{
 		{"primary-language", "ko"}, {"model-mode", "sometimes"}, {"ja-input-method", "t9"},
-		{"model-set", "private"}, {"ja-live-conversion", "maybe"},
+		{"ja-live-conversion", "maybe"},
 	} {
 		before := s
 		var se *SetError
@@ -187,10 +187,13 @@ func TestLanguageSetRejectsUnknownValuesAndKeepsOldOnes(t *testing.T) {
 			t.Errorf("%v：%v", c, err)
 		}
 	}
-	for _, key := range []string{"primary-language", "ja-model", "model-set"} {
+	for _, key := range []string{"primary-language", "ja-model"} {
 		if _, ok := Keys()[key]; !ok {
 			t.Fatalf("命令列說明應列出 %s", key)
 		}
+	}
+	if _, ok := Keys()["model-set"]; ok {
+		t.Fatal("命令列說明不應再列出模型組選擇")
 	}
 	if _, ok := Keys()["language"]; ok {
 		t.Fatal("舊的 language 不應再列進命令列說明")

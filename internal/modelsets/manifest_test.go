@@ -7,7 +7,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"testing"
 )
@@ -43,8 +42,7 @@ func newFixture(t *testing.T) fixture {
 	t.Helper()
 	pack, dictSHA := syntheticPack(t)
 	root := t.TempDir()
-	artifacts := map[string]map[string]any{}
-	makeArtifact := func(id, kind, variant string) {
+	makeArtifact := func(id, kind, variant string) map[string]any {
 		dir := filepath.Join(root, id)
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatal(err)
@@ -55,26 +53,14 @@ func newFixture(t *testing.T) fixture {
 			t.Fatal(err)
 		}
 		rel := id + "/" + id + ".placeholder.int8.onnx"
-		artifacts[id] = syntheticArtifact(id, kind, variant, rel, int64(len(body)), dictSHA)
-	}
-	makeArtifact("reranker-public-core", KindReranker, VariantPublicCore)
-	makeArtifact("punctuation-public-core", KindPunctuation, VariantPublicCore)
-	makeArtifact("reranker-extra", KindReranker, VariantCCBYSA)
-	sets := map[string]any{
-		"ja-public-core": syntheticSet(VariantPublicCore, dictSHA, "", []map[string]any{
-			artifacts["reranker-public-core"], artifacts["punctuation-public-core"],
-		}),
-		"ja-cc-by-sa": syntheticSet(VariantCCBYSA, dictSHA, "punctuation-public-core", []map[string]any{
-			artifacts["reranker-extra"],
-		}),
+		return syntheticArtifact(id, kind, variant, rel, int64(len(body)), dictSHA)
 	}
 	doc := map[string]any{
 		"schema": 1,
-		"model_sets": map[string]any{
-			"schema": Schema, "updated": "2026-11-18",
-			"mixing_policy": "never mix",
-			"sets":          sets,
-		},
+		"model_package": syntheticPackage(dictSHA, []map[string]any{
+			makeArtifact("reranker-extra", KindReranker, VariantCCBYSA),
+			makeArtifact("punctuation-public-core", KindPunctuation, VariantPublicCore),
+		}),
 	}
 	raw, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
@@ -89,9 +75,9 @@ func newFixture(t *testing.T) fixture {
 
 func syntheticLic(variant string) map[string]any {
 	if variant == VariantPublicCore {
-		return map[string]any{"id": "CC-BY-4.0", "scope": "public-core", "distribution": "public install", "notice": "legal/CC-BY-4.0.txt"}
+		return map[string]any{"id": "MIT", "scope": "public-core", "distribution": "MIT only", "notice": "legal/MIT.txt"}
 	}
-	return map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "experimental only", "notice": "legal/CC-BY-SA-4.0.txt"}
+	return map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "carry notice", "notice": "legal/CC-BY-SA-4.0.txt"}
 }
 
 func syntheticArtifact(id, kind, variant, rel string, size int64, dictSHA string) map[string]any {
@@ -116,85 +102,89 @@ func syntheticArtifact(id, kind, variant, rel string, size int64, dictSHA string
 	}
 }
 
-func syntheticSet(variant, dictSHA, shared string, artifacts []map[string]any) map[string]any {
+func syntheticPackage(dictSHA string, artifacts []map[string]any) map[string]any {
 	list := make([]any, len(artifacts))
 	for i, a := range artifacts {
 		list[i] = a
 	}
-	set := map[string]any{
-		"variant": variant, "language": "ja", "version": "test-1", "description": "test",
+	return map[string]any{
+		"schema": Schema, "updated": "2026-11-19", "version": "test-1",
 		"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
 			"version": "test", "manifest_sha256": dictSHA, "source": "test"},
-		"license": syntheticLic(variant), "attribution": []any{"legal/copyright"},
+		"deployment": map[string]any{"sequence_length": 124, "context_tokens_per_side": 60,
+			"gating_top_k": 3, "format": "int8"},
+		"license": syntheticLic(VariantCCBYSA), "attribution": []any{"legal/copyright"},
 		"placeholder": true, "quality": QualityUntrained, "production_eligible": false,
 		"artifacts": list,
 	}
-	if shared != "" {
-		set["shared_punctuation"] = shared
-	}
-	return set
 }
 
 func digestBytes(b []byte) string {
-	return sha256Hex(b)
-}
-
-func sha256Hex(b []byte) string {
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
 }
 
-func TestParseLockAcceptsSyntheticSets(t *testing.T) {
+func TestParseLockAcceptsSyntheticPackage(t *testing.T) {
 	f := newFixture(t)
-	if got := f.lock.SetIDs(); len(got) != 2 {
-		t.Fatalf("sets %v", got)
+	pkg := f.lock.ModelPackage
+	if pkg == nil || pkg.Version != "test-1" || len(pkg.Artifacts) != 2 {
+		t.Fatalf("package %+v", pkg)
 	}
-	set, err := f.lock.Set("ja-public-core")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if set.Variant != VariantPublicCore || len(set.Artifacts) != 2 {
-		t.Fatalf("set %+v", set)
+	if pkg.Artifacts[0].Kind != KindReranker || pkg.Artifacts[1].Kind != KindPunctuation {
+		t.Fatalf("artifacts %+v", pkg.Artifacts)
 	}
 }
 
-func TestParseLockRejectsMixedVariants(t *testing.T) {
+func TestParseLockRejectsWrongArtifactVariant(t *testing.T) {
 	f := newFixture(t)
 	var doc map[string]any
 	if err := json.Unmarshal(f.lockRaw, &doc); err != nil {
 		t.Fatal(err)
 	}
-	sets := doc["model_sets"].(map[string]any)["sets"].(map[string]any)
-	set := sets["ja-public-core"].(map[string]any)
-	artifacts := set["artifacts"].([]any)
-	artifacts[0].(map[string]any)["variant"] = VariantCCBYSA
+	pkg := doc["model_package"].(map[string]any)
+	artifacts := pkg["artifacts"].([]any)
+	artifacts[0].(map[string]any)["variant"] = VariantPublicCore
 	raw, _ := json.Marshal(doc)
 	if _, err := ParseLock(raw); !errors.Is(err, ErrVariantMixed) {
-		t.Fatalf("混用 variant 應被拒絕：%v", err)
+		t.Fatalf("reranker 不是 cc-by-sa 應被拒絕：%v", err)
+	}
+}
+
+func TestParseLockRejectsAlternativeFields(t *testing.T) {
+	f := newFixture(t)
+	var doc map[string]any
+	if err := json.Unmarshal(f.lockRaw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	doc["model_sets"] = map[string]any{"schema": "0c.model-sets/1", "sets": map[string]any{}}
+	delete(doc, "model_package")
+	raw, _ := json.Marshal(doc)
+	if _, err := ParseLock(raw); !errors.Is(err, ErrSchema) {
+		t.Fatalf("舊 model_sets 應被拒絕：%v", err)
 	}
 }
 
 func TestValidateRejectsDictionaryMismatch(t *testing.T) {
 	f := newFixture(t)
-	set, _ := f.lock.Set("ja-public-core")
-	if _, err := set.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: strings.Repeat("b", 64), ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryMismatch) {
+	pkg := f.lock.ModelPackage
+	if _, err := pkg.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: strings.Repeat("b", 64), ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryMismatch) {
 		t.Fatalf("字典不符應被拒絕：%v", err)
 	}
-	if _, err := set.Validate(Options{AllowPlaceholders: true, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryUnknown) {
+	if _, err := pkg.Validate(Options{AllowPlaceholders: true, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryUnknown) {
 		t.Fatalf("沒有已安裝字典應被拒絕：%v", err)
 	}
-	if _, err := set.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, InstalledDictionaryPackID: "other", ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryMismatch) {
+	if _, err := pkg.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, InstalledDictionaryPackID: "other", ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrDictionaryMismatch) {
 		t.Fatalf("字典包 ID 不符應被拒絕：%v", err)
 	}
 }
 
 func TestValidatePlaceholderGate(t *testing.T) {
 	f := newFixture(t)
-	set, _ := f.lock.Set("ja-public-core")
-	if _, err := set.Validate(Options{InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrPlaceholder) {
+	pkg := f.lock.ModelPackage
+	if _, err := pkg.Validate(Options{InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrPlaceholder) {
 		t.Fatalf("未允許 placeholder 應被拒絕：%v", err)
 	}
-	result, err := set.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true})
+	result, err := pkg.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -205,107 +195,77 @@ func TestValidatePlaceholderGate(t *testing.T) {
 
 func TestValidateRejectsFileHashMismatch(t *testing.T) {
 	f := newFixture(t)
-	set, _ := f.lock.Set("ja-public-core")
-	path := filepath.Join(f.root, "reranker-public-core", "reranker-public-core.placeholder.int8.onnx")
+	pkg := f.lock.ModelPackage
+	path := filepath.Join(f.root, "reranker-extra", "reranker-extra.placeholder.int8.onnx")
 	if err := os.WriteFile(path, []byte("tampered"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := set.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrFileMismatch) {
+	if _, err := pkg.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, ArtifactRoot: f.root, VerifyFiles: true}); !errors.Is(err, ErrFileMismatch) {
 		t.Fatalf("檔案雜湊不符應被拒絕：%v", err)
 	}
 }
 
 func TestValidateRejectsTensorContract(t *testing.T) {
 	f := newFixture(t)
-	set, _ := f.lock.Set("ja-public-core")
-	for i := range set.Artifacts {
-		if set.Artifacts[i].Kind == KindReranker {
-			set.Artifacts[i].IO.Outputs[0].Shape = []any{"batch", "seq"}
-		}
-	}
-	if _, err := set.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA}); !errors.Is(err, ErrTensorContract) {
+	pkg := f.lock.ModelPackage
+	pkg.Artifacts[0].IO.Outputs[0].Shape = []any{"batch", "seq"}
+	if _, err := pkg.Validate(Options{AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA}); !errors.Is(err, ErrTensorContract) {
 		t.Fatalf("reranker 輸出形狀應被拒絕：%v", err)
 	}
 }
 
 func TestValidateRejectsUnmarkedPlaceholder(t *testing.T) {
 	f := newFixture(t)
-	set, _ := f.lock.Set("ja-public-core")
-	set.Placeholder = false
-	set.Quality = "trained"
-	for i := range set.Artifacts {
-		set.Artifacts[i].Placeholder = false
-		set.Artifacts[i].Quality = "trained"
+	pkg := f.lock.ModelPackage
+	pkg.Placeholder = false
+	pkg.Quality = "trained"
+	for i := range pkg.Artifacts {
+		pkg.Artifacts[i].Placeholder = false
+		pkg.Artifacts[i].Quality = "trained"
 	}
-	if err := set.ValidateStructure(); !errors.Is(err, ErrPlaceholderUnmarked) {
+	if err := pkg.ValidateStructure(); !errors.Is(err, ErrPlaceholderUnmarked) {
 		t.Fatalf("placeholder 標記不可移除：%v", err)
 	}
 }
 
-func TestInstallSelectsOneSet(t *testing.T) {
+func TestInstallWritesOnePackage(t *testing.T) {
 	f := newFixture(t)
 	dest := t.TempDir()
-	selection, err := Install(f.lock, "ja-public-core", InstallOptions{
+	selection, err := Install(f.lock, InstallOptions{
 		SourceRoot: f.root, DestRoot: dest, AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if selection.SetID != "ja-public-core" || selection.Variant != VariantPublicCore || !selection.Placeholder {
+	if selection.Version != "test-1" || !selection.Placeholder || len(selection.Artifacts) != 2 {
 		t.Fatalf("selection %+v", selection)
 	}
-	if _, err := os.Stat(filepath.Join(dest, "reranker-public-core", "reranker-public-core.placeholder.int8.onnx")); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "reranker-extra")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("不應安裝另一 variant：%v", err)
-	}
-	read, err := ReadSelection(dest)
-	if err != nil || read.SetID != selection.SetID || len(read.Artifacts) != 2 {
-		t.Fatalf("active.json %+v %v", read, err)
-	}
-	if _, err := SelectionResult(f.lock, read, dest, f.dictSHA, true); err != nil {
-		t.Fatalf("使用中的模型組應可驗證：%v", err)
-	}
-
-	// 切換到另一組：舊 variant 的目錄要移除，不能留下混用檔案。
-	if _, err := Install(f.lock, "ja-cc-by-sa", InstallOptions{
-		SourceRoot: f.root, DestRoot: dest, AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA,
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := os.Stat(filepath.Join(dest, "reranker-public-core")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("切換後不應留下 public-core reranker：%v", err)
-	}
-	// cc-by-sa 是 reranker-only，但會安裝共用的 public-core punctuation。
 	for _, path := range []string{
 		"reranker-extra/reranker-extra.placeholder.int8.onnx",
 		"punctuation-public-core/punctuation-public-core.placeholder.int8.onnx",
 	} {
 		if _, err := os.Stat(filepath.Join(dest, filepath.FromSlash(path))); err != nil {
-			t.Fatalf("切換後缺少 %s：%v", path, err)
+			t.Fatalf("缺少 %s：%v", path, err)
 		}
 	}
-	read, err = ReadSelection(dest)
-	if err != nil || read.SetID != "ja-cc-by-sa" || len(read.Artifacts) != 2 {
-		t.Fatalf("切換後 active.json %+v %v", read, err)
+	read, err := ReadSelection(dest)
+	if err != nil || read.Version != selection.Version || len(read.Artifacts) != 2 {
+		t.Fatalf("active.json %+v %v", read, err)
 	}
-	// 同組重裝要 -force。
-	if _, err := Install(f.lock, "ja-cc-by-sa", InstallOptions{
+	if _, err := SelectionResult(f.lock, read, dest, f.dictSHA, true); err != nil {
+		t.Fatalf("使用中的模型包應可驗證：%v", err)
+	}
+	// 同一個模型包重裝要 -force。
+	if _, err := Install(f.lock, InstallOptions{
 		SourceRoot: f.root, DestRoot: dest, AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA,
 	}); !errors.Is(err, ErrSelection) {
-		t.Fatalf("同組重裝應要求 -force：%v", err)
-	}
-	if _, err := Install(f.lock, "ja-cc-by-sa", InstallOptions{
-		SourceRoot: f.root, DestRoot: dest, AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA, Force: true,
-	}); err != nil {
-		t.Fatal(err)
+		t.Fatalf("重裝應要求 -force：%v", err)
 	}
 }
 
 func TestInstallRefusesPlaceholderWithoutSetting(t *testing.T) {
 	f := newFixture(t)
-	_, err := Install(f.lock, "ja-public-core", InstallOptions{
+	_, err := Install(f.lock, InstallOptions{
 		SourceRoot: f.root, DestRoot: t.TempDir(), InstalledDictionarySHA256: f.dictSHA,
 	})
 	if !errors.Is(err, ErrPlaceholder) {
@@ -313,63 +273,124 @@ func TestInstallRefusesPlaceholderWithoutSetting(t *testing.T) {
 	}
 }
 
-func TestRepositoryLockIsOfficialAndNotPlaceholder(t *testing.T) {
+func TestRepositoryLockIsSinglePinnedPackage(t *testing.T) {
 	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	seenIDs := map[string]bool{}
-	for _, id := range lock.SetIDs() {
-		set, _ := lock.Set(id)
-		if set.Placeholder {
-			t.Fatalf("%s 仍在正式 lock 標示 placeholder", id)
+	pkg := lock.ModelPackage
+	if pkg == nil || pkg.Version != "2026.11.0" || len(pkg.Artifacts) != 2 {
+		t.Fatalf("正式 lock 應只有一個模型包：%+v", pkg)
+	}
+	if warnings := pkg.Unpinned(); len(warnings) != 0 {
+		t.Fatalf("正式模型包仍有未 pin 的來源：%v", warnings)
+	}
+	if err := pkg.ValidateRelease(); err != nil {
+		t.Fatalf("release 模式應接受已 pin 的模型包：%v", err)
+	}
+	deployment := pkg.Deployment
+	if deployment == nil || deployment.SequenceLength != 124 || deployment.ContextTokensPerSide != 60 ||
+		deployment.GatingTopK != 3 || deployment.Format != FormatInt8 {
+		t.Fatalf("deployment 不符：%+v", deployment)
+	}
+
+	want := map[string]struct {
+		revision, fp32, fp32SHA, int8, int8SHA string
+		fp32Bytes, int8Bytes                   int64
+	}{
+		"reranker-extra": {
+			revision: "7450e10fe8b673560044c5db08ad3006a06d7a6e",
+			fp32:     "model.onnx", fp32Bytes: 135613420,
+			fp32SHA: "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
+			int8:    "model.int8.onnx", int8Bytes: 34268510,
+			int8SHA: "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3",
+		},
+		"punctuation-public-core": {
+			revision: "ff9166abc620b6716ac7de73cfa67335e6b985d2",
+			fp32:     "model.onnx", fp32Bytes: 135599640,
+			fp32SHA: "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06",
+			int8:    "model.int8.onnx", int8Bytes: 34240656,
+			int8SHA: "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b",
+		},
+	}
+	for _, artifact := range pkg.Artifacts {
+		expected, ok := want[artifact.ArtifactID]
+		if !ok {
+			t.Fatalf("模型包出現未預期的 artifact %s", artifact.ArtifactID)
 		}
-		all := set.AllArtifacts()
-		for i := range all {
-			artifact := &all[i]
-			if artifact.Placeholder {
-				t.Fatalf("%s 仍在正式 lock 標示 placeholder", artifact.ArtifactID)
+		if artifact.Kind == KindReranker && artifact.License.ID != "CC-BY-SA-4.0" {
+			t.Fatalf("reranker 授權應是 CC BY-SA：%s", artifact.License.ID)
+		}
+		if artifact.Kind == KindPunctuation && artifact.License.ID != "MIT" {
+			t.Fatalf("punctuation 授權應是 MIT：%s", artifact.License.ID)
+		}
+		if artifact.HF == nil || artifact.HF.Revision != expected.revision || !artifact.HF.Pinned() {
+			t.Fatalf("%s 未 pin 到 %s：%+v", artifact.ArtifactID, expected.revision, artifact.HF)
+		}
+		for format, file := range map[string]ArtifactFile{
+			FormatFP32: artifact.Files[FormatFP32],
+			FormatInt8: artifact.Files[FormatInt8],
+		} {
+			remote, ok := artifact.HF.Files[format]
+			if !ok {
+				t.Fatalf("%s 缺少 hf %s", artifact.ArtifactID, format)
 			}
-			if artifact.HF == nil || artifact.HF.Repository == "" || artifact.HF.License == "" {
-				t.Fatalf("%s 缺少 HF 來源", artifact.ArtifactID)
+			name, size, digest := expected.fp32, expected.fp32Bytes, expected.fp32SHA
+			if format == FormatInt8 {
+				name, size, digest = expected.int8, expected.int8Bytes, expected.int8SHA
 			}
-			seenIDs[artifact.ArtifactID] = true
-		}
-		// 目前尚未 pin：development 模式可接受並應列出警告，release 模式必須失敗。
-		if warnings := set.Unpinned(); len(warnings) == 0 {
-			t.Fatalf("%s 應該有未 pin 警告", id)
-		}
-		if err := set.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
-			t.Fatalf("release 模式應拒絕未 pin 的 %s：%v", id, err)
+			if remote.Name != name || remote.Bytes != size || remote.SHA256 != digest {
+				t.Fatalf("%s/%s hf=%+v，應為 %s %d %s", artifact.ArtifactID, format, remote, name, size, digest)
+			}
+			if file.Bytes != size || file.SHA256 != digest {
+				t.Fatalf("%s/%s 本機=%+v，應為 %d %s", artifact.ArtifactID, format, file, size, digest)
+			}
 		}
 	}
-	ids := make([]string, 0, len(seenIDs))
-	for id := range seenIDs {
-		ids = append(ids, id)
+	if got := strings.Join(artifactIDs(pkg), ","); got != "reranker-extra,punctuation-public-core" {
+		t.Fatalf("artifact 順序 %q", got)
 	}
-	sort.Strings(ids)
-	if got, want := strings.Join(ids, ","), "punctuation-public-core,reranker-extra,reranker-public-core"; got != want {
-		t.Fatalf("artifact 清單 %q，應為 %q", got, want)
-	}
-	public, _ := lock.Set("ja-public-core")
-	extra, _ := lock.Set("ja-cc-by-sa")
-	if len(public.Artifacts) != 2 || len(extra.Artifacts) != 1 ||
-		extra.Artifacts[0].ArtifactID != "reranker-extra" ||
-		extra.SharedPunctuation != "punctuation-public-core" || extra.Companion == nil {
-		t.Fatalf("模型組配置不符：public=%d extra=%d shared=%q", len(public.Artifacts), len(extra.Artifacts), extra.SharedPunctuation)
-	}
-	if extra.Companion.License.ID != "MIT" || extra.Artifacts[0].License.ID != "CC-BY-SA-4.0" {
-		t.Fatalf("授權配置不符：extra=%s punctuation=%s", extra.Artifacts[0].License.ID, extra.Companion.License.ID)
+	for _, artifact := range pkg.Artifacts {
+		if artifact.Kind == KindReranker && !containsAll(artifact.Attribution, "data/sources/licenses/ja-wiki.txt") {
+			t.Fatalf("reranker 缺少 Wikipedia attribution：%v", artifact.Attribution)
+		}
 	}
 }
 
-func TestCCBYSAArtifactCannotEnterPublicCoreSet(t *testing.T) {
-	f := newFixture(t)
-	public, _ := f.lock.Set("ja-public-core")
-	extra, _ := f.lock.Set("ja-cc-by-sa")
-	public.Artifacts = append(public.Artifacts, extra.Artifacts[0])
-	if err := public.ValidateStructure(); !errors.Is(err, ErrVariantMixed) {
-		t.Fatalf("CC BY-SA artifact 不得進 public-core：%v", err)
+func artifactIDs(pkg *Package) []string {
+	out := make([]string, 0, len(pkg.Artifacts))
+	for _, artifact := range pkg.Artifacts {
+		out = append(out, artifact.ArtifactID)
+	}
+	return out
+}
+
+func containsAll(list []string, want string) bool {
+	for _, item := range list {
+		if item == want {
+			return true
+		}
+	}
+	return false
+}
+
+func TestReleaseRejectsRemovedRevisionOrHash(t *testing.T) {
+	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg := lock.ModelPackage
+	if err := pkg.ValidateRelease(); err != nil {
+		t.Fatalf("基準應通過：%v", err)
+	}
+	pkg.Artifacts[0].HF.Revision = ""
+	if err := pkg.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
+		t.Fatalf("移除 revision 後 release 應失敗：%v", err)
+	}
+	pkg.Artifacts[0].HF.Revision = "7450e10fe8b673560044c5db08ad3006a06d7a6e"
+	pkg.Artifacts[1].HF.Files[FormatInt8] = HFFile{Name: "model.int8.onnx"}
+	if err := pkg.ValidateRelease(); err == nil {
+		t.Fatal("移除檔案雜湊後 release 應失敗")
 	}
 }
 
@@ -378,14 +399,11 @@ func TestPlaceholderFixtureStillRequiresExplicitAllow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	set, err := lock.Set("ja-public-core")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !set.Placeholder {
+	pkg := lock.ModelPackage
+	if pkg == nil || !pkg.Placeholder {
 		t.Fatal("placeholder fixture 應保留 placeholder 標記")
 	}
-	if _, err := set.Validate(Options{InstalledDictionarySHA256: set.Dictionary.ManifestSHA256}); !errors.Is(err, ErrPlaceholder) {
+	if _, err := pkg.Validate(Options{InstalledDictionarySHA256: pkg.Dictionary.ManifestSHA256}); !errors.Is(err, ErrPlaceholder) {
 		t.Fatalf("未允許 placeholder 應被拒絕：%v", err)
 	}
 }

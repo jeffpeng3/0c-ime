@@ -27,12 +27,12 @@ type residencyReport struct {
 	Loading           int                  `json:"loading"`
 	Failed            int                  `json:"failed"`
 	Models            []neural.ModelStatus `json:"models"`
-	// ModelSet 是 P2-27 的日文模型組使用中狀態；-model-report 一定會帶此區段，
-	// 沒有選定時 active 為 false。
-	ModelSet        *modelSetReport `json:"model_set,omitempty"`
-	ProcessRSSBytes int64           `json:"process_rss_bytes"`
-	WorkerRSSBytes  int64           `json:"worker_rss_bytes"`
-	ProcessTreeRSS  int64           `json:"process_tree_rss_bytes"`
+	// ModelPackage 是 P2-27 的日文模型包使用中狀態；-model-report 一定會帶此區段，
+	// 沒有安裝時 active 為 false。
+	ModelPackage    *modelPackageReport `json:"model_package,omitempty"`
+	ProcessRSSBytes int64               `json:"process_rss_bytes"`
+	WorkerRSSBytes  int64               `json:"worker_rss_bytes"`
+	ProcessTreeRSS  int64               `json:"process_tree_rss_bytes"`
 	// OverheadBytes 是實際 RSS 減去模型檔常駐量；包含 Go 引擎、Python、numpy 與 onnxruntime。
 	OverheadBytes int64 `json:"overhead_bytes"`
 }

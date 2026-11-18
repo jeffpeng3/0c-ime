@@ -239,7 +239,7 @@ pub fn find_server(env_server: Option<&str>, updater: &Path) -> Option<PathBuf> 
 }
 
 /// `0c-server -model-report` 的參數。用獨立的 socket 與 0 秒鎖等待，不和執行中的引擎
-/// 搶端點；user 決定模型組根目錄與要讀的設定檔。
+/// 搶端點；user 決定模型包根目錄與要讀的設定檔。
 pub fn model_report_args(user: &str, data: Option<&str>) -> Vec<String> {
     let pid = std::process::id();
     #[cfg(windows)]
@@ -902,7 +902,7 @@ mod tests {
         }
     }
 
-    // P2-42：模型報告用獨立 socket、0 秒鎖等待，不與執行中的引擎搶端點；使用者路徑決定模型組根目錄。
+    // P2-42：模型報告用獨立 socket、0 秒鎖等待，不與執行中的引擎搶端點；使用者路徑決定模型包根目錄。
     #[test]
     fn model_report_args_are_isolated_from_a_running_engine() {
         let args = model_report_args("/home/u/.local/share/zuin/user.json", Some("/usr/share/0c/data"));
@@ -931,7 +931,7 @@ mod tests {
     fn read_model_report_accepts_only_json_objects() {
         let dir = temp("report");
         let ok = dir.join("report.json");
-        fs::write(&ok, r#"{"resident_bytes":1,"model_set":{"active":false}}"#).unwrap();
+        fs::write(&ok, r#"{"resident_bytes":1,"model_package":{"active":false}}"#).unwrap();
         assert_eq!(read_model_report(&ok).unwrap()["resident_bytes"], 1);
         let bad = dir.join("bad.json");
         fs::write(&bad, "not json").unwrap();

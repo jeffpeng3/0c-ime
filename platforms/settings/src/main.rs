@@ -200,7 +200,7 @@ async fn models_command(action: String) -> Result<Value, String> {
     call(command, timeout).await
 }
 
-/// P2-42：`0c-server -model-report` 的摘要（模型組、變體、placeholder、常駐位元組）。
+/// P2-42：`0c-server -model-report` 的摘要（模型包版本、placeholder、常駐位元組）。
 /// 用 0c-update status 找使用中的安裝與字典，settings 找個人資料檔；ZC_SERVER／ZC_DATA／
 /// ZC_USER 可覆寫，ZC_MODEL_REPORT 直接回一份測試或外部產生的報告。
 #[tauri::command]

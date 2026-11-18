@@ -1,358 +1,5 @@
 {
   "dictionary_manifest_sha256": "4e4c4cdf7681b48de2004927745c2adc03f53b0c7b776e9258c39a7f5b0f4075",
-  "model_sets": {
-    "mixing_policy": "Artifact-level rule: a CC BY-SA 4.0 artifact must never be installed into the public-core set. ja-public-core contains reranker-public-core and punctuation-public-core, both MIT. ja-cc-by-sa is reranker-only: it installs reranker-extra (CC BY-SA 4.0) together with the shared punctuation-public-core (MIT), and the CC BY-SA 4.0 notice must be carried whenever reranker-extra is installed. punctuation-public-core remains MIT.",
-    "schema": "0c.model-sets/1",
-    "sets": {
-      "ja-cc-by-sa": {
-        "artifacts": [
-          {
-            "artifact_id": "reranker-extra",
-            "attribution": [
-              "legal/copyright",
-              "data/sources/corpus/experimental.tsv",
-              "data/sources/licenses/ja-wiki.txt"
-            ],
-            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-            "files": {
-              "fp32": {
-                "path": "reranker-extra/model.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "none (fp32)"
-              },
-              "int8": {
-                "path": "reranker-extra/model.int8.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "dynamic-quint8"
-              }
-            },
-            "io": {
-              "inputs": [
-                {
-                  "description": "Token ids, batch-major.",
-                  "dtype": "int64",
-                  "name": "input_ids",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                },
-                {
-                  "description": "1 for real tokens, 0 for padding.",
-                  "dtype": "int64",
-                  "name": "attention_mask",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                }
-              ],
-              "outputs": [
-                {
-                  "description": "One untrained relevance score per candidate.",
-                  "dtype": "float32",
-                  "name": "scores",
-                  "shape": [
-                    "batch"
-                  ]
-                }
-              ]
-            },
-            "kind": "reranker",
-            "license": {
-              "id": "CC-BY-SA-4.0",
-              "scope": "cc-by-sa",
-              "distribution": "experimental only, never inside the public-core install",
-              "notice": "legal/CC-BY-SA-4.0.txt"
-            },
-            "manifest": "reranker-extra/manifest.json",
-            "parameters": 32691713,
-            "placeholder": false,
-            "production_eligible": true,
-            "quality": "trained",
-            "source": {
-              "training_data": "CC BY-SA Japanese experimental corpus (P2-21B2) and lexicon (P2-22)",
-              "datasets": [
-                "data/sources/corpus/experimental.tsv"
-              ],
-              "checkpoint": "",
-              "generator": "oc_training.export 0.2.0",
-              "fingerprint": ""
-            },
-            "variant": "cc-by-sa",
-            "version": "cc-by-sa-2026.11.0",
-            "hf": {
-              "repository": "jeffpeng3/0c-ja-reranker-extra",
-              "revision": "",
-              "license": "CC-BY-SA-4.0",
-              "files": {
-                "fp32": {
-                  "name": "model.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                },
-                "int8": {
-                  "name": "model.int8.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                }
-              }
-            }
-          }
-        ],
-        "attribution": [
-          "legal/copyright",
-          "legal/CC-BY-SA-4.0.txt",
-          "data/sources/corpus/experimental.tsv",
-          "data/sources/licenses/ja-wiki.txt"
-        ],
-        "description": "Experimental CC BY-SA reranker-only set. It pairs reranker-extra (CC BY-SA 4.0) with the shared punctuation-public-core model (MIT); no CC BY-SA artifact may be installed into the public-core set.",
-        "dictionary": {
-          "format": 2,
-          "language": "ja",
-          "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-          "pack_id": "ja-lexicon-public-core",
-          "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
-          "version": "public-core-20261118"
-        },
-        "language": "ja",
-        "license": {
-          "id": "CC-BY-SA-4.0",
-          "scope": "cc-by-sa",
-          "distribution": "experimental only, never inside the public-core install",
-          "notice": "legal/CC-BY-SA-4.0.txt"
-        },
-        "placeholder": false,
-        "production_eligible": true,
-        "quality": "trained",
-        "variant": "cc-by-sa",
-        "version": "extra-2026.11.0",
-        "shared_punctuation": "punctuation-public-core"
-      },
-      "ja-public-core": {
-        "artifacts": [
-          {
-            "artifact_id": "reranker-public-core",
-            "attribution": [
-              "legal/copyright",
-              "data/sources/corpus/public-core.tsv"
-            ],
-            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-            "files": {
-              "fp32": {
-                "path": "reranker-public-core/model.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "none (fp32)"
-              },
-              "int8": {
-                "path": "reranker-public-core/model.int8.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "dynamic-quint8"
-              }
-            },
-            "io": {
-              "inputs": [
-                {
-                  "description": "Token ids, batch-major.",
-                  "dtype": "int64",
-                  "name": "input_ids",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                },
-                {
-                  "description": "1 for real tokens, 0 for padding.",
-                  "dtype": "int64",
-                  "name": "attention_mask",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                }
-              ],
-              "outputs": [
-                {
-                  "description": "One untrained relevance score per candidate.",
-                  "dtype": "float32",
-                  "name": "scores",
-                  "shape": [
-                    "batch"
-                  ]
-                }
-              ]
-            },
-            "kind": "reranker",
-            "license": {
-              "id": "MIT",
-              "scope": "public-core",
-              "distribution": "public-core install only; model weights are not distributed in the Git repository",
-              "notice": "legal/MIT.txt"
-            },
-            "manifest": "reranker-public-core/manifest.json",
-            "parameters": 32691713,
-            "placeholder": false,
-            "production_eligible": true,
-            "quality": "trained",
-            "source": {
-              "training_data": "public-core Japanese corpus (P2-21A) and lexicon (P2-22)",
-              "datasets": [
-                "data/sources/corpus/public-core.tsv"
-              ],
-              "checkpoint": "",
-              "generator": "oc_training.export 0.2.0",
-              "fingerprint": ""
-            },
-            "variant": "public-core",
-            "version": "public-core-2026.11.0",
-            "hf": {
-              "repository": "jeffpeng3/0c-ja-reranker",
-              "revision": "",
-              "license": "MIT",
-              "files": {
-                "fp32": {
-                  "name": "model.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                },
-                "int8": {
-                  "name": "model.int8.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                }
-              }
-            }
-          },
-          {
-            "artifact_id": "punctuation-public-core",
-            "attribution": [
-              "legal/copyright",
-              "data/sources/corpus/public-core.tsv"
-            ],
-            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-            "files": {
-              "fp32": {
-                "path": "punctuation-public-core/model.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "none (fp32)"
-              },
-              "int8": {
-                "path": "punctuation-public-core/model.int8.onnx",
-                "bytes": 0,
-                "sha256": "",
-                "quantization": "dynamic-quint8"
-              }
-            },
-            "io": {
-              "inputs": [
-                {
-                  "description": "Token ids, batch-major.",
-                  "dtype": "int64",
-                  "name": "input_ids",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                },
-                {
-                  "description": "1 for real tokens, 0 for padding.",
-                  "dtype": "int64",
-                  "name": "attention_mask",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                }
-              ],
-              "outputs": [
-                {
-                  "description": "Per-token punctuation logits in label order ['none', 'comma', 'period', 'question'].",
-                  "dtype": "float32",
-                  "name": "logits",
-                  "shape": [
-                    "batch",
-                    "seq",
-                    4
-                  ]
-                }
-              ]
-            },
-            "kind": "punctuation",
-            "license": {
-              "id": "MIT",
-              "scope": "public-core",
-              "distribution": "public-core install only; model weights are not distributed in the Git repository",
-              "notice": "legal/MIT.txt"
-            },
-            "manifest": "punctuation-public-core/manifest.json",
-            "parameters": 32693252,
-            "placeholder": false,
-            "production_eligible": true,
-            "quality": "trained",
-            "source": {
-              "training_data": "public-core Japanese corpus (P2-21A) and lexicon (P2-22)",
-              "datasets": [
-                "data/sources/corpus/public-core.tsv"
-              ],
-              "checkpoint": "",
-              "generator": "oc_training.export 0.2.0",
-              "fingerprint": ""
-            },
-            "variant": "public-core",
-            "version": "public-core-2026.11.0",
-            "hf": {
-              "repository": "jeffpeng3/0c-ja-punct",
-              "revision": "",
-              "license": "MIT",
-              "files": {
-                "fp32": {
-                  "name": "model.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                },
-                "int8": {
-                  "name": "model.int8.onnx",
-                  "bytes": 0,
-                  "sha256": ""
-                }
-              }
-            }
-          }
-        ],
-        "attribution": [
-          "legal/copyright",
-          "data/sources/corpus/public-core.tsv"
-        ],
-        "description": "Public-core reranker and punctuation models; the only set eligible for the default product install once trained.",
-        "dictionary": {
-          "format": 2,
-          "language": "ja",
-          "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-          "pack_id": "ja-lexicon-public-core",
-          "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
-          "version": "public-core-20261118"
-        },
-        "language": "ja",
-        "license": {
-          "id": "MIT",
-          "scope": "public-core",
-          "distribution": "public-core install only; model weights are not distributed in the Git repository",
-          "notice": "legal/MIT.txt"
-        },
-        "placeholder": false,
-        "production_eligible": true,
-        "quality": "trained",
-        "variant": "public-core",
-        "version": "public-core-2026.11.0"
-      }
-    },
-    "updated": "2026-11-18"
-  },
   "models_lock_sha256": "84f5195065b5b4e3124d2af0e09c874b08a0be9eec0db354f61f7e3647adfdb7",
   "packages": {
     "punct": {
@@ -376,5 +23,238 @@
       }
     }
   },
-  "schema": 1
+  "schema": 1,
+  "model_package": {
+    "schema": "0c.model-package/1",
+    "updated": "2026-11-19",
+    "version": "2026.11.0",
+    "dictionary": {
+      "format": 2,
+      "language": "ja",
+      "manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+      "pack_id": "ja-lexicon-public-core",
+      "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
+      "version": "public-core-20261118"
+    },
+    "deployment": {
+      "sequence_length": 124,
+      "context_tokens_per_side": 60,
+      "gating_top_k": 3,
+      "format": "int8",
+      "gating_policy": "Score only the statistics top-3 candidates with the reranker; keep dictionary order on timeout, cancellation or an unavailable model."
+    },
+    "license": {
+      "id": "CC-BY-SA-4.0",
+      "scope": "cc-by-sa",
+      "distribution": "single shipped model package; carry the CC BY-SA 4.0 notice; punctuation-public-core remains MIT",
+      "notice": "legal/CC-BY-SA-4.0.txt"
+    },
+    "attribution": [
+      "legal/copyright",
+      "legal/CC-BY-SA-4.0.txt",
+      "legal/MIT.txt",
+      "data/sources/corpus/experimental.tsv",
+      "data/sources/corpus/public-core.tsv",
+      "data/sources/licenses/ja-wiki.txt",
+      "data/sources/licenses/ja-unidic.txt"
+    ],
+    "placeholder": false,
+    "quality": "trained",
+    "production_eligible": true,
+    "artifacts": [
+      {
+        "artifact_id": "reranker-extra",
+        "attribution": [
+          "legal/copyright",
+          "data/sources/corpus/experimental.tsv",
+          "data/sources/licenses/ja-wiki.txt"
+        ],
+        "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+        "files": {
+          "fp32": {
+            "path": "reranker-extra/model.onnx",
+            "bytes": 135613420,
+            "sha256": "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
+            "quantization": "none (fp32)"
+          },
+          "int8": {
+            "path": "reranker-extra/model.int8.onnx",
+            "bytes": 34268510,
+            "sha256": "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3",
+            "quantization": "dynamic-quint8"
+          }
+        },
+        "io": {
+          "inputs": [
+            {
+              "description": "Token ids, batch-major.",
+              "dtype": "int64",
+              "name": "input_ids",
+              "shape": [
+                "batch",
+                "seq"
+              ]
+            },
+            {
+              "description": "1 for real tokens, 0 for padding.",
+              "dtype": "int64",
+              "name": "attention_mask",
+              "shape": [
+                "batch",
+                "seq"
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "description": "One relevance score per candidate.",
+              "dtype": "float32",
+              "name": "scores",
+              "shape": [
+                "batch"
+              ]
+            }
+          ]
+        },
+        "kind": "reranker",
+        "license": {
+          "id": "CC-BY-SA-4.0",
+          "scope": "cc-by-sa",
+          "distribution": "default install set; carry the CC BY-SA 4.0 notice; never inside the public-core set",
+          "notice": "legal/CC-BY-SA-4.0.txt"
+        },
+        "manifest": "reranker-extra/manifest.json",
+        "parameters": 32691713,
+        "placeholder": false,
+        "production_eligible": true,
+        "quality": "trained",
+        "source": {
+          "training_data": "CC BY-SA Japanese experimental corpus (P2-21B2) and lexicon (P2-22)",
+          "datasets": [
+            "data/sources/corpus/experimental.tsv"
+          ],
+          "checkpoint": "",
+          "generator": "oc_training.export 0.2.0",
+          "fingerprint": ""
+        },
+        "variant": "cc-by-sa",
+        "version": "cc-by-sa-2026.11.0",
+        "hf": {
+          "repository": "jeffpeng3/0c-ja-reranker-extra",
+          "revision": "7450e10fe8b673560044c5db08ad3006a06d7a6e",
+          "license": "CC-BY-SA-4.0",
+          "files": {
+            "fp32": {
+              "name": "model.onnx",
+              "bytes": 135613420,
+              "sha256": "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9"
+            },
+            "int8": {
+              "name": "model.int8.onnx",
+              "bytes": 34268510,
+              "sha256": "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3"
+            }
+          }
+        }
+      },
+      {
+        "artifact_id": "punctuation-public-core",
+        "attribution": [
+          "legal/copyright",
+          "legal/corpus/NOTICE-public-core.md",
+          "data/sources/corpus/public-core.tsv",
+          "data/sources/licenses/ja-unidic.txt"
+        ],
+        "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
+        "files": {
+          "fp32": {
+            "path": "punctuation-public-core/model.onnx",
+            "bytes": 135599640,
+            "sha256": "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06",
+            "quantization": "none (fp32)"
+          },
+          "int8": {
+            "path": "punctuation-public-core/model.int8.onnx",
+            "bytes": 34240656,
+            "sha256": "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b",
+            "quantization": "dynamic-quint8"
+          }
+        },
+        "io": {
+          "inputs": [
+            {
+              "description": "Token ids, batch-major.",
+              "dtype": "int64",
+              "name": "input_ids",
+              "shape": [
+                "batch",
+                "seq"
+              ]
+            },
+            {
+              "description": "1 for real tokens, 0 for padding.",
+              "dtype": "int64",
+              "name": "attention_mask",
+              "shape": [
+                "batch",
+                "seq"
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "description": "Per-token punctuation logits in label order ['none', 'comma', 'period', 'question'].",
+              "dtype": "float32",
+              "name": "logits",
+              "shape": [
+                "batch",
+                "seq",
+                4
+              ]
+            }
+          ]
+        },
+        "kind": "punctuation",
+        "license": {
+          "id": "MIT",
+          "scope": "public-core",
+          "distribution": "public-core MIT model; weights are not distributed in the Git repository",
+          "notice": "legal/MIT.txt"
+        },
+        "manifest": "punctuation-public-core/manifest.json",
+        "parameters": 32693252,
+        "placeholder": false,
+        "production_eligible": true,
+        "quality": "trained",
+        "source": {
+          "training_data": "public-core Japanese corpus (P2-21A) and lexicon (P2-22)",
+          "datasets": [
+            "data/sources/corpus/public-core.tsv"
+          ],
+          "checkpoint": "",
+          "generator": "oc_training.export 0.2.0",
+          "fingerprint": ""
+        },
+        "variant": "public-core",
+        "version": "public-core-2026.11.0",
+        "hf": {
+          "repository": "jeffpeng3/0c-ja-punct",
+          "revision": "ff9166abc620b6716ac7de73cfa67335e6b985d2",
+          "license": "MIT",
+          "files": {
+            "fp32": {
+              "name": "model.onnx",
+              "bytes": 135599640,
+              "sha256": "998b3df5af330a7f2106d6ecd4185a15760bb4ea942eb3ebf9f24b9ca7151a06"
+            },
+            "int8": {
+              "name": "model.int8.onnx",
+              "bytes": 34240656,
+              "sha256": "2860267deb3da1816b3f53decf786c5f5f478a1b9d327c8c80f2428c643f051b"
+            }
+          }
+        }
+      }
+    ]
+  }
 }

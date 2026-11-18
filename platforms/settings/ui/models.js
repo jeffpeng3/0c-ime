@@ -133,7 +133,7 @@
       }
     }
 
-    // P2-42：`0c-server -model-report` 的摘要（模型組、變體、placeholder、常駐位元組）。
+    // P2-42：`0c-server -model-report` 的摘要（模型包版本、placeholder、常駐位元組）。
     // 報告需要載入模型，只在這一頁顯示時抓；失敗不影響上面的 0c-update 狀態。
     async function loadReport() {
       try {
@@ -226,21 +226,21 @@
       if (!Mixed) return null;
       if (m.reportError) {
         return h('div', { class: 'card', id: 'model-report' },
-          h('h2', {}, '模型組與常駐'),
+          h('h2', {}, '模型包與常駐'),
           h('p', { class: 'notice', role: 'status' }, '無法讀取模型報告：' + m.reportError),
-          h('p', { class: 'muted small' }, '模型組與常駐量需要啟動引擎量測；輸入法仍在執行時也可以稍後再試。'));
+          h('p', { class: 'muted small' }, '模型包與常駐量需要啟動引擎量測；輸入法仍在執行時也可以稍後再試。'));
       }
       if (!m.report) {
-        return h('div', { class: 'card', id: 'model-report' }, h('h2', {}, '模型組與常駐'), h('p', { class: 'muted' }, '讀取中…'));
+        return h('div', { class: 'card', id: 'model-report' }, h('h2', {}, '模型包與常駐'), h('p', { class: 'muted' }, '讀取中…'));
       }
       const facts = Mixed.reportFacts(m.report);
       return h('div', { class: 'card', id: 'model-report' },
-        h('h2', {}, '模型組與常駐'),
+        h('h2', {}, '模型包與常駐'),
         h('dl', { class: 'facts' }, ...facts.flatMap((fact) => [
           h('dt', {}, fact.label),
           h('dd', { class: fact.tone === 'warn' ? 'status-warn' : fact.tone === 'ok' ? 'status-ok' : 'muted' }, fact.value),
         ])),
-        h('p', { class: 'muted small' }, '資料來自 0c-server -model-report。模型組選擇在「Mixed 輸入」頁的「模型」。'));
+        h('p', { class: 'muted small' }, '資料來自 0c-server -model-report。日文模型包固定，不需要選擇。'));
     }
 
     function render(root) {
