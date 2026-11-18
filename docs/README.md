@@ -12,7 +12,7 @@
 | 混合語言 benchmark | 可重現的 baseline，不是上線門檻 | `testdata/mixed/README.md` |
 | 日文羅馬字與混打 | 核心與測試存在；日文轉換品質仍在評測 | `core/ja`、`core/session` |
 | Windows Phase 2 實機驗收 | **NOT RUN** | `platforms/windows/test/vm/LIVE-RUN.md` |
-| 日文模型包 | 單一模型包（extra reranker + public 標點）已 pin HF revision；尚未接入推論 | `models/pairing.lock.json`、`PACKAGING.md` |
+| 日文模型包 | 單一模型包（extra reranker + public 標點）已 pin HF revision，並接入日文 reranker／標點 | `models/pairing.lock.json`、`PACKAGING.md` |
 | 無 Python runtime 的產品套件 | 打包檢查與單元測試存在；VM 安裝 NOT RUN | `PACKAGING.md`、`scripts/test_windows_package.py` |
 
 注音的首選正確率、延遲與模型大小有量測時才寫數字，來源在根目錄 [README](../README.md) 與 Phase 2 報告。日文目前沒有可與 Mozc 比較的品質數字；VM 驗收沒有執行，不能把未跑的项目寫成通過。

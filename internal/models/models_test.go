@@ -81,7 +81,7 @@ func TestEmbeddedLockMatchesUpstream(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if l.SHA256 != "84f5195065b5b4e3124d2af0e09c874b08a0be9eec0db354f61f7e3647adfdb7" {
+	if l.SHA256 != "586f235d36bac0dcc000ee4c5ca90516b3b0234e79caac6f26629354dc3c1ade" {
 		t.Fatalf("models.lock 雜湊 %s", l.SHA256)
 	}
 	if l.Models[RoleSelect].Files["model.onnx"].SHA256 != "4a80caf18acbaddde10c908dcbf35919908d616e94618cdde71fc3409c969261" ||

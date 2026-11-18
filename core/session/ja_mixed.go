@@ -32,9 +32,17 @@ import (
 // conn 是選填的連接成本矩陣。重複呼叫會換掉詞典並重建日文 runtime，其他
 // 語言的狀態不受影響。
 func (s *Session) EnableJapanese(lex jlang.Source, conn *jlang.Matrix) bool {
+	return s.EnableJapaneseConfigured(lex, conn, nil)
+}
+
+// EnableJapaneseConfigured is EnableJapanese with a converter hook. The host
+// uses it to attach the Japanese reranker; an empty hook keeps the statistical
+// conversion and the previous behavior unchanged.
+func (s *Session) EnableJapaneseConfigured(lex jlang.Source, conn *jlang.Matrix, configure jlang.ConverterConfig) bool {
 	if s == nil {
 		return false
 	}
+	s.japaneseConfigure = configure
 	s.installJapanese(lex, conn)
 	s.japaneseOn = true
 	return true
@@ -52,7 +60,7 @@ func (s *Session) installJapanese(lex jlang.Source, conn *jlang.Matrix) {
 	cfg := jlang.DefaultConfig()
 	cfg.Dictionary = s.English
 	s.japaneseCfg = cfg
-	s.languages[lang.Ja] = jlang.NewMixedProfile(lex, conn, cfg)
+	s.languages[lang.Ja] = jlang.NewMixedProfileConfigured(lex, conn, cfg, s.japaneseConfigure)
 	delete(s.runtimes, lang.Ja)
 	if s.Language() != lang.Zh {
 		// 換詞典不應把人留在一個正在変換的舊狀態。

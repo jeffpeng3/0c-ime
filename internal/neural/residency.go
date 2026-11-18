@@ -121,6 +121,9 @@ type Prepared struct {
 	Manifest  Manifest
 	ModelSHA  string
 	PunctPath string
+	// ModelPath is the verified weight file of a 0c.model.manifest/1
+	// reranker. It is empty for sequence and zh punctuation packages.
+	ModelPath string
 	Bytes     int64
 	Options   rerank.Options
 	// Placeholder 與 Quality 來自 manifest；placeholder 模型不得被當成已訓練模型。
@@ -131,8 +134,11 @@ type Prepared struct {
 // Loaded 是背景載入完成的後端。Loader 必須在 ctx 取消時盡快返回；Manager 會在
 // Close 時先取消 context，再等待所有載入與執行中的請求。
 type Loaded struct {
-	Scorer        rerank.Scorer
-	Punctuator    punct.Punctuator
+	Scorer     rerank.Scorer
+	Punctuator punct.Punctuator
+	// ScoreTexts is the Japanese reranker path: tokenized text in, one score
+	// per candidate out. It is nil for sequence and punctuation packages.
+	ScoreTexts    func(context.Context, string, []string) ([]float64, error)
 	Options       rerank.Options
 	ResidentBytes int64
 	Placeholder   bool
@@ -339,8 +345,10 @@ func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded
 		return nil, &ModelError{Reason: ReasonNativeUnavailable, Err: native.ErrNativeUnavailable}
 	}
 	switch spec.Role {
-	case RoleSelect, RoleRerank:
+	case RoleSelect:
 		return loadNative(spec, prepared)
+	case RoleRerank:
+		return loadNativeJARerank(spec, prepared)
 	case RolePunct, RoleJAPunct:
 		return loadNativePunct(spec, prepared)
 	}
@@ -365,6 +373,24 @@ func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 				Unavailable: st.Unavailable, TotalUS: st.TotalUS}
 		},
 		Restarts: func() int { return 0 }}, nil
+}
+
+// loadNativeJARerank runs a 0c.model.manifest/1 Japanese reranker with the
+// package tokenizer and the fixed deployment layout.
+func loadNativeJARerank(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
+	b, err := native.OpenRerank(native.RerankConfig{Package: spec.Package, Tokenizer: spec.Tokenizer,
+		Threads: spec.Threads, LibraryPath: spec.ORTLibrary})
+	if err != nil {
+		return nil, wrapNativeError(err)
+	}
+	return &Loaded{ScoreTexts: b.ScoreTexts, Options: prepared.Options, ResidentBytes: prepared.Bytes,
+		Placeholder: prepared.Placeholder, Quality: prepared.Quality,
+		Close: b.Close, State: b.State, Reason: b.Reason,
+		Stats: func() Stats {
+			st := b.Stats()
+			return Stats{Calls: st.Calls, Scored: st.Scored, Timeouts: st.Timeouts, Errors: st.Errors,
+				Unavailable: st.Unavailable, TotalUS: st.TotalUS}
+		}}, nil
 }
 
 // loadNativePunct runs a zh punctuation package or a 0c.model.manifest/1
@@ -408,7 +434,7 @@ func wrapNativeError(err error) error {
 
 func prepareModel(spec ModelSpec) (*Prepared, error) {
 	switch spec.Role {
-	case RoleSelect, RoleRerank:
+	case RoleSelect:
 		c := Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
 			Threads: spec.Threads, Timeout: spec.Timeout}
 		m, err := loadManifest(c)
@@ -434,6 +460,17 @@ func prepareModel(spec ModelSpec) (*Prepared, error) {
 			}
 		}
 		return &Prepared{PunctPath: model, Bytes: bytes, Placeholder: placeholder, Quality: quality}, nil
+	case RoleRerank:
+		manifestPath := filepath.Join(spec.Package, "manifest.json")
+		artifact, err := ValidateArtifact(manifestPath, "", "")
+		if err != nil {
+			return nil, wrapPrepareError(err)
+		}
+		if err := checkRerankerArtifact(artifact.Manifest); err != nil {
+			return nil, wrapPrepareError(err)
+		}
+		return &Prepared{ModelPath: artifact.Path, ModelSHA: artifact.SHA256, Bytes: artifact.Bytes,
+			Placeholder: artifact.Manifest.Placeholder, Quality: artifact.Manifest.Quality}, nil
 	case RoleJAPunct:
 		manifestPath := filepath.Join(spec.Package, "manifest.json")
 		artifact, err := ValidateArtifact(manifestPath, "", "")
@@ -651,6 +688,24 @@ func (m *Manager) StartupOK(name string) bool {
 	return e != nil && !e.disabled && e.err == nil
 }
 
+// Quality returns the package quality label (for example "trained") without
+// exposing any text or file contents.
+func (m *Manager) Quality(name string) string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	e := m.handleEntry(name)
+	if e == nil {
+		return ""
+	}
+	if e.loaded != nil {
+		return e.loaded.Quality
+	}
+	if e.prepared != nil {
+		return e.prepared.Quality
+	}
+	return ""
+}
+
 func (m *Manager) Placeholder(name string) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -766,6 +821,22 @@ func (m *Manager) ScoreContext(ctx context.Context, name string, r rerank.Reques
 	return scores, err
 }
 
+// ScoreTexts runs the Japanese reranker adapter: tokenized left context and
+// candidate surfaces in, one score per candidate out. It uses the same shared
+// executor and cancellation semantics as the other models.
+func (m *Manager) ScoreTexts(ctx context.Context, name, left string, candidates []string) ([]float64, error) {
+	var scores []float64
+	err := m.run(ctx, name, func(runCtx context.Context, loaded *Loaded) error {
+		if loaded.ScoreTexts == nil {
+			return ErrUnavailable
+		}
+		s, err := loaded.ScoreTexts(runCtx, left, candidates)
+		scores = s
+		return err
+	})
+	return scores, err
+}
+
 // PunctuateContext 透過共用執行器呼叫補標點模型。
 func (m *Manager) PunctuateContext(ctx context.Context, name, text string) ([]punct.Edit, error) {
 	var edits []punct.Edit
@@ -811,7 +882,7 @@ func (h *Handle) Options() rerank.Options {
 	options := h.mgr.Options(h.name)
 	h.mgr.mu.Lock()
 	e := h.mgr.entries[h.name]
-	scorer := e != nil && (e.spec.Role == RoleSelect || e.spec.Role == RoleRerank)
+	scorer := e != nil && e.spec.Role == RoleSelect
 	h.mgr.mu.Unlock()
 	if scorer {
 		options.Scorer = h
@@ -845,6 +916,13 @@ func (h *Handle) Restarts() int {
 	}
 	return h.mgr.Restarts(h.name)
 }
+func (h *Handle) Quality() string {
+	if h == nil {
+		return ""
+	}
+	return h.mgr.Quality(h.name)
+}
+
 func (h *Handle) Placeholder() bool {
 	if h == nil {
 		return false
@@ -869,6 +947,13 @@ func (h *Handle) ScoreContext(ctx context.Context, r rerank.Request) ([]float64,
 	}
 	return h.mgr.ScoreContext(ctx, h.name, r)
 }
+func (h *Handle) ScoreTexts(ctx context.Context, left string, candidates []string) ([]float64, error) {
+	if h == nil {
+		return nil, ErrUnavailable
+	}
+	return h.mgr.ScoreTexts(ctx, h.name, left, candidates)
+}
+
 func (h *Handle) Punctuate(text string) ([]punct.Edit, error) {
 	return h.PunctuateContext(context.Background(), text)
 }

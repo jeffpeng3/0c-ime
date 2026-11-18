@@ -118,6 +118,10 @@ type Session struct {
 	Events LanguageEvents
 	// Punct 由宿主設定：提交時補標點（只插入、不改原字）；nil 停用。私人／暫停／英數狀態一律不送出文字。
 	Punct punct.Punctuator
+	// JaPunct is the Japanese punctuation model. The Japanese commit path uses
+	// it when set; otherwise it keeps the legacy Punct fallback so hosts with
+	// one package still work.
+	JaPunct punct.Punctuator
 	// Fuzzy 由宿主依使用者設定：逐對啟用的模糊音；零值全部關閉，行為與沒有此功能時相同。
 	Fuzzy fuzzy.Config
 	// Simplified 由宿主依「輸出簡體字」設定（#118）：送出給應用程式的文字轉成簡體，nil 照原樣送出繁體。
@@ -231,9 +235,10 @@ type Session struct {
 	runtimes   map[lang.ID]*languageRuntime
 	// P2-17：日文混打的按鍵推斷。japaneseOn 由 EnableJapanese 開啟；japaneseRun
 	// 表示目前這段日文是依按鍵自動開始的，送出或取消後回到注音。
-	japaneseOn  bool
-	japaneseRun bool
-	japaneseCfg jlang.Config
+	japaneseOn        bool
+	japaneseRun       bool
+	japaneseCfg       jlang.Config
+	japaneseConfigure jlang.ConverterConfig
 	// lastLanguage 是上一次送出的最後一個片段語言（P2-15）。選字時用它判斷跨語言偏好：
 	// 句首或被清掉後是空字串，代表沒有前文語言。
 	lastLanguage lang.ID
@@ -1886,21 +1891,25 @@ func (s *Session) output(shown, text string, pins map[int]string) string {
 // punctuate 在提交時補標點。學習已依原路徑完成，插入的標點只影響送出的文字與之後的前文。
 // 評分器失敗或回傳不合規的編輯時，原文照送。
 func (s *Session) punctuate(text string) string {
-	return s.punctuateWith(text, punct.Apply)
+	return s.punctuateWith(s.Punct, text, punct.Apply)
 }
 
 // punctuateJapanese uses the Japanese boundary rule: the trained model labels
 // tokens, so a mark may follow kana or the final token. It still only inserts
 // punctuation and never rewrites an original character.
 func (s *Session) punctuateJapanese(text string) string {
-	return s.punctuateWith(text, punct.ApplyJapanese)
+	p := s.JaPunct
+	if p == nil {
+		p = s.Punct
+	}
+	return s.punctuateWith(p, text, punct.ApplyJapanese)
 }
 
-func (s *Session) punctuateWith(text string, apply func(string, []punct.Edit) (string, bool)) string {
-	if s.Punct == nil || text == "" || s.private || s.paused || s.english {
+func (s *Session) punctuateWith(p punct.Punctuator, text string, apply func(string, []punct.Edit) (string, bool)) string {
+	if p == nil || text == "" || s.private || s.paused || s.english {
 		return text
 	}
-	edits, err := s.Punct.Punctuate(text)
+	edits, err := p.Punctuate(text)
 	if err != nil {
 		return text
 	}

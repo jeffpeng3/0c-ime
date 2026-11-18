@@ -34,6 +34,7 @@ type Engine struct {
 	// DisableModelScoring 由宿主依「不用模型」設定：新 session 同步與非同步評分都停用。
 	DisableModelScoring   bool
 	Punct                 punct.Punctuator  // 宿主在建立 session 前設定；提交時補標點，nil 停用。
+	JaPunct               punct.Punctuator  // Japanese punctuation model; nil falls back to Punct on Japanese commits.
 	DocumentContextOff    bool              // 使用者關閉前文時由宿主設定；外殼的前文確認一律忽略。
 	EscKeepComposition    bool              // 使用者關閉「按 Esc 清除整段組字」時由宿主設定。
 	SpaceInsertsSpace     bool              // 使用者關閉「空白鍵選字」時由宿主設定。
@@ -142,6 +143,7 @@ func (e *Engine) OpenSession() uint64 {
 	e.sessions[e.next].Rerank = e.Rerank
 	e.sessions[e.next].DisableModelScoring = e.DisableModelScoring
 	e.sessions[e.next].Punct = e.Punct
+	e.sessions[e.next].JaPunct = e.JaPunct
 	e.sessions[e.next].DocumentContextOff = e.DocumentContextOff
 	e.sessions[e.next].EscKeepComposition = e.EscKeepComposition
 	e.sessions[e.next].SpaceInsertsSpace = e.SpaceInsertsSpace

@@ -96,8 +96,9 @@ type punctuationTraining struct {
 }
 
 type punctuationDataset struct {
-	Path string `json:"path"`
-	Role string `json:"role"`
+	Path   string `json:"path"`
+	Role   string `json:"role"`
+	SHA256 string `json:"sha256,omitempty"`
 }
 
 type punctuationWorkerManifest struct {

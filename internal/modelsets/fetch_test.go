@@ -48,6 +48,19 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 		if spec.variant == VariantCCBYSA {
 			license = map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"}
 		}
+		assets := []any{}
+		hfAssets := map[string]any{}
+		for _, name := range []string{"manifest.json", "vocab.json", "tokenizer.model"} {
+			body := bodies[name]
+			entry := map[string]any{"name": name, "bytes": 0, "sha256": ""}
+			asset := map[string]any{"name": name, "path": spec.id + "/" + name, "bytes": 0, "sha256": ""}
+			if pinned {
+				entry["bytes"], entry["sha256"] = len(body), sum(body)
+				asset["bytes"], asset["sha256"] = len(body), sum(body)
+			}
+			assets = append(assets, asset)
+			hfAssets[name] = entry
+		}
 		artifacts = append(artifacts, map[string]any{
 			"manifest": spec.id + "/manifest.json", "artifact_id": spec.id, "kind": spec.kind,
 			"variant": spec.variant, "version": "test-1", "parameters": 42,
@@ -57,9 +70,10 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 			"attribution":                []any{"legal/copyright"},
 			"source":                     map[string]any{"training_data": "test", "datasets": []any{}, "checkpoint": "", "generator": "test", "fingerprint": ""},
 			"files":                      map[string]any{"int8": local},
+			"assets":                     assets,
 			"hf": map[string]any{
 				"repository": testRepo, "revision": revision, "license": spec.license,
-				"files": map[string]any{"int8": entry},
+				"files": map[string]any{"int8": entry}, "assets": hfAssets,
 			},
 			"io": map[string]any{
 				"inputs": []any{
@@ -88,6 +102,14 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 	return append(raw, '\n')
 }
 
+func testBodies() map[string][]byte {
+	return map[string][]byte{
+		"reranker.int8.onnx": []byte("reranker-onnx"), "punctuation.int8.onnx": []byte("punctuation-onnx"),
+		"manifest.json": []byte("manifest-json"), "vocab.json": []byte("vocab-json"),
+		"tokenizer.model": []byte("tokenizer-model"),
+	}
+}
+
 func fakeHub(t *testing.T, bodies map[string][]byte) *httptest.Server {
 	t.Helper()
 	hub := http.NewServeMux()
@@ -103,10 +125,7 @@ func fakeHub(t *testing.T, bodies map[string][]byte) *httptest.Server {
 }
 
 func TestFetchPackageDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
-	bodies := map[string][]byte{
-		"reranker.int8.onnx":    []byte("reranker-onnx"),
-		"punctuation.int8.onnx": []byte("punctuation-onnx"),
-	}
+	bodies := testBodies()
 	server := fakeHub(t, bodies)
 	cache, out := t.TempDir(), t.TempDir()
 	lock, err := ParseLock(testLockDoc(t, true, bodies))
@@ -118,7 +137,7 @@ func TestFetchPackageDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 2 {
+	if len(files) != 8 {
 		t.Fatalf("files %+v", files)
 	}
 	for _, file := range files {
@@ -138,10 +157,7 @@ func TestFetchPackageDownloadsVerifiesCachesAndSupportsOffline(t *testing.T) {
 }
 
 func TestFetchRejectsHashMismatchAndOfflineMiss(t *testing.T) {
-	good := map[string][]byte{
-		"reranker.int8.onnx":    []byte("reranker-onnx"),
-		"punctuation.int8.onnx": []byte("punctuation-onnx"),
-	}
+	good := testBodies()
 	lock, err := ParseLock(testLockDoc(t, true, good))
 	if err != nil {
 		t.Fatal(err)
@@ -149,6 +165,8 @@ func TestFetchRejectsHashMismatchAndOfflineMiss(t *testing.T) {
 	bad := map[string][]byte{
 		"reranker.int8.onnx":    []byte("tampered"),
 		"punctuation.int8.onnx": good["punctuation.int8.onnx"],
+		"manifest.json":         good["manifest.json"], "vocab.json": good["vocab.json"],
+		"tokenizer.model": good["tokenizer.model"],
 	}
 	server := fakeHub(t, bad)
 	fetcher := &Fetcher{BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client()}
@@ -163,10 +181,7 @@ func TestFetchRejectsHashMismatchAndOfflineMiss(t *testing.T) {
 }
 
 func TestFetchFromFileBaseURL(t *testing.T) {
-	bodies := map[string][]byte{
-		"reranker.int8.onnx":    []byte("reranker-onnx"),
-		"punctuation.int8.onnx": []byte("punctuation-onnx"),
-	}
+	bodies := testBodies()
 	root := t.TempDir()
 	for name, body := range bodies {
 		path := filepath.Join(root, filepath.FromSlash(testRepo), "resolve", testRevision, name)
@@ -188,10 +203,7 @@ func TestFetchFromFileBaseURL(t *testing.T) {
 }
 
 func TestPinTransitionsFromDevelopmentToRelease(t *testing.T) {
-	bodies := map[string][]byte{
-		"reranker.int8.onnx":    []byte("reranker-onnx"),
-		"punctuation.int8.onnx": []byte("punctuation-onnx"),
-	}
+	bodies := testBodies()
 	raw := testLockDoc(t, false, bodies)
 	lock, err := ParseLock(raw)
 	if err != nil {
@@ -209,7 +221,7 @@ func TestPinTransitionsFromDevelopmentToRelease(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(files) != 2 {
+	if len(files) != 8 {
 		t.Fatalf("pin files %+v", files)
 	}
 	lock, err = ParseLock(pinned)

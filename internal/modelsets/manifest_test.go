@@ -414,3 +414,88 @@ func TestDictionaryPackID(t *testing.T) {
 		t.Fatalf("pack id %q", got)
 	}
 }
+
+// The product package has an explicit, runtime-ready layout: each artifact's
+// manifest, vocab and tokenizer live in the same directory as its weights.
+func TestRepositoryPackageLayoutIsExplicit(t *testing.T) {
+	lock, err := LoadLock(filepath.Join("..", "..", "models", "pairing.lock.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pkg := lock.ModelPackage
+	if pkg == nil {
+		t.Fatal("missing model package")
+	}
+	for i := range pkg.Artifacts {
+		artifact := &pkg.Artifacts[i]
+		dir := artifact.PackageDir()
+		if dir == "" {
+			t.Fatalf("%s has no package directory", artifact.ArtifactID)
+		}
+		for format, file := range artifact.Files {
+			if got := filepath.ToSlash(filepath.Dir(filepath.FromSlash(file.Path))); got != dir {
+				t.Fatalf("%s/%s path %s is not in %s", artifact.ArtifactID, format, file.Path, dir)
+			}
+		}
+		for _, name := range []string{"manifest.json", "vocab.json", "tokenizer.model"} {
+			asset, ok := artifact.Asset(name)
+			if !ok {
+				t.Fatalf("%s missing %s", artifact.ArtifactID, name)
+			}
+			if got := filepath.ToSlash(filepath.Dir(filepath.FromSlash(asset.Path))); got != dir {
+				t.Fatalf("%s/%s path %s is not in %s", artifact.ArtifactID, name, asset.Path, dir)
+			}
+			remote, ok := artifact.HF.Assets[name]
+			if !ok || remote.Bytes <= 0 || !validHex(remote.SHA256) {
+				t.Fatalf("%s/%s is not pinned: %+v", artifact.ArtifactID, name, remote)
+			}
+			if asset.Bytes != remote.Bytes || asset.SHA256 != remote.SHA256 {
+				t.Fatalf("%s/%s local/remote mismatch", artifact.ArtifactID, name)
+			}
+		}
+		if asset, _ := artifact.Asset("manifest.json"); asset.Path != artifact.Manifest {
+			t.Fatalf("%s manifest asset %s != %s", artifact.ArtifactID, asset.Path, artifact.Manifest)
+		}
+		if got := artifact.PackageRoot("/models"); got != filepath.Join("/models", filepath.FromSlash(dir)) {
+			t.Fatalf("%s package root %s", artifact.ArtifactID, got)
+		}
+	}
+}
+
+func TestInstallCopiesAssetsAndRecordsThem(t *testing.T) {
+	f := newFixture(t)
+	// Add real asset files to the synthetic source and lock them.
+	for i := range f.lock.ModelPackage.Artifacts {
+		artifact := &f.lock.ModelPackage.Artifacts[i]
+		dir := artifact.PackageDir()
+		var assets []ArtifactAsset
+		for _, name := range []string{"manifest.json", "vocab.json", "tokenizer.model"} {
+			body := []byte(name + ":" + artifact.ArtifactID)
+			rel := dir + "/" + name
+			path := filepath.Join(f.root, filepath.FromSlash(rel))
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, body, 0o644); err != nil {
+				t.Fatal(err)
+			}
+			assets = append(assets, ArtifactAsset{Name: name, Path: rel, Bytes: int64(len(body)), SHA256: digestBytes(body)})
+		}
+		artifact.Assets = assets
+	}
+	dest := t.TempDir()
+	selection, err := Install(f.lock, InstallOptions{
+		SourceRoot: f.root, DestRoot: dest, AllowPlaceholders: true, InstalledDictionarySHA256: f.dictSHA,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(selection.Assets) != 6 {
+		t.Fatalf("selection assets %+v", selection.Assets)
+	}
+	for _, asset := range selection.Assets {
+		if _, err := os.Stat(filepath.Join(dest, filepath.FromSlash(asset.Path))); err != nil {
+			t.Fatalf("missing installed asset %s: %v", asset.Path, err)
+		}
+	}
+}

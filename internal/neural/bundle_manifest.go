@@ -96,6 +96,27 @@ func checkPunctuationArtifact(m ArtifactManifest) error {
 	return nil
 }
 
+// checkRerankerArtifact verifies the tensor contract used by the native
+// Japanese reranker before any model is loaded.
+func checkRerankerArtifact(m ArtifactManifest) error {
+	if m.Kind != "reranker" || len(m.IO.Inputs) != 2 || len(m.IO.Outputs) != 1 {
+		return errPackageContract
+	}
+	names := map[string]bool{}
+	for _, in := range m.IO.Inputs {
+		if in.Dtype != "int64" || len(in.Shape) != 2 {
+			return errPackageContract
+		}
+		names[in.Name] = true
+	}
+	out := m.IO.Outputs[0]
+	if !names["input_ids"] || !names["attention_mask"] || out.Name != "scores" ||
+		out.Dtype != "float32" || len(out.Shape) != 1 {
+		return errPackageContract
+	}
+	return nil
+}
+
 // ValidateArtifact 選出 int8（沒有時用 fp32），解析相對於 manifest 目錄或
 // artifact root 的路徑，並核對大小與 SHA-256。artifactRoot 可為空。
 func ValidateArtifact(manifestPath, artifactRoot, format string) (Artifact, error) {

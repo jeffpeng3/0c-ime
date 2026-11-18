@@ -25,6 +25,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/bridge/ipc"
 	"github.com/0c-biggo/0c-ime/core/engine"
+	jarerank "github.com/0c-biggo/0c-ime/core/ja/rerank"
 	"github.com/0c-biggo/0c-ime/core/layout"
 	"github.com/0c-biggo/0c-ime/core/personal"
 	"github.com/0c-biggo/0c-ime/core/proto"
@@ -34,6 +35,7 @@ import (
 	"github.com/0c-biggo/0c-ime/internal/datadir"
 	"github.com/0c-biggo/0c-ime/internal/e2esync"
 	"github.com/0c-biggo/0c-ime/internal/installs"
+	"github.com/0c-biggo/0c-ime/internal/modelsets"
 	"github.com/0c-biggo/0c-ime/internal/neural"
 	"github.com/0c-biggo/0c-ime/internal/settings"
 	"github.com/0c-biggo/0c-ime/internal/simplified"
@@ -293,6 +295,8 @@ func serve() string {
 	}
 	var selectionSource, punctuationSource string
 	var selectionModel, punctuationModel *neural.Handle
+	var jaRerankerModel, jaPunctuationModel *neural.Handle
+	var jaRerankConfig jarerank.Config
 	var modelManager *neural.Manager
 	if config.Selection == settings.Neural && !explicit["neural-package"] {
 		neuralState = "not_installed"
@@ -336,6 +340,7 @@ func serve() string {
 	if mode == neural.ModeNone {
 		neuralState = "disabled_by_setting"
 	}
+	modelRoot := modelRootForPackage(*modelPackageRoot, *user)
 	var specs []neural.ModelSpec
 	if *neuralPackage != "" {
 		specs = append(specs, neural.ModelSpec{Name: "zh-select", Language: "zh", Role: neural.RoleSelect,
@@ -348,6 +353,21 @@ func serve() string {
 			Backend: backend, ORTLibrary: *neuralORTLib,
 			Package: *punctPackage,
 			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
+	}
+	// The Japanese package (P2-30F): active.json decides which artifact
+	// directories exist. A dictionary mismatch or missing active.json leaves
+	// the statistical Japanese conversion untouched.
+	var jaDeployment *modelsets.Deployment
+	if _, statErr := os.Stat(*modelPackageLock); statErr == nil {
+		jaSpecs, deployment, jaErr := jaPackageModels(*modelPackageLock, modelRoot, *data, backend,
+			*neuralThreads, *neuralTimeout, *punctThreads, *punctTimeout, *neuralORTLib)
+		switch {
+		case jaErr != nil:
+			lg.Printf("日文模型包未啟用，保留統計轉換：%v", jaErr)
+		case len(jaSpecs) > 0:
+			specs = append(specs, jaSpecs...)
+			jaDeployment = deployment
+		}
 	}
 	languageSeen := map[string]bool{}
 	for _, spec := range specs {
@@ -375,6 +395,8 @@ func serve() string {
 			modelManager = manager
 			selectionModel = manager.Handle("zh-select")
 			punctuationModel = manager.Handle("zh-punct")
+			jaRerankerModel = manager.Handle("ja-rerank")
+			jaPunctuationModel = manager.Handle("ja-punct")
 			if selectionModel != nil {
 				switch {
 				case selectionModel.Disabled():
@@ -400,6 +422,35 @@ func serve() string {
 					lg.Printf("補標點已啟用（背景載入模型）：%s", filepath.Base(*punctPackage))
 				}
 			}
+			if jaRerankerModel != nil {
+				switch {
+				case jaRerankerModel.Disabled():
+					jaRerankerModel = nil
+				case !manager.StartupOK("ja-rerank"):
+					lg.Printf("日文 reranker 未啟用：%s", manager.Reason("ja-rerank"))
+					jaRerankerModel = nil
+				default:
+					topK := 3
+					if jaDeployment != nil && jaDeployment.GatingTopK > 0 {
+						topK = jaDeployment.GatingTopK
+					}
+					jaRerankConfig = jarerank.Config{MaxCandidates: topK, MaxRounds: 1,
+						ResearchCandidates: topK}
+					lg.Printf("日文 reranker 已啟用（背景載入模型，top-%d）", topK)
+				}
+			}
+			if jaPunctuationModel != nil {
+				switch {
+				case jaPunctuationModel.Disabled():
+					jaPunctuationModel = nil
+				case !manager.StartupOK("ja-punct"):
+					lg.Printf("日文補標點未啟用：%s", manager.Reason("ja-punct"))
+					jaPunctuationModel = nil
+				default:
+					eng.JaPunct = jaPunctuationModel
+					lg.Printf("日文補標點已啟用（背景載入模型）")
+				}
+			}
 			defer func() {
 				if err := modelManager.Close(); err != nil {
 					lg.Printf("關閉模型管理器：%v", err)
@@ -423,10 +474,6 @@ func serve() string {
 			r = waitForResidency(modelManager, 15*time.Second)
 		}
 		report := buildResidencyReport(mode, primary, allowPlaceholderModels, budgetMB, budgetSource, r)
-		modelRoot := *modelPackageRoot
-		if modelRoot == "" {
-			modelRoot = filepath.Join(filepath.Dir(*user), "models")
-		}
 		report.ModelPackage = buildModelPackageReport(*modelPackageLock, modelRoot, *data, allowPlaceholderModels)
 		if err := writeResidencyReport(os.Stdout, report); err != nil {
 			lg.Printf("輸出模型報告：%v", err)
@@ -436,10 +483,14 @@ func serve() string {
 		}
 		return ""
 	}
-	// 日文語言 profile（P2-01）：只載入統計轉換資料，不建立 worker、不載入
-	// 模型。日文資料缺失時 profile 為 nil，-language ja 會留在注音；有資料但
-	// 詞典損壞才回報錯誤。rerank 介面保留給 P2-30 的 ONNX 模型。
-	jaLang, jaErr := newJaLanguage(*data)
+	// 日文語言 profile：統計轉換是底層，模型可用時把 reranker 掛在
+	// decoder 上，並在 session 提交時使用日文標點模型。日文資料缺失時 profile
+	// 為 nil，-language ja 會留在注音；有資料但詞典損壞才回報錯誤。
+	var jaVerifier *neural.JAVerifier
+	if jaRerankerModel != nil {
+		jaVerifier = neural.NewJAVerifier(jaRerankerModel)
+	}
+	jaLang, jaErr := newJaLanguageWithModels(*data, jaVerifier, jaPunctuationModel, jaRerankConfig)
 	switch {
 	case errors.Is(jaErr, errJaDataMissing):
 		jaLang = nil
@@ -661,8 +712,16 @@ func serve() string {
 		} else if *punctPackage != "" {
 			punctuationState = "fallback"
 		}
+		jaRerankerState, jaPunctuationState := jaModelStatus(jaRerankerModel), jaModelStatus(jaPunctuationModel)
 		info := map[string]string{"selection_state": selectionState, "punctuation_state": punctuationState,
-			"model_mode": string(mode), "model_primary": primary,
+			"ja_reranker_state": jaRerankerState, "ja_punctuation_state": jaPunctuationState,
+			"ja_reranker_quality":        jaModelQuality(jaRerankerModel),
+			"ja_punctuation_quality":     jaModelQuality(jaPunctuationModel),
+			"ja_reranker_placeholder":    fmt.Sprint(jaModelPlaceholder(jaRerankerModel)),
+			"ja_punctuation_placeholder": fmt.Sprint(jaModelPlaceholder(jaPunctuationModel)),
+			"ja_reranker_reason":         jaModelReason(jaRerankerModel),
+			"ja_punctuation_reason":      jaModelReason(jaPunctuationModel),
+			"model_mode":                 string(mode), "model_primary": primary,
 			"model_budget_mb": fmt.Sprint(budgetMB), "model_budget_bytes": fmt.Sprint(int64(budgetMB) << 20),
 			"model_budget_source": budgetSource, "model_allow_placeholders": fmt.Sprint(allowPlaceholderModels)}
 		// 「輸出簡體字」可以從選單即時切換（#169）：回報引擎目前實際的值，設定程式據此判斷有沒有套用。
@@ -702,6 +761,12 @@ func serve() string {
 		jaState := "not_installed"
 		if jaLang != nil && jaLang.Available() {
 			jaState = "statistical"
+			if jaRerankerModel != nil && !jaRerankerModel.Placeholder() {
+				switch jaRerankerModel.State() {
+				case "ready", "loading":
+					jaState = "neural"
+				}
+			}
 		}
 		info["ja_state"] = jaState
 		return info

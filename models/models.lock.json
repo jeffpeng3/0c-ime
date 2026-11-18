@@ -16,8 +16,8 @@
           "size": 8365
         },
         "manifest.json": {
-          "sha256": "6545fed2d7092aec70f929c2fce8360e1456778e99f6eeadc9d8299e5ad91763",
-          "size": 1165
+          "sha256": "1d0d989d5d5ccb89a3507485168779cdacaf5ca51bae6072ae9e034165a82676",
+          "size": 1232
         },
         "model.onnx": {
           "sha256": "4a80caf18acbaddde10c908dcbf35919908d616e94618cdde71fc3409c969261",

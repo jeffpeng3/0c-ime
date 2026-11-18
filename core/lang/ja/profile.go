@@ -25,10 +25,16 @@ type Config = mixed.Config
 // DefaultConfig 回傳日英混打的預設設定。
 func DefaultConfig() Config { return mixed.DefaultConfig() }
 
+// ConverterConfig is an optional hook that configures the statistical decoder
+// before it is wrapped by the mixed converter. The host uses it to attach the
+// Japanese reranker without core/session importing core/ja/*.
+type ConverterConfig func(*jadecode.Decoder)
+
 // mixedBase 提供詞典轉換器；mixed.Profile 會換上混打組字器與変換器。
 type mixedBase struct {
-	lex  Source
-	conn *Matrix
+	lex       Source
+	conn      *Matrix
+	configure ConverterConfig
 }
 
 func (mixedBase) ID() lang.ID { return lang.Ja }
@@ -59,6 +65,9 @@ func (b mixedBase) NewConverter() lang.Converter {
 	if b.conn != nil {
 		dec.Conn = b.conn
 	}
+	if b.configure != nil {
+		b.configure(dec)
+	}
 	return dec
 }
 
@@ -68,6 +77,13 @@ func (mixedBase) NewPunctuator() lang.Punctuator { return nil }
 // 変換只會原樣顯示讀音；conn 是選填的連接成本矩陣。
 func NewMixedProfile(lex Source, conn *Matrix, cfg Config) lang.Profile {
 	return mixed.NewProfile(mixedBase{lex: lex, conn: conn}, cfg)
+}
+
+// NewMixedProfileConfigured is NewMixedProfile with a decoder hook. It is used
+// by the host to attach the Japanese reranker to the converter the session
+// actually uses; a nil hook behaves exactly like NewMixedProfile.
+func NewMixedProfileConfigured(lex Source, conn *Matrix, cfg Config, configure ConverterConfig) lang.Profile {
+	return mixed.NewProfile(mixedBase{lex: lex, conn: conn, configure: configure}, cfg)
 }
 
 // IsLiteral 回報一段 ASCII 按鍵是否會被混打組字器照字面處理。session 用它

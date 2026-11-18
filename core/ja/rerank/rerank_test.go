@@ -305,3 +305,26 @@ func TestReadingFidelityRejectsMismatch(t *testing.T) {
 		t.Fatal("讀音長度不符仍被接受")
 	}
 }
+
+// Candidates() 最後才把詞典同讀音詞條併進來；模型排序不能在合併後又被統計
+// 分數排回去。這個測試直接走 session 使用的候選視窗路徑。
+func TestCandidatesUseRerankerOrderAfterDictionaryMerge(t *testing.T) {
+	dec := ambiguousDecoder(t)
+	v := &scriptedVerifier{target: "雨雨雨飴", prefix: "雨雨"}
+	dec.Reranker = New(dec, v, Config{})
+	seq := seqUnits("あめあめあめあめ")
+	cands, err := dec.Candidates(seq, lang.Span{Start: 0, Length: len(seq)}, langContext())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cands) == 0 || cands[0].Surface != "雨雨雨飴" {
+		surfaces := make([]string, len(cands))
+		for i, cand := range cands {
+			surfaces[i] = cand.Surface
+		}
+		t.Fatalf("候選順序 = %v，want 第一名 雨雨雨飴", surfaces)
+	}
+	if v.calls == 0 {
+		t.Fatal("候選視窗沒有呼叫 reranker")
+	}
+}

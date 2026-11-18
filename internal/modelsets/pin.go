@@ -113,6 +113,52 @@ func Pin(ctx context.Context, raw []byte, opts PinOptions) ([]byte, []PinnedFile
 			local["sha256"] = digest
 			pinned = append(pinned, PinnedFile{ArtifactID: artifactID, Format: format, Name: name, Bytes: size, SHA256: digest})
 		}
+		if assets, ok := hf["assets"].(map[string]any); ok {
+			localAssets, _ := artifact["assets"].([]any)
+			if localAssets == nil {
+				localAssets = []any{}
+			}
+			byName := map[string]map[string]any{}
+			for _, value := range localAssets {
+				if asset, ok := value.(map[string]any); ok {
+					if name, _ := asset["name"].(string); name != "" {
+						byName[name] = asset
+					}
+				}
+			}
+			for name, fileValue := range assets {
+				entry, ok := fileValue.(map[string]any)
+				if !ok {
+					return nil, nil, fmt.Errorf("%w: %s/%s 不是物件", ErrHFSource, artifactID, name)
+				}
+				remote, _ := entry["name"].(string)
+				if remote == "" || filepath.Base(remote) != remote {
+					return nil, nil, fmt.Errorf("%w: %s/%s 缺少合法檔名", ErrHFSource, artifactID, name)
+				}
+				if !opts.Offline {
+					os.Remove(fetcher.cacheDir(repository, revision, remote))
+				}
+				source, err := fetcher.Resolve(ctx, repository, revision, remote, HFFile{Name: remote})
+				if err != nil {
+					return nil, nil, fmt.Errorf("%s/%s: %w", artifactID, name, err)
+				}
+				size, digest, err := DigestFile(source)
+				if err != nil {
+					return nil, nil, err
+				}
+				entry["bytes"] = size
+				entry["sha256"] = digest
+				local := byName[name]
+				if local == nil {
+					local = map[string]any{"name": name, "path": artifactID + "/" + remote}
+					localAssets = append(localAssets, local)
+				}
+				local["bytes"] = size
+				local["sha256"] = digest
+				pinned = append(pinned, PinnedFile{ArtifactID: artifactID, Format: "asset", Name: remote, Bytes: size, SHA256: digest})
+			}
+			artifact["assets"] = localAssets
+		}
 		hf["revision"] = revision
 		if opts.Version != "" {
 			artifact["version"] = opts.Version

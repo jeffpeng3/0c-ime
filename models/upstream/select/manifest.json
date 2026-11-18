@@ -6,7 +6,7 @@
     "unknown_tone_id": 0
   },
   "allow_partial": true,
-  "dictionary_sha256": "517e6c8bb5cbb145c0554edc3cc91c2b55fc753dd42e11194d83f6b0e119aea3",
+  "dictionary_sha256": "4e4c4cdf7681b48de2004927745c2adc03f53b0c7b776e9258c39a7f5b0f4075",
   "weight": 2.0,
   "margin": 0.0,
   "files": {
@@ -44,5 +44,8 @@
     "ㄧㄚ",
     "ㄧㄝ"
   ],
-  "neutral_expand_penalty": 4.0
+  "neutral_expand_penalty": 4.0,
+  "placeholder": false,
+  "quality": "trained",
+  "trained": true
 }
