@@ -1,7 +1,7 @@
 # P2-30N：原生 ONNX 後端（Windows 產品預設）
 
 狀態：實作完成。Windows 產品由 P2-43 改為預設 native 並出貨固定 runtime；Linux／macOS 沒有原生後端時仍保留 Python worker。
-分支：`p2/T30n-native-backend`（基於 `p2/T30s-native-onnx`）。
+分支：`p2/T30n-native-backend`（基於 `p2/T30s-native-onnx`）。補標點由 P2-30P 接上 native，見第 3.2 與 4.2 節。
 
 ## 1. 怎麼用
 
@@ -16,7 +16,8 @@
 
 - `-neural-backend`：`auto`（預設）、`native` 或 `python`。未知值會記錄警告並回到 `auto`。
 - `-neural-ort-lib`：ORT 共享函式庫路徑；空值先找執行檔旁的 `onnxruntime.dll`／`onnxruntime.so` 與 `runtime/` 子目錄，也可用 `ZUIN_ORT_LIBRARY`。
-- native 只接到 sequence／reranker 角色。補標點尚未移植；native 模式不啟動 Python，提交時保留原文。
+- native 接到 sequence／reranker 與補標點。補標點支援注音 worker 套件（`zuin-punct-runtime-v1`）與日文 `0c.model.manifest/1` 標點模型；native 模式不啟動 Python，模型不可用時才保留原文。
+- 只有建置完全沒有 native 後端時，補標點才會退回 Python worker；native 套件本身載入失敗會回報實際原因，不會偷偷啟動 Python。
 - 預設建置（`CGO_ENABLED=0`）不編譯 ORT binding；Windows 的 `auto` 會回報 `native_unavailable` 並退回統計引擎。
 - native 建置：`CGO_ENABLED=1 go build -tags onnxruntime ./...`；Windows 需要 mingw 的 gcc。
 
@@ -33,11 +34,15 @@ residency manager 對同一個 manifest 可選任一後端：`ModelSpec.Backend`
 | `internal/neural/native/backend_ort.go` | `cgo && onnxruntime` 的 ORT 後端：sequence 9 輸入與 reranker 2 輸入。 |
 | `internal/neural/native/backend_stub.go` | 預設建置的 stub；`NativeAvailable()==false`。 |
 | `internal/neural/native/manifest.go` | 與 Python worker 相同的 manifest／vocab 契約核對。 |
-| `cmd/0c-server/main.go` | `-neural-backend`、`-neural-ort-lib`，health 增加 `neural_backend`、`neural_native_available`。 |
-| `internal/neural/residency.go` | `Backend` 型別、`ParseBackend`、`ModelSpec.Backend`、`loadNative`。 |
-| `internal/neural/native/testdata/parity_oracle.py` | 200 句 parity oracle：Python `prepare()`＋同一顆 int8 placeholder。 |
+| `internal/neural/native/punct_plan.go` | 無 CGO 的補標點 manifest 核對、視窗、合併、插入與注音 `eligible_boundaries` 移植。 |
+| `internal/neural/native/punct_ort.go` | `cgo && onnxruntime` 的補標點 scorer：注音 ids／types 與日文 input_ids／attention_mask 兩種契約。 |
+| `cmd/0c-server/main.go` | `-neural-backend`、`-neural-ort-lib`，health 增加 `neural_backend`、`neural_native_available`；native 也建立補標點 spec。 |
+| `internal/neural/residency.go` | `Backend` 型別、`ParseBackend`、`ModelSpec.Backend`、`loadNative`、`loadNativePunct`。 |
+| `internal/neural/native/testdata/parity_oracle.py` | 200 句 parity oracle：Python `prepare()`＋同一顆 int8 placeholder；另有補標點 oracle。 |
 
 ## 3. 輸入組裝對照
+
+### 3.1 Sequence／reranker
 
 Go `input.Prepare` 逐一對照 `sequence_runtime.py`：
 
@@ -54,7 +59,23 @@ Go `input.Prepare` 逐一對照 `sequence_runtime.py`：
 涵蓋一般、輕聲分支、text task、未知聲調、超過 64 字前文、共同前綴與 partial segment。
 `TestPythonGolden` 在預設 `go test ./...` 就會跑，不需要 CGO 或模型。
 
-## 4. Parity 結果（200 句真實日文）
+### 3.2 補標點輸入與插入
+
+日文 `0c.model.manifest/1` 標點模型的契約直接取自 manifest：
+
+- 輸入：`input_ids` 與 `attention_mask`，都是 `int64 [batch, seq]`。
+- 輸出：`logits`，`float32 [batch, seq, 4]`，順序固定 `none`／`comma`／`period`／`question`。
+- 標記：manifest 的 `architecture.marks` 是 `["", "、", "。", "？"]`；空白與 append 的 `<eos>` 不補。
+- 分詞：`internal/spm` 讀同一個 `public_core_ja.model`，identity normalizer、unigram、byte fallback；tokenizer 路徑由 `ModelSpec.Tokenizer`、manifest 的 tokenizer dataset 或套件內的 `tokenizer.model` 取得。
+- 視窗：訓練 `seq_len`（這顆模型是 256）為窗口、步長 128；長文用 `range(0, n-window, stride) + [n-window]` 滑動，每個位置取離窗口邊緣最遠的那一窗，與 `punct_runtime.py` 的滑動視窗 margin 規則逐行相同。
+- padding／truncation：每個窗口補到 256，`pad_id=0`、`attention_mask=0`；padding 位置不產生插入。超過窗口時只滑動，不截掉任何原字。
+- 插入：逐 token `argmax`，只把 manifest 的標點字元插在 token 結尾對應的原字邊界；token 表面是空白、byte fallback 或 dummy prefix 時跳過。輸出新字串由原字元加上插入的標點組成，原字元、順序、長度都不變。
+
+注音 worker 套件（`zuin-punct-runtime-v1`）走原本的 `punct_runtime.py` 契約：character id 從 8 起、UNK 4、`[BOS]=1`、`[SEP]=2`、`[OUT]=7`，echo 需要 `ids`／`types`，bidirectional 只送 `ids`；`threshold`、`window`、`stride`、`input` 全部照 manifest，插入規則與 `eligible_boundaries`、段尾不補、開頭列舉數字不補頓號都逐一移植。
+
+## 4. Parity 結果
+
+### 4.1 Sequence／reranker（200 句真實日文）
 
 環境：Linux x86-64、Go 1.27.3、onnxruntime 1.32.0、`reranker-public-core.placeholder.int8.onnx`、
 `public_core_ja.model`、`sample-ja.txt` 前 200 行；batch 1、seq 32、intra-op 2。
@@ -94,6 +115,41 @@ CGO_ENABLED=1 go test -tags onnxruntime ./internal/neural/native -run TestParity
 placeholder 的 embedding 只有 14,080 列、tokenizer 有 32,768 個 piece，所以兩邊都用
 `id % 14080`；正式模型必須讓 tokenizer 與 embedding 對齊。placeholder 沒有品質意義。
 
+### 4.2 補標點（真實訓練 int8 模型、240 窗）
+
+環境：Linux x86-64（AMD Ryzen 5 5600X、12 threads）、Go 1.27.3、onnxruntime 1.32.0、
+`punctuation-public-core.int8.onnx`（32.7 MB，SHA-256 `2860267d…f051b`）、
+`public_core_ja.model`、`sample-ja.txt` 前 240 行；窗口 256、步長 128、intra-op 8。
+
+| 指標 | 值 |
+|---|---:|
+| 視窗數 | 240 |
+| token id 不一致（SentencePiece） | 0／240 |
+| 每位置 argmax 不一致 | 0 |
+| 全文合併決策不一致 | 0／240 |
+| 插入 edit 不一致 | 0／240 |
+| 插入後全文不一致 | 0／240 |
+| 移除插入標點後與原文不同 | **0 字元** |
+| native int8 每窗 median／p95 | **34.1 ms／40.2 ms** |
+| 同機 Python ORT 每窗 median／p95 | 34.0 ms／40.1 ms |
+
+窗口拉長到 256 後，這台機器的絕對延遲比 manifest 的 aarch64 主機（11.9 ms）慢，
+但 native 與 Python ORT 同機同執行緒設定下相同。插入等於 0 差異代表兩邊的
+SentencePiece span 對應、邊緣 margin 選擇與 none 決策完全一致；`no_edit` 檢查逐一
+移除插入的標點後仍等於原文，原字元沒有被改寫、刪除或重排。
+
+重現：
+
+```sh
+REF=/home/fedora/.opencode/plan/0c-ja/phase2/reference
+NEURAL_PUNCT_PARITY_PYTHON=/path/to/python-with-sentencepiece \
+NEURAL_PUNCT_PARITY_MANIFEST=$REF/models/trained/punctuation-public-core/manifest.json \
+NEURAL_PUNCT_PARITY_TOKENIZER=$REF/tokenizer/public_core_ja.model \
+NEURAL_PUNCT_PARITY_TEXTS=$REF/tokenizer/sample-ja.txt \
+NEURAL_PUNCT_PARITY_LIB=/path/to/libonnxruntime.so.1.32.0 \
+CGO_ENABLED=1 go test -tags onnxruntime ./internal/neural/native -run TestPunctuationParity200 -v
+```
+
 ## 5. 測試
 
 ```sh
@@ -105,6 +161,12 @@ CGO_ENABLED=1 go build -tags onnxruntime ./...
 
 # 200 句 parity（環境變數見上）
 CGO_ENABLED=1 go test -tags onnxruntime ./internal/neural/native -run TestParity200 -v
+
+# 240 窗真實補標點 parity 與延遲（環境變數見 4.2）
+CGO_ENABLED=1 go test -tags onnxruntime ./internal/neural/native -run TestPunctuationParity200 -v
+
+# 補標點視窗、截斷、masked／padding、空輸入與插入的無 CGO 單元測試
+CGO_ENABLED=0 go test ./internal/neural/native -run 'Punct|Window|TokenEdits|Merge|Empty|Character|Truncation|Eligible'
 
 # 既有 zhuyin golden 與 neural 測試
 go test ./core/... ./internal/neural/... ./cmd/0c-server
@@ -120,8 +182,8 @@ go test ./core/... ./internal/neural/... ./cmd/0c-server
    wheel；大小、SHA-256、授權與 `THIRD_PARTY_NOTICES.txt` 由 runtime lock 與打包流程處理。
 3. **CI 的 mingw（已完成）**：`windows-2022` 的 `windows-cgo-native` job 安裝 mingw、
    以 `CGO_ENABLED=1 -tags onnxruntime` 建置並跑測試；`CGO_ENABLED=0` 的純 Go job 保留。
-4. **尚未移植的 worker 功能**：
-   - 補標點 `punct_runtime.py` 完全沒有 native 版，`-neural-backend native` 只影響選字。
+4. **已接上與仍未移植的 worker 功能**：
+   - 補標點 native 已接上：注音 `zuin-punct-runtime-v1` 與日文 `0c.model.manifest/1` 兩種 manifest 都可由 `native.OpenPunct` 執行；Windows Python-free 套件的補標點不再強制保留原文。
    - `ZUIN_ORT_PROVIDERS` GPU provider 選擇（CUDA／CoreML 等）尚未移植。
    - worker 的 stdio 協定、逾時後殺 worker 重啟、`Supervisor` 的每小時重啟上限：native
      沒有獨立行程可殺，目前只在呼叫前檢查 context；ORT `Run` 本身不可中斷。
@@ -132,9 +194,10 @@ go test ./core/... ./internal/neural/... ./cmd/0c-server
    - 模型檔案驗證只做 manifest／hash；native 仍會在 `native.Open` 重新核對，尚未與
      `validateONNXFile` 的 corrupt 分類合併。
 5. **平台與模型覆蓋**：Linux x86-64 與 Windows x86-64 曾在 P2-30S 驗證；macOS arm64、
-   Windows ARM64、無 AVX CPU 未測。目前 parity 只有 untrained placeholder，換正式 sequence
-   模型後要重跑分數 parity、延遲與 RSS。
-6. **打包與回退**：`platforms/neural/`、`scripts/prepare_neural.py`、
-   `scripts/package_windows.py` 仍以 Python 為前提；native 尚未進安裝包。回退路徑是
-   `-neural-backend python`，或在 native 載入失敗時由 residency manager 回報
-   `runtime_missing`／`failed` 並保留統計引擎。
+   Windows ARM64、無 AVX CPU 未測。補標點 parity 已用真實 `punctuation-public-core`
+   int8 模型跑過 240 窗；sequence 仍只有 untrained placeholder，換正式 sequence 模型後
+   要重跑分數 parity、延遲與 RSS。
+6. **打包與回退**：Windows 打包由 P2-43 放入 ORT 與 VC runtime，不再帶 Python；補標點
+   與選字走同一個 native 建置。回退路徑是 `-neural-backend python`（有 Python 的環境），
+   或在 native 載入失敗時由 residency manager 回報 `runtime_missing`／`failed` 並保留
+   統計引擎；只有建置完全沒有 native 後端時才會改走 Python worker。

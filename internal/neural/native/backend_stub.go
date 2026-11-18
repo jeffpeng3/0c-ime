@@ -5,6 +5,7 @@ package native
 import (
 	"context"
 
+	"github.com/0c-biggo/0c-ime/core/punct"
 	"github.com/0c-biggo/0c-ime/core/rerank"
 )
 
@@ -35,3 +36,28 @@ func (b *Backend) State() string { return "fallback" }
 func (b *Backend) Reason() string { return "native_unavailable" }
 
 func (b *Backend) Close() error { return nil }
+
+// PunctBackend is the build-tag stub for punctuation packages.
+type PunctBackend struct{}
+
+func OpenPunct(Config) (*PunctBackend, error) { return nil, ErrNativeUnavailable }
+
+func (b *PunctBackend) Punctuate(string) ([]punct.Edit, error) {
+	return nil, ErrNativeUnavailable
+}
+
+func (b *PunctBackend) PunctuateContext(context.Context, string) ([]punct.Edit, error) {
+	return nil, ErrNativeUnavailable
+}
+
+func (b *PunctBackend) PunctuateText(text string) (string, error) {
+	return text, ErrNativeUnavailable
+}
+
+func (b *PunctBackend) Stats() Stats { return Stats{} }
+
+func (b *PunctBackend) State() string { return "fallback" }
+
+func (b *PunctBackend) Reason() string { return "native_unavailable" }
+
+func (b *PunctBackend) Close() error { return nil }

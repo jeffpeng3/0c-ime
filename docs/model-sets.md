@@ -17,7 +17,7 @@ Windows 產品出貨原生 ONNX Runtime，不內建 Python。`0c-server` 預設�
 
 - 支援選字／reranker 的模型形狀。
 - 模型形狀不受支援、DLL 不在或載入失敗時，回報原因並保留統計排序。
-- 原生後端目前不支援補標點，Python-free 套件提交時保留原文。設定程式的「提交時補標點」在這種套件不會實際補字。
+- 原生後端支援補標點；Python-free 套件以注音 `zuin-punct-runtime-v1` 或日文 `0c.model.manifest/1` 標點模型執行，不啟動 Python worker。模型不可用時才保留原文。
 
 ### Linux 與 macOS
 

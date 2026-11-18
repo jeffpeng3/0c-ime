@@ -47,7 +47,7 @@ worker 必須以 `-I -B -X utf8` 執行；安裝後檔案不得在執行時改�
 - `-model-mode none`：不載入模型，只用統計引擎。
 - `-neural-backend auto`（預設）：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 ONNX Runtime 時用 native；DLL 不在或載入失敗時退回統計，不啟動 Python。Linux／macOS 沒有原生後端時保留內附或系統 Python worker。
 - `-neural-backend python`：sequence 選字走 Python worker（開發與 Linux/macOS 可攜套件）。
-- `-neural-backend native`：sequence 選字走 Go 原生 ONNX；需 `CGO_ENABLED=1 -tags onnxruntime` 建置與 ORT 共享函式庫（執行檔旁的 `onnxruntime.dll`／`onnxruntime.so`、`runtime/` 子目錄、`-neural-ort-lib` 或 `ZUIN_ORT_LIBRARY`）。補標點尚未移植；native 模式下不啟動 Python，提交時保留原文。模型形狀不受支援時回報 `unsupported_model`。細節與 parity 見 [P2-30N](P2-30N-native-backend.md)。
+- `-neural-backend native`：sequence 選字與補標點都走 Go 原生 ONNX；需 `CGO_ENABLED=1 -tags onnxruntime` 建置與 ORT 共享函式庫（執行檔旁的 `onnxruntime.dll`／`onnxruntime.so`、`runtime/` 子目錄、`-neural-ort-lib` 或 `ZUIN_ORT_LIBRARY`）。補標點支援注音 worker 套件與日文 `0c.model.manifest/1` 標點模型，native 模式不啟動 Python；只有建置完全沒有 native 後端時才退回 Python worker。模型形狀不受支援時回報 `unsupported_model`。細節、輸入契約與 parity 見 [P2-30N](P2-30N-native-backend.md)。
 - 模型缺失、manifest 版本或字典配對不符、檔案雜湊不符、ONNX 內容損壞、Python 或 onnxruntime 不可用時，按鍵與提交照統計結果繼續；health 的 `selection_state`、`punctuation_state` 與 `*_reason` 會回報狀態。
 - `model_resident_bytes`、`model_peak_bytes`、`model_in_flight`、`model_residency` 由 health 回報，供記憶體量測；不含輸入文字。
 - manifest 帶 `placeholder: true` 時，health 另回報 `model_placeholder=true`，啟動紀錄也會標明 PLACEHOLDER；placeholder 模型不得當成已訓練模型或進入正式安裝包。

@@ -20,6 +20,22 @@ import (
 	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
+// 沒有原生後端的建置必須回報 native_unavailable，而不是偷偷啟動 Python。
+func TestNativePunctuationNeedsNativeBackend(t *testing.T) {
+	if native.Available() {
+		t.Skip("this build contains the native ONNX backend")
+	}
+	_, err := LoadModel(context.Background(), ModelSpec{Name: "punct", Language: "zh",
+		Role: RolePunct, Backend: BackendNative, Package: t.TempDir()}, &Prepared{})
+	if !errors.Is(err, native.ErrNativeUnavailable) {
+		t.Fatalf("LoadModel err = %v, want native_unavailable", err)
+	}
+	var modelErr *ModelError
+	if !errors.As(err, &modelErr) || modelErr.Reason != ReasonNativeUnavailable {
+		t.Fatalf("model error %+v", err)
+	}
+}
+
 // syntheticONNX 產生極小的 protobuf 外框：ir_version、producer、graph、opset_import。
 // 不是可推論的模型，只用來測檔案核對與 corrupt 分類；真正的 ONNX 由
 // TestPlaceholderModelProbe 以 OC_PLACEHOLDER_MODELS 驗證。

@@ -117,10 +117,10 @@ func Find(o Options) Bundled {
 		return script, filepath.Join(dir, name), ""
 	}
 	b.SelectWorker, b.SelectPackage, b.SelectSource = find("sequence_runtime.py", "select", !nativeUsable)
-	// 補標點仍只有 Python worker；沒有 Python 的安裝不載入它，提交時保留原文。
-	b.PunctWorker, b.PunctPackage, b.PunctSource = find("punct_runtime.py", "punct", true)
+	// 補標點與選字一樣：有原生後端時不需要 worker；沒有 Python 也沒有原生後端才不載入。
+	b.PunctWorker, b.PunctPackage, b.PunctSource = find("punct_runtime.py", "punct", !nativeUsable)
 	b.HasSelect = b.SelectSource != "" && (b.Python != "" || nativeUsable)
-	b.HasPunct = b.PunctSource != "" && b.Python != ""
+	b.HasPunct = b.PunctSource != "" && (b.Python != "" || nativeUsable)
 	return b
 }
 

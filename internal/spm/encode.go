@@ -114,6 +114,61 @@ func (e *Encoder) Normalize(s string) string {
 	return out
 }
 
+// NormalizeMap returns the same string as Normalize together with the source
+// rune index of every normalised rune. The dummy prefix and collapsed spaces
+// map to -1, since they do not correspond to a single original rune.
+func (e *Encoder) NormalizeMap(s string) (string, []int) {
+	m := e.Model
+	if s == "" {
+		return "", nil
+	}
+	r := []rune(s)
+	first := 0
+	if m.RemoveExtraWhitespaces {
+		for first < len(r) && r[first] == ' ' {
+			first++
+		}
+	}
+	if first == len(r) {
+		return "", nil
+	}
+	escape := " "
+	if m.EscapeWhitespaces {
+		escape = "\xe2\x96\x81"
+	}
+	var b strings.Builder
+	b.Grow(len(s) + len(escape))
+	var mapping []int
+	if m.AddDummyPrefix {
+		b.WriteString(escape)
+		mapping = append(mapping, -1)
+	}
+	prevSpace := m.RemoveExtraWhitespaces
+	for i := first; i < len(r); i++ {
+		if r[i] == ' ' {
+			if prevSpace {
+				continue
+			}
+			b.WriteString(escape)
+			mapping = append(mapping, -1)
+			prevSpace = true
+			continue
+		}
+		b.WriteRune(r[i])
+		mapping = append(mapping, i)
+		prevSpace = false
+	}
+	if m.RemoveExtraWhitespaces {
+		for strings.HasSuffix(b.String(), escape) {
+			str := b.String()
+			b.Reset()
+			b.WriteString(str[:len(str)-len(escape)])
+			mapping = mapping[:len(mapping)-1]
+		}
+	}
+	return b.String(), mapping
+}
+
 type vnode struct {
 	start  int32 // rune index
 	length int32 // rune count
@@ -124,12 +179,37 @@ type vnode struct {
 	prev int32 // index into nodes, -1 for the virtual BOS
 }
 
+// Token is one encoded piece. Start and End are rune offsets in the
+// normalised string (see Normalize); Byte marks a byte-fallback id, where
+// several ids share one source span.
+type Token struct {
+	ID    int32
+	Start int
+	End   int
+	Byte  bool
+}
+
 // Encode returns the piece ids for s, mirroring SentencePieceProcessor::Encode
 // with default options (no BOS/EOS, Viterbi, byte fallback when enabled).
 func (e *Encoder) Encode(s string) []int32 {
+	tokens, _ := e.EncodeTokens(s)
+	if len(tokens) == 0 {
+		return nil
+	}
+	out := make([]int32, len(tokens))
+	for i, t := range tokens {
+		out[i] = t.ID
+	}
+	return out
+}
+
+// EncodeTokens returns the piece ids together with their spans in the
+// normalised string. Callers that insert text can map the spans back to the
+// original runes with NormalizeMap.
+func (e *Encoder) EncodeTokens(s string) ([]Token, string) {
 	norm := e.Normalize(s)
 	if norm == "" {
-		return nil
+		return nil, norm
 	}
 
 	// Rune boundaries of the normalized string.
@@ -213,7 +293,7 @@ func (e *Encoder) Encode(s string) []int32 {
 		}
 	}
 	if last < 0 {
-		return nil
+		return nil, norm
 	}
 	var chain []int32
 	for i := last; i >= 0; i = nodes[i].prev {
@@ -224,31 +304,33 @@ func (e *Encoder) Encode(s string) []int32 {
 		chain[i], chain[j] = chain[j], chain[i]
 	}
 
-	out := make([]int32, 0, len(chain)+4)
+	out := make([]Token, 0, len(chain)+4)
 	for _, i := range chain {
 		node := &nodes[i]
+		start := int(node.start)
+		end := start + int(node.length)
 		if node.id != e.Model.UnkID {
-			out = append(out, node.id)
+			out = append(out, Token{ID: node.id, Start: start, End: end})
 			continue
 		}
 		off := runeStarts[node.start]
-		end := len(norm)
-		if int(node.start+node.length) < n {
-			end = runeStarts[node.start+node.length]
+		stop := len(norm)
+		if end < n {
+			stop = runeStarts[end]
 		}
 		if !e.Model.ByteFallback {
-			out = append(out, node.id)
+			out = append(out, Token{ID: node.id, Start: start, End: end})
 			continue
 		}
-		for _, b := range []byte(norm[off:end]) {
+		for _, b := range []byte(norm[off:stop]) {
 			id := e.byteIDs[b]
 			if id < 0 {
 				id = e.Model.UnkID
 			}
-			out = append(out, id)
+			out = append(out, Token{ID: id, Start: start, End: end, Byte: true})
 		}
 	}
-	return out
+	return out, norm
 }
 
 func runeIndex(starts []int, off int) int {

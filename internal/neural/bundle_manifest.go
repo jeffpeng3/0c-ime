@@ -72,6 +72,30 @@ func LoadArtifactManifest(path string) (ArtifactManifest, error) {
 	return m, nil
 }
 
+// checkPunctuationArtifact verifies the tensor contract used by the native
+// Japanese punctuation scorer before any model is loaded.
+func checkPunctuationArtifact(m ArtifactManifest) error {
+	if m.Kind != "punctuation" || len(m.IO.Inputs) != 2 || len(m.IO.Outputs) != 1 {
+		return errPackageContract
+	}
+	names := map[string]bool{}
+	for _, in := range m.IO.Inputs {
+		if in.Dtype != "int64" || len(in.Shape) != 2 {
+			return errPackageContract
+		}
+		names[in.Name] = true
+	}
+	out := m.IO.Outputs[0]
+	if !names["input_ids"] || !names["attention_mask"] || out.Name != "logits" ||
+		out.Dtype != "float32" || len(out.Shape) != 3 {
+		return errPackageContract
+	}
+	if n, ok := out.Shape[2].(float64); !ok || int(n) != 4 {
+		return errPackageContract
+	}
+	return nil
+}
+
 // ValidateArtifact 選出 int8（沒有時用 fp32），解析相對於 manifest 目錄或
 // artifact root 的路徑，並核對大小與 SHA-256。artifactRoot 可為空。
 func ValidateArtifact(manifestPath, artifactRoot, format string) (Artifact, error) {

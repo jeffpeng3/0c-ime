@@ -96,7 +96,7 @@ Windows 產品**不內建 CPython、numpy、onnxruntime Python 套件或 wheel**
 | `onnxruntime.dll` | ONNX Runtime 1.30.0 | MIT，Copyright (c) Microsoft Corporation |
 | `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` | Microsoft Visual C++ 2022 Runtime 14.44.35112 | Microsoft Visual Studio 可轉散佈條款 |
 
-版本、大小與 SHA-256 固定在 [models/runtime.lock.json](../models/runtime.lock.json)。打包工具會拒絕任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。原生後端目前支援選字／reranker；補標點在 Python-free 套件保留原文，不會啟動 Python worker。
+版本、大小與 SHA-256 固定在 [models/runtime.lock.json](../models/runtime.lock.json)。打包工具會拒絕任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。原生後端支援選字／reranker 與補標點；Python-free 套件以 `native.OpenPunct` 執行補標點，不會啟動 Python worker。
 
 Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 與 ONNX Runtime，這個「不內建 Python」的敘述只適用 Windows 產品。兩個原始碼與模型 tarball 都不攜帶可攜 Python、wheel、訓練 checkpoint 或訓練環境。
 

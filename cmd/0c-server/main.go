@@ -372,14 +372,11 @@ func serve() string {
 			Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage, DictionarySHA256: dictionarySHA,
 			Threads: *neuralThreads, Timeout: *neuralTimeout, Preload: true})
 	}
-	if *punctPackage != "" && backend != neural.BackendNative {
+	if *punctPackage != "" {
 		specs = append(specs, neural.ModelSpec{Name: "zh-punct", Language: "zh", Role: neural.RolePunct,
+			Backend: backend, ORTLibrary: *neuralORTLib,
 			Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
 			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
-	} else if *punctPackage != "" && backend == neural.BackendNative {
-		// 原生後端目前只實作 sequence／reranker；沒有 Python 的產品不啟動補標點 worker，
-		// 提交時保留原文（統計轉換），原因由 health 的 punctuation 狀態說明。
-		lg.Printf("原生後端不支援補標點；提交時保留原文")
 	}
 	languageSeen := map[string]bool{}
 	for _, spec := range specs {
