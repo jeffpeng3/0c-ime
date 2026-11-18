@@ -2,6 +2,28 @@ package punct
 
 import "testing"
 
+func TestApplyJapaneseInsertsAfterKanaAndAtEnd(t *testing.T) {
+	text := "今日は天気です"
+	got, ok := ApplyJapanese(text, []Edit{{Offset: 3, Text: "、"}, {Offset: 7, Text: "。"}})
+	if !ok || got != "今日は、天気です。" {
+		t.Fatalf("got %q %v", got, ok)
+	}
+	// Removing only the inserted marks recovers the original string exactly.
+	if len([]rune(got)) != len([]rune(text))+2 {
+		t.Fatalf("changed characters: %q -> %q", text, got)
+	}
+	for _, bad := range [][]Edit{
+		{{Offset: 0, Text: "。"}},
+		{{Offset: 9, Text: "。"}},
+		{{Offset: 2, Text: "."}},
+		{{Offset: 4, Text: "、"}}, // past the end of a shorter input
+	} {
+		if got, ok := ApplyJapanese("今日は", bad); ok || got != "今日は" {
+			t.Fatalf("invalid Japanese edits accepted: %v -> %q", bad, got)
+		}
+	}
+}
+
 func TestApplyInsertsOnlyBetweenHan(t *testing.T) {
 	got, ok := Apply("明天早上九點開會請記得帶資料", []Edit{{Offset: 8, Text: "，"}})
 	if !ok || got != "明天早上九點開會，請記得帶資料" {

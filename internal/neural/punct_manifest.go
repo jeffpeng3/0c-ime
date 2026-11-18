@@ -22,9 +22,30 @@ func loadPunctManifest(c Config) (string, int64, bool, string, error) {
 	if c.Threads < 1 || c.Threads > MaxThreads {
 		return "", 0, false, "", errors.New("invalid punct threads")
 	}
-	b, err := os.ReadFile(filepath.Join(c.Package, "manifest.json"))
+	manifestPath := filepath.Join(c.Package, "manifest.json")
+	b, err := os.ReadFile(manifestPath)
 	if err != nil {
 		return "", 0, false, "", err
+	}
+	var head struct {
+		Schema string `json:"schema"`
+	}
+	if err = json.Unmarshal(b, &head); err != nil {
+		return "", 0, false, "", fmt.Errorf("%w: %v", errCorruptPackage, err)
+	}
+	// Japanese punctuation ships as 0c.model.manifest/1 with per-format file
+	// paths and a SentencePiece tokenizer. The native scorer already accepts
+	// it; use the same artifact validation here so the product manager can
+	// prepare the package before the tokenizer is loaded.
+	if head.Schema == "0c.model.manifest/1" {
+		artifact, err := ValidateArtifact(manifestPath, "", "")
+		if err != nil {
+			return "", 0, false, "", err
+		}
+		if err := checkPunctuationArtifact(artifact.Manifest); err != nil {
+			return "", 0, false, "", err
+		}
+		return artifact.SHA256, artifact.Bytes, artifact.Manifest.Placeholder, artifact.Manifest.Quality, nil
 	}
 	var m struct {
 		Schema      string            `json:"schema"`

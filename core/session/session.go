@@ -1886,6 +1886,17 @@ func (s *Session) output(shown, text string, pins map[int]string) string {
 // punctuate 在提交時補標點。學習已依原路徑完成，插入的標點只影響送出的文字與之後的前文。
 // 評分器失敗或回傳不合規的編輯時，原文照送。
 func (s *Session) punctuate(text string) string {
+	return s.punctuateWith(text, punct.Apply)
+}
+
+// punctuateJapanese uses the Japanese boundary rule: the trained model labels
+// tokens, so a mark may follow kana or the final token. It still only inserts
+// punctuation and never rewrites an original character.
+func (s *Session) punctuateJapanese(text string) string {
+	return s.punctuateWith(text, punct.ApplyJapanese)
+}
+
+func (s *Session) punctuateWith(text string, apply func(string, []punct.Edit) (string, bool)) string {
 	if s.Punct == nil || text == "" || s.private || s.paused || s.english {
 		return text
 	}
@@ -1893,7 +1904,7 @@ func (s *Session) punctuate(text string) string {
 	if err != nil {
 		return text
 	}
-	out, _ := punct.Apply(text, edits)
+	out, _ := apply(text, edits)
 	return out
 }
 

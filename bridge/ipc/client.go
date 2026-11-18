@@ -87,6 +87,30 @@ func (c *Client) Handle(req proto.Request) (proto.Snapshot, error) {
 	return *reply.Snapshot, nil
 }
 
+// Poll 取得已完成且仍有效的背景候選評分。第二個回傳值為 false 表示目前
+// 沒有可用結果（尚未完成、逾時、失敗或已過期），呼叫端保留畫面上的順序。
+func (c *Client) Poll() (proto.Snapshot, bool, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.closed {
+		return proto.Snapshot{}, false, errors.New("連線已關閉")
+	}
+	if c.session == 0 {
+		return proto.Snapshot{}, false, errors.New("尚未 open")
+	}
+	reply, err := c.callLocked(Envelope{Op: OpPoll, Session: c.session})
+	if err != nil {
+		return proto.Snapshot{}, false, err
+	}
+	if !reply.OK {
+		return proto.Snapshot{}, false, errors.New(reply.Error)
+	}
+	if reply.Snapshot == nil {
+		return proto.Snapshot{}, false, nil
+	}
+	return *reply.Snapshot, true, nil
+}
+
 // Health 查詢引擎狀態，並更新能力旗標快取。不需要先 Open。
 func (c *Client) Health() (map[string]string, error) {
 	c.mu.Lock()

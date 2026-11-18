@@ -317,6 +317,19 @@ func (e *Engine) Do(id uint64, req proto.Request) (proto.Snapshot, error) {
 	return snap, nil
 }
 
+// Poll applies a completed asynchronous candidate reorder to the session. It
+// returns false when no current result is ready; stale, timed-out and failed
+// results are discarded by the session.
+func (e *Engine) Poll(id uint64) (proto.Snapshot, bool) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	s, ok := e.sessions[id]
+	if !ok {
+		return proto.Snapshot{}, false
+	}
+	return s.Poll()
+}
+
 // Handle 處理一個 JSON 編碼的請求，回傳 JSON 編碼的快照。
 func (e *Engine) Handle(id uint64, req []byte) ([]byte, error) {
 	var r proto.Request

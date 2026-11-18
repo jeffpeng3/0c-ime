@@ -5,6 +5,7 @@ import (
 
 	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/proto"
+	"github.com/0c-biggo/0c-ime/core/punct"
 	rd "github.com/0c-biggo/0c-ime/core/reading"
 )
 
@@ -88,5 +89,28 @@ func TestSessionJapaneseSelectionLearnsLanguage(t *testing.T) {
 	}
 	if got := s.model.LanguageSurfaceCount(lang.Ja, "今日"); got != 1 {
 		t.Fatalf("日文詞面次數 = %d", got)
+	}
+}
+
+// 日文送出也要補標點：模型可以接在假名或段尾，但只插入標點，原字不變。
+func TestLanguageCommitPunctuatesJapaneseWithoutChangingText(t *testing.T) {
+	s := newSession()
+	if !s.AddLanguageProfile(langLearnProfile{}) || !s.SetLanguage(lang.Ja) {
+		t.Fatal("註冊或切換日文失敗")
+	}
+	r, ok := s.activeRuntime()
+	if !ok {
+		t.Fatal("沒有日文 runtime")
+	}
+	text := "今日は天気です"
+	r.surface = text
+	s.Punct = punctFunc(func(got string) ([]punct.Edit, error) {
+		if got != text {
+			t.Fatalf("模型收到 %q，want %q", got, text)
+		}
+		return []punct.Edit{{Offset: 3, Text: "、"}, {Offset: 7, Text: "。"}}, nil
+	})
+	if got := s.languageCommit(); got != "今日は、天気です。" {
+		t.Fatalf("送出 %q", got)
 	}
 }

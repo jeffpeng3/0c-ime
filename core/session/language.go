@@ -533,6 +533,7 @@ func (s *Session) languageCommit() string {
 		s.emitLearn(lang.ID(r.profile.ID()), text)
 	}
 	s.flushLanguageSelections(!s.paused && !s.private && !s.learningCleared)
+	text = s.punctuateJapanese(text)
 	s.noteCommittedLanguage()
 	r.reset()
 	s.finishJapaneseRun()
