@@ -29,6 +29,8 @@ if ROOT != Path(__file__).resolve().parents[1]:
     raise SystemExit(f"打包模組來自另一份原始碼：{ROOT}；請檢查 Python 的 ._pth 或 PYTHONPATH")
 
 TARGET = "x86_64-pc-windows-msvc"
+# Linux 交叉建置使用 GNU target；Rust 與 Go 的 CGO 都由 x86_64-w64-mingw32-gcc 產生。
+TARGET_GNU = "x86_64-pc-windows-gnu"
 # 32 位元應用程式（例如 32 位元 Office、HCL Notes 12）只載入 32 位元的 TSF DLL（#112）。只建 DLL：引擎與候選窗
 # 由 x64 那份經 named pipe 服務。兩個 target 的 C 執行階段都靜態連結（.cargo/config.toml）：Visual C++ 可轉散發
 # 套件不一定有裝，x64 也一樣（#261）。
@@ -116,16 +118,23 @@ def pe_imports(path):
 
 # Visual C++ 可轉散發套件的 DLL；UCRT（api-ms-win-crt-*、ucrtbase.dll）是 Windows 10 起內建，不在此列。
 VC_REDIST = re.compile(r"^(vcruntime|msvcp|concrt|vccorlib|vcomp|mfc)\d", re.IGNORECASE)
+# GNU target 的執行檔不得依賴 MinGW 的共享執行階段；那些 DLL 不會隨安裝程式出貨。
+MINGW_REDIST = re.compile(r"^(libgcc_s|libstdc\+\+|libwinpthread|libssp)", re.IGNORECASE)
 
 
 def check_static_crt(path):
     """我們建的執行檔與 DLL 不得依賴 VC++ 可轉散發套件（#261）：沒裝的電腦 regsvr32 載不了 0c_tsf.dll，
     安裝精靈在註冊那步失敗。Rust 由 platforms/windows/.cargo/config.toml 的 +crt-static 靜態連結；設了
-    RUSTFLAGS 環境變數會蓋掉那個設定，所以打包時再檢查一次。"""
-    needed = [name for name in pe_imports(path) if VC_REDIST.match(name)]
+    RUSTFLAGS 環境變數會蓋掉那個設定，所以打包時再檢查一次。GNU 交叉建置另外拒絕共享的 MinGW 執行階段。"""
+    imports = pe_imports(path)
+    needed = [name for name in imports if VC_REDIST.match(name)]
     if needed:
         raise ValueError(f"{Path(path).name} 需要 Visual C++ 可轉散發套件（{', '.join(needed)}），沒裝的電腦載入不了；"
                          "請以 -C target-feature=+crt-static 建置，並確認沒有設定 RUSTFLAGS")
+    mingw = [name for name in imports if MINGW_REDIST.match(name)]
+    if mingw:
+        raise ValueError(f"{Path(path).name} 需要 MinGW 共享執行階段（{', '.join(mingw)}）；"
+                         "請靜態連結，否則乾淨的 Windows 電腦載入不了")
 
 
 # 檔案內容（說明）出現在檔案內容對話框、工作管理員與 SmartScreen／Defender 的報告；發行者與 Artifact Signing 的
@@ -205,7 +214,12 @@ def existing_version_languages(path):
 
 
 def stamp_version(path, version):
-    """以 Win32 UpdateResource 寫入版本資訊；必須在簽章與計算雜湊之前。"""
+    """以 Win32 UpdateResource 寫入版本資訊；必須在簽章與計算雜湊之前。
+
+    Linux 交叉建置沒有 Win32 UpdateResource；保留交叉編譯器原本的資源，版本仍記錄在
+    release.json、安裝精靈與安裝收據。"""
+    if sys.platform != "win32":
+        return
     import ctypes
     from ctypes import wintypes
     languages = existing_version_languages(path)
@@ -487,8 +501,13 @@ def runtime_plan(ort_runtime, statistical_only, neural):
 
 
 def build(args):
-    if sys.platform != "win32" or platform.machine().lower() not in ("amd64", "x86_64"):
-        raise ValueError("請在 Windows x64 的建置環境執行")
+    native = sys.platform == "win32"
+    if native and platform.machine().lower() not in ("amd64", "x86_64"):
+        raise ValueError("請在 Windows x64 或 Linux x86_64 的建置環境執行")
+    target = getattr(args, "windows_target", None) or (TARGET if native else TARGET_GNU)
+    # 32 位元 DLL 需要第二份 Rust target；Linux 交叉建置環境沒有 i686 target 時明確略過，
+    # 產品只服務 64 位元應用程式。
+    include_x86 = native or getattr(args, "include_x86", False)
     data = args.data.resolve()
     manifest = check_data(data, not args.preview)
     check_licenses()
@@ -534,14 +553,27 @@ def build(args):
             target = stage / dst
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(regular(src), target)
+
+        def host_tool(name, package):
+            """Build a host-native helper for verification during cross packaging."""
+            path = Path(temp) / name
+            host_env = dict(os.environ, CGO_ENABLED="0")
+            host_env.pop("GOOS", None)
+            host_env.pop("GOARCH", None)
+            subprocess.run([args.go, "build", "-trimpath", "-o", str(path), package],
+                           cwd=ROOT, env=host_env, check=True)
+            return path
         # Force the documented target even if the shell has another default toolchain. 兩個 target 都由
         # platforms/windows/.cargo/config.toml 靜態連結 C 執行階段（#261），下面 check_static_crt 再核對。
-        subprocess.run([args.cargo, "build", "--locked", "--release", "--target", TARGET], cwd=PLATFORM, check=True)
+        subprocess.run([args.cargo, "build", "--locked", "--release", "--target", target], cwd=PLATFORM, check=True)
         for binary in ("0c_tsf.dll", "0c-ui.exe"):
-            copy(PLATFORM / "target" / TARGET / "release" / binary, binary)
-        subprocess.run([args.cargo, "build", "--locked", "--release", "--target", TARGET32, "-p", "zuin-tsf"],
-                       cwd=PLATFORM, check=True)
-        copy(PLATFORM / "target" / TARGET32 / "release" / "0c_tsf.dll", DLL32)
+            copy(PLATFORM / "target" / target / "release" / binary, binary)
+        if include_x86:
+            target32 = getattr(args, "windows_target32", None) or (
+                TARGET32 if native else "i686-pc-windows-gnu")
+            subprocess.run([args.cargo, "build", "--locked", "--release", "--target", target32, "-p", "zuin-tsf"],
+                           cwd=PLATFORM, check=True)
+            copy(PLATFORM / "target" / target32 / "release" / "0c_tsf.dll", DLL32)
         env = dict(os.environ, GOOS="windows", GOARCH="amd64", CGO_ENABLED="0")
         # 原生 ONNX 後端：0c-server 以 CGO＋onnxruntime build tag 建置（Windows 需要 mingw 的 gcc）；
         # 只有這一支帶 CGO。更新器、MCP 與啟動器維持純 Go（CGO_ENABLED=0），CGO-off 的伺服器路徑仍可建置。
@@ -577,8 +609,9 @@ def build(args):
                 + (("0c-settings.exe",) if settings else ())]
         for binary in ours:
             check_pe(binary)
-        check_pe(stage / DLL32, "x86")
-        ours.append(stage / DLL32)
+        if include_x86:
+            check_pe(stage / DLL32, "x86")
+            ours.append(stage / DLL32)
         for binary in ours:
             check_static_crt(binary)
         for binary in ours:
@@ -596,10 +629,9 @@ def build(args):
         if model_package:
             # P2-27：安裝唯一的 pairing lock 模型包。
             # 沒有 --model-source 時從 HF 下載並逐檔核對；下載、雜湊不符或離線缺檔都直接失敗。
-            # 0c-model-set 會再核對一次大小與 SHA-256 並寫出 active.json。
-            tool = Path(temp) / "0c-model-set.exe"
-            subprocess.run([args.go, "build", "-trimpath", "-o", str(tool), "./cmd/0c-model-set"],
-                           cwd=ROOT, env=env, check=True)
+            # 0c-model-set 會再核對一次大小與 SHA-256 並寫出 active.json。交叉建置時用 host
+            # 版本執行，因為 Windows exe 不能在 Linux 上跑。
+            tool = host_tool("0c-model-set", "./cmd/0c-model-set")
             lock_path = str(getattr(args, "model_package_lock", None) or ROOT / "models" / "pairing.lock.json")
             source = getattr(args, "model_source", None)
             if source is None:
@@ -610,7 +642,7 @@ def build(args):
                          "-cache", str(getattr(args, "model_cache", None) or ROOT / "build/cache/ja-models")]
                 if getattr(args, "model_offline", False):
                     fetch.append("-offline")
-                subprocess.run(fetch, cwd=ROOT, env=env, check=True)
+                subprocess.run(fetch, cwd=ROOT, check=True)
             command = [str(tool), "install", "-from", str(Path(source).resolve()),
                        "-to", str(stage / "models"), "-format", getattr(args, "model_format", "int8"),
                        "-lock", lock_path, "-pack", str(args.ja_data.resolve())]
@@ -618,7 +650,7 @@ def build(args):
                 command.append("-allow-placeholders")
             if not args.preview:
                 command.append("-release")
-            subprocess.run(command, cwd=ROOT, env=env, check=True)
+            subprocess.run(command, cwd=ROOT, check=True)
             shutil.copy2(lock_path, stage / "models" / "pairing.lock.json")
             marker = model_package_manifest(model_package, getattr(args, "model_format", "int8"))
             (stage / "MODEL-PACKAGE.txt").write_text(
@@ -649,7 +681,12 @@ def build(args):
             (stage / "PREVIEW.txt").write_text("內部驗證包，非公開發行版。\n", encoding="utf-8")
         # 最後一道產品邊界：不得有 CPython、numpy、onnxruntime Python 套件、worker 或 wheel。
         python_free(stage)
-        subprocess.run([str(stage / "0c-server.exe"), "-check-data", "-data", str(stage / "data")], check=True)
+        if native:
+            server_check = [str(stage / "0c-server.exe")]
+        else:
+            # Windows exe 不能在 Linux 上執行；用同一份 Go 程式在本機驗證資料包。
+            server_check = [str(host_tool("0c-server-check", "./cmd/0c-server"))]
+        subprocess.run(server_check + ["-check-data", "-data", str(stage / "data")], check=True)
         release = {"schema": 1, "product": "0c", "name": "靈犀注音", "version": args.version,
                    "channel": "internal-preview" if args.preview else "public-beta", "os": "windows", "arch": "amd64",
                    "revision": revision, "dirty": dirty, "build_platform": platform.platform(),
@@ -668,7 +705,12 @@ def build(args):
             release["ja_data_format"] = 2
             release["ja_data_manifest_sha256"] = digest(stage / "data/ja/manifest.json")
         (stage / "release.json").write_text(json.dumps(release, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        subprocess.run([str(stage / "0c-update.exe"), "verify", "-bundle", str(stage)], check=True)
+        if native:
+            verify = [str(stage / "0c-update.exe"), "verify", "-bundle", str(stage)]
+        else:
+            verify = [str(host_tool("0c-update-check", "./cmd/0c-update")), "verify",
+                      "-bundle", str(stage), "-target-os", "windows", "-target-arch", "amd64"]
+        subprocess.run(verify, check=True)
         (stage / "SHA256SUMS").write_text("".join(f"{digest(p)}  {p.relative_to(stage).as_posix()}\n"
                                                  for p in sorted(stage.rglob("*")) if p.is_file() and p.name != "SHA256SUMS"), encoding="utf-8")
         fd, temporary = tempfile.mkstemp(prefix=".0c-", dir=args.out)
@@ -716,12 +758,19 @@ def main():
     parser.add_argument("--allow-placeholders", action="store_true",
                         help="明確允許安裝未訓練 placeholder 模型包；完成品會標記 MODEL-PACKAGE-PLACEHOLDER.txt")
     parser.add_argument("--cargo", default="cargo")
+    parser.add_argument("--windows-target", default=None,
+                        help="Rust target（預設依主機選 x86_64-pc-windows-msvc 或 x86_64-pc-windows-gnu）")
+    parser.add_argument("--windows-target32", default=None,
+                        help="選填的 i686 Rust target；Linux 交叉建置預設不建 32 位元 DLL")
+    parser.add_argument("--x86", dest="include_x86", action="store_true",
+                        help="一併建置 32 位元 x86/0c_tsf.dll；需要已安裝的 i686 target")
     parser.add_argument("--settings", type=Path, help="scripts/build_settings_windows.py 產生的目錄（0c-settings.exe 與 NOTICES.txt）；省略則不內附設定程式")
     parser.add_argument("--signtool", type=Path, help="Windows SDK x64 signtool.exe")
     parser.add_argument("--sign-dlib", type=Path, help="Artifact Signing 用戶端的 Azure.CodeSigning.Dlib.dll")
     parser.add_argument("--sign-metadata", type=Path, help="Artifact Signing metadata.json（端點、帳戶、憑證設定檔）")
     try:
         args = parser.parse_args()
+        args.include_x86 = getattr(args, "include_x86", False)
         sign = (args.signtool, args.sign_dlib, args.sign_metadata)
         if any(sign) and not all(sign):
             parser.error("簽章需要同時指定 --signtool、--sign-dlib、--sign-metadata")

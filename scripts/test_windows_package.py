@@ -127,6 +127,16 @@ class RuntimeTreeTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in out.iterdir()), sorted(windows_runtime.DLLS))
         self.assertFalse(any(p.suffix in (".py", ".whl") for p in out.iterdir()))
 
+    def test_fetch_moves_the_download_into_the_cache(self):
+        # 快取目錄原本不存在時，下載完成的暫存檔要搬到快取，不能把目標路徑當成來源。
+        tmp = Path(tempfile.mkdtemp(prefix="runtime-fetch-"))
+        source = tmp / "source.bin"
+        source.write_bytes(b"wheel-bytes")
+        cache = tmp / "cache"
+        target = windows_runtime.fetch(source.as_uri(), sha(b"wheel-bytes"), cache)
+        self.assertEqual(target, cache / "source.bin")
+        self.assertEqual(target.read_bytes(), b"wheel-bytes")
+
 
 class PythonFreeTests(unittest.TestCase):
     def test_clean_bundle_has_no_python_runtime(self):

@@ -83,7 +83,7 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - **主要語言只是偏好**：`zh`／`ja` 影響先驗、切換成本與模型常駐順序，不阻擋其他語言。
 - **逐片段候選**：候選範圍跟著游標所在片段。Windows 在候選窗沒開時用 Home／End／←／→ 換片段，會自動為新片段重開候選。
 - **長詞是一項候選**：詞庫長詞跨過多個輸入片段時合併成一個片段，候選只出現一次。
-- **目前限制**：日文模型包（extra reranker + public 標點）已 pin HF revision，但日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
+- **目前限制**：日文模型包（extra reranker + public 標點）已 pin HF revision 並接入引擎；套件只支援 64 位元應用程式，完整日文詞典與神經模型常駐時記憶體可能接近 1 GB。Windows Phase 2 VM 驗收是 **NOT RUN**。
 
 操作、按鍵與未接上的日文設定見 [輸入與候選](docs/typing.md)；日文模型包見 [模型與模型包](docs/model-sets.md)。
 
@@ -96,7 +96,7 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - Windows TSF 只有一個 Mixed profile。注音、日文羅馬字與英文在同一個組字區，不再有 ja-JP「靈犀日本語」profile；舊版留下的 ja-JP 會在升級時清掉。
 - `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
 
-repo 內的日文資料包是 140 行（138 筆詞條）的種子包。完整的 0c-jadic public-core pack（1,147,021 筆、870,298 surfaces）不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。這份完整詞典的統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
+repo 內的日文資料包是 140 行（138 筆詞條）的種子包。完整的 0c-jadic public-core pack 不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；P2-45F 的 importer 匯入 1,137,895 筆詞條、861,582 個 surface，編譯後合併為 909,864 筆。pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。這份完整詞典的統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
 
 ```sh
 make assets LANG=zh                 # 注音字典與模型

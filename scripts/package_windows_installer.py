@@ -50,7 +50,7 @@ def read_bundle(archive):
     release = metadata(archive)
     if (release['os'], release['arch']) != ('windows', 'amd64'):
         raise ValueError('安裝精靈需要 Windows amd64 ZIP')
-    required = {'0c-update.exe', '0c-server.exe', '0c-ui.exe', '0c_tsf.dll', 'x86/0c_tsf.dll',
+    required = {'0c-update.exe', '0c-server.exe', '0c-ui.exe', '0c_tsf.dll',
                 'data/manifest.json', 'data/lexicon.bin', 'data/lm.bin', 'data/NOTICE.txt', 'data/report.txt'}
     required |= {'TERMS.md', 'LICENSE', 'legal/README.md', 'THIRD_PARTY_NOTICES.txt'}
     required |= set(NATIVE_RUNTIME_DLLS)

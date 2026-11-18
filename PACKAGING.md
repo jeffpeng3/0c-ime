@@ -106,7 +106,7 @@ python3 scripts/source_release.py verify build/source-release/<版本>/0c-ime-<�
 
 ## Windows 安裝、移除與回復
 
-Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。**產品執行階段不含 CPython、numpy、onnxruntime Python 套件或任何 Python worker**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy、onnxruntime Python 套件，且各 PE 檔不含已移除的 Python runtime 路徑字串。授權邊界與第三方聲明見 [授權頁](docs/licensing.md)。
+Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。也可以在 Linux x86_64 交叉建置：Rust 與 CGO 使用 `x86_64-pc-windows-gnu` 與 `x86_64-w64-mingw32-gcc`，`makensis` 需要可用的 NSIS 3 與 `NSISDIR`；Linux 交叉建置預設只出 x64，不加 32 位元的 `x86/0c_tsf.dll`，除非另外安裝 i686 target 並加 `--x86`。**產品執行階段不含 CPython、numpy、onnxruntime Python 套件或任何 Python worker**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy、onnxruntime Python 套件，且各 PE 檔不含已移除的 Python runtime 路徑字串。授權邊界與第三方聲明見 [授權頁](docs/licensing.md)。
 
 `0c-server` 預設 `-neural-backend auto`：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 `onnxruntime.dll` 時使用 native；DLL 不在或載入失敗時直接退回統計轉換；產品沒有 Python 執行路徑。原生後端支援選字／reranker 與補標點的模型形狀；模型形狀不受支援時回報 `unsupported_model` 並保留統計結果。補標點同樣走 native；建置完全沒有原生後端時退回統計引擎與原文提交。
 
