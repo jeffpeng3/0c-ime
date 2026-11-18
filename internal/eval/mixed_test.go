@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/0c-biggo/0c-ime/core/reading"
+	"github.com/0c-biggo/0c-ime/core/segment"
 )
 
 const mixedDir = "../../testdata/mixed"
@@ -49,16 +50,23 @@ func TestMixedFixturesLoad(t *testing.T) {
 			t.Errorf("%s: 情境 %q 重複", c.Name, c.Scenario)
 		}
 		wantScenario[c.Scenario] = true
-		if len(c.Cases) != 2 {
-			t.Errorf("%s: 案例數 = %d，want 2", c.Name, len(c.Cases))
+		wantCases := 4
+		if c.Scenario == ScenarioA {
+			wantCases = 5
+		}
+		if len(c.Cases) != wantCases {
+			t.Errorf("%s: 案例數 = %d，want %d", c.Name, len(c.Cases), wantCases)
 		}
 		if len(entry.SHA256) != 64 {
 			t.Errorf("%s: SHA-256 = %q", c.Name, entry.SHA256)
 		}
+		if c.Seed != MixedBenchSeed {
+			t.Errorf("%s: seed = %d，want %d", c.Name, c.Seed, MixedBenchSeed)
+		}
 		total += len(c.Cases)
 	}
-	if total != 6 {
-		t.Fatalf("總案例數 = %d，want 6", total)
+	if total != 13 {
+		t.Fatalf("總案例數 = %d，want 13", total)
 	}
 	for scenario, seen := range wantScenario {
 		if !seen {
@@ -171,7 +179,7 @@ func TestMixedFaultsAreVisible(t *testing.T) {
 		rep := RunMixed(a, "fixture", MixedRunnerFunc(func(c MixedCase) (MixedPrediction, error) {
 			p, _ := perfectRunner(c)
 			p.Segments = p.Segments[:len(p.Segments)-1]
-			p.Text = strings.TrimSuffix(p.Text, " is a good sentence")
+			p.Text = strings.TrimSuffix(p.Text, " hello")
 			return p, nil
 		}))
 		got := rep.Cases[0]
@@ -239,8 +247,8 @@ func wrongSurfaceRunner(cs MixedCase) (MixedPrediction, error) {
 	p, _ := perfectRunner(cs)
 	for i := range p.Segments {
 		if p.Segments[i].InputIndex == 1 {
-			p.Segments[i].Surface = "大雞吧"
-			p.Text = strings.Replace(p.Text, "大雞巴", "大雞吧", 1)
+			p.Segments[i].Surface = "今添"
+			p.Text = strings.Replace(p.Text, "今天", "今添", 1)
 		}
 	}
 	return p, nil
@@ -248,28 +256,33 @@ func wrongSurfaceRunner(cs MixedCase) (MixedPrediction, error) {
 
 func TestMixedAcceptAlternatives(t *testing.T) {
 	entries := loadMixedFixtures(t)
-	var b *MixedCorpus
+	var a *MixedCorpus
 	for _, entry := range entries {
-		if entry.Corpus.Scenario == ScenarioB {
-			b = entry.Corpus
+		if entry.Corpus.Scenario == ScenarioA {
+			a = entry.Corpus
 		}
 	}
-	if b == nil {
-		t.Fatal("缺少情境 B")
+	if a == nil {
+		t.Fatal("缺少情境 A")
 	}
-	rep := RunMixed(b, "fixture", MixedRunnerFunc(func(cs MixedCase) (MixedPrediction, error) {
+	rep := RunMixed(a, "fixture", MixedRunnerFunc(func(cs MixedCase) (MixedPrediction, error) {
 		p, _ := perfectRunner(cs)
-		if cs.ID == "b-zh-primary" {
+		if cs.ID == "a-canonical-mixed" {
 			for i := range p.Segments {
-				if p.Segments[i].InputIndex == 1 {
-					p.Segments[i].Surface = "寿司"
-					p.Text = strings.Replace(p.Text, "すし", "寿司", 1)
+				if p.Segments[i].InputIndex == 2 {
+					p.Segments[i].Surface = "デス"
+					p.Text = strings.Replace(p.Text, "です", "デス", 1)
 				}
 			}
 		}
 		return p, nil
 	}))
-	got := rep.Cases[0]
+	var got MixedCaseReport
+	for _, c := range rep.Cases {
+		if c.ID == "a-canonical-mixed" {
+			got = c
+		}
+	}
 	if got.Segment.SurfaceCorrect != got.Segment.N || got.Segment.JointCorrect != got.Segment.N {
 		t.Errorf("accept 詞面應算片段正確：%#v", got.Segment)
 	}
@@ -320,6 +333,23 @@ func TestMixedValidationRejectsBrokenCorpus(t *testing.T) {
 		"empty-surface":    func(c *MixedCorpus) { c.Cases[0].Expect[0].Surface = "" },
 		"invalid-reading":  func(c *MixedCorpus) { c.Cases[0].Input[0].Reading = reading.Sequence{reading.Unit("x")} },
 		"unknown-script":   func(c *MixedCorpus) { c.Cases[0].Input[0].Script = 99 },
+		"unknown-tag":      func(c *MixedCorpus) { c.Cases[0].Tags = []string{"noisy:unknown"} },
+		"missing-tags":     func(c *MixedCorpus) { c.Cases[0].Tags = nil },
+		"duplicate-tag":    func(c *MixedCorpus) { c.Cases[0].Tags = []string{MixedTidyTag, MixedTidyTag} },
+		"negative-seed":    func(c *MixedCorpus) { c.Seed = -1 },
+		"kana-without-keys": func(c *MixedCorpus) {
+			c.Cases[0].Input[1].Script = segment.ScriptKana
+			c.Cases[0].Input[1].Keys = ""
+		},
+		"zhuyin-no-reading": func(c *MixedCorpus) {
+			c.Cases[0].Input[0].Script = segment.ScriptZhuyin
+			c.Cases[0].Input[0].Reading = nil
+		},
+		"composition-split": func(c *MixedCorpus) {
+			c.Cases[0].Input[0].Composition = "a"
+			c.Cases[0].Input[1].Composition = "b"
+			c.Cases[0].Input[2].Composition = "a"
+		},
 	}
 	for name, mutate := range tests {
 		t.Run(name, func(t *testing.T) {

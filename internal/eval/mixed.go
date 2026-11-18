@@ -1,13 +1,14 @@
 package eval
 
-// 混合語言 benchmark skeleton（P2-16）。
+// 混合語言 benchmark（P2-16 格式、P2-61 接上真實引擎）。
 //
-// 這個檔案只定義題庫格式、片段正確率、語言切換與功能 smoke 指標，不執行
-// 任何語言轉換器。實際引擎由 P2-61 接上 MixedRunner；同一個 runner 換掉
-// 就能比較不同版本，題庫與指標不需要改。
+// 這個檔案定義題庫格式、片段正確率、語言切換與功能 smoke 指標，不執行任何
+// 語言轉換器。實際引擎由 P2-61 的 MixedSessionRunner 接上；同一個 runner
+// 換掉就能比較不同版本，題庫與指標不需要改。
 //
-// 這裡刻意沒有準確度門檻。情境 A/B/C 的數字先當觀察值，等功能與語料穩定
-// 後再由 P2-61 決定是否凍結 baseline。
+// 這裡刻意沒有準確度門檻。情境 A/B/C 的數字是觀察值與回歸比較的起點，不是
+// 上線門檻。P2-61 的題庫另外用 tag 標出雜訊變體，讓「乾淨」與「雜訊」的
+// 分數分開看。
 
 import (
 	"crypto/sha256"
@@ -52,11 +53,15 @@ func (s MixedScenario) Valid() bool {
 //
 // 一個檔案只放一種情境，讓報告可以直接對應 A/B/C。primary_language 是
 // 該情境宣稱的主要語言，只影響之後的 prior 與切換成本，不是模式開關。
+//
+// seed 是題庫的固定種子。P2-61 用它決定案例的報告順序（見 MixedSeedOrder），
+// 不從時間、環境或 map 迭代推導任何順序。
 type MixedCorpus struct {
 	Schema          int           `json:"schema"`
 	Name            string        `json:"name"`
 	Scenario        MixedScenario `json:"scenario"`
 	PrimaryLanguage lang.ID       `json:"primary_language"`
+	Seed            int           `json:"seed,omitempty"`
 	License         string        `json:"license"`
 	Source          string        `json:"source"`
 	Notes           string        `json:"notes,omitempty"`
@@ -64,13 +69,29 @@ type MixedCorpus struct {
 	Cases           []MixedCase   `json:"cases"`
 }
 
+// MixedTidyTag 是乾淨案例的標籤。
+const MixedTidyTag = "clean"
+
+// MixedTags 是 P2-61 允許的案例維度標籤。未知標籤直接載入失敗，避免打錯字
+// 的雜訊案例悄悄混進 clean 的統計。
+var MixedTags = map[string]bool{
+	MixedTidyTag:       true,
+	"noisy:no-space":   true,
+	"noisy:mixed-case": true,
+	"noisy:digits":     true,
+	"noisy:long-match": true,
+}
+
 // MixedCase 是一個混合輸入與逐片段參考答案。
 //
 // input 依使用者實際輸入順序排列；expect 必須一個 input 對一個 expect，
 // 且 input_index 依序是 0..n-1。這樣片段正確率不會被任意對齊方式影響。
+//
+// tags 只描述案例維度（clean 或某一種雜訊），不能用來改變評分方式。
 type MixedCase struct {
 	ID     string               `json:"id"`
 	Notes  string               `json:"notes,omitempty"`
+	Tags   []string             `json:"tags,omitempty"`
 	Input  []MixedInputSegment  `json:"input"`
 	Expect []MixedExpectSegment `json:"expect"`
 }
@@ -80,11 +101,20 @@ type MixedCase struct {
 // text 是使用者看到的按鍵或文字；reading 是正規化後的讀音單位，羅馬字片段
 // 可以先留空，由 converter 決定。language_hint 只是提示，實作不得拿它擋掉
 // 其他語言候選。
+//
+// keys 是實際送進 session 的按鍵，只有無法從 text 直接推出按鍵時才需要：
+// かな片段用羅馬字按鍵，注音片段由 reading 經標準排列推出，Latin／數字／
+// 符號片段直接用 text。
+//
+// composition 把連續的 input 片段分到同一次組字：同一個非空名稱的片段會
+// 一起打完才送出，讓跨片段的長詞有機會合併。空字串代表這一段自己送出。
 type MixedInputSegment struct {
 	Script       segment.Script   `json:"script"`
 	Text         string           `json:"text"`
 	Reading      reading.Sequence `json:"reading,omitempty"`
 	LanguageHint lang.ID          `json:"language_hint,omitempty"`
+	Keys         string           `json:"keys,omitempty"`
+	Composition  string           `json:"composition,omitempty"`
 }
 
 // MixedExpectSegment 是一段參考輸出。
@@ -99,9 +129,15 @@ type MixedExpectSegment struct {
 }
 
 // MixedPrediction 是受測系統對一個 case 的輸出。
+//
+// MergedSegments 與 UnorderedDirectKeys 是 runner 回報的結構觀察，不是分數：
+// 前者表示一個輸出片段跨過兩個以上的 input 邊界（長詞合併），後者表示
+// 使用者在組字中打到沒有被引擎接收的字元（由應用程式直接插入）。
 type MixedPrediction struct {
-	Text     string                  `json:"text"`
-	Segments []MixedPredictedSegment `json:"segments"`
+	Text                string                  `json:"text"`
+	Segments            []MixedPredictedSegment `json:"segments"`
+	MergedSegments      int                     `json:"merged_segments,omitempty"`
+	UnorderedDirectKeys int                     `json:"unordered_direct_keys,omitempty"`
 }
 
 // MixedPredictedSegment 是預測輸出中的一段，以 input_index 對回題庫。
@@ -182,6 +218,11 @@ type MixedCaseSmoke struct {
 	DuplicateSegments   int  `json:"duplicate_segments"`
 	UnknownIndex        int  `json:"unknown_index_segments"`
 	InvalidSegments     int  `json:"invalid_segments"`
+	// MergedSegments 是一個輸出片段跨過多個 input 邊界；它通常正是
+	// missing_segments 的來源，分開記才看得出「合併」與「掉段」不同。
+	MergedSegments int `json:"merged_segments"`
+	// UnorderedDirectKeys 是組字中沒被引擎接收、由應用程式直接插入的按鍵。
+	UnorderedDirectKeys int `json:"unordered_direct_keys"`
 }
 
 // MixedSmoke 是所有案例的功能 smoke 彙總。
@@ -198,20 +239,24 @@ type MixedSmoke struct {
 	DuplicateSegments   int `json:"duplicate_segments"`
 	UnknownIndex        int `json:"unknown_index_segments"`
 	InvalidSegments     int `json:"invalid_segments"`
+	MergedSegments      int `json:"merged_segments"`
+	UnorderedDirectKeys int `json:"unordered_direct_keys"`
 }
 
 // MixedCaseReport 保留逐題證據。
 type MixedCaseReport struct {
-	ID          string              `json:"id"`
-	Reference   string              `json:"reference"`
-	Output      string              `json:"output"`
-	TextCorrect bool                `json:"text_correct"`
-	Segment     MixedSegmentMetrics `json:"segment"`
-	Switch      MixedSwitchMetrics  `json:"switch"`
-	SwitchExact bool                `json:"switch_exact"`
-	Smoke       MixedCaseSmoke      `json:"smoke"`
-	Error       string              `json:"error,omitempty"`
-	Panic       bool                `json:"panic,omitempty"`
+	ID          string                  `json:"id"`
+	Tags        []string                `json:"tags,omitempty"`
+	Reference   string                  `json:"reference"`
+	Output      string                  `json:"output"`
+	Segments    []MixedPredictedSegment `json:"segments,omitempty"`
+	TextCorrect bool                    `json:"text_correct"`
+	Segment     MixedSegmentMetrics     `json:"segment"`
+	Switch      MixedSwitchMetrics      `json:"switch"`
+	SwitchExact bool                    `json:"switch_exact"`
+	Smoke       MixedCaseSmoke          `json:"smoke"`
+	Error       string                  `json:"error,omitempty"`
+	Panic       bool                    `json:"panic,omitempty"`
 }
 
 // MixedCorpusInfo 記錄報告對應的題庫與來源。
@@ -255,24 +300,27 @@ func LoadMixedCorpus(path string) (*MixedCorpus, string, error) {
 
 // LoadMixedCorpusDir 讀取目錄下所有 .json 題庫，依檔名排序。
 //
-// README 與其他副檔名會被忽略；目錄內沒有題庫時回傳錯誤，避免空跑得到
-// 全 0 的美麗報告。
+// README、manifest（*.manifest.json）與其他副檔名會被忽略；目錄內沒有題庫
+// 時回傳錯誤，避免空跑得到全 0 的美麗報告。
 func LoadMixedCorpusDir(dir string) ([]MixedCorpusEntry, error) {
 	paths, err := filepath.Glob(filepath.Join(dir, "*.json"))
 	if err != nil {
 		return nil, err
 	}
 	sort.Strings(paths)
-	if len(paths) == 0 {
-		return nil, fmt.Errorf("%s: 找不到混合語言題庫", dir)
-	}
 	out := make([]MixedCorpusEntry, 0, len(paths))
 	for _, path := range paths {
+		if strings.HasSuffix(path, ".manifest.json") {
+			continue
+		}
 		c, hash, err := LoadMixedCorpus(path)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, MixedCorpusEntry{Corpus: c, SHA256: hash, Path: path})
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("%s: 找不到混合語言題庫", dir)
 	}
 	return out, nil
 }
@@ -293,6 +341,9 @@ func ValidateMixedCorpus(c *MixedCorpus) error {
 	}
 	if !lang.Tag(c.PrimaryLanguage).Valid() {
 		return fmt.Errorf("primary_language %q 無效", c.PrimaryLanguage)
+	}
+	if c.Seed < 0 {
+		return fmt.Errorf("seed %d 無效", c.Seed)
 	}
 	if len(c.Cases) == 0 {
 		return fmt.Errorf("沒有案例")
@@ -321,8 +372,24 @@ func validateMixedCase(cs *MixedCase) error {
 	if len(cs.Input) == 0 {
 		return fmt.Errorf("沒有 input")
 	}
+	if len(cs.Tags) == 0 {
+		return fmt.Errorf("至少需要一個 tag（乾淨案例用 %q）", MixedTidyTag)
+	}
+	seenTag := map[string]bool{}
+	for _, tag := range cs.Tags {
+		if !MixedTags[tag] {
+			return fmt.Errorf("未知 tag %q", tag)
+		}
+		if seenTag[tag] {
+			return fmt.Errorf("tag %q 重複", tag)
+		}
+		seenTag[tag] = true
+	}
 	if len(cs.Expect) != len(cs.Input) {
 		return fmt.Errorf("input %d 段，expect %d 段；目前格式要求一對一", len(cs.Input), len(cs.Expect))
+	}
+	if err := validateMixedCompositions(cs.Input); err != nil {
+		return err
 	}
 	for i, in := range cs.Input {
 		if in.Script == segment.ScriptUnknown || in.Script > segment.ScriptMixed {
@@ -338,6 +405,19 @@ func validateMixedCase(cs *MixedCase) error {
 		}
 		if in.LanguageHint != lang.Und && !lang.Tag(in.LanguageHint).Valid() {
 			return fmt.Errorf("input %d language_hint %q 無效", i, in.LanguageHint)
+		}
+		switch in.Script {
+		case segment.ScriptZhuyin:
+			// 注音片段由 reading 經標準排列推出按鍵；沒有 reading 就無法
+			// 重現使用者實際打的鍵。
+			if len(in.Reading) == 0 {
+				return fmt.Errorf("input %d 是注音片段，但沒有 reading", i)
+			}
+		case segment.ScriptKana:
+			// かな沒有通用鍵盤按鍵，必須在題庫明確記錄羅馬字按鍵。
+			if in.Keys == "" {
+				return fmt.Errorf("input %d 是かな片段，但沒有 keys（羅馬字按鍵）", i)
+			}
 		}
 	}
 	for i, ex := range cs.Expect {
@@ -365,9 +445,39 @@ func validateMixedCase(cs *MixedCase) error {
 	return nil
 }
 
+// validateMixedCompositions 要求同一個 composition 名稱的片段必須連續。
+// 不連續代表使用者中間已經送出過一次，runner 無法用同一次組字重現。
+func validateMixedCompositions(input []MixedInputSegment) error {
+	closed := map[string]bool{}
+	prev := ""
+	for i, in := range input {
+		name := in.Composition
+		if name == prev {
+			continue
+		}
+		if name != "" && closed[name] {
+			return fmt.Errorf("input %d 的 composition %q 不連續", i, name)
+		}
+		if prev != "" {
+			closed[prev] = true
+		}
+		if name != "" && len(name) > 64 {
+			return fmt.Errorf("input %d 的 composition 名稱太長", i)
+		}
+		prev = name
+	}
+	return nil
+}
+
 // RunMixed 執行一份題庫並產生報告。runner 為 nil 或發生 panic 都會記成
 // 失敗案例，不會讓整個 benchmark 中斷。
 func RunMixed(c *MixedCorpus, corpusHash string, runner MixedRunner) MixedReport {
+	return RunMixedCases(c, c.Cases, corpusHash, runner)
+}
+
+// RunMixedCases 以呼叫端指定的案例順序執行；P2-61 的固定種子順序用它。
+// 報告記錄題庫的雜湊與實際執行的案例數，不因排序改變分母。
+func RunMixedCases(c *MixedCorpus, cases []MixedCase, corpusHash string, runner MixedRunner) MixedReport {
 	rep := MixedReport{
 		Schema: MixedSchema,
 		Corpus: MixedCorpusInfo{
@@ -378,11 +488,11 @@ func RunMixed(c *MixedCorpus, corpusHash string, runner MixedRunner) MixedReport
 			Source:          c.Source,
 			Notes:           c.Notes,
 			SHA256:          corpusHash,
-			Count:           len(c.Cases),
+			Count:           len(cases),
 		},
 	}
 	byLanguage := map[lang.ID]MixedSegmentMetrics{}
-	for _, cs := range c.Cases {
+	for _, cs := range cases {
 		cr := runMixedCase(cs, runner)
 		rep.Cases = append(rep.Cases, cr.MixedCaseReport)
 		addSegmentMetrics(&rep.Segment, cr.Segment)
@@ -419,6 +529,7 @@ type mixedCaseMetrics struct {
 func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 	cr := mixedCaseMetrics{MixedCaseReport: MixedCaseReport{
 		ID:        cs.ID,
+		Tags:      append([]string(nil), cs.Tags...),
 		Reference: expectedText(cs),
 	}}
 	pred, err, panicked := safeMixedPredict(runner, cs)
@@ -431,7 +542,10 @@ func runMixedCase(cs MixedCase, runner MixedRunner) mixedCaseMetrics {
 		pred = MixedPrediction{}
 	} else {
 		cr.Output = pred.Text
+		cr.Segments = append([]MixedPredictedSegment(nil), pred.Segments...)
 	}
+	cr.Smoke.MergedSegments = pred.MergedSegments
+	cr.Smoke.UnorderedDirectKeys = pred.UnorderedDirectKeys
 
 	byIndex := map[int]MixedPredictedSegment{}
 	for _, p := range pred.Segments {
@@ -644,6 +758,8 @@ func addSmoke(dst *MixedSmoke, cr mixedCaseMetrics) {
 	dst.DuplicateSegments += cr.Smoke.DuplicateSegments
 	dst.UnknownIndex += cr.Smoke.UnknownIndex
 	dst.InvalidSegments += cr.Smoke.InvalidSegments
+	dst.MergedSegments += cr.Smoke.MergedSegments
+	dst.UnorderedDirectKeys += cr.Smoke.UnorderedDirectKeys
 }
 
 // MixedDeterminismSignature 回傳報告的 JSON。目前報告沒有延遲欄位，所以

@@ -3,75 +3,36 @@
   "name": "mixed-scenario-b",
   "scenario": "B",
   "primary_language": "zh",
+  "seed": 61,
   "license": "CC0-1.0",
-  "source": "0c phase2 P2-16 hand-written fixture",
-  "notes": "情境 B：主要語言中文。注音片段優先中文，羅馬字仍可產生日文候選，英文詞典仍可保留原文。",
-  "count": 2,
+  "source": "0c phase2 P2-61 fixture (extended from P2-16 skeleton)",
+  "notes": "情境 B：主要語言中文。注音優先中文；羅馬字仍走日文轉換，英文保留原文。主要語言是排序偏好，不是模式開關。",
+  "count": 4,
   "cases": [
     {
       "id": "b-zh-primary",
-      "notes": "主要語言是中文，但 Latin 片段 sushi 仍走日文，不被中文 prior 擋掉。",
-      "input": [
-        {
-          "script": "zhuyin",
-          "text": "ㄐㄧㄣㄊㄧㄢ",
-          "reading": ["ㄐㄧㄣ", "ㄊㄧㄢ"],
-          "language_hint": "zh"
-        },
-        {
-          "script": "latin",
-          "text": "sushi",
-          "reading": ["す", "し"],
-          "language_hint": "ja"
-        },
-        {
-          "script": "latin",
-          "text": " API",
-          "language_hint": "en"
-        }
-      ],
-      "expect": [
-        {
-          "input_index": 0,
-          "surface": "今天",
-          "language": "zh",
-          "variant": "zh-Hant"
-        },
-        {
-          "input_index": 1,
-          "surface": "すし",
-          "accept": ["寿司"],
-          "language": "ja",
-          "variant": "ja"
-        },
-        {
-          "input_index": 2,
-          "surface": " API",
-          "language": "en",
-          "variant": "en"
-        }
-      ]
-    },
-    {
-      "id": "b-roman-ja",
-      "notes": "中文主要語言下，Latin 羅馬字片段仍可選到日文詞；英文片段獨立保留。",
+      "notes": "主要語言中文：注音、日文羅馬字與英文各一段，全部在同一個 session。",
+      "tags": ["clean"],
       "input": [
         {
           "script": "zhuyin",
           "text": "ㄨㄛˇㄇㄣ˙",
           "reading": ["ㄨㄛˇ", "ㄇㄣ˙"],
-          "language_hint": "zh"
+          "language_hint": "zh",
+          "composition": "zh-1"
         },
         {
           "script": "latin",
-          "text": "kaisha",
-          "reading": ["か", "い", "し", "ゃ"],
-          "language_hint": "ja"
+          "text": "gakkou",
+          "reading": ["が", "っ", "こ", "う"],
+          "language_hint": "ja",
+          "composition": "ja-1"
         },
         {
           "script": "latin",
           "text": " code",
-          "language_hint": "en"
+          "language_hint": "en",
+          "composition": "en-1"
         }
       ],
       "expect": [
@@ -83,7 +44,7 @@
         },
         {
           "input_index": 1,
-          "surface": "会社",
+          "surface": "学校",
           "language": "ja",
           "variant": "ja"
         },
@@ -92,6 +53,122 @@
           "surface": " code",
           "language": "en",
           "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "b-zh-ja-latin",
+      "notes": "中文主要語言下，Latin 羅馬字仍可選到日文詞；英文片段獨立保留。",
+      "tags": ["clean"],
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄎㄚㄈㄟ",
+          "reading": ["ㄎㄚ", "ㄈㄟ"],
+          "language_hint": "zh",
+          "composition": "zh-1"
+        },
+        {
+          "script": "latin",
+          "text": "jikan",
+          "reading": ["じ", "か", "ん"],
+          "language_hint": "ja",
+          "composition": "ja-1"
+        },
+        {
+          "script": "latin",
+          "text": " api",
+          "language_hint": "en",
+          "composition": "en-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "咖啡",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "時間",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 2,
+          "surface": " api",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "b-noisy-no-space",
+      "notes": "雜訊：注音與英文之間沒有空白；英文由同一組字的中英按鍵路徑原樣留下。",
+      "tags": ["noisy:no-space"],
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄏㄠˇ",
+          "reading": ["ㄏㄠˇ"],
+          "language_hint": "zh",
+          "composition": "zh-1"
+        },
+        {
+          "script": "latin",
+          "text": "API",
+          "language_hint": "en",
+          "composition": "zh-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "好",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "API",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "b-noisy-long-match",
+      "notes": "雜訊：麻婆豆腐由兩段注音連續打完，詞庫長詞合併。合併會讓後一段沒有自己的輸出片段，如實計入 merged_segments／missing_segments。",
+      "tags": ["noisy:long-match"],
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄇㄚˊㄆㄛˊ",
+          "reading": ["ㄇㄚˊ", "ㄆㄛˊ"],
+          "language_hint": "zh",
+          "composition": "zh-1"
+        },
+        {
+          "script": "zhuyin",
+          "text": "ㄉㄡˋㄈㄨˇ",
+          "reading": ["ㄉㄡˋ", "ㄈㄨˇ"],
+          "language_hint": "zh",
+          "composition": "zh-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "麻婆",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "豆腐",
+          "language": "zh",
+          "variant": "zh-Hant"
         }
       ]
     }

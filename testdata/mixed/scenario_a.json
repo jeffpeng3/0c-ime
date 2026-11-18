@@ -3,37 +3,185 @@
   "name": "mixed-scenario-a",
   "scenario": "A",
   "primary_language": "ja",
+  "seed": 61,
   "license": "CC0-1.0",
-  "source": "0c phase2 P2-16 hand-written fixture",
-  "notes": "情境 A：主要語言日文。羅馬字、注音與英文在同一段輸入內混合，不切換模式。",
-  "count": 2,
+  "source": "0c phase2 P2-61 fixture (extended from P2-16 skeleton)",
+  "notes": "情境 A：主要語言日文。一個 profile-free session 內交錯日文羅馬字、注音與英文；language_hint 只是提示，實際語言由引擎按鍵推斷。composition 是使用者的組字邊界（目前產品在換語言時以 Enter 送出前一段）。",
+  "count": 5,
   "cases": [
     {
-      "id": "a-canonical",
-      "notes": "phase2-requirements 的規格範例；英文片段保留原文，片段之間的空格屬於英文片段。",
+      "id": "a-canonical-mixed",
+      "notes": "規格型混合句：日文羅馬字、注音、日文、英文各一段。英文片段前面的空白沒有組字，由應用程式直接插入。",
+      "tags": [
+        "clean"
+      ],
       "input": [
         {
           "script": "latin",
-          "text": "watashiwa",
-          "reading": ["わ", "た", "し", "は"],
-          "language_hint": "ja"
+          "text": "kyou",
+          "reading": [
+            "き",
+            "ょ",
+            "う"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-1"
         },
         {
           "script": "zhuyin",
-          "text": "ㄉㄚˋㄐㄧㄅㄚ",
-          "reading": ["ㄉㄚˋ", "ㄐㄧ", "ㄅㄚ"],
-          "language_hint": "zh"
+          "text": "ㄐㄧㄣㄊㄧㄢ",
+          "reading": [
+            "ㄐㄧㄣ",
+            "ㄊㄧㄢ"
+          ],
+          "language_hint": "zh",
+          "composition": "zh-1"
         },
         {
           "script": "latin",
           "text": "desu",
-          "reading": ["で", "す"],
-          "language_hint": "ja"
+          "reading": [
+            "で",
+            "す"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-2"
         },
         {
           "script": "latin",
-          "text": "is a good sentence",
-          "language_hint": "en"
+          "text": " hello",
+          "language_hint": "en",
+          "composition": "en-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "今日",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 1,
+          "surface": "今天",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 2,
+          "surface": "です",
+          "accept": [
+            "デス"
+          ],
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 3,
+          "surface": " hello",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "a-ja-latin",
+      "notes": "日文統計轉換後接英文原文；兩段各自送出，仍是同一個 session。",
+      "tags": [
+        "clean"
+      ],
+      "input": [
+        {
+          "script": "latin",
+          "text": "gakkou",
+          "reading": [
+            "が",
+            "っ",
+            "こ",
+            "う"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-1"
+        },
+        {
+          "script": "latin",
+          "text": " api",
+          "language_hint": "en",
+          "composition": "en-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "学校",
+          "language": "ja",
+          "variant": "ja"
+        },
+        {
+          "input_index": 1,
+          "surface": " api",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "a-noisy-no-space",
+      "notes": "雜訊：注音與英文之間沒有空白，直接接在同一組字。",
+      "tags": [
+        "noisy:no-space"
+      ],
+      "input": [
+        {
+          "script": "zhuyin",
+          "text": "ㄐㄧㄣㄊㄧㄢ",
+          "reading": [
+            "ㄐㄧㄣ",
+            "ㄊㄧㄢ"
+          ],
+          "language_hint": "zh",
+          "composition": "zh-1"
+        },
+        {
+          "script": "latin",
+          "text": "API",
+          "language_hint": "en",
+          "composition": "zh-1"
+        }
+      ],
+      "expect": [
+        {
+          "input_index": 0,
+          "surface": "今天",
+          "language": "zh",
+          "variant": "zh-Hant"
+        },
+        {
+          "input_index": 1,
+          "surface": "API",
+          "language": "en",
+          "variant": "en"
+        }
+      ]
+    },
+    {
+      "id": "a-romaji-spec",
+      "notes": "P2-16 規格範例的 watashiwa：統計轉換目前選 ワタ私話，不是參考的 私わ。這一題保留為 clean 的已知缺口，不調整題庫遷就引擎。",
+      "tags": [
+        "clean"
+      ],
+      "input": [
+        {
+          "script": "latin",
+          "text": "watashiwa",
+          "reading": [
+            "わ",
+            "た",
+            "し",
+            "わ"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-1"
         }
       ],
       "expect": [
@@ -42,67 +190,54 @@
           "surface": "私わ",
           "language": "ja",
           "variant": "ja"
-        },
-        {
-          "input_index": 1,
-          "surface": "大雞巴",
-          "language": "zh",
-          "variant": "zh-Hant"
-        },
-        {
-          "input_index": 2,
-          "surface": "です",
-          "language": "ja",
-          "variant": "ja"
-        },
-        {
-          "input_index": 3,
-          "surface": " is a good sentence",
-          "language": "en",
-          "variant": "en"
         }
       ]
     },
     {
-      "id": "a-kana-zh-en",
-      "notes": "かな是強訊號，注音片段走中文，英文片段保留原文。",
+      "id": "a-noisy-long-match",
+      "notes": "雜訊：東京大学由兩段羅馬字連續打完，長詞跨片段合併。合併是目前的產品行為；這個案例用 merged_segments 與 missing_segments 觀察，不把兩段都算成獨立輸出。",
+      "tags": [
+        "noisy:long-match"
+      ],
       "input": [
         {
-          "script": "kana",
-          "text": "すし",
-          "reading": ["す", "し"],
-          "language_hint": "ja"
-        },
-        {
-          "script": "zhuyin",
-          "text": "ㄏㄠˇ",
-          "reading": ["ㄏㄠˇ"],
-          "language_hint": "zh"
+          "script": "latin",
+          "text": "toukyou",
+          "reading": [
+            "と",
+            "う",
+            "き",
+            "ょ",
+            "う"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-1"
         },
         {
           "script": "latin",
-          "text": " API",
-          "language_hint": "en"
+          "text": "daigaku",
+          "reading": [
+            "だ",
+            "い",
+            "が",
+            "く"
+          ],
+          "language_hint": "ja",
+          "composition": "ja-1"
         }
       ],
       "expect": [
         {
           "input_index": 0,
-          "surface": "すし",
+          "surface": "東京",
           "language": "ja",
           "variant": "ja"
         },
         {
           "input_index": 1,
-          "surface": "好",
-          "language": "zh",
-          "variant": "zh-Hant"
-        },
-        {
-          "input_index": 2,
-          "surface": " API",
-          "language": "en",
-          "variant": "en"
+          "surface": "大学",
+          "language": "ja",
+          "variant": "ja"
         }
       ]
     }

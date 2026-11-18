@@ -1,0 +1,43 @@
+{
+ "schema": 1,
+ "seed": 61,
+ "generator": "cmd/0c-eval-mixed build",
+ "fixtures": [
+  {
+   "file": "scenario_a.json",
+   "name": "mixed-scenario-a",
+   "scenario": "A",
+   "count": 5,
+   "sha256": "8e7d1e83be48cf1f5c85b54211d1ee30182ac2ba925b7b6406819c1e70140ca1"
+  },
+  {
+   "file": "scenario_b.json",
+   "name": "mixed-scenario-b",
+   "scenario": "B",
+   "count": 4,
+   "sha256": "20182763b1a887aacb7ab8ca4a39d4cbed3daaf7f46e7d7c002c8b8684e6a080"
+  },
+  {
+   "file": "scenario_c.json",
+   "name": "mixed-scenario-c",
+   "scenario": "C",
+   "count": 4,
+   "sha256": "ddfa5dd6a7d10d2b3ac72c6910568b257d40b2551f0ba6702eb3d2b3bad60dc6"
+  }
+ ],
+ "case_order_sha256": "1a19f2674cf7f0cc2e2d30e9671f8bc7fc3d6b6ff574ded7a74f364b10cbd4cb",
+ "pack": {
+  "path": "ja-lexicon-public-core.pack",
+  "sha256": "8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840"
+ },
+ "data": {
+  "dir": "testdata/golden/zh/data",
+  "lexicon_sha256": "94d260889b92f3afd24dab1ac96dd9cf1d40739ed570e962eaeb79e0dc4d4c08",
+  "lm_sha256": "eb95dbd03262a76072fdeb1050b1ff96380396da2848739e4bdbc0778eb71f5f"
+ },
+ "models": {
+  "used": false,
+  "note": "no model loaded: reference int8 ONNX files are placeholders; any run that loads them is wiring-only and must not be quoted as quality"
+ },
+ "quality": "observational baseline, not a release gate; references are lexicon preference and hand-written fixtures"
+}
