@@ -486,17 +486,25 @@ class SourceReleaseTests(unittest.TestCase):
 
         def run(command, cwd, check):
             self.assertEqual((cwd, check), (root, True))
-            self.assertEqual(command[:3], ["go", "run", "./cmd/0c-compile"])
-            stage = Path(command[command.index("-out") + 1])
-            stage.mkdir(parents=True)
-            (stage / "manifest.json").write_text('{"format":2,"language":"ja"}\n')
-            (stage / "placeholder").write_text("new")
+            if command[:3] == ["go", "run", "./cmd/0c-compile"]:
+                stage = Path(command[command.index("-out") + 1])
+                stage.mkdir(parents=True)
+                (stage / "manifest.json").write_text('{"format":2,"language":"ja"}\n')
+                (stage / "placeholder").write_text("new")
+            else:
+                self.assertEqual(command[:3], ["go", "run", "./cmd/0c-japack"])
+                stage = Path(command[command.index("-out") + 1])
+                (stage / "lexicon").mkdir()
+                (stage / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n")
+                (stage / "connection.tsv").write_text("<s>\tnoun\t0.1\n")
 
         with patch.object(fetch_assets.subprocess, "run", side_effect=run):
             self.assertEqual(fetch_assets.build_ja(root, out), out)
         self.assertEqual((out / "manifest.json").read_text().strip(), '{"format":2,"language":"ja"}')
         self.assertEqual((out / "symbols/symbols.tsv").read_text(), "きごう\t※\t米印\t記号\n")
         self.assertEqual((out / "placeholder").read_text(), "new")
+        self.assertEqual((out / "lexicon/words.tsv").read_text(), "明日\tあした\t1\tnoun\n")
+        self.assertEqual((out / "connection.tsv").read_text(), "<s>\tnoun\t0.1\n")
 
         (out / "keep").write_text("old")
 

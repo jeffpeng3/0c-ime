@@ -111,10 +111,15 @@ def copy_english(source, destination, go):
 
 
 JA_FILES = ("lexicon.bin", "lm.bin", "manifest.json", "NOTICE.txt", "report.txt", "lexicon.tsv")
+# 0c-server 的日文載入路徑（cmd/0c-server/ja_language.go）讀這兩個 TSV，不讀 lexicon.bin：
+#   lexicon/words.tsv  <- 編譯後的 lexicon.tsv／0c-japack 匯出
+#   connection.tsv     <- 編譯後的連接成本矩陣／0c-japack 匯出
+# 編譯產物與 runtime 布局一起放進 data/ja/，manifest 仍只描述編譯產物。
+JA_RUNTIME_FILES = ("lexicon/words.tsv", "connection.tsv")
 
 
 def check_ja_data(directory, public):
-    """Validate a compiled Japanese pack (and optional symbols/) before it enters a bundle."""
+    """Validate a compiled Japanese pack (and optional symbols/runtime files) before it enters a bundle."""
     directory = Path(directory)
     if directory.is_symlink() or not directory.is_dir():
         raise ValueError("日文資料包必須是一般目錄")
@@ -136,6 +141,16 @@ def check_ja_data(directory, public):
         options = manifest.get("options") or {}
         normalized["options"] = dict(options, Public=options.get("Public") is True or options.get("public") is True)
         check_public_sources(normalized, (directory / "NOTICE.txt").read_text(encoding="utf-8"))
+    runtime = [directory / name for name in JA_RUNTIME_FILES]
+    present = [path.is_file() for path in runtime]
+    if any(present) and not all(present):
+        missing = next(name for name, ok in zip(JA_RUNTIME_FILES, present) if not ok)
+        raise ValueError(f"日文資料包的執行期布局不完整，缺少 {missing}")
+    for path in runtime:
+        if path.exists():
+            regular(path)
+            if not path.read_text(encoding="utf-8").strip():
+                raise ValueError(f"日文資料包的執行期檔案不可為空：{path.name}")
     symbols = directory / "symbols"
     if symbols.exists() or symbols.is_symlink():
         if symbols.is_symlink() or not symbols.is_dir():
@@ -150,23 +165,55 @@ def check_ja_data(directory, public):
     return manifest
 
 
-def copy_ja_data(source, destination, public=True):
-    """Stage the Japanese pack as data/ja/; the Chinese pack and its model bindings stay untouched."""
+def ja_runtime_files(source, go="go"):
+    """Return the runtime TSVs for a compiled pack, exporting them with 0c-japack when absent."""
+    source = Path(source)
+    paths = [source / name for name in JA_RUNTIME_FILES]
+    if all(path.is_file() for path in paths):
+        return paths, None
+    temp = tempfile.TemporaryDirectory(prefix=".ja-runtime-")
+    try:
+        subprocess.run([go, "run", "./cmd/0c-japack", "-pack", str(source), "-out", temp.name],
+                       cwd=ROOT, check=True)
+        paths = [Path(temp.name) / name for name in JA_RUNTIME_FILES]
+        for path in paths:
+            regular(path)
+    except Exception:
+        temp.cleanup()
+        raise
+    return paths, temp
+
+
+def copy_ja_data(source, destination, public=True, go="go"):
+    """Stage the Japanese pack as data/ja/; the Chinese pack and its model bindings stay untouched.
+
+    The compiled artifacts keep their names. 0c-server only loads the runtime TSVs, so this also
+    maps the pack to lexicon/words.tsv and connection.tsv (exporting them with 0c-japack when the
+    pack was produced by plain 0c-compile)."""
     source = Path(source).resolve()
     manifest = check_ja_data(source, public)
-    target = Path(destination) / "ja"
-    if target.exists() or target.is_symlink():
-        raise ValueError("日文資料包目標已存在")
-    target.mkdir(parents=True)
-    for name in JA_FILES:
-        shutil.copy2(regular(source / name), target / name)
-    symbols = source / "symbols"
-    if symbols.is_dir():
-        for path in sorted(symbols.rglob("*")):
-            if path.is_file():
-                copy = target / "symbols" / path.relative_to(symbols)
-                copy.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(path, copy)
+    runtime, temp = ja_runtime_files(source, go)
+    try:
+        target = Path(destination) / "ja"
+        if target.exists() or target.is_symlink():
+            raise ValueError("日文資料包目標已存在")
+        target.mkdir(parents=True)
+        for name in JA_FILES:
+            shutil.copy2(regular(source / name), target / name)
+        for name, path in zip(JA_RUNTIME_FILES, runtime):
+            copy = target / name
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(path, copy)
+        symbols = source / "symbols"
+        if symbols.is_dir():
+            for path in sorted(symbols.rglob("*")):
+                if path.is_file():
+                    copy = target / "symbols" / path.relative_to(symbols)
+                    copy.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(path, copy)
+    finally:
+        if temp is not None:
+            temp.cleanup()
     return manifest
 
 

@@ -181,6 +181,8 @@ NOTICE.txt     實際使用來源的授權與姓名標示全文
 report.txt     詞條數、連接數、檔案大小、常駐記憶體估計
 ```
 
+`0c-server` 的日文載入路徑不讀 `lexicon.bin`。打包時用 `0c-japack` 從同一個資料包匯出執行期布局：`lexicon/words.tsv`（詞條 TSV）與 `connection.tsv`（連接成本 TSV）。`make assets LANG=ja` 會直接產生這兩份檔案，Windows 的 `--ja-data` 也會把它們放進 `data/ja/`。`lexicon.bin`／`lm.bin` 仍保留在資料包內供 manifest、模型配對與後續載入器使用。
+
 manifest v2 的固定欄位：
 
 ```json

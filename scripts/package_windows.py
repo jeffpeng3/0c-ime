@@ -592,7 +592,7 @@ def build(args):
         if model_pair:
             copy_model_pair(model_pair, stage)
         if args.ja_data:
-            copy_ja_data(args.ja_data, stage / "data", public=not args.preview)
+            copy_ja_data(args.ja_data, stage / "data", public=not args.preview, go=args.go)
         if model_package:
             # P2-27：安裝唯一的 pairing lock 模型包。
             # 沒有 --model-source 時從 HF 下載並逐檔核對；下載、雜湊不符或離線缺檔都直接失敗。
@@ -689,7 +689,7 @@ def main():
     parser = argparse.ArgumentParser(description="建立靈犀注音 Windows x64 完整套件；不安裝、不註冊、不上傳")
     parser.add_argument("--release-docs", required=True, type=Path, help="外部文件目錄，須含 INSTALL.md、PRIVACY.md、UPDATING.md")
     parser.add_argument("--data", required=True, type=Path)
-    parser.add_argument("--ja-data", type=Path, help="0c-compile -lang ja -public 產生的日文資料包（含可選 symbols/）；放進 data/ja/")
+    parser.add_argument("--ja-data", type=Path, help="0c-compile -lang ja -public 產生的日文資料包（含可選 symbols/）；執行期 TSV 會自動放入 data/ja/")
     parser.add_argument("--version", required=True)
     parser.add_argument("--out", type=Path, default=ROOT / "build/release")
     parser.add_argument("--preview", action="store_true")

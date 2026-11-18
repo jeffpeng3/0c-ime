@@ -38,9 +38,17 @@ tar -xJf 0c-ime-models-<版本>.tar.xz   # 選用：神經選字與補標點
 | `make assets LANG=all` | 同時處理注音與日文 |
 | `make assets LANG=ja JA_OUT=<目錄>` | 指定日文包輸出位置 |
 
-日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。**載入接線注意**：`0c-server` 的日文載入路徑目前讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`，編譯後 `data/ja` 的 `lexicon.bin`／`lm.bin` 尚未接上；在整合完成前，`--ja-data` 只證明打包與雜湊正確，不能宣稱 shipped 日文轉換可用。
+日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。**載入布局**：`0c-server` 的日文載入路徑讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`，不讀 `lexicon.bin`。`0c-japack` 從編譯後的 `lexicon.bin` 匯出這兩個 TSV；`make assets LANG=ja` 與 Windows 的 `--ja-data` 都會產生這個布局。
 
-日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。編譯器不寫時間戳，同一份 `data/ja` 連跑兩次得到相同雜湊。
+日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。打包時的執行期映射是：
+
+| 編譯產物 | 引擎載入路徑 |
+|---|---|
+| `lexicon.tsv`／`lexicon.bin` 的詞條 | `data/ja/lexicon/words.tsv` |
+| `lexicon.bin` 的連接成本矩陣 | `data/ja/connection.tsv` |
+| `symbols/*.tsv` | `data/ja/symbols/*.tsv`（記号載入器使用） |
+
+編譯器不寫時間戳，同一份 `data/ja` 連跑兩次得到相同雜湊。執行期 TSV 由同一次編譯匯出，manifest 仍只描述 `lexicon.bin`、`lm.bin`、`lexicon.tsv`。
 
 ## 發行版整合
 
@@ -110,7 +118,7 @@ python scripts\package_windows.py --data assets\data --ja-data build\ja --ort-ru
 python scripts\package_windows_installer.py --archive build\release\<ZIP> --out build\release
 ```
 
-`--ja-data` 是選用的。有指定時，日文包以 `data/ja/` 放進 ZIP，`release.json` 多了 `ja_data_format` 與 `ja_data_manifest_sha256`；安裝後位於 `%LOCALAPPDATA%\Zuin\versions\<版本>-<雜湊>\data\ja\`。沒有指定時，ZIP 與原本的注音套件相同。日文包會經過 `check_ja_data`：format 2、`language: ja`、manifest 內的檔案雜湊、公開包的來源聲明與 `symbols/*.tsv` 都會檢查。日文資料不經過 `-seal`，因為 `0c-compile -seal` 目前只驗證注音 manifest；ZIP 的逐檔 SHA-256 與安裝收據仍會保護它。
+`--ja-data` 是選用的。有指定時，日文包以 `data/ja/` 放進 ZIP，`release.json` 多了 `ja_data_format` 與 `ja_data_manifest_sha256`；安裝後位於 `%LOCALAPPDATA%\Zuin\versions\<版本>-<雜湊>\data\ja\`。沒有指定時，ZIP 與原本的注音套件相同。日文包會經過 `check_ja_data`：format 2、`language: ja`、manifest 內的檔案雜湊、公開包的來源聲明與 `symbols/*.tsv` 都會檢查。`copy_ja_data` 另外放入引擎載入的 `lexicon/words.tsv`、`connection.tsv`；來源只有一般 `0c-compile` 產物時，會呼叫 `0c-japack` 從 `lexicon.bin` 匯出。日文資料不經過 `-seal`，因為 `0c-compile -seal` 目前只驗證注音 manifest；ZIP 的逐檔 SHA-256 與安裝收據仍會保護它。
 
 `release.json` 的 `native_runtime` 記錄出貨的 ONNX Runtime／MSVC 版本與五個 DLL 的 SHA-256。`--statistical-only` 只供診斷，不建置原生後端、不出貨 DLL；公開套件必須用 `--ort-runtime`。`--neural` 已移除，指定時直接失敗。
 

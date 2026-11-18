@@ -131,6 +131,9 @@ func (m *Matrix) Cost(left, right POS) float64 {
 // SetFallback 設定未指定詞性對的保底成本。
 func (m *Matrix) SetFallback(cost float64) { m.fallback = cost }
 
+// Fallback 回傳未指定詞性對的保底成本。
+func (m *Matrix) Fallback() float64 { return m.fallback }
+
 // Connections 回傳排序後的連接成本，供編碼。
 func (m *Matrix) Connections() []Connection {
 	out := make([]Connection, 0, len(m.costs))

@@ -742,6 +742,9 @@ class ReleaseTests(unittest.TestCase):
         for filename, body in (("lexicon.bin", b"lexicon"), ("lm.bin", b"lm"),
                                ("lexicon.tsv", b"surface\treading\n"), ("report.txt", b"report")):
             (directory / filename).write_bytes(body)
+        (directory / "lexicon").mkdir()
+        (directory / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n", encoding="utf-8")
+        (directory / "connection.tsv").write_text("<s>\tnoun\t0.1\n", encoding="utf-8")
         source = {"ID": "curated", "Name": "0c 人工維護的詞條", "URL": "https://0c.biggo.com",
                   "Version": "fixture", "License": "CC-BY-SA-4.0", "Attribution": "Funmula Co., Limited",
                   "Distributable": public}
@@ -769,6 +772,8 @@ class ReleaseTests(unittest.TestCase):
         packager.copy_ja_data(pack, destination)
         for name in packager.JA_FILES:
             self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
+        for name in packager.JA_RUNTIME_FILES:
+            self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
         self.assertEqual((destination / "ja/symbols/symbols.tsv").read_text(encoding="utf-8"),
                          "きごう\t※\t米印\t記号\n")
         self.assertEqual((destination / "lm.bin").read_bytes(), b"chinese")
@@ -795,6 +800,28 @@ class ReleaseTests(unittest.TestCase):
         (linked / "symbols/symbols.tsv").symlink_to(pack / "symbols/symbols.tsv")
         with self.assertRaisesRegex(ValueError, "符號連結"):
             packager.check_ja_data(linked, public=False)
+
+    def test_japanese_compiled_pack_exports_runtime_layout_when_missing(self):
+        pack = self.ja_pack("compiled-only")
+        shutil.rmtree(pack / "lexicon")
+        (pack / "connection.tsv").unlink()
+        destination = self.root / "compiled-stage" / "data"
+        destination.mkdir(parents=True)
+
+        def export(command, cwd, check):
+            self.assertEqual((cwd, check), (packager.ROOT, True))
+            self.assertEqual(command[:3], ["go", "run", "./cmd/0c-japack"])
+            out = Path(command[command.index("-out") + 1])
+            (out / "lexicon").mkdir(parents=True)
+            (out / "lexicon/words.tsv").write_text("明日\tあした\t1\tnoun\n", encoding="utf-8")
+            (out / "connection.tsv").write_text("<s>\tnoun\t0.1\n", encoding="utf-8")
+
+        with patch.object(packager.subprocess, "run", side_effect=export):
+            packager.copy_ja_data(pack, destination)
+        self.assertEqual((destination / "ja/lexicon/words.tsv").read_text(encoding="utf-8"),
+                         "明日\tあした\t1\tnoun\n")
+        self.assertEqual((destination / "ja/connection.tsv").read_text(encoding="utf-8"),
+                         "<s>\tnoun\t0.1\n")
 
     def test_english_install_downgrade_rollback_and_uninstall_keep_user_data(self):
         data = self.bundle / "data"

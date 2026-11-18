@@ -9,8 +9,9 @@ models/{select,punct}/ in the same layout as the unpacked tarballs. Releases up
 to 0.2.2 bundle the models in the source tarball.
 
 The Japanese pack has no published tarball yet: --lang ja compiles data/ja with
-0c-compile -public and copies its symbols/ directory. --lang all installs the
-Chinese assets and builds the Japanese pack in one run.
+0c-compile -public and copies its symbols/ directory. 0c-japack then exports the
+lexicon/words.tsv and connection.tsv files that 0c-server actually loads. --lang all
+installs the Chinese assets and builds the Japanese pack in one run.
 """
 
 import argparse
@@ -133,8 +134,10 @@ def build_ja(root, output, go="go"):
     """Compile the Japanese data pack from this tree and replace output only after success.
 
     A git checkout carries data/ja sources but no compiled pack. The compiler is deterministic,
-    so rebuilding is the way to get the same bytes as a release. Symbols and kaomoji live beside
-    the pack because the runtime reads them as TSV files, not from lexicon.bin."""
+    so rebuilding is the way to get the same bytes as a release. 0c-server reads
+    lexicon/words.tsv and connection.tsv, not lexicon.bin, so 0c-japack exports that runtime
+    layout from the same compiled pack. Symbols and kaomoji live beside the pack because the
+    runtime reads them as TSV files, not from lexicon.bin."""
     output = Path(output)
     if not output.is_absolute():
         output = root / output
@@ -148,6 +151,11 @@ def build_ja(root, output, go="go"):
         manifest = json.loads((stage / "manifest.json").read_text(encoding="utf-8"))
         if manifest.get("format") != 2 or manifest.get("language") != "ja":
             raise ValueError("0c-compile did not write a format 2 Japanese pack")
+        subprocess.run([go, "run", "./cmd/0c-japack", "-pack", str(stage), "-out", str(stage)],
+                       cwd=root, check=True)
+        for name in ("lexicon/words.tsv", "connection.tsv"):
+            if not (stage / name).is_file():
+                raise ValueError(f"0c-japack did not write the runtime layout: {name}")
         symbols = root / "data" / "ja" / "symbols"
         if symbols.is_dir():
             shutil.copytree(symbols, stage / "symbols")
