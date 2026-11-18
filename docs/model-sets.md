@@ -34,21 +34,21 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 ## 日文模型組
 
-日文不以單一模型檔出貨，而以模型組為單位。一組固定一個 reranker 與一個 punctuation，兩者同 variant，並綁定同一個日文資料包 manifest。
+日文不以單一模型檔出貨，而以模型組為單位，綁定同一個日文資料包 manifest。`ja-public-core` 是完整的 reranker 加 punctuation，兩者都是 MIT。`ja-cc-by-sa` 是 reranker-only 實驗組：只有 CC BY-SA 4.0 的 `reranker-extra`，透過 `shared_punctuation` 共用 public-core 的 `punctuation-public-core`（MIT）。
 
 | 模型組 ID | Variant | 授權 | 目前狀態 |
 |---|---|---|---|
-| `ja-public-core` | `public-core` | MIT | 已訓練，HF 來源，尚未 pin revision |
-| `ja-cc-by-sa` | `cc-by-sa` | CC BY-SA 4.0 | 已訓練 experimental，HF 來源，尚未 pin revision |
+| `ja-public-core` | `public-core` | MIT | `reranker-public-core` + `punctuation-public-core`，HF 來源，尚未 pin revision |
+| `ja-cc-by-sa` | `cc-by-sa` | CC BY-SA 4.0 reranker + MIT punctuation | reranker-only：`reranker-extra` + 共用 `punctuation-public-core`，HF 來源，尚未 pin revision |
 
-兩組不得混用，也不能把 public-core 的 reranker 配 cc-by-sa 的 punctuation。模型組清單在 `models/pairing.lock.json` 的 `model_sets`。
+混用規則以 artifact 為單位：CC BY-SA 4.0 artifact 不得安裝進 public-core 組；`punctuation` 只允許 public-core，所以不存在 CC BY-SA punctuation。安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice，`punctuation-public-core` 保持 MIT。模型組清單在 `models/pairing.lock.json` 的 `model_sets`，共三個 artifact。
 
 ### 在設定程式切換
 
 Windows 設定程式的「Mixed 輸入」頁有「日文模型組」：
 
 - `public-core` 是預設。
-- `cc-by-sa` 標示為實驗組，只進 experimental，預設不會載入。
+- `cc-by-sa` 標示為實驗組，只進 experimental，預設不會載入；它只有 `reranker-extra`，punctuation 共用 public-core。
 - 「允許 placeholder 模型」預設關閉；placeholder 只存在 `testdata/models/placeholder/`，正式 lock 不含 placeholder。
 
 設定會寫進 `settings.json`。在日文模型尚未接入推論前，切換模型組不會改變目前日文轉換的結果。

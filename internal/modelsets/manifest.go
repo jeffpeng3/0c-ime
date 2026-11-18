@@ -71,7 +71,9 @@ type Section struct {
 	Sets         map[string]*Set `json:"sets"`
 }
 
-// Set 是一個可安裝的模型組：一個 reranker、一個 punctuation，同一 variant，綁定同一字典包。
+// Set 是一個可安裝的模型組，綁定同一字典包。public-core 固定一個 reranker 與一個
+// punctuation；cc-by-sa 是 reranker-only，透過 SharedPunctuation 共用 public-core
+// 的 punctuation 模型。Companion 由 ParseLock 解析，不寫回 JSON。
 type Set struct {
 	ID                 string     `json:"-"`
 	Variant            string     `json:"variant"`
@@ -84,7 +86,21 @@ type Set struct {
 	Placeholder        bool       `json:"placeholder"`
 	Quality            string     `json:"quality"`
 	ProductionEligible bool       `json:"production_eligible"`
+	SharedPunctuation  string     `json:"shared_punctuation,omitempty"`
 	Artifacts          []Artifact `json:"artifacts"`
+	Companion          *Artifact  `json:"-"`
+}
+
+// AllArtifacts 回傳這個模型組實際要安裝的模型：自己的 artifacts 加上共用 punctuation
+// （cc-by-sa reranker-only 組才有）。共用模型仍是 public-core artifact，授權不會變成
+// CC BY-SA。
+func (s *Set) AllArtifacts() []Artifact {
+	out := make([]Artifact, 0, len(s.Artifacts)+1)
+	out = append(out, s.Artifacts...)
+	if s.Companion != nil {
+		out = append(out, *s.Companion)
+	}
+	return out
 }
 
 // Dictionary 是模型組綁定的字典包。ManifestSHA256 是安裝後 <data>/ja/manifest.json 的
@@ -244,20 +260,45 @@ func ParseLock(b []byte) (Lock, error) {
 	if len(lock.ModelSets.Sets) == 0 {
 		return Lock{}, fmt.Errorf("%w: 沒有模型組", ErrSchema)
 	}
-	seen := map[string]string{}
+	seen := map[string]*Artifact{}
+	owner := map[string]string{}
 	for id, set := range lock.ModelSets.Sets {
 		if set == nil {
 			return Lock{}, fmt.Errorf("%w: %s 是空的模型組", ErrSchema, id)
 		}
 		set.ID = id
-		if err := set.ValidateStructure(); err != nil {
-			return Lock{}, fmt.Errorf("%s: %w", id, err)
-		}
-		for _, artifact := range set.Artifacts {
-			if other, ok := seen[artifact.ArtifactID]; ok {
+		for i := range set.Artifacts {
+			artifact := &set.Artifacts[i]
+			if artifact.ArtifactID == "" {
+				return Lock{}, fmt.Errorf("%w: %s 有模型沒有 ID", ErrSchema, id)
+			}
+			if other, ok := owner[artifact.ArtifactID]; ok {
 				return Lock{}, fmt.Errorf("%w: %s 同時出現在 %s 與 %s", ErrVariantMixed, artifact.ArtifactID, other, id)
 			}
-			seen[artifact.ArtifactID] = id
+			owner[artifact.ArtifactID] = id
+			seen[artifact.ArtifactID] = artifact
+		}
+	}
+	for id, set := range lock.ModelSets.Sets {
+		if set.SharedPunctuation != "" {
+			companion, ok := seen[set.SharedPunctuation]
+			if !ok {
+				return Lock{}, fmt.Errorf("%w: %s 的 shared_punctuation %q 不存在", ErrIncompleteSet, id, set.SharedPunctuation)
+			}
+			if companion.Kind != KindPunctuation || companion.Variant != VariantPublicCore {
+				return Lock{}, fmt.Errorf("%w: %s 的 shared_punctuation %q 必須是 public-core punctuation",
+					ErrVariantMixed, id, set.SharedPunctuation)
+			}
+			if companion.DictionaryManifestSHA256 != set.Dictionary.ManifestSHA256 {
+				return Lock{}, fmt.Errorf("%w: %s 與共用 punctuation 綁定的字典不同", ErrDictionaryMismatch, id)
+			}
+			if companion.Placeholder != set.Placeholder {
+				return Lock{}, fmt.Errorf("%w: %s 與共用 punctuation 的 placeholder 狀態不同", ErrPlaceholderUnmarked, id)
+			}
+			set.Companion = companion
+		}
+		if err := set.ValidateStructure(); err != nil {
+			return Lock{}, fmt.Errorf("%s: %w", id, err)
 		}
 	}
 	return lock, nil
@@ -313,8 +354,9 @@ func (s *Set) ValidateRelease() error {
 // Unpinned 列出尚未 pin 的 HF 來源，development 模式用它產生警告。
 func (s *Set) Unpinned() []string {
 	var out []string
-	for i := range s.Artifacts {
-		artifact := &s.Artifacts[i]
+	all := s.AllArtifacts()
+	for i := range all {
+		artifact := &all[i]
 		if artifact.HF == nil {
 			continue
 		}
@@ -376,11 +418,36 @@ func (s *Set) validateStructure(release bool) error {
 		default:
 			return fmt.Errorf("%w: %s 的 kind=%q", ErrSchema, artifact.ArtifactID, artifact.Kind)
 		}
+		if s.Variant == VariantCCBYSA && artifact.Kind == KindPunctuation {
+			return fmt.Errorf("%w: %s 是 punctuation；punctuation 只允許 public-core，cc-by-sa 組只能有 reranker",
+				ErrVariantMixed, artifact.ArtifactID)
+		}
 		kinds[artifact.Kind]++
+	}
+	all := s.AllArtifacts()
+	ids = map[string]bool{}
+	for i := range all {
+		artifact := &all[i]
+		switch artifact.Variant {
+		case VariantPublicCore, VariantCCBYSA:
+		default:
+			return fmt.Errorf("%w: %s 的 variant=%q", ErrSchema, artifact.ArtifactID, artifact.Variant)
+		}
+		if artifact.Variant != s.Variant {
+			if s.Variant != VariantCCBYSA || artifact.Variant != VariantPublicCore ||
+				s.Companion == nil || artifact.ArtifactID != s.Companion.ArtifactID {
+				return fmt.Errorf("%w: %s 是 %s，不得放進 %s 模型組",
+					ErrVariantMixed, artifact.ArtifactID, artifact.Variant, s.Variant)
+			}
+		}
+		if artifact.ArtifactID == "" || ids[artifact.ArtifactID] {
+			return fmt.Errorf("%w: 模型 ID 空白或重複：%q", ErrSchema, artifact.ArtifactID)
+		}
+		ids[artifact.ArtifactID] = true
 		if artifact.Version == "" {
 			return fmt.Errorf("%w: %s 缺少 version", ErrSchema, artifact.ArtifactID)
 		}
-		if err := checkLicense(s.Variant, artifact.License); err != nil {
+		if err := checkLicense(artifact.Variant, artifact.License); err != nil {
 			return fmt.Errorf("%s: %w", artifact.ArtifactID, err)
 		}
 		if len(artifact.Attribution) == 0 {
@@ -413,6 +480,27 @@ func (s *Set) validateStructure(release bool) error {
 			return fmt.Errorf("%w: %s 缺少 source", ErrSchema, artifact.ArtifactID)
 		}
 	}
+	switch s.Variant {
+	case VariantPublicCore:
+		if s.SharedPunctuation != "" || s.Companion != nil {
+			return fmt.Errorf("%w: public-core 模型組不得共用其他模型", ErrVariantMixed)
+		}
+		if kinds[KindReranker] != 1 || kinds[KindPunctuation] != 1 {
+			return fmt.Errorf("%w: public-core 需要各一個 reranker 與 punctuation，目前 reranker=%d punctuation=%d",
+				ErrIncompleteSet, kinds[KindReranker], kinds[KindPunctuation])
+		}
+	case VariantCCBYSA:
+		if kinds[KindReranker] != 1 || kinds[KindPunctuation] != 0 {
+			return fmt.Errorf("%w: cc-by-sa 是 reranker-only，目前 reranker=%d punctuation=%d",
+				ErrIncompleteSet, kinds[KindReranker], kinds[KindPunctuation])
+		}
+		if s.SharedPunctuation == "" || s.Companion == nil {
+			return fmt.Errorf("%w: cc-by-sa 模型組需要 shared_punctuation 指向 public-core punctuation", ErrIncompleteSet)
+		}
+		if s.Companion.Kind != KindPunctuation || s.Companion.Variant != VariantPublicCore {
+			return fmt.Errorf("%w: shared_punctuation 必須是 public-core punctuation", ErrVariantMixed)
+		}
+	}
 	if s.Placeholder != placeholder {
 		return fmt.Errorf("%w: 模型組 placeholder=%v 與模型 %v 不一致", ErrPlaceholderUnmarked, s.Placeholder, placeholder)
 	}
@@ -429,10 +517,6 @@ func (s *Set) validateStructure(release bool) error {
 		if !s.ProductionEligible {
 			return fmt.Errorf("%w: %s 沒有標示 production_eligible", ErrHFSource, s.ID)
 		}
-	}
-	if kinds[KindReranker] != 1 || kinds[KindPunctuation] != 1 {
-		return fmt.Errorf("%w: 需要各一個 reranker 與 punctuation，目前 reranker=%d punctuation=%d",
-			ErrIncompleteSet, kinds[KindReranker], kinds[KindPunctuation])
 	}
 	return nil
 }
@@ -466,10 +550,11 @@ func (s *Set) Validate(opts Options) (Result, error) {
 		SetID: s.ID, Variant: s.Variant, Version: s.Version, Placeholder: s.Placeholder,
 		Quality: s.Quality, Dictionary: s.Dictionary, DictionaryMatches: true,
 		InstalledSHA256: opts.InstalledDictionarySHA256,
-		Artifacts:       make([]ArtifactStatus, 0, len(s.Artifacts)),
+		Artifacts:       make([]ArtifactStatus, 0, len(s.AllArtifacts())),
 	}
-	for i := range s.Artifacts {
-		artifact := &s.Artifacts[i]
+	all := s.AllArtifacts()
+	for i := range all {
+		artifact := &all[i]
 		file, ok := artifact.Files[format]
 		if !ok {
 			return Result{}, fmt.Errorf("%w: %s 沒有 %s 檔案", ErrSchema, artifact.ArtifactID, format)

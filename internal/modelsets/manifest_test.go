@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -42,36 +43,30 @@ func newFixture(t *testing.T) fixture {
 	t.Helper()
 	pack, dictSHA := syntheticPack(t)
 	root := t.TempDir()
-	files := map[string][]byte{}
-	artifacts := []map[string]any{}
-	for _, variant := range []string{VariantPublicCore, VariantCCBYSA} {
-		for _, kind := range []string{KindReranker, KindPunctuation} {
-			id := kind + "-" + variant
-			dir := filepath.Join(root, id)
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				t.Fatal(err)
-			}
-			path := filepath.Join(dir, id+".placeholder.int8.onnx")
-			body := []byte("synthetic-onnx:" + id + "\n")
-			if err := os.WriteFile(path, body, 0o644); err != nil {
-				t.Fatal(err)
-			}
-			rel := id + "/" + id + ".placeholder.int8.onnx"
-			files[rel] = body
-			artifacts = append(artifacts, syntheticArtifact(id, kind, variant, rel, int64(len(body)), dictSHA))
+	artifacts := map[string]map[string]any{}
+	makeArtifact := func(id, kind, variant string) {
+		dir := filepath.Join(root, id)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
 		}
+		path := filepath.Join(dir, id+".placeholder.int8.onnx")
+		body := []byte("synthetic-onnx:" + id + "\n")
+		if err := os.WriteFile(path, body, 0o644); err != nil {
+			t.Fatal(err)
+		}
+		rel := id + "/" + id + ".placeholder.int8.onnx"
+		artifacts[id] = syntheticArtifact(id, kind, variant, rel, int64(len(body)), dictSHA)
 	}
-	// 把同 variant 的兩個模型分成一組。
-	sets := map[string]any{}
-	for _, variant := range []string{VariantPublicCore, VariantCCBYSA} {
-		var group []map[string]any
-		for _, a := range artifacts {
-			if a["variant"] == variant {
-				group = append(group, a)
-			}
-		}
-		id := "ja-" + variant
-		sets[id] = syntheticSet(variant, dictSHA, group)
+	makeArtifact("reranker-public-core", KindReranker, VariantPublicCore)
+	makeArtifact("punctuation-public-core", KindPunctuation, VariantPublicCore)
+	makeArtifact("reranker-extra", KindReranker, VariantCCBYSA)
+	sets := map[string]any{
+		"ja-public-core": syntheticSet(VariantPublicCore, dictSHA, "", []map[string]any{
+			artifacts["reranker-public-core"], artifacts["punctuation-public-core"],
+		}),
+		"ja-cc-by-sa": syntheticSet(VariantCCBYSA, dictSHA, "punctuation-public-core", []map[string]any{
+			artifacts["reranker-extra"],
+		}),
 	}
 	doc := map[string]any{
 		"schema": 1,
@@ -121,12 +116,12 @@ func syntheticArtifact(id, kind, variant, rel string, size int64, dictSHA string
 	}
 }
 
-func syntheticSet(variant, dictSHA string, artifacts []map[string]any) map[string]any {
+func syntheticSet(variant, dictSHA, shared string, artifacts []map[string]any) map[string]any {
 	list := make([]any, len(artifacts))
 	for i, a := range artifacts {
 		list[i] = a
 	}
-	return map[string]any{
+	set := map[string]any{
 		"variant": variant, "language": "ja", "version": "test-1", "description": "test",
 		"dictionary": map[string]any{"pack_id": "ja-test", "language": "ja", "format": 2,
 			"version": "test", "manifest_sha256": dictSHA, "source": "test"},
@@ -134,6 +129,10 @@ func syntheticSet(variant, dictSHA string, artifacts []map[string]any) map[strin
 		"placeholder": true, "quality": QualityUntrained, "production_eligible": false,
 		"artifacts": list,
 	}
+	if shared != "" {
+		set["shared_punctuation"] = shared
+	}
+	return set
 }
 
 func digestBytes(b []byte) string {
@@ -258,7 +257,7 @@ func TestInstallSelectsOneSet(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dest, "reranker-public-core", "reranker-public-core.placeholder.int8.onnx")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(dest, "reranker-cc-by-sa")); !errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(dest, "reranker-extra")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("不應安裝另一 variant：%v", err)
 	}
 	read, err := ReadSelection(dest)
@@ -276,10 +275,19 @@ func TestInstallSelectsOneSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(dest, "reranker-public-core")); !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("切換後不應留下 public-core：%v", err)
+		t.Fatalf("切換後不應留下 public-core reranker：%v", err)
+	}
+	// cc-by-sa 是 reranker-only，但會安裝共用的 public-core punctuation。
+	for _, path := range []string{
+		"reranker-extra/reranker-extra.placeholder.int8.onnx",
+		"punctuation-public-core/punctuation-public-core.placeholder.int8.onnx",
+	} {
+		if _, err := os.Stat(filepath.Join(dest, filepath.FromSlash(path))); err != nil {
+			t.Fatalf("切換後缺少 %s：%v", path, err)
+		}
 	}
 	read, err = ReadSelection(dest)
-	if err != nil || read.SetID != "ja-cc-by-sa" {
+	if err != nil || read.SetID != "ja-cc-by-sa" || len(read.Artifacts) != 2 {
 		t.Fatalf("切換後 active.json %+v %v", read, err)
 	}
 	// 同組重裝要 -force。
@@ -310,19 +318,22 @@ func TestRepositoryLockIsOfficialAndNotPlaceholder(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	seenIDs := map[string]bool{}
 	for _, id := range lock.SetIDs() {
 		set, _ := lock.Set(id)
 		if set.Placeholder {
 			t.Fatalf("%s 仍在正式 lock 標示 placeholder", id)
 		}
-		for i := range set.Artifacts {
-			artifact := &set.Artifacts[i]
+		all := set.AllArtifacts()
+		for i := range all {
+			artifact := &all[i]
 			if artifact.Placeholder {
 				t.Fatalf("%s 仍在正式 lock 標示 placeholder", artifact.ArtifactID)
 			}
 			if artifact.HF == nil || artifact.HF.Repository == "" || artifact.HF.License == "" {
 				t.Fatalf("%s 缺少 HF 來源", artifact.ArtifactID)
 			}
+			seenIDs[artifact.ArtifactID] = true
 		}
 		// 目前尚未 pin：development 模式可接受並應列出警告，release 模式必須失敗。
 		if warnings := set.Unpinned(); len(warnings) == 0 {
@@ -331,6 +342,34 @@ func TestRepositoryLockIsOfficialAndNotPlaceholder(t *testing.T) {
 		if err := set.ValidateRelease(); !errors.Is(err, ErrUnpinned) {
 			t.Fatalf("release 模式應拒絕未 pin 的 %s：%v", id, err)
 		}
+	}
+	ids := make([]string, 0, len(seenIDs))
+	for id := range seenIDs {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if got, want := strings.Join(ids, ","), "punctuation-public-core,reranker-extra,reranker-public-core"; got != want {
+		t.Fatalf("artifact 清單 %q，應為 %q", got, want)
+	}
+	public, _ := lock.Set("ja-public-core")
+	extra, _ := lock.Set("ja-cc-by-sa")
+	if len(public.Artifacts) != 2 || len(extra.Artifacts) != 1 ||
+		extra.Artifacts[0].ArtifactID != "reranker-extra" ||
+		extra.SharedPunctuation != "punctuation-public-core" || extra.Companion == nil {
+		t.Fatalf("模型組配置不符：public=%d extra=%d shared=%q", len(public.Artifacts), len(extra.Artifacts), extra.SharedPunctuation)
+	}
+	if extra.Companion.License.ID != "MIT" || extra.Artifacts[0].License.ID != "CC-BY-SA-4.0" {
+		t.Fatalf("授權配置不符：extra=%s punctuation=%s", extra.Artifacts[0].License.ID, extra.Companion.License.ID)
+	}
+}
+
+func TestCCBYSAArtifactCannotEnterPublicCoreSet(t *testing.T) {
+	f := newFixture(t)
+	public, _ := f.lock.Set("ja-public-core")
+	extra, _ := f.lock.Set("ja-cc-by-sa")
+	public.Artifacts = append(public.Artifacts, extra.Artifacts[0])
+	if err := public.ValidateStructure(); !errors.Is(err, ErrVariantMixed) {
+		t.Fatalf("CC BY-SA artifact 不得進 public-core：%v", err)
 	}
 }
 

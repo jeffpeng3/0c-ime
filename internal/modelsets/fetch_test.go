@@ -260,3 +260,48 @@ func containsErr(err error, target error) bool {
 	}
 	return false
 }
+
+func TestExtraSetFetchesSharedPublicPunctuation(t *testing.T) {
+	bodies := map[string][]byte{
+		"reranker.int8.onnx":    []byte("reranker-onnx"),
+		"punctuation.int8.onnx": []byte("punctuation-onnx"),
+	}
+	server := fakeHub(t, bodies)
+	raw := testLockDoc(t, true, bodies)
+	var doc map[string]any
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	sets := doc["model_sets"].(map[string]any)["sets"].(map[string]any)
+	public := sets["ja-public-core"].(map[string]any)
+	publicArtifacts := public["artifacts"].([]any)
+	original, _ := json.Marshal(publicArtifacts[0])
+	var reranker map[string]any
+	json.Unmarshal(original, &reranker)
+	reranker["artifact_id"] = "reranker-extra"
+	reranker["variant"] = VariantCCBYSA
+	reranker["license"] = map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"}
+	reranker["files"].(map[string]any)["int8"].(map[string]any)["path"] = "reranker-extra/model.int8.onnx"
+	reranker["hf"].(map[string]any)["license"] = "CC-BY-SA-4.0"
+	extra := map[string]any{
+		"variant": VariantCCBYSA, "language": "ja", "version": "test-1",
+		"dictionary": public["dictionary"], "attribution": []any{"legal/copyright"},
+		"license":     map[string]any{"id": "CC-BY-SA-4.0", "scope": "cc-by-sa", "distribution": "test", "notice": "legal/CC-BY-SA-4.0.txt"},
+		"placeholder": false, "quality": "trained", "production_eligible": true,
+		"shared_punctuation": "punctuation-test", "artifacts": []any{reranker},
+	}
+	sets["ja-cc-by-sa"] = extra
+	raw, _ = json.Marshal(doc)
+	lock, err := ParseLock(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fetcher := &Fetcher{BaseURL: server.URL, CacheDir: t.TempDir(), Client: server.Client()}
+	files, err := fetcher.FetchSet(t.Context(), lock, "ja-cc-by-sa", FormatInt8, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 || files[0].ArtifactID != "reranker-extra" || files[1].ArtifactID != "punctuation-test" {
+		t.Fatalf("extra fetch 應含共用 punctuation：%+v", files)
+	}
+}

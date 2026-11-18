@@ -37,10 +37,10 @@ CC BY-SA 資料與模型是**另一個 experimental set**：
 
 - 衍生語料與模型以 **CC BY-SA 4.0** 釋出。
 - 與公開核心分開 manifest、checkpoint、安裝包與模型組。
-- 不混進公開核心，也不把 public-core 與 cc-by-sa 的模型配成同一組。
+- 不混進公開核心。混用規則以 artifact 為單位：CC BY-SA artifact 不得安裝進 public-core 組；CC BY-SA reranker 可與共用 public-core punctuation 配對。
 - 保留來源的原始授權版本與署名，例如 Wikipedia 文字是 CC BY-SA 4.0，部分 LLM-jp 語料是 CC BY-SA 3.0。
 
-日文的 `ja-cc-by-sa` 模型組標示 CC BY-SA 4.0，只進 experimental，預設不載入。這一組不得與 `ja-public-core` 混用。
+日文的 `ja-cc-by-sa` 模型組只包含 `reranker-extra`，標示 CC BY-SA 4.0，只進 experimental，預設不載入。它的 punctuation 共用 `ja-public-core` 的 `punctuation-public-core`，該模型保持 MIT。混用規則以 artifact 為單位：CC BY-SA artifact 不得安裝進 public-core 組；安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice。
 
 ## 個別來源的散布義務
 
@@ -106,6 +106,6 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 ## 品質與驗證狀態
 
-- 日文模型仍在評測，兩組模型組尚未 pin 正式 revision，沒有品質承諾。placeholder 只留在 `testdata/models/placeholder/`，不進正式 lock 或 release bundle。
+- 日文模型仍在評測，三個 artifact 尚未 pin 正式 revision，沒有品質承諾。placeholder 只留在 `testdata/models/placeholder/`，不進正式 lock 或 release bundle。
 - Windows Phase 2 VM 驗收是 **NOT RUN**，不能寫成已通過。
 - 注音、混合語言 benchmark 與延遲數字只在有量測來源時引用；沒有數字的項目代表未驗證。

@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-// P2-25P 的四個真實 int8 placeholder 模型。預設跳過；設定
+// P2-25P placeholder 測試 fixture（三個 artifact）。預設跳過；設定
 // OC_PLACEHOLDER_MODELS=/path/to/phase2/reference/models 後，會用
 // testdata/models/placeholder/pairing.lock.json 核對每個檔案的大小、SHA-256、
 // 張量契約與 placeholder 標記。placeholder 不在正式 lock 內。
@@ -87,7 +87,7 @@ func TestPlaceholderModelSetsRejectMixedAndTampered(t *testing.T) {
 
 	mixed := *public
 	mixed.Artifacts = append([]Artifact(nil), public.Artifacts...)
-	mixed.Artifacts[1] = other.Artifacts[1]
+	mixed.Artifacts[1] = other.Artifacts[0]
 	if err := mixed.ValidateStructure(); !errors.Is(err, ErrVariantMixed) {
 		t.Fatalf("混用 variant 應被拒絕：%v", err)
 	}

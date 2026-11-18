@@ -25,13 +25,15 @@ Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定
 
 ## 日文模型組與版本分離（P2-27）
 
-日文模型不以「單一模型檔」出貨，而是以**模型組**為單位：一組固定一個 reranker 與一個 punctuation，兩者同 variant，並綁定同一個日文詞典包的 manifest SHA-256。`public-core` 與 `cc-by-sa` 是兩個獨立的組，不得混用、不得配成 mixed set。`ja-public-core` 的模型標示 MIT，資料依公開核心的 CC BY 4.0／公共領域／permissive notice-only 三類授權；`ja-cc-by-sa` 的模型與資料標示 CC BY-SA 4.0，只進 experimental。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
+日文模型不以「單一模型檔」出貨，而是以**模型組**為單位，並綁定同一個日文詞典包的 manifest SHA-256。`ja-public-core` 包含 `reranker-public-core` 與 `punctuation-public-core`，兩個 artifact 都是 MIT，資料依公開核心的 CC BY 4.0／公共領域／permissive notice-only 三類授權。`ja-cc-by-sa` 是 reranker-only 實驗組，只包含 `reranker-extra`（CC BY-SA 4.0），透過 `shared_punctuation` 與 `ja-public-core` 共用 `punctuation-public-core`（MIT）；安裝 `reranker-extra` 時必須帶 CC BY-SA 4.0 notice。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
 
-四個模型分別來自 `jeffpeng3/0c-ja-reranker`、`jeffpeng3/0c-ja-punct`（MIT）與 `jeffpeng3/0c-ja-reranker-extra`、`jeffpeng3/0c-ja-punct-extra`（CC BY-SA 4.0）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；模型檔由 `0c-model-set fetch` 從 HF 下載、逐檔核對後放進安裝包。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
+混用規則以 artifact 為單位：CC BY-SA 4.0 artifact 不得安裝進 public-core 組。`cc-by-sa` 組不得擁有自己的 punctuation，也不能把 `reranker-public-core` 放進 experimental 組。
+
+三個模型分別來自 `jeffpeng3/0c-ja-reranker`、`jeffpeng3/0c-ja-punct`（MIT）與 `jeffpeng3/0c-ja-reranker-extra`（CC BY-SA 4.0）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；模型檔由 `0c-model-set fetch` 從 HF 下載、逐檔核對後放進安裝包。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
 
 產品側 manifest schema 在 [model-set.schema.json](model-set.schema.json)（JSON Schema 2020-12）。每個模型記錄：
 
-- `artifact_id`、`kind`（`reranker`／`punctuation`）、`variant`、版本與參數數。
+- `artifact_id`、`kind`（`reranker`／`punctuation`）、`variant`、版本與參數數。正式 lock 共三個 artifact：`reranker-public-core`、`punctuation-public-core`、`reranker-extra`。
 - 每個檔案格式（`int8`、`fp32`）的相對路徑、大小、SHA-256 與量化方式。
 - `io`：`input_ids`／`attention_mask` 都是 `int64 [batch, seq]`；reranker 輸出 `scores` 為 `float32 [batch]`，punctuation 輸出 `logits` 為 `float32 [batch, seq, 4]`。
 - `license`、`notice`、`attribution` 參考（授權全文與來源帳本）。
@@ -80,7 +82,7 @@ go run ./cmd/0c-model-set install -set ja-public-core \
   -pack build/ja -allow-placeholders
 ```
 
-`install` 只會放入所選 variant 的模型檔，並移除清單中另一組的目錄，避免同一個安裝目錄留下 public-core 與 cc-by-sa 混用的檔案。同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
+`install` 只會放入所選模型組的 artifacts。`ja-cc-by-sa` 會放入 `reranker-extra` 與共用的 `punctuation-public-core`，並移除另一組留在安裝目錄的 reranker；不會留下 CC BY-SA punctuation。同一組重裝要加 `-force`。模型檔不進 Git（`.gitignore` 也排除 `*.onnx`），工具只搬運已下載或已匯出的檔案。
 
 ### 引擎回報
 

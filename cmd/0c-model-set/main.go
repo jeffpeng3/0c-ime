@@ -349,6 +349,13 @@ func check(args []string) error {
 		return err
 	}
 	var warnings []string
+	seenWarnings := map[string]bool{}
+	addWarning := func(w string) {
+		if !seenWarnings[w] {
+			seenWarnings[w] = true
+			warnings = append(warnings, w)
+		}
+	}
 	for _, id := range lock.SetIDs() {
 		set, err := lock.Set(id)
 		if err != nil {
@@ -363,10 +370,10 @@ func check(args []string) error {
 				return fmt.Errorf("%s: %w", id, err)
 			}
 			for _, warning := range set.Unpinned() {
-				warnings = append(warnings, id+": "+warning)
+				addWarning(warning)
 			}
 			if set.Placeholder {
-				warnings = append(warnings, id+": placeholder 模型組不得進入正式發行")
+				addWarning(id + ": placeholder 模型組不得進入正式發行")
 			}
 		}
 	}

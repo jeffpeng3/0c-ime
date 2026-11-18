@@ -208,18 +208,44 @@ class ModelSetTests(unittest.TestCase):
     def test_official_lock_has_hf_sources_and_no_placeholders(self):
         section = package_windows.load_model_sets()
         repos = set()
+        ids = []
         for name, chosen in section["sets"].items():
             self.assertFalse(chosen["placeholder"], name)
             self.assertTrue(chosen["production_eligible"], name)
-            for artifact in chosen["artifacts"]:
+            for artifact in package_windows.model_set_artifacts(section, chosen):
+                if artifact["artifact_id"] not in ids:
+                    ids.append(artifact["artifact_id"])
                 self.assertFalse(artifact["placeholder"], artifact["artifact_id"])
                 hf = artifact["hf"]
                 repos.add(hf["repository"])
-                self.assertEqual(hf["license"], "MIT" if chosen["variant"] == "public-core" else "CC-BY-SA-4.0")
+                self.assertEqual(hf["license"], "MIT" if artifact["variant"] == "public-core" else "CC-BY-SA-4.0")
                 self.assertIn("int8", hf["files"])
                 self.assertIn("fp32", hf["files"])
+        self.assertEqual(sorted(ids), ["punctuation-public-core", "reranker-extra", "reranker-public-core"])
         self.assertEqual(repos, {"jeffpeng3/0c-ja-reranker", "jeffpeng3/0c-ja-punct",
-                                 "jeffpeng3/0c-ja-reranker-extra", "jeffpeng3/0c-ja-punct-extra"})
+                                 "jeffpeng3/0c-ja-reranker-extra"})
+        extra = section["sets"]["ja-cc-by-sa"]
+        self.assertEqual(len(extra["artifacts"]), 1)
+        self.assertEqual(extra["artifacts"][0]["artifact_id"], "reranker-extra")
+        self.assertEqual(extra["shared_punctuation"], "punctuation-public-core")
+        self.assertNotIn("punctuation-extra", json.dumps(section))
+
+    def test_extra_set_carries_cc_by_sa_notice_and_keeps_punctuation_mit(self):
+        section = package_windows.load_model_sets()
+        chosen = package_windows.check_model_set("ja-cc-by-sa", "int8", False, preview=True)
+        manifest = package_windows.model_set_manifest("ja-cc-by-sa", chosen, "int8")
+        self.assertEqual(manifest["artifacts"], ["reranker-extra", "punctuation-public-core"])
+        licenses = {item["artifact_id"]: item["id"] for item in manifest["licenses"]}
+        self.assertEqual(licenses["reranker-extra"], "CC-BY-SA-4.0")
+        self.assertEqual(licenses["punctuation-public-core"], "MIT")
+        stage = Path(tempfile.mkdtemp(prefix="model-notices-"))
+        package_windows.write_model_set_notices(stage, "ja-cc-by-sa", chosen)
+        notices = (stage / "MODEL-SET-NOTICES.txt").read_text(encoding="utf-8")
+        self.assertIn("reranker-extra", notices)
+        self.assertIn("CC-BY-SA-4.0", notices)
+        self.assertIn("punctuation-public-core", notices)
+        self.assertIn("MIT", notices)
+        self.assertIn("Attribution-ShareAlike", (stage / "MODEL-SET-CC-BY-SA-4.0.txt").read_text(encoding="utf-8"))
 
     def test_release_rejects_unpinned_official_lock(self):
         with self.assertRaisesRegex(ValueError, "尚未 pin|revision"):

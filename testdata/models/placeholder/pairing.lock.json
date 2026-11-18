@@ -1,13 +1,13 @@
 {
   "dictionary_manifest_sha256": "4e4c4cdf7681b48de2004927745c2adc03f53b0c7b776e9258c39a7f5b0f4075",
   "model_sets": {
-    "mixing_policy": "public-core and cc-by-sa artifacts must never be installed or scored as one pair; each set is complete only with one reranker and one punctuation model from the same variant and the same dictionary pack.",
+    "mixing_policy": "Artifact-level rule: a CC BY-SA 4.0 artifact must never be installed into the public-core set. ja-public-core contains reranker-public-core and punctuation-public-core, both MIT. ja-cc-by-sa is reranker-only: it installs reranker-extra (CC BY-SA 4.0) together with the shared punctuation-public-core (MIT), and the CC BY-SA 4.0 notice must be carried whenever reranker-extra is installed. punctuation-public-core remains MIT.",
     "schema": "0c.model-sets/1",
     "sets": {
       "ja-cc-by-sa": {
         "artifacts": [
           {
-            "artifact_id": "reranker-cc-by-sa",
+            "artifact_id": "reranker-extra",
             "attribution": [
               "legal/copyright",
               "data/sources/corpus/experimental.tsv",
@@ -17,13 +17,13 @@
             "files": {
               "fp32": {
                 "bytes": 130784628,
-                "path": "reranker-cc-by-sa/reranker-cc-by-sa.placeholder.fp32.onnx",
+                "path": "reranker-extra/reranker-extra.placeholder.fp32.onnx",
                 "quantization": "none (fp32)",
                 "sha256": "1c3ac68b50fd2fe8d944bb54fad1cf65709b77f4485b94be9652463a018cc975"
               },
               "int8": {
                 "bytes": 55361694,
-                "path": "reranker-cc-by-sa/reranker-cc-by-sa.placeholder.int8.onnx",
+                "path": "reranker-extra/reranker-extra.placeholder.int8.onnx",
                 "quantization": "dynamic-quint8",
                 "sha256": "d543645063ab7cf36880770a547c17fb3a681626cd987a051156e5c1e79df3af"
               }
@@ -67,7 +67,7 @@
               "notice": "legal/CC-BY-SA-4.0.txt",
               "scope": "cc-by-sa"
             },
-            "manifest": "reranker-cc-by-sa/manifest.json",
+            "manifest": "reranker-extra/manifest.json",
             "parameters": 32691713,
             "placeholder": true,
             "production_eligible": false,
@@ -81,92 +81,15 @@
             },
             "variant": "cc-by-sa",
             "version": "placeholder-0.1.0"
-          },
-          {
-            "artifact_id": "punctuation-cc-by-sa",
-            "attribution": [
-              "legal/copyright",
-              "data/sources/corpus/experimental.tsv",
-              "data/sources/licenses/ja-wiki.txt"
-            ],
-            "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
-            "files": {
-              "fp32": {
-                "bytes": 130789948,
-                "path": "punctuation-cc-by-sa/punctuation-cc-by-sa.placeholder.fp32.onnx",
-                "quantization": "none (fp32)",
-                "sha256": "76cd331d1a91143fd4f07d6cfe50a376526543ffd20a9011e37db0e569d403ff"
-              },
-              "int8": {
-                "bytes": 55362064,
-                "path": "punctuation-cc-by-sa/punctuation-cc-by-sa.placeholder.int8.onnx",
-                "quantization": "dynamic-quint8",
-                "sha256": "36e691b9e8adc0619cd5d4513b88c0d69315026dc5e68ee1c0f9394533706f1e"
-              }
-            },
-            "io": {
-              "inputs": [
-                {
-                  "description": "Token ids, batch-major.",
-                  "dtype": "int64",
-                  "name": "input_ids",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                },
-                {
-                  "description": "1 for real tokens, 0 for padding.",
-                  "dtype": "int64",
-                  "name": "attention_mask",
-                  "shape": [
-                    "batch",
-                    "seq"
-                  ]
-                }
-              ],
-              "outputs": [
-                {
-                  "description": "Per-token punctuation logits in label order ['none', 'comma', 'period', 'question'].",
-                  "dtype": "float32",
-                  "name": "logits",
-                  "shape": [
-                    "batch",
-                    "seq",
-                    4
-                  ]
-                }
-              ]
-            },
-            "kind": "punctuation",
-            "license": {
-              "distribution": "experimental only, never inside the public-core install",
-              "id": "CC-BY-SA-4.0",
-              "notice": "legal/CC-BY-SA-4.0.txt",
-              "scope": "cc-by-sa"
-            },
-            "manifest": "punctuation-cc-by-sa/manifest.json",
-            "parameters": 32693252,
-            "placeholder": true,
-            "production_eligible": false,
-            "quality": "untrained",
-            "source": {
-              "checkpoint": "",
-              "datasets": [],
-              "fingerprint": "reranker:cc-by-sa:seed=20261121:params=32693252:init_std=0.02",
-              "generator": "oc_training.export.placeholder 0.1.0",
-              "training_data": "none (untrained placeholder)"
-            },
-            "variant": "cc-by-sa",
-            "version": "placeholder-0.1.0"
           }
         ],
         "attribution": [
           "legal/copyright",
+          "legal/CC-BY-SA-4.0.txt",
           "data/sources/corpus/experimental.tsv",
           "data/sources/licenses/ja-wiki.txt"
         ],
-        "description": "Experimental reranker and punctuation models trained on CC BY-SA data; never installed together with public-core models.",
+        "description": "Placeholder reranker-only fixture pairing reranker-extra with punctuation-public-core.",
         "dictionary": {
           "format": 2,
           "language": "ja",
@@ -186,7 +109,8 @@
         "production_eligible": false,
         "quality": "untrained",
         "variant": "cc-by-sa",
-        "version": "placeholder-0.1.0"
+        "version": "placeholder-0.1.0",
+        "shared_punctuation": "punctuation-public-core"
       },
       "ja-public-core": {
         "artifacts": [

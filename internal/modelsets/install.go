@@ -112,13 +112,14 @@ func Install(lock Lock, setID string, opts InstallOptions) (Selection, error) {
 	}
 	defer os.RemoveAll(stage)
 
+	all := set.AllArtifacts()
 	selection := Selection{
 		Schema: SelectionSchema, SetID: set.ID, Variant: set.Variant, Version: set.Version,
 		Format: format, Placeholder: set.Placeholder, Quality: set.Quality, Dictionary: set.Dictionary,
-		Artifacts: make([]SelectionArtifact, 0, len(set.Artifacts)),
+		Artifacts: make([]SelectionArtifact, 0, len(all)),
 	}
-	for i := range set.Artifacts {
-		artifact := &set.Artifacts[i]
+	for i := range all {
+		artifact := &all[i]
 		file := artifact.Files[format]
 		from := filepath.Join(opts.SourceRoot, filepath.FromSlash(file.Path))
 		to := filepath.Join(stage, filepath.FromSlash(file.Path))
@@ -149,7 +150,7 @@ func Install(lock Lock, setID string, opts InstallOptions) (Selection, error) {
 		}
 	}
 	moved := map[string]bool{}
-	for _, artifact := range set.Artifacts {
+	for _, artifact := range all {
 		file := artifact.Files[format]
 		top := topDir(file.Path)
 		if top == "" || moved[top] {
@@ -171,7 +172,7 @@ func Install(lock Lock, setID string, opts InstallOptions) (Selection, error) {
 		return Selection{}, err
 	}
 	// 重新核對安裝後的大小與雜湊；避免複製失敗留下看似可用的檔案。
-	for _, artifact := range set.Artifacts {
+	for _, artifact := range all {
 		file := artifact.Files[format]
 		if _, err := verifyFile(opts.DestRoot, file); err != nil {
 			return Selection{}, err

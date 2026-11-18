@@ -2,14 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://0c.biggo.com/schema/0c.model-sets/1",
   "title": "0C product model sets",
-  "description": "P2-27 產品側模型 manifest。models/pairing.lock.json 的 model_sets 區段；外層既有注音字典配對欄位不在本 schema。一個模型組固定一個 reranker 與一個 punctuation，同一 variant，並綁定一個日文詞典包的 manifest SHA-256。",
+  "description": "P2-27 產品側模型 manifest。models/pairing.lock.json 的 model_sets 區段；外層既有注音字典配對欄位不在本 schema。public-core 固定一個 reranker 與一個 punctuation；cc-by-sa 是 reranker-only，透過 shared_punctuation 共用 public-core punctuation。混用規則以 artifact 為單位：CC BY-SA artifact 不得進 public-core 組。每個模型組綁定一個日文詞典包的 manifest SHA-256。",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "sets"],
   "properties": {
     "schema": { "const": "0c.model-sets/1" },
     "updated": { "type": "string", "description": "YYYY-MM-DD；最後一次人工審查日期。" },
-    "mixing_policy": { "type": "string", "description": "public-core 與 cc-by-sa 不得混用的說明。" },
+    "mixing_policy": { "type": "string", "description": "artifact-level 混用規則：CC BY-SA artifact 不得進 public-core 組；reranker-extra 安裝時必須帶 CC BY-SA 4.0 notice。" },
     "sets": {
       "type": "object",
       "minProperties": 1,
@@ -183,11 +183,16 @@
         "placeholder": { "type": "boolean" },
         "quality": { "type": "string", "minLength": 1 },
         "production_eligible": { "type": "boolean" },
+        "shared_punctuation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "cc-by-sa reranker-only 組共用的 public-core punctuation artifact ID；public-core 組不得設定。"
+        },
         "artifacts": {
           "type": "array",
-          "minItems": 2,
+          "minItems": 1,
           "maxItems": 2,
-          "description": "必須各一個 reranker 與 punctuation；validator 另外檢查。",
+          "description": "public-core 各一個 reranker 與 punctuation；cc-by-sa 只有一個 reranker。validator 另外檢查 shared_punctuation。",
           "items": { "$ref": "#/$defs/artifact" }
         }
       }

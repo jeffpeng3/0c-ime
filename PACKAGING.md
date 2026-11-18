@@ -76,7 +76,7 @@ python3 scripts/build_release_data.py --bigram-dir 0c-ime-bigram-20261019/bigram
 
 ## 組裝 Release tarball
 
-Git repo 保存 [字典 lock](data/dictionary.lock.json)、[上游模型 lock](models/models.lock.json) 與 [配對 lock](models/pairing.lock.json)；二進位字典由發佈工具加入原始碼 tarball，配對後的模型另外打成模型 tarball。`models/pairing.lock.json` 的 `model_sets` 另外分開日文 public-core 與 cc-by-sa 模型組（P2-27），兩組不得混用；模型檔不進 Git，安裝器以 `cmd/0c-model-set` 選擇要帶哪一組，`0c-server -model-report` 會回報使用中的組。
+Git repo 保存 [字典 lock](data/dictionary.lock.json)、[上游模型 lock](models/models.lock.json) 與 [配對 lock](models/pairing.lock.json)；二進位字典由發佈工具加入原始碼 tarball，配對後的模型另外打成模型 tarball。`models/pairing.lock.json` 的 `model_sets` 另外分開日文 public-core 與 cc-by-sa 模型組（P2-27）；混用規則以 artifact 為單位，CC BY-SA artifact 不得進 public-core 組；模型檔不進 Git，安裝器以 `cmd/0c-model-set` 選擇要帶哪一組，`0c-server -model-report` 會回報使用中的組。
 
 先提交原始碼與固定清單、建立版本 tag，再用已驗證的現成字典組裝。輸出目錄須尚未存在：
 
@@ -116,7 +116,7 @@ python scripts\package_windows_installer.py --archive build\release\<ZIP> --out 
 
 注音 select／punct ONNX 由 `--model-pair` 出貨（`hf_models.py pair` 的輸出；不含 Python worker），打包時核對 `models.lock` 與 `pairing.lock`。原生產品沒有 `--model-pair` 會拒絕出貨。
 
-日文模型組由 `--model-set` 從 [models/pairing.lock.json](models/pairing.lock.json) 選一組（`ja-public-core` 或 `ja-cc-by-sa`），`--model-source` 可指向已下載的 ONNX；省略時依 lock 的 `hf.repository` 與 `hf.revision` 從 Hugging Face 下載到 `--model-cache`，逐檔核對大小與 SHA-256，`--model-offline` 只用快取。`--model-format` 選 `int8`（預設）或 `fp32`。打包時以 `cmd/0c-model-set` 再核對一次並綁定日文資料包 manifest，只放入所選 variant，把 `active.json`、`pairing.lock.json` 放在套件的 `models/`。正式 release 要求 revision 與雜湊已 pin，缺少時直接失敗；placeholder 只允許出現在明確加 `--allow-placeholders` 的 preview 套件，正式 release 一律拒絕。兩組不得混用；public-core 標示 MIT，cc-by-sa 標示 CC BY-SA 4.0 且只進 experimental，授權義務見 [授權頁](docs/licensing.md)。
+日文模型組由 `--model-set` 從 [models/pairing.lock.json](models/pairing.lock.json) 選一組（`ja-public-core` 或 `ja-cc-by-sa`），`--model-source` 可指向已下載的 ONNX；省略時依 lock 的 `hf.repository` 與 `hf.revision` 從 Hugging Face 下載到 `--model-cache`，逐檔核對大小與 SHA-256，`--model-offline` 只用快取。`--model-format` 選 `int8`（預設）或 `fp32`。打包時以 `cmd/0c-model-set` 再核對一次並綁定日文資料包 manifest，只放入所選模型組的 artifacts：`ja-public-core` 是 `reranker-public-core` 加 `punctuation-public-core`，`ja-cc-by-sa` 是 `reranker-extra` 加共用的 `punctuation-public-core`。`active.json`、`pairing.lock.json` 放在套件的 `models/`。正式 release 要求 revision 與雜湊已 pin，缺少時直接失敗；placeholder 只允許出現在明確加 `--allow-placeholders` 的 preview 套件，正式 release 一律拒絕。混用規則以 artifact 為單位：CC BY-SA artifact 不得進 public-core 組；`reranker-extra` 安裝時一定帶 `MODEL-SET-CC-BY-SA-4.0.txt` 與 `MODEL-SET-NOTICES.txt`，`punctuation-public-core` 保持 MIT，授權義務見 [授權頁](docs/licensing.md)。
 
 `0c-update` 安裝時逐檔核對 `release.json`，把整個版本目錄換上去；升級保留上一版，`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版。`0c-update rollback -restore-user` 額外還原升級前的個人詞庫；`install.ps1` 沒有 `-RestoreUser` 參數。`install.ps1 -Uninstall` 或 `0c-update uninstall` 取消 TSF 註冊並停用收據，**不刪**版本目錄、字典、備份或 `%LOCALAPPDATA%\Zuin\user.json`；要清掉所有本機檔案時，先解除安裝，再自行刪除 `%LOCALAPPDATA%\Zuin`。回復到不含日文包的版本時，使用中的版本目錄沒有 `data/ja/`，不會從別版補上；想移除日文包請換成不含 `--ja-data` 的套件再安裝或回復，不要手動刪除版本目錄裡的檔案，收據核對會失敗。
 

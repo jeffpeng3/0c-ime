@@ -323,6 +323,32 @@ def load_model_sets(path=None):
     return section
 
 
+def model_artifact(section, artifact_id):
+    """Find an artifact by ID in any set."""
+    for candidate in section["sets"].values():
+        for artifact in candidate.get("artifacts", []):
+            if artifact.get("artifact_id") == artifact_id:
+                return artifact
+    return None
+
+
+def model_set_artifacts(section, chosen):
+    """The artifacts a set actually installs: its own plus the shared punctuation.
+
+    public-core owns reranker-public-core and punctuation-public-core. The
+    cc-by-sa set owns reranker-extra only and references the same
+    punctuation-public-core through shared_punctuation.
+    """
+    artifacts = list(chosen.get("artifacts", []))
+    shared = chosen.get("shared_punctuation")
+    if shared:
+        companion = model_artifact(section, shared)
+        if companion is None:
+            raise ValueError(f"模型組 {chosen.get('variant')} 的 shared_punctuation {shared!r} 不存在")
+        artifacts.append(companion)
+    return artifacts
+
+
 def check_model_set(set_id, format, allow_placeholders, path=None, preview=False):
     """Validate one pairing-lock model set before staging it.
 
@@ -330,6 +356,10 @@ def check_model_set(set_id, format, allow_placeholders, path=None, preview=False
     one only with an explicit --allow-placeholders, while a public release
     rejects placeholders even when the flag is present. A release also requires
     a pinned HF revision and per-file size/SHA-256 for the selected format.
+
+    Mixing is checked per artifact: a CC BY-SA artifact may never enter the
+    public-core set. The cc-by-sa set is reranker-only and pairs reranker-extra
+    with the shared public-core punctuation model.
     """
     section = load_model_sets(path)
     sets = section["sets"]
@@ -346,9 +376,35 @@ def check_model_set(set_id, format, allow_placeholders, path=None, preview=False
             raise ValueError(f"模型組 {set_id} 是 placeholder；placeholder 不得進入正式 release bundle")
     elif not preview and not chosen.get("production_eligible"):
         raise ValueError(f"模型組 {set_id} 沒有標示 production_eligible，不得進入正式 release bundle")
-    for artifact in chosen.get("artifacts", []):
-        if artifact.get("variant") != chosen["variant"]:
-            raise ValueError(f"模型組 {set_id} 混用 variant")
+
+    own = list(chosen.get("artifacts", []))
+    if chosen["variant"] == "public-core":
+        if chosen.get("shared_punctuation"):
+            raise ValueError(f"public-core 模型組 {set_id} 不得共用其他模型")
+        if any(a.get("variant") != "public-core" for a in own):
+            raise ValueError(f"模型組 {set_id} 混入非 public-core artifact")
+        kinds = {a.get("kind") for a in own}
+        if kinds != {"reranker", "punctuation"} or len(own) != 2:
+            raise ValueError(f"public-core 模型組 {set_id} 需要一個 reranker 與一個 punctuation")
+    else:
+        if any(a.get("variant") != "cc-by-sa" for a in own):
+            raise ValueError(f"模型組 {set_id} 混入非 cc-by-sa artifact")
+        if any(a.get("kind") == "punctuation" for a in own):
+            raise ValueError(f"模型組 {set_id} 是 reranker-only；punctuation 只允許 public-core")
+        if len(own) != 1 or own[0].get("kind") != "reranker":
+            raise ValueError(f"模型組 {set_id} 需要恰好一個 cc-by-sa reranker")
+        if not chosen.get("shared_punctuation"):
+            raise ValueError(f"模型組 {set_id} 缺少 shared_punctuation")
+    artifacts = model_set_artifacts(section, chosen)
+    shared = chosen.get("shared_punctuation")
+    if shared:
+        companion = model_artifact(section, shared)
+        if companion.get("kind") != "punctuation" or companion.get("variant") != "public-core":
+            raise ValueError(f"模型組 {set_id} 的 shared_punctuation 必須是 public-core punctuation")
+        if companion.get("dictionary_manifest_sha256") != chosen.get("dictionary", {}).get("manifest_sha256"):
+            raise ValueError(f"模型組 {set_id} 與共用 punctuation 綁定的字典不同")
+
+    for artifact in artifacts:
         if format not in artifact.get("files", {}):
             raise ValueError(f"模型組 {set_id} 沒有 {format} 檔案")
         if preview:
@@ -399,7 +455,16 @@ def copy_model_pair(source, stage):
 
 
 def model_set_manifest(set_id, chosen, format):
-    """Stable release.json record; makes the placeholder status impossible to miss."""
+    """Stable release.json record; makes placeholder and artifact licenses visible."""
+    section = load_model_sets()
+    artifacts = model_set_artifacts(section, chosen)
+    licenses = []
+    for artifact in artifacts:
+        license = artifact.get("license") or {}
+        item = {"artifact_id": artifact.get("artifact_id"), "variant": artifact.get("variant"),
+                "id": license.get("id", ""), "notice": license.get("notice", "")}
+        if item not in licenses:
+            licenses.append(item)
     return {
         "set_id": set_id,
         "variant": chosen["variant"],
@@ -409,7 +474,38 @@ def model_set_manifest(set_id, chosen, format):
         "quality": chosen.get("quality", ""),
         "production_eligible": bool(chosen.get("production_eligible")),
         "dictionary": chosen.get("dictionary", {}),
+        "artifacts": [a.get("artifact_id") for a in artifacts],
+        "licenses": licenses,
     }
+
+
+def write_model_set_notices(stage, set_id, chosen):
+    """Carry every model artifact license into the bundle.
+
+    reranker-extra is CC BY-SA 4.0, so selecting ja-cc-by-sa must ship the
+    CC BY-SA notice even though the shared punctuation-public-core stays MIT.
+    """
+    stage = Path(stage)
+    section = load_model_sets()
+    artifacts = model_set_artifacts(section, chosen)
+    lines = [f"set_id: {set_id}", f"variant: {chosen['variant']}", ""]
+    cc_by_sa = None
+    for artifact in artifacts:
+        license = artifact.get("license") or {}
+        lines += [f"artifact: {artifact.get('artifact_id')}", f"variant: {artifact.get('variant')}",
+                  f"license: {license.get('id', '')}", f"notice: {license.get('notice', '')}", ""]
+        if "CC-BY-SA" in str(license.get("id", "")).upper():
+            cc_by_sa = (artifact, license)
+    (stage / "MODEL-SET-NOTICES.txt").write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+    if cc_by_sa:
+        artifact, license = cc_by_sa
+        notice = license.get("notice", "")
+        source = ROOT / notice
+        if not notice or not source.is_file():
+            raise ValueError(f"模型組 {set_id} 缺少 CC BY-SA 授權全文：{notice}")
+        (stage / "MODEL-SET-CC-BY-SA-4.0.txt").write_text(
+            f"{set_id}/{artifact.get('artifact_id', '')} uses {license.get('id', '')}\n\n"
+            + source.read_text(encoding="utf-8"), encoding="utf-8")
 
 
 def server_version(args, binary):
@@ -571,6 +667,7 @@ def build(args):
                 f"set_id: {marker['set_id']}\nvariant: {marker['variant']}\nversion: {marker['version']}\n"
                 f"format: {marker['format']}\nplaceholder: {'yes' if marker['placeholder'] else 'no'}\n"
                 f"quality: {marker['quality']}\n", encoding="utf-8")
+            write_model_set_notices(stage, args.model_set, model_set)
             if marker["placeholder"]:
                 (stage / "MODEL-SET-PLACEHOLDER.txt").write_text(
                     "本套件的模型組是未訓練 placeholder（quality=" + marker["quality"] + "），"

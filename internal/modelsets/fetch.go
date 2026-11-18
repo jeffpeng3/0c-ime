@@ -93,8 +93,9 @@ func (f *Fetcher) FetchSet(ctx context.Context, lock Lock, setID, format, dest s
 		return nil, err
 	}
 	var out []FetchedFile
-	for i := range set.Artifacts {
-		artifact := &set.Artifacts[i]
+	all := set.AllArtifacts()
+	for i := range all {
+		artifact := &all[i]
 		local, ok := artifact.Files[format]
 		if !ok {
 			return nil, fmt.Errorf("%w: %s 沒有 %s 檔案", ErrSchema, artifact.ArtifactID, format)
