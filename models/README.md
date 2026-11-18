@@ -1,6 +1,6 @@
 # 發佈模型
 
-每個版本的 Release 另附 `0c-ime-models-<版本>.tar.xz`，內含兩個可直接搭配 `assets/data/` 使用的模型，解壓到原始碼 tarball 的同一處即補上本目錄的 `select/` 與 `punct/`（0.2.2 以前內附在原始碼 tarball）。模型沒有公開訓練程式與訓練資料，不屬於 DFSG-free 的原始碼 tarball，見 [DFSG 檢查](../legal/DFSG-free.md)。模型權重與版本固定，建置輸入法不需要訓練模型或重新產生字典；沒有模型時輸入法以統計選字運作。
+每個版本的 Release 另附 `0c-ime-models-<版本>.tar.xz`，內含兩個可直接搭配 `assets/data/` 使用的模型，解壓到原始碼 tarball 的同一處即補上本目錄的 `select/` 與 `punct/`（0.2.2 以前內附在原始碼 tarball）。模型沒有公開訓練程式與訓練資料，不屬於 DFSG-free 的原始碼 tarball，見 [DFSG 檢查](../legal/DFSG-free.md)。模型權重與版本固定，建置輸入法不需要訓練模型或重新產生字典；沒有模型時輸入法以統計選字運作。使用者版授權整理見 [docs/licensing.md](../docs/licensing.md)。
 
 | 目錄 | 模型 | 授權 |
 |---|---|---|
@@ -25,7 +25,7 @@ Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定
 
 ## 日文模型組與版本分離（P2-27）
 
-日文模型不以「單一模型檔」出貨，而是以**模型組**為單位：一組固定一個 reranker 與一個 punctuation，兩者同 variant，並綁定同一個日文詞典包的 manifest SHA-256。`public-core` 與 `cc-by-sa` 是兩個獨立的組，不得混用、不得配成 mixed set。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
+日文模型不以「單一模型檔」出貨，而是以**模型組**為單位：一組固定一個 reranker 與一個 punctuation，兩者同 variant，並綁定同一個日文詞典包的 manifest SHA-256。`public-core` 與 `cc-by-sa` 是兩個獨立的組，不得混用、不得配成 mixed set。`ja-public-core` 的模型標示 CC BY 4.0，資料依公開核心的 CC BY 4.0／公共領域／permissive notice-only 三類授權；`ja-cc-by-sa` 的模型與資料標示 CC BY-SA 4.0，只進 experimental。模型組清單在 [pairing.lock.json](pairing.lock.json) 的 `model_sets` 區段；外層既有的注音字典配對欄位不變，舊版 `0c-server`／`0c-update` 會忽略新區段。
 
 產品側 manifest schema 在 [model-set.schema.json](model-set.schema.json)（JSON Schema 2020-12）。每個模型記錄：
 

@@ -21,6 +21,7 @@
   <a href="https://0c.biggo.com">官網</a> ·
   <a href="https://0c.biggo.com/download/">下載</a> ·
   <a href="https://0c.biggo.com/technology/">選字技術</a> ·
+  <a href="docs/README.md">使用者文件</a> ·
   <a href="https://0c.biggo.com/guide/basics/">操作指南</a> ·
   <a href="https://0c.biggo.com/docs/cli/">CLI 文件</a> ·
   <a href="https://0c.biggo.com/help/">支援</a> ·
@@ -34,7 +35,7 @@
 
 > **English** — 0C (靈犀注音) is a Zhuyin (Bopomofo) input method for Traditional Chinese. An on-device Transformer language model reads what you have just written and picks the right homophones, so you can type a whole sentence without stopping to choose characters. It runs entirely on your computer, and ships shells for Fcitx5, IBus, macOS InputMethodKit and Windows TSF.
 
-> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと Windows の ja-JP プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
+> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと、Windows の単一 Mixed プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。日文モデルは未学習の placeholder で、Windows の Phase 2 VM 検証は NOT RUN です。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
 
 ## ✨ 特色
 
@@ -43,8 +44,9 @@
 - 🔒 **全在本機**：選字、補標點與個人學習都在你的電腦上以 CPU 執行，不連網、不上傳打字內容。
 - 📚 **我的詞彙**：人名、術語、英文指令加進來就排在前面，也看得到靈犀學到了什麼。
 - 🔤 **中英混打、自動加空格、模糊音、Emoji 與顏文字**：可選擇在中文字和英文字母相連處自動補半形空格（「用Python寫」送出「用 Python 寫」）；ㄗ／ㄓ、ㄘ／ㄔ、ㄙ／ㄕ、ㄣ／ㄥ 近音放在後面備選；按 = 開 Emoji 選單。
+- 🀄 **單一 Mixed profile**：Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在同一個組字區直接輸入，不必切換語言。主要語言只是排序偏好。逐片段候選跟著游標，長詞詞庫 match 是一項候選。詳見 [輸入與候選](docs/typing.md)。
 - 🔁 **輸出簡體字、自訂選字鍵**：看繁體打字、送出時才轉簡體，可從輸入法選單一鍵切換；選字鍵可用 1–0 或 asdfghjkl;。
-- ✍️ **送出時補標點**（Beta）：Enter 送出時在漢字之間補上 ，。？！、；，不改動你打的字。
+- ✍️ **送出時補標點**（Beta）：Enter 送出時在漢字之間補上 ，。？！、；，不改動你打的字。Windows Python-free 套件目前保留原文。
 - 🛟 **自動退回**：模型無法啟動或回應太慢時改用統計引擎排序，打字不會卡住。
 
 <p align="center">
@@ -73,13 +75,25 @@ flowchart TD
 3. **本機學習** 👤：你選過、改過的字詞記在本機個人詞庫，下次同樣的情況優先出現。
 4. **有把握才補全** ⇥：後續字詞的信心夠高時才顯示 Tab 建議。
 
+## 🀄 單一 Mixed profile 與混合輸入
+
+Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在同一個組字區直接輸入：
+
+- **不用切換語言**：合法注音留在中文；有載入日文資料時，合法羅馬字轉日文；英文詞、網址、數字與識別字照原文。
+- **主要語言只是偏好**：`zh`／`ja` 影響先驗、切換成本與模型常駐順序，不阻擋其他語言。
+- **逐片段候選**：候選範圍跟著游標所在片段。Windows 在候選窗沒開時用 Home／End／←／→ 換片段，會自動為新片段重開候選。
+- **長詞是一項候選**：詞庫長詞跨過多個輸入片段時合併成一個片段，候選只出現一次。
+- **目前限制**：日文模型組是未訓練 placeholder，日文轉換尚未接上 shipped 資料包；Windows Phase 2 VM 驗收是 **NOT RUN**。
+
+操作、按鍵與未接上的日文設定見 [輸入與候選](docs/typing.md)；模型組切換見 [模型與模型組](docs/model-sets.md)。
+
 ## 🇯🇵 日文輸入（預覽）
 
 日文輸入還在整合階段，不是正式支援的功能。目前 repo 內有這些部分：
 
-- かな與羅馬字輸入、文節轉換、候選、預測、カタカナ／半角カナ、変換／無変換鍵，以及記号與顔文字辭典。
-- 日文個人學習、ライブ変換開關與日英混打規則。
-- Windows TSF 的 `zh-TW` 與 `ja-JP` 兩個語言 profile，以及設定程式的語言選項。
+- 核心支援かな與羅馬字組字、文節轉換、候選、預測、カタカナ／半角カナ、変換／無変換鍵；記号與顔文字載入器在 `core/ja/rewrite`。
+- 日文個人學習與ライブ変換的程式在 `core/ja/personal`、`core/ja/live`；設定程式有對應選項，但正式引擎路徑尚未全部接上。
+- Windows TSF 只有一個 Mixed profile。注音、日文羅馬字與英文在同一個組字區，不再有 ja-JP「靈犀日本語」profile；舊版留下的 ja-JP 會在升級時清掉。
 - `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
 
 目前 repo 的日文資料包是 137 詞條的種子包，不是 Mozc 全量詞典；`make assets LANG=ja` 會編譯這份資料。Windows 套件可選擇內附 `data/ja/`：
@@ -92,7 +106,9 @@ make assets MODELS_ONLY=1           # 只換注音模型，需已有 assets/data
 python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 ```
 
-系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64；安裝 ja-JP 鍵盤／語言，才能從語言列選擇靈犀注音的日文 profile。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。日文轉換目前只用統計詞典；正式產品不 import 或啟動 llama.cpp、GGUF、zenz。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上。
+系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64。安裝後直接從中文（台灣）的鍵盤清單選「Mixed」，不需要另裝 ja-JP 語言。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。
+
+**目前限制**：Windows 套件放入的是編譯後的 `data/ja/`，但引擎的日文載入路徑目前讀 `lexicon/words.tsv` 與 `connection.tsv`；在整合接上編譯包之前，不能假設 shipped package 的日文轉換已完成。日文 `ja-public-core` 與 `ja-cc-by-sa` 兩組模型也都還是未訓練 placeholder，尚未接入推論。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
 
 ### 量測
 
@@ -142,9 +158,11 @@ xychart-beta
 
 Windows、macOS、Linux 安裝包請到官網下載：👉 [0c.biggo.com/download](https://0c.biggo.com/download/)
 
+逐步的安裝、升級、回復與移除，以及資料保留位置，見 [安裝、升級、回復與移除](docs/install.md)。
+
 發行版打包請用 [Releases](https://github.com/0c-biggo/0c-ime/releases/latest) 的 `0c-ime-<版本>.tar.xz`：內附現成字典，符合 DFSG，解壓即可建置；已配對的神經模型在另附的 `0c-ime-models-<版本>.tar.xz`。見 [打包與發佈](PACKAGING.md)。
 
-Windows 解除安裝不會刪個人詞庫；`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版，`-restore-user` 一併還原升級前的詞庫。內附的日文資料在該版本的 `data/ja/`，回復時跟著切換版本，注音字典與 `%LOCALAPPDATA%\Zuin\user.json` 不受影響。完整步驟見 [打包與發佈](PACKAGING.md#windows-安裝移除與回復)。
+Windows 解除安裝不會刪個人詞庫；`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版，`0c-update rollback -restore-user` 一併還原升級前的詞庫。內附的日文資料在該版本的 `data/ja/`，回復時跟著切換版本，注音字典與 `%LOCALAPPDATA%\Zuin\user.json` 不受影響。完整步驟見 [安裝、升級、回復與移除](docs/install.md) 與 [打包與發佈](PACKAGING.md#windows-安裝移除與回復)。
 
 ## 🛠️ 從原始碼建置
 
@@ -184,7 +202,7 @@ go run ./cmd/0c-eval-ja -write-baseline testdata/ja/baseline.json   # 刻意更�
 | 🍎 macOS | InputMethodKit（Swift） | [platforms/macos](platforms/macos/README.md) |
 | 🪟 Windows | TSF（Rust） | [platforms/windows](platforms/windows/README.md) |
 | ⚙️ 設定程式 | Tauri | [platforms/settings](platforms/settings/README.md) |
-| 🧠 神經推論 | Python＋ONNX Runtime | [platforms/neural](platforms/neural/README.md) |
+| 🧠 神經推論 | ONNX Runtime；Windows 原生，Linux／macOS 使用系統 Python | [platforms/neural](platforms/neural/README.md) |
 
 ## 🗂️ 專案結構
 
@@ -194,6 +212,7 @@ bridge/       引擎與外殼之間的行程間通訊（IPC）
 internal/     設定、自動更新、神經推論 worker、詞庫編譯與評測等共用程式
 cmd/          執行檔入口：0c-server、0c-ibus、0c-update、0c-cli、0c-compile、0c-eval…
 platforms/    Linux／macOS／Windows 外殼、設定程式、神經推論
+docs/         使用者文件：安裝、輸入與候選、模型組、授權
 data/         詞庫來源、來源帳本與授權聲明
 models/       上游模型與字典配對的固定清單
 scripts/      建置、打包與回歸測試工具
@@ -219,4 +238,4 @@ make test-release
 
 ## 📄 授權
 
-自有程式採 AGPL-3.0-only，另可洽談商業授權；自有圖示與圖片採 CC BY-SA 4.0；資料、模型與第三方元件依各自授權，見 [授權說明](legal/README.md)。
+自有程式採 AGPL-3.0-only，另可洽談商業授權；自有圖示與圖片採 CC BY-SA 4.0。公開核心資料與模型用 CC BY 4.0、公共領域或 permissive notice-only；CC BY-SA 資料與模型是另一個 experimental set；UniDic BSD 與 IPADic 的聲明義務、Windows 的 ONNX Runtime／MSVC runtime 邊界見 [授權頁](docs/licensing.md)。逐來源與逐檔說明見 [授權說明](legal/README.md)。

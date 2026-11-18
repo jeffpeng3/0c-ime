@@ -4,7 +4,7 @@ Copyright (C) 2026 Funmula Co., Limited
 
 本專案的自有程式碼、建置腳本、測試程式與文件，著作權屬 Funmula Co., Limited，除另有聲明外，依 **GNU Affero General Public License version 3 only（AGPL-3.0-only）** 授權。完整條款見 [LICENSE](../LICENSE)。
 
-使用與授權說明見 [TERMS.md](TERMS.md)，不影響 LICENSE 已授予的權利；隱私與資料的說明見官網 [隱私與資料](https://0c.biggo.com/privacy/)。依 Debian 自由軟體指導方針（DFSG）的逐項檢查見 [DFSG-free.md](DFSG-free.md)；逐檔的著作權人與授權以 Debian 的 DEP-5 格式列在 [copyright](copyright)。
+使用與授權說明見 [TERMS.md](TERMS.md)，不影響 LICENSE 已授予的權利；隱私與資料的說明見官網 [隱私與資料](https://0c.biggo.com/privacy/)。使用者版授權整理見 [docs/licensing.md](../docs/licensing.md)，內容與本文件及 [PACKAGING.md](../PACKAGING.md) 對齊；逐檔與逐來源的權威清單仍是本目錄。依 Debian 自由軟體指導方針（DFSG）的逐項檢查見 [DFSG-free.md](DFSG-free.md)；逐檔的著作權人與授權以 Debian 的 DEP-5 格式列在 [copyright](copyright)。
 
 ## 圖示與圖片
 
@@ -30,7 +30,7 @@ AGPL-3.0 允許研究、個人及商業使用。若需要以不符合 AGPL 條�
 - 訓練語料：public core 與 CC BY-SA experimental 分開列帳，來源在 `data/sources/corpus/`，授權政策與 NOTICE 在 [legal/corpus/](corpus/README.md)。公開核心只用 CC BY 4.0、公共領域與經簽核的 permissive notice-only（目前限 IPADic、Unihan、0c curated 與 UniDic 的 BSD-3-Clause 分支）；CC BY-SA 只進 experimental，並以 CC BY-SA 4.0 釋出衍生語料與模型。Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN、Common Crawl 與 NEologd 不進公開核心。UniDic 的 BSD 全文與著作者表示在 [legal/unidic/](unidic/README.md)。
 - 英文詞表：原始碼中的 `data/english/LICENSE.txt`；編譯後資料包中的 `data/english/NOTICE.txt`。
 - 日文資料包：`data/ja/` 的詞條、連接成本與詞頻採 CC BY-SA 4.0，記号與顔文字辭典採 AGPL-3.0-only；編譯後的 `data/ja/NOTICE.txt` 逐來源列出授權與姓名標示。日後匯入 Mozc、SudachiDict 或 Wikipedia 時維持各自的混合授權，不整體改標。來源判斷見 [data/ja/README.md](../data/ja/README.md)。
-- 神經模型：各模型套件隨附的 `LICENSE`；目前選字與補標點的固定 D512 模型採 MIT。日文目前沒有隨附神經模型：P2-01 起正式產品只用統計詞典，沒有 llama.cpp、GGUF、zenz 路徑。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時隨模型套件附上對應 `LICENSE` 與姓名標示。
+- 神經模型：各模型套件隨附的 `LICENSE`；目前選字與補標點的固定 D512 模型採 MIT。日文目前沒有隨附可用於推論的神經模型：P2-01 起正式產品只用統計詞典，沒有 llama.cpp、GGUF、zenz 路徑。模型組清單中的 `ja-public-core` 標示 CC BY 4.0、`ja-cc-by-sa` 標示 CC BY-SA 4.0，兩組目前都是未訓練 placeholder，尚未接入推論；日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時隨模型套件附上對應 `LICENSE` 與姓名標示。
 - Unicode：[授權聲明](UNICODE-NOTICE.txt)。
 - UniDic：[修正 BSD 全文與著作者表示](unidic/README.md)。
 - 其他隨安裝包出貨的元件：`THIRD_PARTY_NOTICES.txt`。

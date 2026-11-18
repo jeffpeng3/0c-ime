@@ -51,7 +51,10 @@ htmlcov/
 # Private working notes belong outside the public repository.
 /MEMORY.md
 /IME_OSS.md
-/docs/
+# docs/ is public user documentation. Keep private notes in these ignored subdirectories.
+/docs/private/
+/docs/reports/
+/docs/research/
 
 # Private records and research are not public source.
 /build/

@@ -4,7 +4,9 @@ CLAUDE.md
 MEMORY.md
 IME_OSS.md
 .claude/
-docs/
+docs/private/
+docs/reports/
+docs/research/
 build/
 data/raw/
 data/research
