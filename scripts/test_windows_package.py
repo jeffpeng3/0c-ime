@@ -84,6 +84,18 @@ class RuntimeTreeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             windows_runtime.verify_tree(root, lock)
 
+    def test_fetch_puts_the_downloaded_wheel_in_the_cache(self):
+        tmp = Path(tempfile.mkdtemp(prefix="runtime-fetch-"))
+        data = b"pinned wheel fixture"
+        source = tmp / "pinned.whl"
+        source.write_bytes(data)
+        cache = tmp / "cache"
+        got = windows_runtime.fetch("file://" + str(source), sha(data), cache)
+        self.assertEqual(got, cache / "pinned.whl")
+        self.assertEqual(got.read_bytes(), data)
+        with self.assertRaises(ValueError):
+            windows_runtime.fetch("file://" + str(source), "0" * 64, cache)
+
     def test_extract_takes_only_the_five_dlls(self):
         # Two tiny wheels with the same layout as the pinned wheels.
         import zipfile
