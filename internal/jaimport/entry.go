@@ -97,14 +97,15 @@ func (p POS) Valid() bool {
 func MapPOS(s string) POS {
 	first, _, _ := strings.Cut(strings.TrimSpace(s), ",")
 	first = strings.TrimSpace(first)
-	switch first {
+	switch strings.ToLower(first) {
 	case "名詞", "名詞句":
 		return POSNoun
 	case "動詞":
 		return POSVerb
 	case "形容詞":
 		return POSAdjective
-	case "形容動詞":
+	case "形容動詞", "形状詞", "形状", "shape", "shape_noun":
+		// 形状詞是 UniDic 與 Sudachi 對な形容詞的詞性名稱，行為與形容動詞相同。
 		return POSAdjectivalNoun
 	case "副詞":
 		return POSAdverb
