@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "name": "jaeval-test-fixture",
+  "license": "CC0-1.0",
+  "source": "0c P2-50 unit-test fixture",
+  "count": 3,
+  "cases": [
+    {"id": "fixture-ja", "category": "ja-word", "input": "kyou", "expect": "今日"},
+    {"id": "fixture-mixed", "category": "mixed-zh-ja", "input": "ㄐㄧㄣㄊㄧㄢkyou", "expect": "今天今日"},
+    {"id": "fixture-number", "category": "numbers-symbols", "input": "123", "expect": "123"}
+  ]
+}
