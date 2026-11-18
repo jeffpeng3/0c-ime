@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -22,6 +24,10 @@ import (
 // 注音解碼器與注音 session 完全不經過這裡。
 
 var errJaDataMissing = errors.New("japanese conversion data is not installed")
+
+// jaLoadWarnf 是日文資料載入的警告輸出。main 會換成伺服器 logger；測試可替換。
+// 每次載入最多輸出一行，避免資料包損壞時洗版。
+var jaLoadWarnf = func(string, ...any) {}
 
 // jaLanguage 是一個行程內共用的日文語言 profile。同一個 decoder 不保存
 // 輸入狀態，可同時服務多個 session。
@@ -109,11 +115,38 @@ func (p jaProfile) NewConverter() lang.Converter { return p.dec }
 
 func (p jaProfile) NewPunctuator() lang.Punctuator { return nil }
 
-func loadJaDecoder(dataDir string) (*jadecode.Decoder, *jalexicon.Mem, *jalexicon.Matrix, error) {
-	words, conns, ok := jaDataFiles(dataDir)
+func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexicon.Matrix, error) {
+	dir, ok := jaDataDir(dataDir)
 	if !ok {
 		return nil, nil, nil, errJaDataMissing
 	}
+	bin := filepath.Join(dir, "lexicon.bin")
+	words := filepath.Join(dir, "lexicon", "words.tsv")
+	conns := filepath.Join(dir, "connection.tsv")
+	haveTSV := fileExists(words) && fileExists(conns)
+
+	// 資料包有 lexicon.bin 時優先走緊湊載入器。檔案缺失就直接用 TSV；
+	// 檔案存在但無法開啟或解碼時視為「二進位不可用」，記一行警告後改用 TSV。
+	// 載入成功就一律使用二進位結果，不會因為 TSV 同時存在而被蓋掉。
+	var binErr error
+	if fileExists(bin) {
+		lex, err := loadJaBin(bin)
+		if err == nil {
+			conn := lex.Matrix()
+			return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
+		}
+		binErr = fmt.Errorf("%s：%w", bin, err)
+		if haveTSV {
+			jaLoadWarnf("日文詞典 %s 無法使用，改用 %s：%v", bin, words, err)
+		}
+	}
+	if !haveTSV {
+		if binErr != nil {
+			return nil, nil, nil, binErr
+		}
+		return nil, nil, nil, errJaDataMissing
+	}
+
 	wf, err := os.Open(words)
 	if err != nil {
 		return nil, nil, nil, err
@@ -135,15 +168,54 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, *jalexicon.Mem, *jalexico
 	return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
 }
 
-func jaDataFiles(dataDir string) (words, conns string, ok bool) {
+// loadJaBin 開啟並解碼 lexicon.bin。任何開啟或解碼錯誤都回傳給呼叫端，
+// 由 loadJaDecoder 決定是否退回 TSV。
+func loadJaBin(path string) (*jalexicon.Bin, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var size int64 = -1
+	if st, err := f.Stat(); err == nil {
+		size = st.Size()
+	}
+	return jalexicon.LoadBinSize(f, size)
+}
+
+// jaDataDir 找日文資料目錄：先看 <data>/ja，再看 data 本身。第二個候選只有在
+// 目錄看起來是日文包時才採用，避免把注音包的 lexicon.bin 當成日文詞典。
+func jaDataDir(dataDir string) (string, bool) {
 	for _, dir := range []string{filepath.Join(dataDir, "ja"), dataDir} {
-		words = filepath.Join(dir, "lexicon", "words.tsv")
-		conns = filepath.Join(dir, "connection.tsv")
-		if fileExists(words) && fileExists(conns) {
-			return words, conns, true
+		if dir == dataDir && !looksJapanese(dir) {
+			continue
+		}
+		if fileExists(filepath.Join(dir, "lexicon.bin")) ||
+			fileExists(filepath.Join(dir, "lexicon", "words.tsv")) && fileExists(filepath.Join(dir, "connection.tsv")) {
+			return dir, true
 		}
 	}
-	return "", "", false
+	return "", false
+}
+
+// looksJapanese 判斷目錄是不是日文資料包。connection.tsv 與
+// lexicon/words.tsv 是日文來源格式的標記；只有二進位檔時看 manifest language。
+func looksJapanese(dir string) bool {
+	if fileExists(filepath.Join(dir, "connection.tsv")) || fileExists(filepath.Join(dir, "lexicon", "words.tsv")) {
+		return true
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
+	if err != nil {
+		return false
+	}
+	var m struct {
+		Format   int    `json:"format"`
+		Language string `json:"language"`
+	}
+	if json.Unmarshal(b, &m) != nil {
+		return false
+	}
+	return m.Format >= 2 && m.Language == "ja"
 }
 
 func fileExists(path string) bool {
