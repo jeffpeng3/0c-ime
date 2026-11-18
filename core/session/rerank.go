@@ -68,7 +68,7 @@ func (s *Session) rerankPath() {
 }
 
 func (s *Session) rerankAllowed() bool {
-	return s.Rerank.Scorer != nil && s.allowRerank && s.comp.Empty() && s.cand == nil && !s.private && !s.paused && !s.english && len(s.locks) == 0
+	return !s.DisableModelScoring && s.Rerank.Scorer != nil && s.allowRerank && s.comp.Empty() && s.cand == nil && !s.private && !s.paused && !s.english && len(s.locks) == 0
 }
 
 // rerankable：段落長度在模型範圍內；有沒打聲調音節（#150）的段落沒有共用讀音可送，照統計引擎。
