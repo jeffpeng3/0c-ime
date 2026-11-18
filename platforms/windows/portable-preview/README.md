@@ -2,9 +2,10 @@
 
 This ZIP is a portable engine bundle. It is not an installer and it is not a
 complete input method: it contains the Go engine (`0c-server.exe`), the updater
-tool (`0c-update.exe`), the pinned native ONNX Runtime DLLs, a compiled data
-pack, and the fetched Japanese model package. There is no TSF DLL, no candidate
-window, no settings app and no Python runtime in the archive.
+tool (`0c-update.exe`), the pinned native ONNX Runtime DLLs, the exact
+upstream v0.2.12 data pack, and the fetched Japanese model package. There is
+no TSF DLL, no candidate window, no settings app and no Python runtime in the
+archive.
 
 ## Requirements
 
@@ -77,24 +78,17 @@ fail with a missing-receipt error.
 
 ## What is in `data\`
 
-`data\` is compiled from this source tree with the bigram TSV inputs omitted:
+`data\` is the exact upstream release data pack from
+**0c-ime v0.2.12** (`assets/data/`). The source tarball
+`0c-ime-0.2.12.tar.xz` was verified against the release `SHA256SUMS`
+(tarball SHA-256 `7c9ba6877f25deb75a6068b849047bc5a2377eaddfc534529a2fdd1de2eff264`).
+The tarball's `data/dictionary.lock.json` is byte-identical to
+`data/dictionary.lock.json` in this repository, and all `assets/data/` files
+match every size and SHA-256 in that lock. The dictionary bytes are the
+upstream release bytes; they were not rebuilt in this worktree.
 
-```text
-0c-compile -data data -out build/data -bigram '' -public
-0c-english -source data/english -out build/data/english
-```
-
-`data\lm.bin` is therefore the reduced unigram-only LM (about 4.8 MB) instead
-of the locked bigram LM (about 52.8 MB). The engine runs, but next-word
-prediction and context selection are weaker than a release build.
-
-Measured against `data/dictionary.lock.json`:
-
-- Matching: `lexicon.bin`, `english/NOTICE.txt`, `english/manifest.json`,
-  `english/words.bin`.
-- Not matching: `NOTICE.txt`, `lm.bin`, `manifest.json`, `report.txt`.
-
-The lock is not satisfied. Do not treat this data pack as a release data pack.
+The data pack includes `lexicon.bin`, the full bigram-backed `lm.bin`
+(52,766,129 bytes), manifest, NOTICE, report, and the `english/` subpack.
 
 ## What is in `models\`
 
@@ -118,8 +112,8 @@ preview.
    has not been executed on Windows 10 or Windows 11.
 2. No input method shell: no TSF DLL, no candidate window, no settings app.
    The engine alone cannot type into applications.
-3. The data lock is not satisfied because `data/lm/bigram` was absent. The
-   reduced LM is weaker; see the per-file list above.
+3. The data pack is the exact locked v0.2.12 release, but the engine is built
+   from the current development tree, not from the v0.2.12 tag.
 4. The Japanese model package is present but not active and not bound to a
    shipped Japanese data pack.
 5. Binaries are unsigned. SmartScreen and antivirus products may warn.
