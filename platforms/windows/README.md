@@ -29,6 +29,24 @@ C 執行階段靜態連結（`.cargo/config.toml` 的 `+crt-static`，x64 與 i6
 
 內附神經模型的 `neural\` 只有模型資料，不含 Python runtime；可在任一平台上用 `python3 scripts/prepare_neural.py --platform windows-amd64` 產生，步驟見 [神經推論](../neural/README.md#官網可攜套件)。
 
+### Linux 交叉編譯 x64（GNU）與開發註冊
+
+Linux 上以 mingw-w64 建 x64 的 DLL 與候選窗：
+
+```bash
+cd platforms/windows
+cargo build --release --target x86_64-pc-windows-gnu
+```
+
+產物是 `target/x86_64-pc-windows-gnu/release/0c_tsf.dll` 與 `0c-ui.exe`（PE32+、x86-64）。在 Windows 以系統管理員 PowerShell 執行：
+
+```powershell
+.\register.ps1    # 複製 DLL 到 %LOCALAPPDATA%\Zuin\tsf\0c_tsf.dll、regsvr32、加入 Mixed profile
+.\unregister.ps1  # 反向移除語言清單、CLSID／TSF 註冊、固定路徑 DLL 與 input-list 記號
+```
+
+`register.ps1` 沿用套件的固定路徑與 `input.dll` 的 `InstallLayoutOrTip("0404:{CLSID}{profile}", 0)`，只接受 x64 PE；`unregister.ps1` 以 `ILOT_UNINSTALL` 移除項目並執行 `regsvr32 /u`。兩者只處理 DLL 註冊與語言清單；`0c-server.exe`、`0c-ui.exe` 仍要依安裝收據放在版本目錄。註冊與 Win＋空白切換只能在 Windows 桌面驗證。
+
 ## 套件安裝與更新
 
 一般使用者直接雙擊 `*-setup.exe`，依精靈完成安裝或升級；解除安裝入口會出現在 Windows「已安裝的應用程式」。下列 ZIP 命令僅供開發驗證與進階操作。
