@@ -6,7 +6,7 @@ import (
 )
 
 // Config describes one native backend instance. It uses the same package
-// directory, manifest and vocab.json as the Python worker.
+// directory, manifest and vocab.json as the model package.
 type Config struct {
 	Package          string
 	DictionarySHA256 string
@@ -47,5 +47,5 @@ var (
 	ErrUnsupportedModel = errors.New("native model layout is not supported")
 )
 
-// MaxThreads matches the Python worker's accepted range.
+// MaxThreads matches the package manifest's accepted range.
 const MaxThreads = 8

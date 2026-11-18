@@ -308,8 +308,13 @@ vcruntime140.dll, vcruntime140_1.dll, msvcp140.dll, msvcp140_1.dll
 
 
 def python_free(stage):
-    """產品不得內建 Python：完成品出現 .py／.pyc／.pyd、wheel、numpy 或 onnxruntime Python 套件就失敗。"""
+    """The product bundle must not contain Python files or Python runtime code.
+
+    First reject any .py/.pyc/.pyd/wheel/numpy/onnxruntime payload, then scan
+    every shipped PE for the removed interpreter and worker path strings.
+    """
     windows_runtime.check_python_free(stage)
+    windows_runtime.check_no_python_runtime(stage)
 
 
 def load_model_package(path=None):
@@ -388,7 +393,7 @@ def check_model_pair(directory, data):
     for role in ("select", "punct"):
         if not regular(directory / role / "manifest.json"):
             raise ValueError(f"模型配對目錄缺少 {role}/manifest.json：{directory}")
-    expected = hf_models.check_shipped(directory, Path(data), workers=None)
+    expected = hf_models.check_shipped(directory, Path(data))
     lock = directory / "pairing.lock.json"
     if not regular(lock) or lock.read_bytes() != expected:
         raise ValueError(f"模型配對目錄的 pairing.lock.json 與出貨字典不符：{directory}")

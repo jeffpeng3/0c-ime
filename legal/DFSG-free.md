@@ -19,7 +19,7 @@
 | Go 相依模組 | MIT、BSD-2-Clause、BSD-3-Clause | 符合 |
 | Rust 相依 crate（設定程式、Windows 外殼） | MIT、Apache-2.0、MPL-2.0、Unicode-3.0 等 | 符合 |
 | 內附第三方程式碼：nlohmann/json | MIT | 符合 |
-| 推論執行環境：NumPy、ONNX Runtime | BSD-3-Clause、MIT | 符合（Debian main 已收錄） |
+| 推論執行環境：ONNX Runtime（選用，未內建於原始碼 tarball） | MIT | 符合 |
 | 詞庫來源（`data/`） | CC BY-SA 4.0、CC BY 4.0、MIT、政府資料開放授權條款第 1 版 | 符合 |
 | 簡體轉換字典（`internal/simplified/opencc`） | Apache-2.0 | 符合 |
 | 英文詞表（`data/english`） | SCOWL 授權 | 符合 |
@@ -118,7 +118,7 @@ go-winio 只用於 Windows 的 named pipe，Linux 與 macOS 的執行檔不含�
 - **自動更新**：Linux 安裝後 `0c-update` 會建立 systemd user timer，從 `s3.biggo.com` 取得已簽章的更新並自行安裝。Debian 套件由 apt 管理更新，需要能在建置或安裝時關閉自動更新與更新提示。
 - **內嵌的第三方副本**：`nlohmann/json.hpp`（Debian：`nlohmann-json3-dev`）與 `internal/simplified/opencc` 的 OpenCC 字典（Debian：`opencc` 1.4.2）。Debian 偏好使用系統套件，至少要在 `debian/copyright` 逐一列出。
 - **設定程式**：`platforms/settings` 使用 Tauri 2；`tauri`、`wry`、`tao` 等 crate 目前不在 Debian，要先打包這些 crate，或第一版不含設定程式。
-- **工具鏈與執行相依**：`go.mod` 要求 Go 1.26（Debian sid 為 1.27）；`platforms/neural/requirements.txt` 固定 `onnxruntime==1.30.0`、`numpy==2.5.3`，Debian sid 為 ONNX Runtime 1.27.1、NumPy 2.4.6，要確認推論 worker 在這些版本可用。
+- **工具鏈與執行相依**：`go.mod` 要求 Go 1.26（Debian sid 為 1.27）；產品執行階段沒有 Python、NumPy 或 onnxruntime Python 套件，選用模型時使用原生 ONNX Runtime（Debian sid 為 1.27.1），缺少共享函式庫時退回統計引擎。
 - **測試金鑰**：`testdata/e2e/` 的私鑰只供測試（見該目錄 README），lintian 會提出警告，需要 override 並說明。
 
 ## 維持方式

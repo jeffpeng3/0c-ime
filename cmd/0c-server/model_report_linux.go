@@ -10,7 +10,7 @@ import (
 )
 
 // processTreeRSS 回傳引擎本身與其子孫行程的 RSS（bytes）。Linux 的 /proc/<pid>/status 有 VmRSS；
-// children 檔列出直接子行程，逐層加總。worker 可能是 Python，也可能是 shell 轉接，全部算進來。
+// children 檔列出直接子行程，逐層加總，全部算進程序樹。
 func processTreeRSS() (self, children int64) {
 	self = procRSS(os.Getpid())
 	for _, pid := range descendants(os.Getpid()) {

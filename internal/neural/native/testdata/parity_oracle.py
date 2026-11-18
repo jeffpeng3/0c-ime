@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """P2-30N parity oracle: Python input assembly + int8 placeholder inference.
 
-The script imports prepare() from the real Python sequence worker, builds
-requests from real Japanese lines, records every assembled tensor, runs the
-same int8 placeholder model, and also tokenizes the lines with Python
+The script imports prepare() from an archived Python reference implementation,
+builds requests from real Japanese lines, records every assembled tensor, runs
+the same int8 placeholder model, and also tokenizes the lines with Python
 sentencepiece. The Go parity test feeds the recorded requests to the Go port
 and the native ONNX backend.
 
-This is a test oracle only; it is not part of the product path.
+This is a development-only test oracle; it is not part of the product path and
+the repository ships no Python worker.
 """
 import argparse
 import importlib.util

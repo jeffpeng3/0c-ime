@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """把已配對舊字典的 neural/ 複製一份，改成配對新字典（只改配對雜湊，不動模型）。
 
-引擎與 worker 只以字典 manifest.json 整檔的 SHA-256 核對配對（選字模型 manifest.json／vocab.json、
+引擎與模型套件只以字典 manifest.json 整檔的 SHA-256 核對配對（選字模型 manifest.json／vocab.json、
 補標點 vocab.json 的 dictionary_sha256，模型 manifest 的 files 記 vocab.json 雜湊）。模型輸入只有
 注音音節（bases）、聲調與字元（characters）；字典只決定候選，不在 vocab 的候選字由 runtime 整段退回
 統計引擎（manifest limits.unknown_candidate_character）。所以只改詞條讀音、不換模型的字典修正，可以把

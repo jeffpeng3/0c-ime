@@ -9,6 +9,7 @@ package main
 import (
 	"bufio"
 	"crypto/sha256"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -28,6 +29,7 @@ import (
 	"github.com/0c-biggo/0c-ime/internal/eval"
 	"github.com/0c-biggo/0c-ime/internal/fuzzyeval"
 	"github.com/0c-biggo/0c-ime/internal/neural"
+	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
 func main() {
@@ -311,10 +313,11 @@ func fatal(err error) {
 	}
 }
 
-// supervisors 追蹤評測開的神經 worker，結束時統一關閉並印出統計。
+// supervisors tracks the native ONNX backends opened by the evaluation run and
+// closes them at the end, printing aggregate counters.
 type supervisors struct {
 	mu   sync.Mutex
-	list []*neural.Supervisor
+	list []*native.Backend
 }
 
 func (s *supervisors) attach(e *engine.Engine, data string, timeout time.Duration, threads int) error {
@@ -322,18 +325,31 @@ func (s *supervisors) attach(e *engine.Engine, data string, timeout time.Duratio
 	if !b.HasSelect {
 		return fmt.Errorf("%s 旁沒有可用的 neural/select", data)
 	}
+	if !native.Available() {
+		return fmt.Errorf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag）")
+	}
 	manifest, err := os.ReadFile(filepath.Join(data, "manifest.json"))
 	if err != nil {
 		return err
 	}
-	w, err := neural.OpenSupervised(neural.Config{Python: b.Python, Script: b.SelectWorker, Package: b.SelectPackage,
+	pkgManifest, err := os.ReadFile(filepath.Join(b.SelectPackage, "manifest.json"))
+	if err != nil {
+		return err
+	}
+	var m neural.Manifest
+	if err := json.Unmarshal(pkgManifest, &m); err != nil {
+		return err
+	}
+	backend, err := native.Open(native.Config{Package: b.SelectPackage,
 		DictionarySHA256: fmt.Sprintf("%x", sha256.Sum256(manifest)), Threads: threads, Timeout: timeout})
 	if err != nil {
 		return err
 	}
-	e.Rerank = w.Options()
+	options := neural.OptionsFor(m)
+	options.Scorer = backend
+	e.Rerank = options
 	s.mu.Lock()
-	s.list = append(s.list, w)
+	s.list = append(s.list, backend)
 	s.mu.Unlock()
 	return nil
 }

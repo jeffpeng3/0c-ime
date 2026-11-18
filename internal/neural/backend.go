@@ -1,59 +1,74 @@
 package neural
 
-import "runtime"
+import (
+	"fmt"
+	"strings"
 
-// BackendAuto picks the native ONNX Runtime backend when this build contains it
-// and its shared library is installed, and otherwise degrades to the
-// statistical engine. Python is never required: an auto build without the
-// native runtime does not silently start a Python worker.
-const BackendAuto Backend = "auto"
+	"github.com/0c-biggo/0c-ime/internal/neural/native"
+)
+
+// Backend selects how a model package is executed. The only executor is the
+// native ONNX Runtime backend; "auto" resolves to native when this build and
+// the installed runtime can provide it, and to the statistical engine
+// otherwise. There is no interpreter backend.
+type Backend string
+
+const (
+	BackendAuto   Backend = "auto"
+	BackendNative Backend = "native"
+	// BackendStatistical is a resolution result, not a -neural-backend value:
+	// the native runtime is unavailable, so the statistical engine serves.
+	BackendStatistical Backend = "statistical"
+)
+
+// ParseBackend parses the -neural-backend value; unknown values are rejected.
+func ParseBackend(value string) (Backend, error) {
+	switch backend := Backend(strings.ToLower(strings.TrimSpace(value))); backend {
+	case BackendAuto, BackendNative:
+		return backend, nil
+	}
+	return "", fmt.Errorf("unknown neural backend %q", value)
+}
 
 // ResolvedBackend is the outcome of backend selection, including a stable
-// reason code for health reporting.
+// reason code for health reporting. An empty Reason means native is ready.
 type ResolvedBackend struct {
 	Backend Backend
 	Library string
-	// Reason is empty when the requested backend is ready. Otherwise it is one
-	// of "native_unavailable" (binary built without CGO/onnxruntime),
-	// "native_runtime_missing" (DLL not installed next to the executable), or
-	// "python" (auto fell back to the legacy worker on Linux/macOS).
+	// Reason is empty when the requested native backend is ready. Otherwise it
+	// is "native_unavailable" (binary built without CGO/onnxruntime) or
+	// "native_runtime_missing" (shared library not installed next to the
+	// executable). In both cases the statistical engine serves requests.
 	Reason string
 }
 
 // ChooseBackend resolves -neural-backend against the build and the installed
-// runtime. goos is passed explicitly so the policy is testable off Windows.
-func ChooseBackend(requested Backend, nativeBuilt bool, library, goos string) ResolvedBackend {
+// runtime. It never returns an interpreter backend.
+func ChooseBackend(requested Backend, nativeBuilt bool, library string) ResolvedBackend {
 	switch requested {
-	case BackendPython:
-		return ResolvedBackend{Backend: BackendPython}
-	case BackendNative:
+	case BackendNative, BackendAuto:
 		if !nativeBuilt {
-			return ResolvedBackend{Backend: BackendNative, Reason: "native_unavailable"}
+			return ResolvedBackend{Backend: BackendStatistical, Reason: ReasonNativeUnavailable}
 		}
 		if library == "" {
-			return ResolvedBackend{Backend: BackendNative, Reason: "native_runtime_missing"}
+			return ResolvedBackend{Backend: BackendStatistical, Reason: ReasonRuntimeMissing}
 		}
 		return ResolvedBackend{Backend: BackendNative, Library: library}
-	case BackendAuto:
-		if nativeBuilt && library != "" {
-			return ResolvedBackend{Backend: BackendNative, Library: library}
-		}
-		if goos == "windows" || nativeBuilt {
-			reason := "native_unavailable"
-			if nativeBuilt {
-				reason = "native_runtime_missing"
-			}
-			return ResolvedBackend{Backend: BackendNative, Reason: reason}
-		}
-		return ResolvedBackend{Backend: BackendPython, Reason: "python"}
 	}
-	return ResolvedBackend{Backend: BackendPython, Reason: "unknown_backend"}
+	return ResolvedBackend{Backend: BackendStatistical, Reason: "unknown_backend"}
 }
 
-// DefaultBackend is the product default: native when usable, statistical
-// otherwise. Linux/macOS keep the bundled Python worker when no native runtime
-// is built.
+// NativeAvailable reports whether this binary contains the native ONNX
+// backend. Default CGO-disabled builds return false.
+func NativeAvailable() bool { return native.Available() }
+
+// NativeRuntimeLibrary is the ONNX Runtime shared library installed next to
+// this executable, or "" when it is absent.
+func NativeRuntimeLibrary() string { return native.RuntimeLibrary() }
+
+// DefaultBackend resolves the product default: native when usable, statistical
+// otherwise.
 func DefaultBackend() (Backend, ResolvedBackend) {
-	chosen := ChooseBackend(BackendAuto, NativeAvailable(), NativeRuntimeLibrary(), runtime.GOOS)
+	chosen := ChooseBackend(BackendAuto, NativeAvailable(), NativeRuntimeLibrary())
 	return chosen.Backend, chosen
 }

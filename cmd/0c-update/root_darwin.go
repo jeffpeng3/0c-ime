@@ -31,7 +31,7 @@ func dropRoot(args []string) error {
 	if err != nil {
 		return err
 	}
-	// pkg 的套件在安裝程式 root 的暫存目錄，裡面有 0700 的目錄（例如 neural/python），使用者讀不到。
+	// pkg 的套件在安裝程式 root 的暫存目錄，裡面有 0700 的目錄，使用者讀不到。
 	// 複製一份給使用者（APFS 上是 clonefile，不佔空間），結束後刪掉。
 	var copied string
 	if bundle, ok := installBundleArg(args); ok {

@@ -8,119 +8,72 @@ import (
 	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
-// 模型與推論環境的來源，health 的 selection_source／punctuation_source、neural_python 回報這些值。
+// Model sources for health reporting.
 const (
-	SourceBundled = "bundled" // 安裝包內附（官網安裝包；發行版另外裝的模型套件也放在這裡）
-	SourceUser    = "user"    // 個人目錄（#180 下載後在本機配對）
-	SourceSystem  = "system"  // 系統的 python3（Linux 系統安裝，#181）
+	SourceBundled = "bundled" // shipped in the install bundle
+	SourceUser    = "user"    // personal directory, downloaded/paird locally (#180)
 )
 
-// SystemPython 是沒有內附 Python 時在 Linux 使用的系統 Python（Debian 的 python3；numpy、onnxruntime
-// 由 python3-numpy、python3-onnxruntime 提供）。macOS、Windows 的官網安裝包一定內附 Python，不退回系統。
-func SystemPython() string {
-	if runtime.GOOS == "linux" {
-		return "/usr/bin/python3"
-	}
-	return ""
-}
-
-// Options 是找神經推論三樣東西（Python、worker、模型）的位置。
+// Options locates model packages. Model packages are data only; no
+// interpreter or worker script is part of the bundle.
 //
-//	<data>/../neural/python/             內附 Python 與 numpy、onnxruntime（官網安裝包）
-//	<data>/../neural/*_runtime.py        worker（系統安裝即 /usr/share/0c/neural/）
-//	<data>/../neural/select|punct/       安裝包內建的模型，與該字典配對出貨
-//	<UserDir>/models/<字典 manifest SHA-256>/select|punct/   個人目錄的模型（#180）
+//	<data>/../neural/select|punct/                          bundled models
+//	<UserDir>/models/<dictionary manifest SHA-256>/select|punct/
 //
-// 模型依「安裝包內建 → 個人目錄」的順序取第一個；都沒有時由統計引擎選字。個人目錄以字典 manifest 的
-// 雜湊分開：worker 啟動時本來就核對這個雜湊（DictionarySHA256），換了字典的舊配對不會被找到。
+// Models are searched bundled first and then the personal directory. If none
+// exist, the statistical engine selects candidates.
 type Options struct {
-	DataDir string
-	// UserDir 是個人資料目錄（~/.local/share/zuin）；空字串或 DictionarySHA256 為空時不找個人目錄。
+	DataDir          string
 	UserDir          string
 	DictionarySHA256 string
-	// SystemPython 是沒有內附 Python 時的退路（Linux）；空字串不退回（FindBundled、macOS、Windows）。
-	// 檔案不存在時仍用這個路徑，見 Bundled。
-	SystemPython string
 }
 
-// Bundled 是找到的推論環境與模型。HasSelect／HasPunct 表示可以啟動 worker（有模型、worker 與要執行的 Python）。
-//
-// Python 是要執行的 Python，PythonSource 是它的來源；Python 不為空但 PythonSource 為空，表示 Linux 的系統
-// Python 目前不存在（沒裝 python3）。這時照樣啟動 worker：執行檔不存在是 runtime_missing，每 10 分鐘重試，
-// 使用者之後裝好 python3 不必重啟引擎（與缺 numpy、onnxruntime 相同）。macOS、Windows 沒有系統 Python 的
-// 退路：內附 Python 不見是安裝損毀，Python 為空、不啟動 worker，狀態與以前一樣是 not_installed。
+// Bundled is the located models plus native runtime availability. HasSelect
+// and HasPunct mean a package was found; whether it can run depends on the
+// native backend and its shared library.
 type Bundled struct {
-	Python, SelectWorker, SelectPackage, PunctWorker, PunctPackage string
-	PythonSource, SelectSource, PunctSource                        string // 空字串：沒有找到
-	HasSelect, HasPunct                                            bool
-	// P2-43：原生 ONNX Runtime。Native 為這個建置含原生後端且執行檔旁有 ONNX Runtime；
-	// NativeLibrary 是找到的 DLL／so 路徑。沒有 Python 的 Windows 產品靠這一組載入模型。
+	SelectPackage, PunctPackage string
+	SelectSource, PunctSource   string // empty: not found
+	HasSelect, HasPunct         bool
+	// P2-43: native ONNX Runtime. Native is true when this build contains the
+	// native backend and an ONNX Runtime library is installed next to the
+	// executable; NativeLibrary is its path.
 	Native        bool
 	NativeLibrary string
-	// NativeBuilt 是這個建置是否含原生後端（與 DLL 是否存在無關）。
+	// NativeBuilt is whether this build contains the native backend,
+	// regardless of whether the shared library is present.
 	NativeBuilt bool
 }
 
-// RuntimeMissing 回報找到模型與 worker、要用的系統 Python 卻不存在（Linux 沒裝 python3）。引擎照樣啟動
-// worker（HasSelect／HasPunct 為真），啟動時的狀態報 runtime_missing；之後的狀態由 worker 的重試決定。
-func (b Bundled) RuntimeMissing(punct bool) bool {
-	if b.Python == "" || b.PythonSource != "" {
-		return false
-	}
-	if punct {
-		return b.PunctSource != ""
-	}
-	return b.SelectSource != ""
-}
-
-// FindBundled 只找安裝包內附的 Python 與模型（官網安裝包的布局）。
+// FindBundled only looks at the install bundle's models.
 func FindBundled(dataDir string) Bundled { return Find(Options{DataDir: dataDir}) }
 
-// Find 分開找 Python、worker 與模型；見 Options。
+// Find locates bundled and personal model packages; see Options.
 func Find(o Options) Bundled {
 	dir := filepath.Join(filepath.Dir(filepath.Clean(o.DataDir)), "neural")
-	python := filepath.Join(dir, "python", "bin", "python3")
-	if runtime.GOOS == "windows" {
-		python = filepath.Join(dir, "python", "python.exe")
-	}
-	var b Bundled
-	switch {
-	case regular(python):
-		b.Python, b.PythonSource = python, SourceBundled
-	case o.SystemPython != "":
-		b.Python = o.SystemPython
-		if regular(o.SystemPython) {
-			b.PythonSource = SourceSystem
-		}
-	}
 	var user string
 	if o.UserDir != "" && len(o.DictionarySHA256) == 64 {
 		user = filepath.Join(o.UserDir, "models", o.DictionarySHA256)
 	}
+	var b Bundled
 	b.NativeBuilt = native.Available()
 	b.NativeLibrary = native.RuntimeLibrary()
 	b.Native = b.NativeBuilt && b.NativeLibrary != ""
-	nativeUsable := b.Native
-	find := func(worker, name string, needsWorker bool) (string, string, string) {
-		script := filepath.Join(dir, worker)
-		if needsWorker && !regular(script) {
-			return script, filepath.Join(dir, name), ""
-		}
+	find := func(name string) (string, string) {
 		if bundled := filepath.Join(dir, name); regular(filepath.Join(bundled, "manifest.json")) {
-			return script, bundled, SourceBundled
+			return bundled, SourceBundled
 		}
 		if user != "" {
 			if p := filepath.Join(user, name); regular(filepath.Join(p, "manifest.json")) {
-				return script, p, SourceUser
+				return p, SourceUser
 			}
 		}
-		return script, filepath.Join(dir, name), ""
+		return filepath.Join(dir, name), ""
 	}
-	b.SelectWorker, b.SelectPackage, b.SelectSource = find("sequence_runtime.py", "select", !nativeUsable)
-	// 補標點與選字一樣：有原生後端時不需要 worker；沒有 Python 也沒有原生後端才不載入。
-	b.PunctWorker, b.PunctPackage, b.PunctSource = find("punct_runtime.py", "punct", !nativeUsable)
-	b.HasSelect = b.SelectSource != "" && (b.Python != "" || nativeUsable)
-	b.HasPunct = b.PunctSource != "" && (b.Python != "" || nativeUsable)
+	b.SelectPackage, b.SelectSource = find("select")
+	b.PunctPackage, b.PunctSource = find("punct")
+	b.HasSelect = b.SelectSource != ""
+	b.HasPunct = b.PunctSource != ""
 	return b
 }
 
@@ -129,10 +82,11 @@ func regular(path string) bool {
 	return err == nil && st.Mode().IsRegular()
 }
 
-// MaxThreads 是 worker 接受的 threads 上限，須與 Python worker 的檢查一致。
+// MaxThreads is the executor's thread cap.
 const MaxThreads = 8
 
-// DefaultThreads 用滿 CPU 到上限為止：推論只在按鍵與提交時短暫執行，閒置時不占用。
+// DefaultThreads uses all CPUs up to the cap: inference only runs briefly on
+// key presses and commits, so idle time costs nothing.
 func DefaultThreads() int {
 	return max(1, min(MaxThreads, runtime.NumCPU()))
 }

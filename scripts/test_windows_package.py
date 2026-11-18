@@ -1,4 +1,4 @@
-"""P2-43: Windows packaging, native runtime lock and the Python-free product boundary."""
+"""P2-43/P2-30D: Windows packaging, native runtime lock and the no-Python runtime boundary."""
 
 import hashlib
 import json
@@ -117,7 +117,7 @@ class RuntimeTreeTests(unittest.TestCase):
 
 
 class PythonFreeTests(unittest.TestCase):
-    def test_clean_bundle(self):
+    def test_clean_bundle_has_no_python_runtime(self):
         root = Path(tempfile.mkdtemp(prefix="bundle-clean-"))
         (root / "data").mkdir()
         (root / "data" / "manifest.json").write_text("{}")
@@ -125,8 +125,24 @@ class PythonFreeTests(unittest.TestCase):
         (root / "0c-server.exe").write_bytes(b"MZ")
         (root / "THIRD_PARTY_NOTICES.txt").write_text("onnxruntime")
         self.assertEqual(windows_runtime.python_free(root), [])
+        self.assertEqual(windows_runtime.python_runtime_hits(root), [])
         windows_runtime.check_python_free(root)
+        windows_runtime.check_no_python_runtime(root)
         package_windows.python_free(root)
+
+    def test_rejects_binaries_with_python_runtime_paths(self):
+        markers = [b"sequence_runtime.py", b"punct_runtime.py", b"-neural-python",
+                   b"-system-python", b"-neural-worker", b"-punct-worker",
+                   b"neural_python", b"python.exe", b"runtime/python/",
+                   b"site-packages", b"numpy/core"]
+        for marker in markers:
+            with self.subTest(marker=marker):
+                root = Path(tempfile.mkdtemp(prefix="bundle-binary-"))
+                (root / "0c-server.exe").write_bytes(b"MZ" + marker + b"\x00")
+                with self.assertRaises(ValueError):
+                    windows_runtime.check_no_python_runtime(root)
+                with self.assertRaises(ValueError):
+                    package_windows.python_free(root)
 
     def test_rejects_cpython_numpy_and_wheels(self):
         cases = {

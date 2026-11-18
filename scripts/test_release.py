@@ -2275,7 +2275,7 @@ class ReleaseTests(unittest.TestCase):
             installer.restore_user_store(self.home, self.root)
 
     def write_neural(self, label):
-        for name in ("python/bin/python3", "sequence_runtime.py", "select/manifest.json", "select/model.onnx"):
+        for name in ("select/manifest.json", "select/model.onnx", "punct/manifest.json", "punct/model.onnx"):
             path = self.bundle / "neural" / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(f"{label} {name}")
@@ -2330,10 +2330,10 @@ class ReleaseTests(unittest.TestCase):
         installer.install(self.bundle, self.home, self.release)
         self.write_neural("v2")
         backup = installer.install(self.bundle, self.home, self.release)
-        (neural / "sequence_runtime.py").write_text("patched")
+        (neural / "select/manifest.json").write_text("patched")
         with self.assertRaisesRegex(ValueError, "已變更"):
             installer.rollback(self.home, backup)
-        self.assertEqual((neural / "sequence_runtime.py").read_text(), "patched")
+        self.assertEqual((neural / "select/manifest.json").read_text(), "patched")
 
     def test_rollback_rejects_reappeared_legacy_file(self):
         legacy = self.home / ".local/bin/zuin-server"
@@ -2956,43 +2956,22 @@ Successfully verified: 0c-update.exe
         with self.assertRaisesRegex(ValueError, "需要 --ort-runtime"):
             package_windows.runtime_plan(None, False, None)
 
-    def test_intel_mac_neural_runtime_matches_its_python(self):
-        # onnxruntime 1.30.0 沒有 Intel Mac wheel：Intel 版用 1.23.2 與 CPython 3.13，wheel 的 ABI 與架構要一致。
-        import collect_notices
+    def test_prepare_neural_fetches_no_python_runtime(self):
+        # The neural prepare flow ships models only: no CPython, numpy or
+        # onnxruntime Python package, no wheels and no bytecode compiler.
         import prepare_neural
-        import tarfile
-        runtime = prepare_neural.RUNTIMES["macos-amd64"]
-        self.assertEqual(runtime["version"], "3.13")
-        self.assertIn("cpython-3.13.", runtime["python"][0])
-        self.assertTrue(runtime["python"][0].endswith("-x86_64-apple-darwin-install_only_stripped.tar.gz"))
-        names = [url.rsplit("/", 1)[1] for url, _ in runtime["wheels"]]
-        self.assertEqual([n.split("-")[0] for n in names], ["numpy", "onnxruntime"])
-        for name in names:
-            self.assertTrue(name.endswith("_x86_64.whl") and "-cp313-cp313-" in name, name)
-        self.assertIn("-x86_64-unknown-linux-gnu-", prepare_neural.COMPILERS["3.13"][0])
-        self.assertIn("cpython-3.13.", prepare_neural.COMPILERS["3.13"][0])
-        for platform, entry in prepare_neural.RUNTIMES.items():
-            self.assertIn(entry["version"], prepare_neural.COMPILERS, platform)
-        with tempfile.TemporaryDirectory() as temp:
-            temp = Path(temp)
-            archive = temp / "python.tar.gz"
-            with tarfile.open(archive, "w:gz") as tar:
-                for name, body in (("python/bin/python3.13", "interpreter"), ("python/bin/pip3", "pip"),
-                                   ("python/lib/python3.13/LICENSE.txt", "PSF 3.13"), ("python/lib/python3.13/os.py", ""),
-                                   ("python/lib/python3.13/site-packages/pip/__init__.py", ""),
-                                   ("python/lib/python3.13/tkinter/__init__.py", ""), ("python/lib/tcl9.0/init.tcl", "")):
-                    data = body.encode()
-                    info = tarfile.TarInfo(name)
-                    info.size = len(data)
-                    tar.addfile(info, io.BytesIO(data))
-            site = prepare_neural.install_python("macos-amd64", archive, temp / "neural/python")
-            self.assertEqual(site, temp / "neural/python/lib/python3.13/site-packages")
-            self.assertEqual(sorted(p.name for p in (temp / "neural/python/bin").iterdir()), ["python3"])
-            for gone in ("lib/python3.13/site-packages/pip", "lib/python3.13/tkinter", "lib/tcl9.0"):
-                self.assertFalse((temp / "neural/python" / gone).exists(), gone)
-            text = "\n".join(collect_notices.python_sections(temp / "neural", "macos-amd64"))
-            self.assertIn("CPython 3.13", text)
-            self.assertIn("PSF 3.13", text)
+        import sys
+        self.assertFalse(hasattr(prepare_neural, "RUNTIMES"))
+        self.assertFalse(hasattr(prepare_neural, "install_python"))
+        source = Path(prepare_neural.__file__).read_text(encoding="utf-8")
+        for marker in ("cpython-", "python-build-standalone", ".whl", "numpy-", "onnxruntime-"):
+            self.assertNotIn(marker, source)
+        parser_help = subprocess.run([sys.executable, "-B", str(Path(prepare_neural.__file__)), "--help"],
+                                     capture_output=True, text=True).stdout
+        for flag in ("--models", "--dictionary", "--out"):
+            self.assertIn(flag, parser_help)
+        for flag in ("--python-archive", "--wheel", "--compiler-archive"):
+            self.assertNotIn(flag, parser_help)
 
     def test_bundle_name_is_not_rebound_while_packaging(self):
         # dev.60 前 #80 的迴圈 `for name in NEURAL_CRT` 蓋掉了套件名稱，Windows ZIP 的頂層目錄變成 msvcp140_1.dll/。
@@ -3269,7 +3248,8 @@ class HFModelsTests(unittest.TestCase):
             self.assertEqual(len(urls), 6)
 
     def test_replace_models_pairs_public_models_and_matches_pairing_lock(self):
-        # 0.2.2 形狀的 neural/：可攜 Python、worker、內部匯出的模型（含 export-validation.json）
+        # A legacy neural/ tree may contain a portable Python and workers; the
+        # rebuild must emit model data only and never copy them.
         old = self.root / "old-neural"
         for path in ("python/bin/python3", "sequence_runtime.py", "punct_runtime.py", "README.txt",
                      "select/model.onnx", "select/manifest.json", "select/vocab.json", "select/export-validation.json",
@@ -3278,10 +3258,9 @@ class HFModelsTests(unittest.TestCase):
             (old / path).write_text("old " + path)
         weights = self.hf.fetch(self.weights, lock_path=self.lock)
         out = self.hf.replace_models(old, self.data, self.root / "new/neural", weights, self.lock)
-        self.assertEqual((out / "python/bin/python3").read_text(), "old python/bin/python3")
-        # worker 不沿用舊 neural/ 的：一律是 repo 的版本（例如關掉 onnxruntime 遙測的修正才會出貨）
-        for name in self.hf.WORKER_NAMES:
-            self.assertEqual((out / name).read_bytes(), (self.hf.WORKERS / name).read_bytes(), name)
+        self.assertFalse((out / "python").exists())
+        self.assertFalse((out / "sequence_runtime.py").exists())
+        self.assertFalse((out / "punct_runtime.py").exists())
         self.assertFalse((out / "pairing.lock.json").exists())
         self.assertEqual(sorted(p.name for p in (out / "select").iterdir()), ["LICENSE", "README.md", "manifest.json", "model.onnx", "vocab.json"])
         dictionary = installer.digest(self.data / "manifest.json")
@@ -3294,23 +3273,17 @@ class HFModelsTests(unittest.TestCase):
         self.assertEqual(self.hf.check_shipped(out, self.data, self.lock), self.pairing.pairing_lock(dictionary, self.lock))
         with self.assertRaisesRegex(ValueError, "輸出已存在"):
             self.hf.replace_models(old, self.data, out, weights, self.lock)
-        # 內部匯出的 neural/（manifest 不是上游的）不能當公開包出貨
+        # An internal-export neural/ (manifest not upstream) cannot ship.
         with self.assertRaisesRegex(ValueError, "不是公開版模型配對出貨字典的結果"):
             self.hf.check_shipped(old, self.data, self.lock)
-        # worker 跟 repo 不同（沿用舊版或手改）不能出貨
-        for name in self.hf.WORKER_NAMES:
-            original = (out / name).read_bytes()
-            (out / name).write_bytes(original + b"\n")
-            with self.assertRaisesRegex(ValueError, f"neural/{name} 與 platforms/neural/runtime/{name} 不同"):
-                self.hf.check_shipped(out, self.data, self.lock)
-            (out / name).write_bytes(original)
-        # 只換掉權重（例如沿用舊的 model.onnx）也擋下
+        # Replacing only the weights (for example an older model.onnx) is rejected.
         shutil.copyfile(old / "select/model.onnx", out / "select/model.onnx")
         with self.assertRaisesRegex(ValueError, "官網套件要內建 Hugging Face 公開版"):
             self.hf.check_shipped(out, self.data, self.lock)
 
     def test_shipped_repairing_keeps_the_pairing_lock_consistent(self):
-        # 打包時 prepare_data_manifest 拿掉不公開來源、把模型改配對到出貨 manifest：結果仍等於出貨字典的 pairing.lock。
+        # Packaging strips non-public sources and re-pairs the models to the
+        # shipped manifest; the result still equals the shipped pairing lock.
         news = {"ID": "zuin-news-stratified-20260921", "Name": "新聞", "Distributable": False}
         (self.data / "manifest.json").write_bytes(packager.json_bytes(
             {"format": 2, "sources": [{"ID": "zhwiki", "Distributable": True}, news]}))
@@ -3318,8 +3291,6 @@ class HFModelsTests(unittest.TestCase):
         neural = self.root / "neural"
         neural.mkdir()
         self.hf.write_packages(weights, installer.digest(self.data / "manifest.json"), neural, self.lock)
-        for name in self.hf.WORKER_NAMES:
-            shutil.copyfile(self.hf.WORKERS / name, neural / name)
         shipped = packager.prepare_data_manifest(self.data, neural)
         self.assertEqual(shipped, installer.digest(self.data / "manifest.json"))
         self.assertEqual(json.loads(self.hf.check_shipped(neural, self.data, self.lock))["dictionary_manifest_sha256"], shipped)
@@ -3336,6 +3307,8 @@ class HFModelsTests(unittest.TestCase):
                                      capture_output=True, text=True).stdout
         self.assertIn("--models", parser_help)
         self.assertNotIn("--select", parser_help)
+        self.assertNotIn("--python-archive", parser_help)
+        self.assertNotIn("--wheel", parser_help)
 
 
 if __name__ == "__main__":

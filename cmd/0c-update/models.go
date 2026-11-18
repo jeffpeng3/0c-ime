@@ -59,7 +59,6 @@ type modelsRuntime struct {
 	Backend string   `json:"backend"`
 	Library string   `json:"library,omitempty"`
 	Reason  string   `json:"reason,omitempty"`
-	Python  string   `json:"python,omitempty"`
 	Missing []string `json:"missing"`
 }
 
@@ -130,8 +129,6 @@ type modelsEnv struct {
 	// equivalent 是 models/equivalent.json：與 models.lock 的 model.onnx 等價的雜湊。
 	equivalent []byte
 	dial       autoupdate.Dialer
-	// runtimeCheck 核對系統 Python 能不能 import numpy、onnxruntime，回傳缺少的 apt 套件。
-	runtimeCheck func(python string) []string
 	// distributionDisabled：發行版關掉了模型下載與提醒。
 	distributionDisabled func(data string) bool
 	// settingsMissing：找不到設定程式（例如發行版套件沒附 0c-settings），提醒的「下載模型」開不了模型頁。
@@ -142,7 +139,7 @@ type modelsEnv struct {
 func defaultModelsEnv() modelsEnv {
 	base := basePath()
 	return modelsEnv{base: base, data: dataPackDir(base), goos: runtime.GOOS, lock: upstream.Lock, equivalent: upstream.Equivalent, dial: dialEngine,
-		runtimeCheck: checkModelRuntime(base), distributionDisabled: modelDownloadDisabled, settingsMissing: settingsProgramMissing, now: time.Now}
+		distributionDisabled: modelDownloadDisabled, settingsMissing: settingsProgramMissing, now: time.Now}
 }
 
 // newModelsEnv 測試替換用。
@@ -189,7 +186,7 @@ func (e modelsEnv) snapshot() (modelsSnapshot, error) {
 	}
 	s.lock, s.dictionary = l, e.dictionary()
 	s.equivalent, _ = models.ParseEquivalents(e.equivalent) // 讀不到就只認 models.lock 本身（測試核對編進去的那份）
-	s.bundled = neural.Find(neural.Options{DataDir: e.data, SystemPython: neural.SystemPython()})
+	s.bundled = neural.Find(neural.Options{DataDir: e.data})
 	s.inspect = e.store().Inspect(l, s.dictionary)
 	if p, err := e.pairing(); err == nil {
 		s.pairing, s.pairingOK = p, p.Matches(l, s.dictionary)
@@ -296,30 +293,20 @@ func manifestModelSHA(dir string) string {
 	return ""
 }
 
-// runtime：Windows 產品不內建 Python；有原生 ONNX Runtime 就報 native，沒有時照實說會用統計轉換。
-// Linux 系統安裝仍用系統的 python3，缺什麼列出 Debian 的套件名。
+// runtime reports the native ONNX Runtime when it is installed next to the
+// engine; otherwise the engine uses the statistical path. There is no
+// interpreter runtime to probe.
 func (e modelsEnv) runtime(b neural.Bundled) modelsRuntime {
 	r := modelsRuntime{Missing: []string{}}
-	switch {
-	case b.Native || (e.goos == "windows" && b.NativeLibrary != ""):
+	if b.Native || (e.goos == "windows" && b.NativeLibrary != "") {
 		r.OK, r.Backend, r.Library = true, "native", b.NativeLibrary
-	case b.PythonSource == neural.SourceBundled:
-		r.OK, r.Backend, r.Python = true, "python", b.Python
-	case e.goos != "linux":
-		r.Backend = "statistical"
-		if b.NativeBuilt {
-			r.Reason = "native_runtime_missing"
-		} else {
-			r.Reason = "native_unavailable"
-		}
-	case b.PythonSource == neural.SourceSystem:
-		r.Backend = "python"
-		r.Python = b.Python
-		r.Missing = e.runtimeCheck(b.Python)
-		r.OK = len(r.Missing) == 0
-	default: // 沒有 python3
-		r.Backend = "python"
-		r.Missing = []string{"python3", "python3-numpy", "python3-onnxruntime"}
+		return r
+	}
+	r.Backend = "statistical"
+	if b.NativeBuilt {
+		r.Reason = "native_runtime_missing"
+	} else {
+		r.Reason = "native_unavailable"
 	}
 	return r
 }

@@ -37,6 +37,17 @@ PYTHON_DIRS = ("site-packages", "dist-packages", "python", "python3", "python314
 PYTHON_FILES = ("python.exe", "pythonw.exe", "python3.exe", "python314.dll", "python313.dll",
                 "python312.dll", "python311.dll", "python310.dll")
 
+# Byte strings that must not occur in any shipped PE file. They catch a binary
+# that still carries the removed interpreter or worker path even when no Python
+# files are copied into the bundle.
+RUNTIME_MARKERS = (
+    b"sequence_runtime.py", b"punct_runtime.py", b"onnx_bundle_probe.py",
+    b"-neural-python", b"-system-python", b"-neural-worker", b"-punct-worker",
+    b"neural_python", b"python.exe", b"pythonw.exe", b"runtime/python/",
+    b"python/bin/python", b"site-packages", b"dist-packages", b"numpy/core",
+    b"onnxruntime.capi",
+)
+
 
 def digest(path: Path) -> str:
     h = hashlib.sha256()
@@ -183,6 +194,27 @@ def check_python_free(root: Path) -> None:
     found = python_free(root)
     if found:
         raise ValueError("套件含 Python 或 wheel，產品不得內建 Python：" + ", ".join(found[:20]))
+
+
+def python_runtime_hits(root: Path) -> list:
+    """Return shipped PE files that still contain Python runtime code markers."""
+    root = Path(root)
+    hits = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in (".exe", ".dll", ".pyd"):
+            continue
+        data = path.read_bytes()
+        found = [marker.decode("ascii", "replace") for marker in RUNTIME_MARKERS if marker in data]
+        if found:
+            hits.append(f"{path.relative_to(root).as_posix()}: {', '.join(sorted(set(found)))}")
+    return hits
+
+
+def check_no_python_runtime(root: Path) -> None:
+    """Reject a bundle whose binaries still reference the removed interpreter path."""
+    hits = python_runtime_hits(root)
+    if hits:
+        raise ValueError("產品二進位仍含 Python runtime 路徑：" + "; ".join(hits[:20]))
 
 
 def describe(entry: dict) -> dict:

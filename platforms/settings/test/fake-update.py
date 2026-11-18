@@ -513,7 +513,7 @@ def models_init(path, kind):
         st.update(source='user', need='redownload', download_size=SELECT_NEW['size'], downloads=downloads([SELECT_NEW]),
                   models=models_stale_select('ready' if kind == 'redownload' else 'fallback'))
     elif kind == 'runtime':
-        st['runtime'] = {'ok': False, 'python': '/usr/bin/python3', 'missing': ['python3-numpy', 'python3-onnxruntime']}
+        st['runtime'] = {'ok': False, 'backend': 'statistical', 'reason': 'native_unavailable', 'missing': []}
     elif kind == 'distribution':
         st.update(can_download=False, disabled_reason='distribution')
     elif kind == 'dictionary':  # 發行版自己重建字典，不在 pairing.lock 上

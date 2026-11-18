@@ -2,51 +2,14 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/0c-biggo/0c-ime/internal/installs"
-	"github.com/0c-biggo/0c-ime/internal/neural"
 )
-
-// checkModelRuntime 回報系統 Python 缺少的 Debian 套件名；結果快取在個人目錄（models_runtime.go），設定程式
-// 每秒輪詢 status 時不會每次都啟動 Python。
-func checkModelRuntime(base string) func(python string) []string {
-	return func(python string) []string {
-		return cachedModelRuntime(filepath.Join(base, "models"), python, time.Now(), probeModelRuntime)
-	}
-}
-
-// probeModelRuntime 以系統 Python 試著 import numpy、onnxruntime（與 worker 相同），並回報它的 sys.path（快取的鍵）。
-func probeModelRuntime(python string) (runtimeProbe, error) {
-	const script = "import json,sys\nm=[]\nfor n in ('numpy','onnxruntime'):\n    try:\n        __import__(n)\n    except Exception:\n        m.append(n)\nprint(json.dumps({'missing':m,'path':[p for p in sys.path if p]}))\n"
-	failed := runtimeProbe{Missing: []string{"python3-numpy", "python3-onnxruntime"}}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, python, "-I", "-B", "-c", script)
-	cmd.Env = append(os.Environ(), neural.NoTelemetryEnv...) // import onnxruntime 就會啟動它的遙測（見 NoTelemetryEnv）
-	out, err := cmd.Output()
-	if err != nil {
-		return failed, err
-	}
-	var p struct {
-		Missing []string `json:"missing"`
-		Path    []string `json:"path"`
-	}
-	if err := json.Unmarshal(out, &p); err != nil {
-		return failed, err
-	}
-	r := runtimeProbe{Missing: []string{}, Path: p.Path}
-	for _, n := range p.Missing {
-		r.Missing = append(r.Missing, "python3-"+strings.TrimSpace(n))
-	}
-	return r, nil
-}
 
 // modelDownloadDisabled：引擎用的是系統安裝的字典，而 distribution.json 寫了 "model_download": false。
 func modelDownloadDisabled(data string) bool {

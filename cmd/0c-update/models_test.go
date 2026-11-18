@@ -75,8 +75,6 @@ func newModelsFixture(t *testing.T) *modelsFixture {
 	share := filepath.Join(root, "usr/share/0c")
 	data := filepath.Join(share, "data")
 	writeModelFile(t, filepath.Join(data, "manifest.json"), []byte(`{"dictionary":"a"}`+"\n"))
-	writeModelFile(t, filepath.Join(share, "neural", "sequence_runtime.py"), []byte("#"))
-	writeModelFile(t, filepath.Join(share, "neural", "punct_runtime.py"), []byte("#"))
 	os.MkdirAll(base, 0o700)
 
 	files := map[string][]byte{}
@@ -111,7 +109,6 @@ func newModelsFixture(t *testing.T) *modelsFixture {
 
 	f := &modelsFixture{hits: &hits, files: files, noticeOK: true}
 	f.env = modelsEnv{base: base, data: data, goos: "linux", lock: raw, dial: noEngine,
-		runtimeCheck:         func(string) []string { return []string{"python3-onnxruntime"} },
 		distributionDisabled: func(string) bool { return false }, settingsMissing: func() bool { return false }, now: time.Now}
 	f.writePairing(t)
 	oldReload, oldSend, oldOpen := reloadEngineForModels, sendModelsNotice, openSettingsPage
@@ -171,7 +168,7 @@ func TestModelsStatusWithoutModels(t *testing.T) {
 	if len(st.Downloads) != 2 || st.Downloads[0].Role != "select" || st.Downloads[1].Role != "punct" {
 		t.Fatalf("downloads %+v", st.Downloads)
 	}
-	if st.Runtime.OK || strings.Join(st.Runtime.Missing, ",") != "python3-onnxruntime" {
+	if st.Runtime.OK || st.Runtime.Backend != "statistical" || len(st.Runtime.Missing) != 0 {
 		t.Fatalf("runtime %+v", st.Runtime)
 	}
 	if len(st.Models) != 2 || st.Models[0].Role != "select" || st.Models[1].Label != "補標點" {

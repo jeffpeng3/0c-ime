@@ -59,7 +59,6 @@ func TestModelsRemindRecordsCheckedState(t *testing.T) {
 	if models.EngineShouldCheck(f.env.base, dict, time.Now()) {
 		t.Fatal("下載完成時已記下狀態，交接後的新引擎不必再叫")
 	}
-	os.Remove(filepath.Join(filepath.Dir(f.env.data), "neural", "sequence_runtime.py"))
 	f.env.store().SaveRemind(models.Remind{Stopped: models.StopDownloaded}) // 例如舊的紀錄：沒有處理過的狀態
 	if !models.EngineShouldCheck(f.env.base, dict, time.Now()) {
 		t.Fatal("還沒處理過這個狀態：叫一次")

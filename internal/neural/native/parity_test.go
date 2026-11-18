@@ -93,29 +93,30 @@ type parityReport struct {
 	PythonMSTotal   float64 `json:"python_latency_ms_total"`
 }
 
-// TestParity200 runs the Python sequence worker's prepare() and the native
-// backend on the same int8 placeholder model for real Japanese lines.
+// TestParity200 compares an archived Python reference prepare() with the
+// native backend on the same int8 placeholder model for real Japanese lines.
+// It is a development gate: build-tagged and env-gated, with the reference
+// script supplied from outside the product tree. It is not a runtime
+// dependency and the repository ships no Python worker.
 //
 // Required environment:
 //
-//	NEURAL_PARITY_PYTHON           python with numpy/onnxruntime/sentencepiece
-//	NEURAL_PARITY_SPM              public_core_ja.model
-//	NEURAL_PARITY_TEXTS            sample-ja.txt (at least 200 lines)
-//	NEURAL_PARITY_ONNX             reranker-public-core...int8.onnx
-//	NEURAL_PARITY_LIB              libonnxruntime.so.1.32.0
-//	NEURAL_PARITY_OUT              optional report JSON path
+//	NEURAL_PARITY_PYTHON                python with numpy/onnxruntime/sentencepiece
+//	NEURAL_PARITY_SEQUENCE_RUNTIME      archived sequence_runtime.py reference
+//	NEURAL_PARITY_SPM                   public_core_ja.model
+//	NEURAL_PARITY_TEXTS                 sample-ja.txt (at least 200 lines)
+//	NEURAL_PARITY_ONNX                  reranker-public-core...int8.onnx
+//	NEURAL_PARITY_LIB                   libonnxruntime.so.1.32.0
+//	NEURAL_PARITY_OUT                   optional report JSON path
 func TestParity200(t *testing.T) {
 	python := os.Getenv("NEURAL_PARITY_PYTHON")
 	spmPath := os.Getenv("NEURAL_PARITY_SPM")
 	textsPath := os.Getenv("NEURAL_PARITY_TEXTS")
 	onnxPath := os.Getenv("NEURAL_PARITY_ONNX")
 	libPath := os.Getenv("NEURAL_PARITY_LIB")
-	if python == "" || spmPath == "" || textsPath == "" || onnxPath == "" || libPath == "" {
-		t.Skip("set NEURAL_PARITY_PYTHON/SPM/TEXTS/ONNX/LIB to run the 200-line parity test")
-	}
 	worker := os.Getenv("NEURAL_PARITY_SEQUENCE_RUNTIME")
-	if worker == "" {
-		worker = filepath.Join("..", "..", "..", "platforms", "neural", "runtime", "sequence_runtime.py")
+	if python == "" || spmPath == "" || textsPath == "" || onnxPath == "" || libPath == "" || worker == "" {
+		t.Skip("set NEURAL_PARITY_PYTHON/SEQUENCE_RUNTIME/SPM/TEXTS/ONNX/LIB to run the 200-line parity test")
 	}
 	oraclePath := filepath.Join(t.TempDir(), "oracle.json")
 	script := filepath.Join("testdata", "parity_oracle.py")

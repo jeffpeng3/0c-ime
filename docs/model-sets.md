@@ -13,15 +13,15 @@
 
 ### Windows
 
-Windows 產品出貨原生 ONNX Runtime，不內建 Python。`0c-server` 預設在有 `onnxruntime.dll` 時使用 native 後端：
+產品出貨或使用原生 ONNX Runtime，執行階段不含 Python。`0c-server` 預設在有 `onnxruntime.dll` 時使用 native 後端：
 
 - 支援選字／reranker 的模型形狀。
 - 模型形狀不受支援、DLL 不在或載入失敗時，回報原因並保留統計排序。
-- 原生後端支援補標點；Python-free 套件以注音 `zuin-punct-runtime-v1` 或日文 `0c.model.manifest/1` 標點模型執行，不啟動 Python worker。模型不可用時才保留原文。
+- 原生後端支援補標點：注音 `zuin-punct-runtime-v1` 或日文 `0c.model.manifest/1` 標點模型都由 `native.OpenPunct` 執行。模型不可用時才保留原文。
 
 ### Linux 與 macOS
 
-Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 與 ONNX Runtime。Linux 系統安裝不隨套件帶模型，使用者在設定程式的「模型」頁按「下載模型」才會連到 Hugging Face：
+Linux 與 macOS 的神經推論使用原生 ONNX Runtime；沒有共享函式庫時退回統計引擎。Linux 系統安裝不隨套件帶模型，使用者在設定程式的「模型」頁按「下載模型」才會連到 Hugging Face：
 
 ```sh
 0c-update models status -json

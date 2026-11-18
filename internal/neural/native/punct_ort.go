@@ -154,7 +154,7 @@ func (b *PunctBackend) PunctuateContext(ctx context.Context, text string) ([]pun
 }
 
 // TokenLogits runs one packed token window. It is used by the parity harness
-// so the Go and Python sides can compare the same model output.
+// so the Go and reference sides can compare the same model output.
 func (b *PunctBackend) TokenLogits(ids, mask []int64) ([][]float32, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()

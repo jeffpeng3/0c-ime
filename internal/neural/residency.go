@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -17,32 +16,6 @@ import (
 	"github.com/0c-biggo/0c-ime/core/rerank"
 	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
-
-// Backend selects how a model package is executed. python is the default;
-// native is opt-in until parity has been proven on the target model.
-type Backend string
-
-const (
-	BackendPython Backend = "python"
-	BackendNative Backend = "native"
-)
-
-// ParseBackend parses the -neural-backend value.
-func ParseBackend(value string) (Backend, error) {
-	switch backend := Backend(strings.ToLower(strings.TrimSpace(value))); backend {
-	case BackendAuto, BackendPython, BackendNative:
-		return backend, nil
-	}
-	return "", fmt.Errorf("unknown neural backend %q", value)
-}
-
-// NativeAvailable reports whether this binary contains the native ONNX
-// backend. Default CGO-disabled builds return false.
-func NativeAvailable() bool { return native.Available() }
-
-// NativeRuntimeLibrary is the ONNX Runtime shared library installed next to
-// this executable, or "" when it is absent.
-func NativeRuntimeLibrary() string { return native.RuntimeLibrary() }
 
 // Mode 是模型常駐策略（P2-30 / FR-9）。
 //
@@ -129,8 +102,6 @@ type ModelSpec struct {
 	Language         string
 	Role             Role
 	Backend          Backend
-	Python           string
-	Script           string
 	Package          string
 	DictionarySHA256 string
 	Threads          int
@@ -350,7 +321,9 @@ func OpenManager(cfg ManagerConfig, specs ...ModelSpec) (*Manager, error) {
 	return m, nil
 }
 
-// LoadModel 是正式載入器：sequence 套件走 Supervisor，補標點走 PunctWorker。
+// LoadModel is the product loader. Every role runs on the native ONNX Runtime
+// backend; any failure is reported and the manager keeps the statistical
+// engine.
 func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -362,31 +335,21 @@ func LoadModel(ctx context.Context, spec ModelSpec, prepared *Prepared) (*Loaded
 		}
 		prepared = p
 	}
+	if spec.Backend == BackendStatistical {
+		return nil, &ModelError{Reason: ReasonNativeUnavailable, Err: native.ErrNativeUnavailable}
+	}
 	switch spec.Role {
 	case RoleSelect, RoleRerank:
-		if spec.Backend == BackendNative {
-			return loadNative(spec, prepared)
-		}
-		w, err := openPreparedSupervisedAsync(Config{Python: spec.Python, Script: spec.Script, Package: spec.Package,
-			DictionarySHA256: spec.DictionarySHA256, Threads: spec.Threads, Timeout: spec.Timeout}, prepared.Manifest)
-		if err != nil {
-			return nil, err
-		}
-		return &Loaded{Scorer: w, Options: prepared.Options, ResidentBytes: prepared.Bytes,
-			Placeholder: prepared.Placeholder, Quality: prepared.Quality,
-			Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats, Restarts: w.Restarts}, nil
+		return loadNative(spec, prepared)
 	case RolePunct, RoleJAPunct:
-		if spec.Backend == BackendNative {
-			return loadNativePunct(spec, prepared)
-		}
-		return loadPythonPunct(spec, prepared)
+		return loadNativePunct(spec, prepared)
 	}
 	return nil, &ModelError{Reason: ReasonFailed, Err: fmt.Errorf("unsupported role %q", spec.Role)}
 }
 
-// loadNative uses the same manifest and vocab.json as the Python worker; only
-// the executor changes. Punctuation has a separate native scorer because its
-// tensor contract and insertion rule are different.
+// loadNative uses the same manifest and vocab.json the package ships; only the
+// executor is native. Punctuation has a separate scorer because its tensor
+// contract and insertion rule are different.
 func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 	b, err := native.Open(native.Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
 		Threads: spec.Threads, Timeout: spec.Timeout, LibraryPath: spec.ORTLibrary})
@@ -404,34 +367,12 @@ func loadNative(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 		Restarts: func() int { return 0 }}, nil
 }
 
-// loadPythonPunct keeps the legacy worker as the only fallback path. It is
-// used when the build has no native backend; a native package that fails to
-// load reports its own error instead of silently starting Python.
-func loadPythonPunct(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
-	command := func() *exec.Cmd {
-		return pythonCommand(spec.Python, spec.Script, "--package", spec.Package, "--threads", fmt.Sprint(spec.Threads))
-	}
-	w, err := openPunctPrepared(PunctConfig{Python: spec.Python, Script: spec.Script, Package: spec.Package,
-		Threads: spec.Threads, Timeout: spec.Timeout}, prepared.PunctPath, command)
-	if err != nil {
-		return nil, err
-	}
-	return &Loaded{Punctuator: w, ResidentBytes: prepared.Bytes,
-		Placeholder: prepared.Placeholder, Quality: prepared.Quality,
-		Close: func() error { w.Close(); return nil }, State: w.State, Reason: w.Reason, Stats: w.Stats}, nil
-}
-
-// loadNativePunct runs a zh character package or a 0c.model.manifest/1
-// punctuation package through ONNX Runtime. Python is only tried when this
-// build has no native backend at all.
+// loadNativePunct runs a zh punctuation package or a 0c.model.manifest/1
+// punctuation package through ONNX Runtime.
 func loadNativePunct(spec ModelSpec, prepared *Prepared) (*Loaded, error) {
 	b, err := native.OpenPunct(native.Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
 		Threads: spec.Threads, Timeout: spec.Timeout, LibraryPath: spec.ORTLibrary, Tokenizer: spec.Tokenizer})
 	if err != nil {
-		if (errors.Is(err, native.ErrNativeUnavailable) || errors.Is(err, native.ErrRuntimeMissing)) &&
-			spec.Python != "" && spec.Script != "" {
-			return loadPythonPunct(spec, prepared)
-		}
 		return nil, wrapNativeError(err)
 	}
 	return &Loaded{Punctuator: b, ResidentBytes: prepared.Bytes,
@@ -468,7 +409,7 @@ func wrapNativeError(err error) error {
 func prepareModel(spec ModelSpec) (*Prepared, error) {
 	switch spec.Role {
 	case RoleSelect, RoleRerank:
-		c := Config{Python: spec.Python, Script: spec.Script, Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
+		c := Config{Package: spec.Package, DictionarySHA256: spec.DictionarySHA256,
 			Threads: spec.Threads, Timeout: spec.Timeout}
 		m, err := loadManifest(c)
 		if err != nil {
@@ -482,7 +423,7 @@ func prepareModel(spec ModelSpec) (*Prepared, error) {
 		return &Prepared{Manifest: m, ModelSHA: m.Files["model.onnx"], Bytes: packageBytes(spec.Package, m.Files),
 			Options: optionsFor(m), Placeholder: m.Placeholder, Quality: m.Quality}, nil
 	case RolePunct:
-		c := PunctConfig{Python: spec.Python, Script: spec.Script, Package: spec.Package, Threads: spec.Threads, Timeout: spec.Timeout}
+		c := Config{Package: spec.Package, Threads: spec.Threads, Timeout: spec.Timeout}
 		model, bytes, placeholder, quality, err := loadPunctManifest(c)
 		if err != nil {
 			return nil, wrapPrepareError(err)
@@ -531,10 +472,6 @@ func modelReason(err error) string {
 		return ReasonVersionMismatch
 	case errors.Is(err, errCorruptPackage), errors.Is(err, errONNXCorrupt):
 		return ReasonCorrupt
-	}
-	var startup *StartupError
-	if errors.As(err, &startup) {
-		return startup.Reason
 	}
 	return ReasonFailed
 }
@@ -623,7 +560,7 @@ func (m *Manager) finishLoad(e *modelEntry, loaded *Loaded, err error, prepared 
 // handleEntry 取得 entry；呼叫端需持有 m.mu。
 func (m *Manager) handleEntry(name string) *modelEntry { return m.entries[name] }
 
-// State 回報模型狀態。載入中的 worker 由後端自己回報 loading、ready、fallback、
+// State 回報模型狀態。載入中的後端自己回報 loading、ready、fallback、
 // runtime_missing；模型尚未排入載入時是 idle，被模式排除時是 disabled。
 func (m *Manager) State(name string) string {
 	m.mu.Lock()
@@ -643,7 +580,7 @@ func (m *Manager) State(name string) string {
 	return e.state
 }
 
-// Reason 回傳最近一次載入或 worker 啟動失敗的固定原因代碼。
+// Reason 回傳最近一次載入失敗的固定原因代碼。
 func (m *Manager) Reason(name string) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -689,7 +626,7 @@ func (m *Manager) Restarts(name string) int {
 	return 0
 }
 
-// Options 回傳 scorer 的 rerank 選項。Preload 成功的模型在 worker 就緒前就有值。
+// Options 回傳 scorer 的 rerank 選項。Preload 成功的模型在後端就緒前就有值。
 func (m *Manager) Options(name string) rerank.Options {
 	m.mu.Lock()
 	defer m.mu.Unlock()

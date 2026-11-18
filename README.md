@@ -46,7 +46,7 @@
 - 🔤 **中英混打、自動加空格、模糊音、Emoji 與顏文字**：可選擇在中文字和英文字母相連處自動補半形空格（「用Python寫」送出「用 Python 寫」）；ㄗ／ㄓ、ㄘ／ㄔ、ㄙ／ㄕ、ㄣ／ㄥ 近音放在後面備選；按 = 開 Emoji 選單。
 - 🀄 **單一 Mixed profile**：Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在同一個組字區直接輸入，不必切換語言。主要語言只是排序偏好。逐片段候選跟著游標，長詞詞庫 match 是一項候選。詳見 [輸入與候選](docs/typing.md)。
 - 🔁 **輸出簡體字、自訂選字鍵**：看繁體打字、送出時才轉簡體，可從輸入法選單一鍵切換；選字鍵可用 1–0 或 asdfghjkl;。
-- ✍️ **送出時補標點**（Beta）：Enter 送出時在漢字之間補上 ，。？！、；，不改動你打的字。Windows Python-free 套件使用原生 ONNX 補標點；模型不可用時才保留原文。
+- ✍️ **送出時補標點**（Beta）：Enter 送出時在漢字之間補上 ，。？！、；，不改動你打的字。產品使用原生 ONNX 補標點；模型不可用時才保留原文。
 - 🛟 **自動退回**：模型無法啟動或回應太慢時改用統計引擎排序，打字不會卡住。
 
 <p align="center">
@@ -202,14 +202,14 @@ go run ./cmd/0c-eval-ja -write-baseline testdata/ja/baseline.json   # 刻意更�
 | 🍎 macOS | InputMethodKit（Swift） | [platforms/macos](platforms/macos/README.md) |
 | 🪟 Windows | TSF（Rust） | [platforms/windows](platforms/windows/README.md) |
 | ⚙️ 設定程式 | Tauri | [platforms/settings](platforms/settings/README.md) |
-| 🧠 神經推論 | ONNX Runtime；Windows 原生，Linux／macOS 使用系統 Python | [platforms/neural](platforms/neural/README.md) |
+| 🧠 神經推論 | 原生 ONNX Runtime；沒有執行階段時退回統計引擎 | [platforms/neural](platforms/neural/README.md) |
 
 ## 🗂️ 專案結構
 
 ```text
 core/         輸入法邏輯：注音解析、詞圖解碼、語言模型、候選重排、個人學習（不做 I/O）
 bridge/       引擎與外殼之間的行程間通訊（IPC）
-internal/     設定、自動更新、神經推論 worker、詞庫編譯與評測等共用程式
+internal/     設定、自動更新、原生神經推論、詞庫編譯與評測等共用程式
 cmd/          執行檔入口：0c-server、0c-ibus、0c-update、0c-cli、0c-compile、0c-eval…
 platforms/    Linux／macOS／Windows 外殼、設定程式、神經推論
 docs/         使用者文件：安裝、輸入與候選、模型包、授權

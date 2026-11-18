@@ -87,10 +87,9 @@ func TestModelStatusExplainsFallbackReason(t *testing.T) {
 	}
 }
 
-// #181：系統安裝找到模型卻缺 numpy／onnxruntime，或模型放在個人目錄時，狀態要說清楚。
+// A missing native runtime or a model in the personal directory must be
+// explained without asking the user to install an interpreter.
 func TestModelStatusExplainsRuntimeMissingAndUserModel(t *testing.T) {
-	defer func(goos string) { modelHintOS = goos }(modelHintOS)
-	modelHintOS = "linux"
 	got := modelStatus(modelStatusDial(map[string]string{"version": "dev", "selection_state": "runtime_missing",
 		"punctuation_state": "ready", "punctuation_source": "user"}, true))
 	if got["selection_state"] != "runtime_missing" || got["punctuation_source"] != "user" || got["selection_source"] != nil {
@@ -98,18 +97,12 @@ func TestModelStatusExplainsRuntimeMissingAndUserModel(t *testing.T) {
 	}
 	var text bytes.Buffer
 	printModelStatus(&text, got)
-	for _, want := range []string{"神經選字：缺少推論元件（請安裝 python3-numpy、python3-onnxruntime），使用統計引擎", "補標點：已就緒（個人目錄的模型）"} {
+	for _, want := range []string{"神經選字：缺少原生推論元件，使用統計引擎", "補標點：已就緒（個人目錄的模型）"} {
 		if !strings.Contains(text.String(), want) {
 			t.Fatalf("missing %q: %s", want, text.String())
 		}
 	}
-	// macOS、Windows 的推論元件內附在安裝包裡：不提 apt 的套件名。
-	for _, goos := range []string{"darwin", "windows"} {
-		modelHintOS = goos
-		text.Reset()
-		printModelStatus(&text, got)
-		if !strings.Contains(text.String(), "神經選字：缺少推論元件，使用統計引擎") || strings.Contains(text.String(), "python3") {
-			t.Fatalf("%s: %s", goos, text.String())
-		}
+	if strings.Contains(text.String(), "python") {
+		t.Fatalf("status must not mention an interpreter: %s", text.String())
 	}
 }

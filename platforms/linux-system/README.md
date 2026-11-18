@@ -45,7 +45,7 @@ make install PREFIX=/usr VERSION=0.2.3 DESTDIR=$PWD/debian/tmp
 |---|---|
 | 輸入法框架（擇一或兩者） | `fcitx5`，或 `ibus` |
 | 設定程式 | `libwebkit2gtk-4.1-0` |
-| 神經選字、補標點（選用，見[神經模型](#神經模型180)） | `python3`、`python3-numpy`、`python3-onnxruntime`；模型由使用者在設定程式下載。沒有模型或缺少時自動退回統計選字 |
+| 神經選字、補標點（選用，見[神經模型](#神經模型180)） | 原生 ONNX Runtime；缺少時退回統計引擎；模型由使用者在設定程式下載。沒有模型或缺少時自動退回統計選字 |
 
 ## 放到哪裡
 
@@ -64,8 +64,7 @@ make install PREFIX=/usr VERSION=0.2.3 DESTDIR=$PWD/debian/tmp
 | `/usr/share/fcitx5/addon/0c.conf`、`/usr/share/fcitx5/inputmethod/zuin.conf` | Fcitx5 addon 與輸入法（ID `zuin`） |
 | `/usr/share/ibus/component/0c.xml` | IBus 元件（`org.biggo.ime.IBus`、engine `0c`），由 `platforms/linux-ibus/0c.xml.in` 產生 |
 | `/usr/share/0c/data/` | 字典 |
-| `/usr/share/0c/neural/sequence_runtime.py`、`punct_runtime.py` | 神經推論 worker |
-| `/usr/share/0c/neural/pairing.lock.json` | 字典與 Hugging Face 模型的配對清單（#180） |
+| `/usr/share/0c/neural/pairing.lock.json` | 字典與 Hugging Face 模型的配對清單（#180）；推論由原生後端執行 |
 | `/usr/share/0c/distribution.json` | 模式標記，例如 `{"schema":1,"updates":"package-manager","version":"0.2.3"}` |
 | `/usr/share/applications/0c-settings.desktop`、`/usr/share/icons/hicolor/…` | 應用程式選單項目、設定程式圖示、注／英狀態圖示 |
 
@@ -102,7 +101,7 @@ make install PREFIX=/usr VERSION=0.2.3 DESTDIR=$PWD/debian/tmp
 - 字典不是 `pairing.lock.json` 上的那一份（例如自己重建字典）時，設定程式說明原因，不提供下載。
 - 套件升級換了字典、模型沒換（`models.lock.json` 相同）時，引擎在本機用已下載的權重重新配對，不重新下載、不打擾使用者；`models.lock.json` 換了時設定程式提示重新下載，下載成功後才刪舊的。
 - 沒有模型時，引擎在安裝滿一小時、使用者打過字之後送桌面通知提醒可以下載（最多 3 次、間隔 24 小時，可按「不再提醒」）。`MODEL_DOWNLOAD=0` 同時關掉下載與提醒。
-- 推論用系統的 `python3`、`python3-numpy`、`python3-onnxruntime`；缺少時設定程式列出要裝的套件，仍允許先下載。
+- 推論用原生 ONNX Runtime；缺少共享函式庫時退回統計引擎，不要求系統 Python。仍允許先下載。
 
 ## 加入輸入法
 

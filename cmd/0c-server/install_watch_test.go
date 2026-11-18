@@ -198,19 +198,15 @@ func healthOf(t *testing.T, sock string) map[string]string {
 	return r.Info
 }
 
-// 系統安裝（Debian）：沒有內附 Python 時用系統的 python3，模型可以放在個人目錄；找到模型卻沒有 Python
-// 時回報 runtime_missing，照常用統計引擎打字。
-func TestSystemInstallNeuralDiscovery(t *testing.T) {
+// Models live in the personal directory (#180); with no native backend the
+// engine reports the statistical fallback while input continues.
+func TestUserModelDiscoveryWithoutNativeBackend(t *testing.T) {
 	binary := buildServer(t)
 	root := t.TempDir()
 	data := filepath.Join(root, "share", "0c", "data")
 	sha := writeCompiledData(t, data)
-	neuralDir := filepath.Join(root, "share", "0c", "neural")
-	os.MkdirAll(neuralDir, 0o755)
-	os.WriteFile(filepath.Join(neuralDir, "sequence_runtime.py"), nil, 0o644)
-	os.WriteFile(filepath.Join(neuralDir, "punct_runtime.py"), nil, 0o644)
 	userDir := filepath.Join(root, "home", "zuin")
-	// 核對得過的模型套件（雜湊與字典配對都對；模型內容是假的，worker 不會真的就緒）。
+	// A package that passes manifest, dictionary and hash validation.
 	for name, manifest := range map[string]map[string]any{
 		"select": {"schema": "zuin-sequence-runtime-v1", "context_policy": "confirmed_left_64", "dictionary_sha256": sha, "weight": 1},
 		"punct":  {"schema": neural.PunctSchema},
@@ -227,52 +223,31 @@ func TestSystemInstallNeuralDiscovery(t *testing.T) {
 		os.WriteFile(filepath.Join(p, "manifest.json"), b, 0o644)
 	}
 	os.WriteFile(filepath.Join(userDir, "settings.json"), []byte(`{"punctuation":true}`), 0o600)
-	run := func(t *testing.T, python string) map[string]string {
-		sock := filepath.Join(t.TempDir(), "0c.sock")
-		server := exec.Command(binary, "-data", data, "-user", filepath.Join(userDir, "user.json"), "-socket", sock,
-			"-system-python", python, "-install-watch", "off")
-		if err := server.Start(); err != nil {
-			t.Fatal(err)
-		}
-		defer func() { server.Process.Signal(os.Interrupt); server.Wait() }()
-		waitDial(t, sock)
-		return healthOf(t, sock)
+	sock := filepath.Join(t.TempDir(), "0c.sock")
+	server := exec.Command(binary, "-data", data, "-user", filepath.Join(userDir, "user.json"), "-socket", sock,
+		"-install-watch", "off")
+	if err := server.Start(); err != nil {
+		t.Fatal(err)
 	}
-	t.Run("沒有 Python", func(t *testing.T) {
-		// 照樣以系統 Python 的路徑啟動 worker：執行檔不存在是 runtime_missing（10 分鐘重試，之後裝好 python3
-		// 不必重啟引擎）；模型來源照實回報。
-		sock := filepath.Join(t.TempDir(), "0c.sock")
-		server := exec.Command(binary, "-data", data, "-user", filepath.Join(userDir, "user.json"), "-socket", sock,
-			"-system-python", filepath.Join(root, "no", "python3"), "-install-watch", "off")
-		if err := server.Start(); err != nil {
-			t.Fatal(err)
+	defer func() { server.Process.Signal(os.Interrupt); server.Wait() }()
+	waitDial(t, sock)
+	info := healthOf(t, sock)
+	for deadline := time.Now().Add(5 * time.Second); info["selection_state"] == "loading" || info["punctuation_state"] == "loading"; info = healthOf(t, sock) {
+		if time.Now().After(deadline) {
+			t.Fatalf("still loading: %v", info)
 		}
-		defer func() { server.Process.Signal(os.Interrupt); server.Wait() }()
-		waitDial(t, sock)
-		info := healthOf(t, sock)
-		for deadline := time.Now().Add(5 * time.Second); info["selection_state"] == "loading" || info["punctuation_state"] == "loading"; info = healthOf(t, sock) {
-			if time.Now().After(deadline) {
-				t.Fatalf("still loading: %v", info)
-			}
-			time.Sleep(20 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
+	}
+	want := map[string]string{"neural_startup_state": "enabled", "selection_state": "fallback",
+		"punctuation_state": "fallback", "selection_source": "user", "punctuation_source": "user"}
+	for k, v := range want {
+		if info[k] != v {
+			t.Errorf("%s = %q，應為 %q（%v）", k, info[k], v, info)
 		}
-		want := map[string]string{"neural_startup_state": "runtime_missing", "selection_state": "runtime_missing",
-			"punctuation_state": "runtime_missing", "neural_python": "missing", "selection_source": "user", "punctuation_source": "user"}
-		for k, v := range want {
-			if info[k] != v {
-				t.Errorf("%s = %q，應為 %q（%v）", k, info[k], v, info)
-			}
-		}
-	})
-	t.Run("系統 Python 與個人目錄的模型", func(t *testing.T) {
-		info := run(t, "/bin/sh") // 存在的執行檔；worker 腳本是空的，啟動後沒有就緒就退回
-		want := map[string]string{"neural_python": "system", "neural_startup_state": "enabled", "selection_source": "user", "punctuation_source": "user"}
-		for k, v := range want {
-			if info[k] != v {
-				t.Errorf("%s = %q，應為 %q（%v）", k, info[k], v, info)
-			}
-		}
-	})
+	}
+	if _, ok := info["neural_python"]; ok {
+		t.Errorf("health still reports a Python runtime: %v", info)
+	}
 }
 
 // 測試用的 stderr 收集器：引擎 exec 成新版之後仍寫同一個 fd，讀寫要上鎖。
