@@ -35,7 +35,7 @@ Copyright (C) 2026 Funmula Co., Limited
 
 CC BY-SA 資料與模型以 **CC BY-SA 4.0** 釋出，與公開核心分開 manifest、checkpoint 與安裝包：
 
-- 日文模型包的 `reranker-extra` 使用 Wikipedia 與 Stack Exchange 的 CC BY-SA 實驗語料，衍生模型以 CC BY-SA 4.0 釋出。
+- 日文模型包的 `reranker` 使用 Wikipedia 與 Stack Exchange 的 CC BY-SA 實驗語料，衍生模型以 CC BY-SA 4.0 釋出。
 - 保留來源的原始授權版本與署名，例如 Wikipedia 文字是 CC BY-SA 4.0、Stack Exchange 需要逐帖作者與原問題 URL，部分 LLM-jp 語料是 CC BY-SA 3.0。
 - 安裝或散布日文模型包時一定帶 `legal/CC-BY-SA-4.0.txt`，打包後的套件另附 `MODEL-PACKAGE-CC-BY-SA-4.0.txt` 與 `MODEL-PACKAGE-NOTICES.txt`。
 - 同一模型包的 punctuation 保持 MIT，不會因與 CC BY-SA reranker 一起出貨而變成 CC BY-SA。它附 UniDic BSD 與 IPADic 的 notice，詳見下一節。

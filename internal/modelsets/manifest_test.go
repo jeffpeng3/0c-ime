@@ -58,7 +58,7 @@ func newFixture(t *testing.T) fixture {
 	doc := map[string]any{
 		"schema": 1,
 		"model_package": syntheticPackage(dictSHA, []map[string]any{
-			makeArtifact("reranker-extra", KindReranker, VariantCCBYSA),
+			makeArtifact("reranker", KindReranker, VariantCCBYSA),
 			makeArtifact("punctuation-public-core", KindPunctuation, VariantPublicCore),
 		}),
 	}
@@ -196,7 +196,7 @@ func TestValidatePlaceholderGate(t *testing.T) {
 func TestValidateRejectsFileHashMismatch(t *testing.T) {
 	f := newFixture(t)
 	pkg := f.lock.ModelPackage
-	path := filepath.Join(f.root, "reranker-extra", "reranker-extra.placeholder.int8.onnx")
+	path := filepath.Join(f.root, "reranker", "reranker.placeholder.int8.onnx")
 	if err := os.WriteFile(path, []byte("tampered"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -241,7 +241,7 @@ func TestInstallWritesOnePackage(t *testing.T) {
 		t.Fatalf("selection %+v", selection)
 	}
 	for _, path := range []string{
-		"reranker-extra/reranker-extra.placeholder.int8.onnx",
+		"reranker/reranker.placeholder.int8.onnx",
 		"punctuation-public-core/punctuation-public-core.placeholder.int8.onnx",
 	} {
 		if _, err := os.Stat(filepath.Join(dest, filepath.FromSlash(path))); err != nil {
@@ -298,7 +298,7 @@ func TestRepositoryLockIsSinglePinnedPackage(t *testing.T) {
 		revision, fp32, fp32SHA, int8, int8SHA string
 		fp32Bytes, int8Bytes                   int64
 	}{
-		"reranker-extra": {
+		"reranker": {
 			revision: "7450e10fe8b673560044c5db08ad3006a06d7a6e",
 			fp32:     "model.onnx", fp32Bytes: 135613420,
 			fp32SHA: "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
@@ -347,7 +347,7 @@ func TestRepositoryLockIsSinglePinnedPackage(t *testing.T) {
 			}
 		}
 	}
-	if got := strings.Join(artifactIDs(pkg), ","); got != "reranker-extra,punctuation-public-core" {
+	if got := strings.Join(artifactIDs(pkg), ","); got != "reranker,punctuation-public-core" {
 		t.Fatalf("artifact 順序 %q", got)
 	}
 	for _, artifact := range pkg.Artifacts {

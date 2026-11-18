@@ -238,7 +238,7 @@ func pin(args []string) error {
 	fs := flag.NewFlagSet("pin", flag.ContinueOnError)
 	var lockPath string
 	commonFlags(fs, &lockPath)
-	repo := fs.String("repo", "", "Hugging Face repo，例如 jeffpeng3/0c-ja-reranker-extra")
+	repo := fs.String("repo", "", "Hugging Face repo，例如 jeffpeng3/0c-ja-reranker")
 	revision := fs.String("revision", "", "HF commit 雜湊")
 	base := fs.String("base-url", modelsets.DefaultBaseURL, "HF 或鏡像 URL")
 	cache := fs.String("cache", filepath.Join("build", "cache", "ja-models"), "下載快取")

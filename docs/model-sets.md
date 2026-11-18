@@ -38,10 +38,10 @@ Linux 與 macOS 的神經推論使用系統或發行版提供的 Python、NumPy 
 
 | 角色 | 授權 | 來源 |
 |---|---|---|
-| 候選重排 reranker | CC BY-SA 4.0 | `jeffpeng3/0c-ja-reranker-extra`，revision `7450e10fe8b6` |
+| 候選重排 reranker | CC BY-SA 4.0 | `jeffpeng3/0c-ja-reranker`，revision `7450e10fe8b6` |
 | 標點 punctuation | MIT | `jeffpeng3/0c-ja-punct`，revision `ff9166abc620` |
 
-兩個 artifact 的 fp32／int8 大小與 SHA-256 都在 `models/pairing.lock.json` 的 `model_package`。reranker 來自 Wikipedia 與 Stack Exchange 的 CC BY-SA 實驗語料，安裝或散布時一定帶 `legal/CC-BY-SA-4.0.txt` 與打包產生的 `MODEL-PACKAGE-CC-BY-SA-4.0.txt`、`MODEL-PACKAGE-NOTICES.txt`；punctuation 保持 MIT，附 UniDic 與 IPADic 的 notice。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。
+兩個 artifact 的 fp32／int8 大小與 SHA-256 都在 `models/pairing.lock.json` 的 `model_package`。reranker 的舊 repo 名稱 `0c-ja-reranker-extra` 只作暫時 redirect，產品與文件一律使用 `jeffpeng3/0c-ja-reranker`。reranker 來自 Wikipedia 與 Stack Exchange 的 CC BY-SA 實驗語料，安裝或散布時一定帶 `legal/CC-BY-SA-4.0.txt` 與打包產生的 `MODEL-PACKAGE-CC-BY-SA-4.0.txt`、`MODEL-PACKAGE-NOTICES.txt`；punctuation 保持 MIT，附 UniDic 與 IPADic 的 notice。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。
 
 ### 部署設定
 
