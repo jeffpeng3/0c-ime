@@ -1,0 +1,24 @@
+{
+  "schema": "0c.p2-63.fixture/1",
+  "file": "p2-63-groups.npz",
+  "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+  "seed": 20261118,
+  "groups": 200,
+  "per_group": 5,
+  "seq": 244,
+  "context": 120,
+  "layout": "<bos> left(context) <eos> candidate <eos> right(context)",
+  "dtype": "int64",
+  "id_ranges": {
+    "left_right": [
+      1000,
+      8000
+    ],
+    "candidate": [
+      8000,
+      24000
+    ]
+  },
+  "source": "synthetic; homophone-v1 benchmark was not present on the measurement machine",
+  "generator": "scripts/perf/ja_reranker_perf.py make_fixture"
+}

@@ -1,0 +1,78 @@
+{
+  "schema": "0c.p2-63.perf/1",
+  "machine": {
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "processor": "",
+    "python": "3.13.7",
+    "cpu_count": 12,
+    "affinity": 12,
+    "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+    "load_average": [
+      6.74365234375,
+      5.99267578125,
+      5.3037109375
+    ],
+    "mem_total_kb": 32815868
+  },
+  "python": "3.13.7",
+  "mode": "soak",
+  "model": {
+    "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+    "bytes": 34242785,
+    "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+  },
+  "ort": {
+    "version": "1.32.0",
+    "providers": [
+      "CPUExecutionProvider"
+    ]
+  },
+  "options": {
+    "intra_op": 8,
+    "inter_op": 1,
+    "spinning": false
+  },
+  "fixture": {
+    "path": "scripts/perf/fixtures/p2-63-groups.npz",
+    "groups": 200,
+    "per_group": 5,
+    "seq": 244
+  },
+  "duration_s": 1800.1,
+  "target_period_ms": 200.0,
+  "groups_scored": 8908,
+  "dropped_ticks": 459,
+  "latency": {
+    "samples": 8908,
+    "min_ms": 91.304,
+    "median_ms": 108.948,
+    "mean_ms": 120.75,
+    "p95_ms": 181.386,
+    "p99_ms": 264.128,
+    "max_ms": 900.319,
+    "per_candidate": {
+      "samples": 44540,
+      "min_ms": 15.924,
+      "median_ms": 21.374,
+      "mean_ms": 24.125,
+      "p95_ms": 38.863,
+      "p99_ms": 62.698,
+      "max_ms": 515.487
+    },
+    "first_10pct_median_ms": 112.472,
+    "last_10pct_median_ms": 106.153,
+    "drift_ms": -6.319,
+    "slope_ms_per_hour": -64.201
+  },
+  "rss": {
+    "after_load_mb": 205.7,
+    "first_10pct_median_mb": 208.4,
+    "last_10pct_median_mb": 213.1,
+    "growth_mb": 4.7,
+    "max_mb": 213.4,
+    "hwm_mb": 217.0,
+    "slope_mb_per_hour": 10.428
+  },
+  "samples_path": "scripts/perf/results/soak.jsonl"
+}
