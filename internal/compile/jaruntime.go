@@ -11,8 +11,9 @@ import (
 )
 
 // 日文資料包的執行期布局。0c-compile 產出的是 lexicon.bin／lm.bin／lexicon.tsv；
-// 0c-server 的日文載入路徑讀 lexicon/words.tsv 與 connection.tsv。打包時由
-// WriteJARuntime 把同一個編譯結果轉成引擎實際載入的兩個 TSV，不改編譯格式。
+// 0c-server 的日文載入路徑讀 lexicon/words.tsv、connection.tsv，並在 lm.bin 存在時
+// 一併載入語言模型。打包時由 WriteJARuntime 把同一個編譯結果轉成引擎實際載入的
+// 兩個 TSV，不改編譯格式。
 const (
 	JARuntimeWords       = "lexicon/words.tsv"
 	JARuntimeConnections = "connection.tsv"

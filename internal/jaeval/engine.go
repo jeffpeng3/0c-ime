@@ -26,6 +26,7 @@ import (
 	"github.com/0c-biggo/0c-ime/core/personal"
 	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/core/zhuyin"
+	"github.com/0c-biggo/0c-ime/internal/jaload"
 )
 
 // Options control data loading. Empty directories are allowed: conversion then
@@ -141,7 +142,19 @@ func loadJapanese(path string) (*jadecode.Decoder, string, string, error) {
 			return nil, lexiconPath, connPath, fmt.Errorf("%s: %w", connPath, err)
 		}
 	}
-	return &jadecode.Decoder{Lex: lex, Conn: connectionOrNil(conn), PreferHiragana: true}, lexiconPath, connPath, nil
+	lmDir := filepath.Dir(lexiconPath)
+	if filepath.Base(lmDir) == "lexicon" {
+		lmDir = filepath.Dir(lmDir)
+	}
+	model, err := jaload.LoadLM(filepath.Join(lmDir, "lm.bin"))
+	if err != nil {
+		return nil, lexiconPath, connPath, err
+	}
+	dec := &jadecode.Decoder{Lex: lex, Conn: connectionOrNil(conn), PreferHiragana: true, LM: model}
+	if model != nil {
+		dec.LMWeight = jadecode.DefaultLMWeight
+	}
+	return dec, lexiconPath, connPath, nil
 }
 
 func connectionOrNil(conn *jalexicon.Matrix) jalexicon.Connection {

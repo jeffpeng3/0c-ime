@@ -84,7 +84,7 @@ func TestLoadJaDecoderFallsBackOnBadBin(t *testing.T) {
 			}
 			tc.mutate(t, path, valid)
 
-			dec, lex, conn, err := loadJaDecoder(dir)
+			dec, lex, conn, _, err := loadJaDecoder(dir)
 			if err != nil {
 				t.Fatalf("loadJaDecoder: %v", err)
 			}
@@ -115,7 +115,7 @@ func TestLoadJaDecoderKeepsSuccessfulBinWhenTSVDiffers(t *testing.T) {
 	tsv := "違\tちが\t1\tnoun\n"
 	writeFile(t, filepath.Join(dir, "lexicon", "words.tsv"), []byte(tsv))
 
-	_, lex, _, err := loadJaDecoder(dir)
+	_, lex, _, _, err := loadJaDecoder(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

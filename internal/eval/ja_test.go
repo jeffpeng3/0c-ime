@@ -3,7 +3,11 @@ package eval
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/0c-biggo/0c-ime/core/ja/decode"
+	"github.com/0c-biggo/0c-ime/internal/jaimport"
 )
 
 const (
@@ -110,6 +114,44 @@ func TestJAFixtureReusesT03Corpus1(t *testing.T) {
 				t.Errorf("題目 %q 不在 T03 corpus.1 fixture 內", item.Surface)
 			}
 		}
+	}
+}
+
+func TestLoadJADecoderOptionalLM(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "lexicon"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"lexicon/words.tsv", "connection.tsv"} {
+		b, err := os.ReadFile(filepath.Join(jaDataDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), b, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dec, _, err := LoadJADecoder(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.LM != nil || dec.LMWeight != 0 {
+		t.Fatalf("沒有 lm.bin 時 LM = %#v，weight = %v", dec.LM, dec.LMWeight)
+	}
+
+	model := jaimport.NewLM(map[string]float64{"今日": -0.5}, map[[2]string]float64{{"今日", "は"}: 1})
+	if err := os.WriteFile(filepath.Join(dir, "lm.bin"), model.Encode(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	dec, _, err = LoadJADecoder(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dec.LM == nil || dec.LM.Len() != 1 || dec.LM.BigramLen() != 1 {
+		t.Fatalf("lm.bin 未載入：%#v", dec.LM)
+	}
+	if dec.LMWeight != decode.DefaultLMWeight {
+		t.Fatalf("LMWeight = %v，want %v", dec.LMWeight, decode.DefaultLMWeight)
 	}
 }
 

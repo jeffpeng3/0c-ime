@@ -24,6 +24,7 @@ func main() {
 	writeBaseline := flag.String("write-baseline", "", "把本次品質數字寫成 baseline JSON")
 	gate := flag.Bool("gate", false, "與 baseline 比較，品質退步時回傳非零")
 	determinism := flag.Bool("determinism", false, "連跑兩次並比較所有非延遲結果")
+	lmWeight := flag.Float64("lm-weight", -1, "覆寫日文 LM 權重；<0 使用載入器預設，0 停用")
 	quiet := flag.Bool("quiet", false, "不印摘要")
 	flag.Parse()
 
@@ -35,6 +36,9 @@ func main() {
 
 	dec, engine, err := eval.LoadJADecoder(*data)
 	check(err)
+	if *lmWeight >= 0 {
+		dec.LMWeight = *lmWeight
+	}
 	opts := eval.JAOptions{
 		TopN:      rules.TopN,
 		Timeout:   time.Duration(rules.TimeoutMS) * time.Millisecond,

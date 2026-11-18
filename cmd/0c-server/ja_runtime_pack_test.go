@@ -35,6 +35,9 @@ func TestJaRuntimePackFromRealData(t *testing.T) {
 	if !w.Available() {
 		t.Fatal("日文 profile 未載入")
 	}
+	if w.lm == nil || w.lm.Len() == 0 {
+		t.Fatal("編譯包的 lm.bin 沒有載入")
+	}
 	s := newJaLanguageTestSession(t, w)
 	if commit := jaLanguageCommit(t, s, "kyouha"); commit.Commit != "今日は" {
 		t.Fatalf("統計轉換 = %q，want 今日は", commit.Commit)

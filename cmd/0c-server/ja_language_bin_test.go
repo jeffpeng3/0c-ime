@@ -59,7 +59,7 @@ func TestLoadJaDecoderPrefersBin(t *testing.T) {
 	dir := t.TempDir()
 	writeJaPack(t, dir)
 
-	binDec, binLex, binConn, err := loadJaDecoder(dir)
+	binDec, binLex, binConn, _, err := loadJaDecoder(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestLoadJaDecoderPrefersBin(t *testing.T) {
 	if err := os.Remove(filepath.Join(dir, "lexicon.bin")); err != nil {
 		t.Fatal(err)
 	}
-	tsvDec, tsvLex, _, err := loadJaDecoder(dir)
+	tsvDec, tsvLex, _, _, err := loadJaDecoder(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

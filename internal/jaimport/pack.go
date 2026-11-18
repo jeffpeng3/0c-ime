@@ -488,7 +488,7 @@ func DecodeLM(data []byte) (*LM, error) {
 			return nil, fmt.Errorf("unigram 詞面：%w", err)
 		}
 		v, err := readFloat(r)
-		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) {
 			return nil, fmt.Errorf("unigram %q 成本不合法", k)
 		}
 		m.Unigram[k] = v
@@ -507,7 +507,7 @@ func DecodeLM(data []byte) (*LM, error) {
 			return nil, fmt.Errorf("bigram 右詞：%w", err)
 		}
 		v, err := readFloat(r)
-		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) || v < 0 {
+		if err != nil || math.IsNaN(v) || math.IsInf(v, 0) {
 			return nil, fmt.Errorf("bigram %q→%q 成本不合法", a, b)
 		}
 		m.Bigram[[2]string{a, b}] = v

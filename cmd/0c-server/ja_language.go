@@ -10,10 +10,12 @@ import (
 	jadecode "github.com/0c-biggo/0c-ime/core/ja/decode"
 	"github.com/0c-biggo/0c-ime/core/ja/input"
 	jalexicon "github.com/0c-biggo/0c-ime/core/ja/lexicon"
+	jalm "github.com/0c-biggo/0c-ime/core/ja/lm"
 	jarerank "github.com/0c-biggo/0c-ime/core/ja/rerank"
 	"github.com/0c-biggo/0c-ime/core/lang"
 	jlang "github.com/0c-biggo/0c-ime/core/lang/ja"
 	"github.com/0c-biggo/0c-ime/core/session"
+	"github.com/0c-biggo/0c-ime/internal/jaload"
 	"github.com/0c-biggo/0c-ime/internal/neural"
 )
 
@@ -35,6 +37,7 @@ type jaLanguage struct {
 	profile  lang.Profile
 	lex      jalexicon.Source
 	conn     *jalexicon.Matrix
+	lm       *jalm.Model
 	verifier *neural.JAVerifier
 	punct    *neural.Handle
 	rerank   jarerank.Config
@@ -47,11 +50,11 @@ func newJaLanguage(dataDir string) (*jaLanguage, error) {
 }
 
 func newJaLanguageWithModels(dataDir string, verifier *neural.JAVerifier, punct *neural.Handle, cfg jarerank.Config) (*jaLanguage, error) {
-	dec, lex, conn, err := loadJaDecoder(dataDir)
+	dec, lex, conn, model, err := loadJaDecoder(dataDir)
 	if err != nil {
 		return nil, err
 	}
-	return &jaLanguage{profile: jaProfile{dec: dec}, lex: lex, conn: conn, verifier: verifier, punct: punct, rerank: cfg}, nil
+	return &jaLanguage{profile: jaProfile{dec: dec}, lex: lex, conn: conn, lm: model, verifier: verifier, punct: punct, rerank: cfg}, nil
 }
 
 // Available 回報日文 profile 是否已載入。
@@ -67,9 +70,15 @@ func (w *jaLanguage) AttachProfile(s *session.Session) bool {
 		return false
 	}
 	var configure jlang.ConverterConfig
-	if w.verifier != nil {
+	if w.verifier != nil || w.lm != nil {
 		configure = func(dec *jadecode.Decoder) {
-			dec.Reranker = jarerank.New(dec, w.verifier, w.rerank)
+			if w.lm != nil {
+				dec.LM = w.lm
+				dec.LMWeight = jadecode.DefaultLMWeight
+			}
+			if w.verifier != nil {
+				dec.Reranker = jarerank.New(dec, w.verifier, w.rerank)
+			}
 		}
 	}
 	ok := s.EnableJapaneseConfigured(w.lex, w.conn, configure)
@@ -115,10 +124,10 @@ func (p jaProfile) NewConverter() lang.Converter { return p.dec }
 
 func (p jaProfile) NewPunctuator() lang.Punctuator { return nil }
 
-func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexicon.Matrix, error) {
+func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexicon.Matrix, *jalm.Model, error) {
 	dir, ok := jaDataDir(dataDir)
 	if !ok {
-		return nil, nil, nil, errJaDataMissing
+		return nil, nil, nil, nil, errJaDataMissing
 	}
 	bin := filepath.Join(dir, "lexicon.bin")
 	words := filepath.Join(dir, "lexicon", "words.tsv")
@@ -133,7 +142,11 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexi
 		lex, err := loadJaBin(bin)
 		if err == nil {
 			conn := lex.Matrix()
-			return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
+			dec, model, err := jaDecoderWithLM(lex, conn, dir)
+			if err != nil {
+				return nil, nil, nil, nil, err
+			}
+			return dec, lex, conn, model, nil
 		}
 		binErr = fmt.Errorf("%s：%w", bin, err)
 		if haveTSV {
@@ -142,30 +155,49 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexi
 	}
 	if !haveTSV {
 		if binErr != nil {
-			return nil, nil, nil, binErr
+			return nil, nil, nil, nil, binErr
 		}
-		return nil, nil, nil, errJaDataMissing
+		return nil, nil, nil, nil, errJaDataMissing
 	}
 
 	wf, err := os.Open(words)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	defer wf.Close()
 	lex, err := jalexicon.Load(wf)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	cf, err := os.Open(conns)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	defer cf.Close()
 	conn, err := jalexicon.LoadConnections(cf)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
-	return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
+	dec, model, err := jaDecoderWithLM(lex, conn, dir)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	return dec, lex, conn, model, nil
+}
+
+// jaDecoderWithLM 建立 decoder，並在資料目錄有 lm.bin 時掛上語言模型。
+// lm.bin 是選填的編譯產物；不存在時回傳 nil 模型，decoder 保持原本的詞成本
+// 加連接成本排序。權重固定用 DefaultLMWeight，目前為 0，因此預設排序不變。
+func jaDecoderWithLM(lex jalexicon.Source, conn *jalexicon.Matrix, dir string) (*jadecode.Decoder, *jalm.Model, error) {
+	model, err := jaload.LoadLM(filepath.Join(dir, "lm.bin"))
+	if err != nil {
+		return nil, nil, err
+	}
+	dec := &jadecode.Decoder{Lex: lex, Conn: conn, LM: model}
+	if model != nil {
+		dec.LMWeight = jadecode.DefaultLMWeight
+	}
+	return dec, model, nil
 }
 
 // loadJaBin 開啟並解碼 lexicon.bin。任何開啟或解碼錯誤都回傳給呼叫端，
