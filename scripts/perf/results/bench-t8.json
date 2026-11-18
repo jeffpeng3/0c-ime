@@ -1,0 +1,253 @@
+{
+  "schema": "0c.p2-63.perf/1",
+  "machine": {
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "processor": "",
+    "python": "3.13.7",
+    "cpu_count": 12,
+    "affinity": 12,
+    "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+    "load_average": [
+      8.255859375,
+      7.333984375,
+      4.99853515625
+    ],
+    "mem_total_kb": 32815864
+  },
+  "python": "3.13.7",
+  "mode": "bench",
+  "model": {
+    "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+    "bytes": 34242785,
+    "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+  },
+  "ort": {
+    "version": "1.32.0",
+    "numpy": "2.5.5",
+    "providers": [
+      "CPUExecutionProvider"
+    ]
+  },
+  "options": {
+    "intra_op": 8,
+    "inter_op": 1,
+    "spinning": false,
+    "execution_mode": "sequential",
+    "config_name": "t8"
+  },
+  "fixture": {
+    "path": "scripts/perf/fixtures/p2-63-groups.npz",
+    "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+    "groups": 200,
+    "per_group": 5,
+    "seq": 244,
+    "candidates": 1000
+  },
+  "warmup_runs": 30,
+  "passes": 3,
+  "session_load_ms": 115.293,
+  "individual": {
+    "per_candidate": {
+      "samples": 1000,
+      "min_ms": 17.153,
+      "median_ms": 21.857,
+      "mean_ms": 22.984,
+      "p95_ms": 32.394,
+      "p99_ms": 44.889,
+      "max_ms": 59.887
+    },
+    "per_group": {
+      "samples": 200,
+      "min_ms": 95.199,
+      "median_ms": 109.203,
+      "mean_ms": 114.919,
+      "p95_ms": 143.518,
+      "p99_ms": 167.978,
+      "max_ms": 191.642
+    },
+    "selected_pass": 1,
+    "pass_medians_ms": [
+      21.535,
+      21.857,
+      22.159
+    ]
+  },
+  "individual_only": false,
+  "batch": {
+    "5": {
+      "groups": 200,
+      "selected_pass": 0,
+      "pass_medians_ms": [
+        130.451,
+        136.754,
+        130.228
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 117.276,
+        "median_ms": 130.451,
+        "mean_ms": 135.121,
+        "p95_ms": 160.152,
+        "p99_ms": 187.84,
+        "max_ms": 250.127
+      },
+      "per_candidate_equivalent_ms": 26.09
+    },
+    "8": {
+      "groups": 125,
+      "selected_pass": 2,
+      "pass_medians_ms": [
+        227.368,
+        233.307,
+        231.643
+      ],
+      "per_group": {
+        "samples": 125,
+        "min_ms": 214.017,
+        "median_ms": 231.643,
+        "mean_ms": 239.515,
+        "p95_ms": 279.597,
+        "p99_ms": 301.111,
+        "max_ms": 313.813
+      },
+      "per_candidate_equivalent_ms": 28.955
+    }
+  },
+  "batch_sweep": {
+    "1": {
+      "batch": 1,
+      "groups": 200,
+      "selected_pass": 2,
+      "pass_medians_ms": [
+        21.514,
+        22.568,
+        21.621
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 17.164,
+        "median_ms": 21.621,
+        "mean_ms": 22.674,
+        "p95_ms": 30.419,
+        "p99_ms": 43.643,
+        "max_ms": 49.888
+      },
+      "per_candidate_equivalent_ms": 21.621,
+      "speedup_vs_batch1": 1.0
+    },
+    "2": {
+      "batch": 2,
+      "groups": 200,
+      "selected_pass": 0,
+      "pass_medians_ms": [
+        46.114,
+        46.162,
+        45.522
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 39.6,
+        "median_ms": 46.114,
+        "mean_ms": 49.114,
+        "p95_ms": 68.777,
+        "p99_ms": 90.753,
+        "max_ms": 96.188
+      },
+      "per_candidate_equivalent_ms": 23.057,
+      "speedup_vs_batch1": 0.469
+    },
+    "3": {
+      "batch": 3,
+      "groups": 200,
+      "selected_pass": 2,
+      "pass_medians_ms": [
+        73.194,
+        71.008,
+        71.033
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 64.164,
+        "median_ms": 71.033,
+        "mean_ms": 75.123,
+        "p95_ms": 92.663,
+        "p99_ms": 123.403,
+        "max_ms": 257.58
+      },
+      "per_candidate_equivalent_ms": 23.678,
+      "speedup_vs_batch1": 0.304
+    },
+    "4": {
+      "batch": 4,
+      "groups": 200,
+      "selected_pass": 0,
+      "pass_medians_ms": [
+        102.143,
+        102.339,
+        101.386
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 93.082,
+        "median_ms": 102.143,
+        "mean_ms": 106.246,
+        "p95_ms": 133.092,
+        "p99_ms": 147.943,
+        "max_ms": 148.728
+      },
+      "per_candidate_equivalent_ms": 25.536,
+      "speedup_vs_batch1": 0.212
+    },
+    "5": {
+      "batch": 5,
+      "groups": 200,
+      "selected_pass": 0,
+      "pass_medians_ms": [
+        130.451,
+        136.754,
+        130.228
+      ],
+      "per_group": {
+        "samples": 200,
+        "min_ms": 117.276,
+        "median_ms": 130.451,
+        "mean_ms": 135.121,
+        "p95_ms": 160.152,
+        "p99_ms": 187.84,
+        "max_ms": 250.127
+      },
+      "per_candidate_equivalent_ms": 26.09,
+      "speedup_vs_batch1": 0.166
+    },
+    "8": {
+      "batch": 8,
+      "groups": 125,
+      "selected_pass": 2,
+      "pass_medians_ms": [
+        227.368,
+        233.307,
+        231.643
+      ],
+      "per_group": {
+        "samples": 125,
+        "min_ms": 214.017,
+        "median_ms": 231.643,
+        "mean_ms": 239.515,
+        "p95_ms": 279.597,
+        "p99_ms": 301.111,
+        "max_ms": 313.813
+      },
+      "per_candidate_equivalent_ms": 28.955,
+      "speedup_vs_batch1": 0.093
+    }
+  },
+  "rss": {
+    "after_load_mb": 122.3,
+    "peak_sampled_mb": 237.5,
+    "hwm_mb": 239.6,
+    "after_scoring_mb": 237.6,
+    "delta_peak_mb": 115.2
+  },
+  "duration_s": null
+}

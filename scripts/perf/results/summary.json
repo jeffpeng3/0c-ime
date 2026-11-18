@@ -1,0 +1,1468 @@
+{
+  "schema": "0c.p2-63.perf/1",
+  "machine": {
+    "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "processor": "",
+    "python": "3.13.7",
+    "cpu_count": 12,
+    "affinity": 12,
+    "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+    "load_average": [
+      3.5302734375,
+      4.8486328125,
+      3.2587890625
+    ],
+    "mem_total_kb": 32815864
+  },
+  "python": "3.13.7",
+  "model": {
+    "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+    "bytes": 34242785,
+    "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+  },
+  "fixture_meta": {
+    "schema": "0c.p2-63.fixture/1",
+    "file": "p2-63-groups.npz",
+    "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+    "seed": 20261118,
+    "groups": 200,
+    "per_group": 5,
+    "seq": 244,
+    "context": 120,
+    "layout": "<bos> left(context) <eos> candidate <eos> right(context)",
+    "dtype": "int64",
+    "id_ranges": {
+      "left_right": [
+        1000,
+        8000
+      ],
+      "candidate": [
+        8000,
+        24000
+      ]
+    },
+    "source": "synthetic; homophone-v1 benchmark was not present on the measurement machine",
+    "generator": "scripts/perf/ja_reranker_perf.py make_fixture"
+  },
+  "final_config": "t8",
+  "cold": {
+    "schema": "0c.p2-63.perf/1",
+    "machine": {
+      "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+      "machine": "x86_64",
+      "processor": "",
+      "python": "3.13.7",
+      "cpu_count": 12,
+      "affinity": 12,
+      "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+      "load_average": [
+        3.5302734375,
+        4.8486328125,
+        3.2587890625
+      ],
+      "mem_total_kb": 32815864
+    },
+    "python": "3.13.7",
+    "mode": "cold",
+    "model": {
+      "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+      "bytes": 34242785,
+      "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+    },
+    "options": {
+      "intra_op": 8,
+      "inter_op": 1,
+      "spinning": false
+    },
+    "repeats": 5,
+    "runs": [
+      {
+        "import_ms": 115.396,
+        "session_load_ms": 104.781,
+        "first_inference_ms": 35.578,
+        "ready_ms": 278.934,
+        "total_child_ms": 278.944,
+        "scores": [
+          -2.949012
+        ],
+        "onnxruntime": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "intra_op": 8,
+        "rss_after_imports_mb": 52.8,
+        "rss_after_load_mb": 110.6,
+        "process_wall_ms": 348.885,
+        "run": 0
+      },
+      {
+        "import_ms": 110.428,
+        "session_load_ms": 101.371,
+        "first_inference_ms": 36.902,
+        "ready_ms": 270.011,
+        "total_child_ms": 270.02,
+        "scores": [
+          -2.949012
+        ],
+        "onnxruntime": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "intra_op": 8,
+        "rss_after_imports_mb": 52.8,
+        "rss_after_load_mb": 110.5,
+        "process_wall_ms": 329.651,
+        "run": 1
+      },
+      {
+        "import_ms": 111.74,
+        "session_load_ms": 116.593,
+        "first_inference_ms": 36.354,
+        "ready_ms": 285.354,
+        "total_child_ms": 285.363,
+        "scores": [
+          -2.949012
+        ],
+        "onnxruntime": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "intra_op": 8,
+        "rss_after_imports_mb": 52.8,
+        "rss_after_load_mb": 110.5,
+        "process_wall_ms": 344.039,
+        "run": 2
+      },
+      {
+        "import_ms": 87.734,
+        "session_load_ms": 100.97,
+        "first_inference_ms": 35.075,
+        "ready_ms": 246.306,
+        "total_child_ms": 246.316,
+        "scores": [
+          -2.949012
+        ],
+        "onnxruntime": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "intra_op": 8,
+        "rss_after_imports_mb": 52.8,
+        "rss_after_load_mb": 110.0,
+        "process_wall_ms": 308.334,
+        "run": 3
+      },
+      {
+        "import_ms": 111.276,
+        "session_load_ms": 113.981,
+        "first_inference_ms": 35.41,
+        "ready_ms": 283.156,
+        "total_child_ms": 283.167,
+        "scores": [
+          -2.949012
+        ],
+        "onnxruntime": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "intra_op": 8,
+        "rss_after_imports_mb": 53.0,
+        "rss_after_load_mb": 110.7,
+        "process_wall_ms": 347.913,
+        "run": 4
+      }
+    ],
+    "summary": {
+      "import_ms": 111.276,
+      "session_load_ms": 104.781,
+      "first_inference_ms": 35.578,
+      "ready_ms": 278.934,
+      "process_wall_ms": 344.039,
+      "rss_after_imports_mb": 52.8,
+      "rss_after_load_mb": 110.5
+    },
+    "cache_note": "model file was already in the OS page cache; cache drop needs root and was not attempted"
+  },
+  "bench": {
+    "t1": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          1.04443359375,
+          1.029296875,
+          0.6708984375
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 1,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "t1"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 104.854,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 48.6,
+          "median_ms": 56.307,
+          "mean_ms": 56.696,
+          "p95_ms": 63.523,
+          "p99_ms": 68.716,
+          "max_ms": 76.584
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 257.214,
+          "median_ms": 282.84,
+          "mean_ms": 283.479,
+          "p95_ms": 301.915,
+          "p99_ms": 310.206,
+          "max_ms": 319.417
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          56.307,
+          55.415
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 121.7,
+        "peak_sampled_mb": 194.9,
+        "hwm_mb": 198.4,
+        "after_scoring_mb": 195.1,
+        "delta_peak_mb": 73.2
+      },
+      "duration_s": null
+    },
+    "t2": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          1.97021484375,
+          1.322265625,
+          0.8037109375
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 2,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "t2"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 95.994,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 28.968,
+          "median_ms": 33.461,
+          "mean_ms": 34.801,
+          "p95_ms": 42.092,
+          "p99_ms": 53.461,
+          "max_ms": 99.868
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 150.135,
+          "median_ms": 171.104,
+          "mean_ms": 174.007,
+          "p95_ms": 195.425,
+          "p99_ms": 226.485,
+          "max_ms": 244.7
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          33.461,
+          33.858
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 121.1,
+        "peak_sampled_mb": 194.5,
+        "hwm_mb": 198.0,
+        "after_scoring_mb": 194.7,
+        "delta_peak_mb": 73.4
+      },
+      "duration_s": null
+    },
+    "t4": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          4.1083984375,
+          3.509765625,
+          2.08203125
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 4,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "t4"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 3,
+      "session_load_ms": 100.816,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 17.003,
+          "median_ms": 25.188,
+          "mean_ms": 25.206,
+          "p95_ms": 31.964,
+          "p99_ms": 36.099,
+          "max_ms": 51.072
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 101.481,
+          "median_ms": 124.5,
+          "mean_ms": 126.028,
+          "p95_ms": 148.423,
+          "p99_ms": 156.461,
+          "max_ms": 173.729
+        },
+        "selected_pass": 1,
+        "pass_medians_ms": [
+          24.87,
+          25.188,
+          26.899
+        ]
+      },
+      "individual_only": false,
+      "batch": {
+        "5": {
+          "groups": 200,
+          "selected_pass": 1,
+          "pass_medians_ms": [
+            150.433,
+            150.411,
+            147.147
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 132.494,
+            "median_ms": 150.411,
+            "mean_ms": 152.528,
+            "p95_ms": 169.923,
+            "p99_ms": 184.011,
+            "max_ms": 232.024
+          },
+          "per_candidate_equivalent_ms": 30.082
+        },
+        "8": {
+          "groups": 125,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            254.749,
+            270.345,
+            266.021
+          ],
+          "per_group": {
+            "samples": 125,
+            "min_ms": 238.493,
+            "median_ms": 266.021,
+            "mean_ms": 266.747,
+            "p95_ms": 290.48,
+            "p99_ms": 304.454,
+            "max_ms": 312.434
+          },
+          "per_candidate_equivalent_ms": 33.253
+        }
+      },
+      "batch_sweep": {
+        "1": {
+          "batch": 1,
+          "groups": 200,
+          "selected_pass": 1,
+          "pass_medians_ms": [
+            25.081,
+            25.733,
+            25.902
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 18.596,
+            "median_ms": 25.733,
+            "mean_ms": 26.107,
+            "p95_ms": 33.051,
+            "p99_ms": 40.341,
+            "max_ms": 55.234
+          },
+          "per_candidate_equivalent_ms": 25.733,
+          "speedup_vs_batch1": 1.0
+        },
+        "2": {
+          "batch": 2,
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            51.562,
+            51.523,
+            52.399
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 40.81,
+            "median_ms": 51.562,
+            "mean_ms": 52.227,
+            "p95_ms": 62.225,
+            "p99_ms": 68.549,
+            "max_ms": 81.49
+          },
+          "per_candidate_equivalent_ms": 25.781,
+          "speedup_vs_batch1": 0.499
+        },
+        "3": {
+          "batch": 3,
+          "groups": 200,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            81.169,
+            82.202,
+            81.287
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 67.845,
+            "median_ms": 81.287,
+            "mean_ms": 82.069,
+            "p95_ms": 95.35,
+            "p99_ms": 102.997,
+            "max_ms": 106.531
+          },
+          "per_candidate_equivalent_ms": 27.096,
+          "speedup_vs_batch1": 0.317
+        },
+        "4": {
+          "batch": 4,
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            117.523,
+            117.948,
+            116.388
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 102.095,
+            "median_ms": 117.523,
+            "mean_ms": 119.496,
+            "p95_ms": 139.995,
+            "p99_ms": 150.633,
+            "max_ms": 201.953
+          },
+          "per_candidate_equivalent_ms": 29.381,
+          "speedup_vs_batch1": 0.219
+        },
+        "5": {
+          "batch": 5,
+          "groups": 200,
+          "selected_pass": 1,
+          "pass_medians_ms": [
+            150.433,
+            150.411,
+            147.147
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 132.494,
+            "median_ms": 150.411,
+            "mean_ms": 152.528,
+            "p95_ms": 169.923,
+            "p99_ms": 184.011,
+            "max_ms": 232.024
+          },
+          "per_candidate_equivalent_ms": 30.082,
+          "speedup_vs_batch1": 0.171
+        },
+        "8": {
+          "batch": 8,
+          "groups": 125,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            254.749,
+            270.345,
+            266.021
+          ],
+          "per_group": {
+            "samples": 125,
+            "min_ms": 238.493,
+            "median_ms": 266.021,
+            "mean_ms": 266.747,
+            "p95_ms": 290.48,
+            "p99_ms": 304.454,
+            "max_ms": 312.434
+          },
+          "per_candidate_equivalent_ms": 33.253,
+          "speedup_vs_batch1": 0.097
+        }
+      },
+      "rss": {
+        "after_load_mb": 122.1,
+        "peak_sampled_mb": 236.8,
+        "hwm_mb": 239.0,
+        "after_scoring_mb": 236.9,
+        "delta_peak_mb": 114.7
+      },
+      "duration_s": null
+    },
+    "t6": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          5.39990234375,
+          3.9755859375,
+          2.32568359375
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 6,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "t6"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 104.665,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 18.7,
+          "median_ms": 24.096,
+          "mean_ms": 24.676,
+          "p95_ms": 32.194,
+          "p99_ms": 37.43,
+          "max_ms": 46.714
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 109.963,
+          "median_ms": 120.003,
+          "mean_ms": 123.381,
+          "p95_ms": 147.824,
+          "p99_ms": 157.277,
+          "max_ms": 166.882
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          24.096,
+          24.261
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 122.1,
+        "peak_sampled_mb": 195.9,
+        "hwm_mb": 199.4,
+        "after_scoring_mb": 196.0,
+        "delta_peak_mb": 73.8
+      },
+      "duration_s": null
+    },
+    "t8": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          8.255859375,
+          7.333984375,
+          4.99853515625
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 8,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "t8"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 3,
+      "session_load_ms": 115.293,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 17.153,
+          "median_ms": 21.857,
+          "mean_ms": 22.984,
+          "p95_ms": 32.394,
+          "p99_ms": 44.889,
+          "max_ms": 59.887
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 95.199,
+          "median_ms": 109.203,
+          "mean_ms": 114.919,
+          "p95_ms": 143.518,
+          "p99_ms": 167.978,
+          "max_ms": 191.642
+        },
+        "selected_pass": 1,
+        "pass_medians_ms": [
+          21.535,
+          21.857,
+          22.159
+        ]
+      },
+      "individual_only": false,
+      "batch": {
+        "5": {
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            130.451,
+            136.754,
+            130.228
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 117.276,
+            "median_ms": 130.451,
+            "mean_ms": 135.121,
+            "p95_ms": 160.152,
+            "p99_ms": 187.84,
+            "max_ms": 250.127
+          },
+          "per_candidate_equivalent_ms": 26.09
+        },
+        "8": {
+          "groups": 125,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            227.368,
+            233.307,
+            231.643
+          ],
+          "per_group": {
+            "samples": 125,
+            "min_ms": 214.017,
+            "median_ms": 231.643,
+            "mean_ms": 239.515,
+            "p95_ms": 279.597,
+            "p99_ms": 301.111,
+            "max_ms": 313.813
+          },
+          "per_candidate_equivalent_ms": 28.955
+        }
+      },
+      "batch_sweep": {
+        "1": {
+          "batch": 1,
+          "groups": 200,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            21.514,
+            22.568,
+            21.621
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 17.164,
+            "median_ms": 21.621,
+            "mean_ms": 22.674,
+            "p95_ms": 30.419,
+            "p99_ms": 43.643,
+            "max_ms": 49.888
+          },
+          "per_candidate_equivalent_ms": 21.621,
+          "speedup_vs_batch1": 1.0
+        },
+        "2": {
+          "batch": 2,
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            46.114,
+            46.162,
+            45.522
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 39.6,
+            "median_ms": 46.114,
+            "mean_ms": 49.114,
+            "p95_ms": 68.777,
+            "p99_ms": 90.753,
+            "max_ms": 96.188
+          },
+          "per_candidate_equivalent_ms": 23.057,
+          "speedup_vs_batch1": 0.469
+        },
+        "3": {
+          "batch": 3,
+          "groups": 200,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            73.194,
+            71.008,
+            71.033
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 64.164,
+            "median_ms": 71.033,
+            "mean_ms": 75.123,
+            "p95_ms": 92.663,
+            "p99_ms": 123.403,
+            "max_ms": 257.58
+          },
+          "per_candidate_equivalent_ms": 23.678,
+          "speedup_vs_batch1": 0.304
+        },
+        "4": {
+          "batch": 4,
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            102.143,
+            102.339,
+            101.386
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 93.082,
+            "median_ms": 102.143,
+            "mean_ms": 106.246,
+            "p95_ms": 133.092,
+            "p99_ms": 147.943,
+            "max_ms": 148.728
+          },
+          "per_candidate_equivalent_ms": 25.536,
+          "speedup_vs_batch1": 0.212
+        },
+        "5": {
+          "batch": 5,
+          "groups": 200,
+          "selected_pass": 0,
+          "pass_medians_ms": [
+            130.451,
+            136.754,
+            130.228
+          ],
+          "per_group": {
+            "samples": 200,
+            "min_ms": 117.276,
+            "median_ms": 130.451,
+            "mean_ms": 135.121,
+            "p95_ms": 160.152,
+            "p99_ms": 187.84,
+            "max_ms": 250.127
+          },
+          "per_candidate_equivalent_ms": 26.09,
+          "speedup_vs_batch1": 0.166
+        },
+        "8": {
+          "batch": 8,
+          "groups": 125,
+          "selected_pass": 2,
+          "pass_medians_ms": [
+            227.368,
+            233.307,
+            231.643
+          ],
+          "per_group": {
+            "samples": 125,
+            "min_ms": 214.017,
+            "median_ms": 231.643,
+            "mean_ms": 239.515,
+            "p95_ms": 279.597,
+            "p99_ms": 301.111,
+            "max_ms": 313.813
+          },
+          "per_candidate_equivalent_ms": 28.955,
+          "speedup_vs_batch1": 0.093
+        }
+      },
+      "rss": {
+        "after_load_mb": 122.3,
+        "peak_sampled_mb": 237.5,
+        "hwm_mb": 239.6,
+        "after_scoring_mb": 237.6,
+        "delta_peak_mb": 115.2
+      },
+      "duration_s": null
+    },
+    "default": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          10.0078125,
+          5.81298828125,
+          3.14453125
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 0,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "default"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 151.424,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 17.389,
+          "median_ms": 24.445,
+          "mean_ms": 26.069,
+          "p95_ms": 38.375,
+          "p99_ms": 50.826,
+          "max_ms": 125.055
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 105.355,
+          "median_ms": 122.625,
+          "mean_ms": 130.345,
+          "p95_ms": 172.705,
+          "p99_ms": 212.902,
+          "max_ms": 314.834
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          24.445,
+          23.927
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 122.4,
+        "peak_sampled_mb": 196.8,
+        "hwm_mb": 200.2,
+        "after_scoring_mb": 196.9,
+        "delta_peak_mb": 74.4
+      },
+      "duration_s": null
+    },
+    "t8-spin": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          5.95556640625,
+          5.47216796875,
+          3.22216796875
+        ],
+        "mem_total_kb": 32815864
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 8,
+        "inter_op": 1,
+        "spinning": true,
+        "execution_mode": "sequential",
+        "config_name": "t8-spin"
+      },
+      "fixture": {
+        "path": "scripts/perf/fixtures/p2-63-groups.npz",
+        "sha256": "7b76c69d6c8266394fd993034305594abb3434d03d781047da497765fbc7708c",
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 99.444,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 28.369,
+          "median_ms": 31.569,
+          "mean_ms": 32.381,
+          "p95_ms": 38.379,
+          "p99_ms": 43.464,
+          "max_ms": 68.399
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 150.635,
+          "median_ms": 158.885,
+          "mean_ms": 161.907,
+          "p95_ms": 177.45,
+          "p99_ms": 214.361,
+          "max_ms": 233.462
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          31.569,
+          31.091
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 122.2,
+        "peak_sampled_mb": 196.2,
+        "hwm_mb": 199.8,
+        "after_scoring_mb": 196.4,
+        "delta_peak_mb": 74.0
+      },
+      "duration_s": null
+    }
+  },
+  "shape": {
+    "244": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          5.79638671875,
+          3.24072265625,
+          1.3583984375
+        ],
+        "mem_total_kb": 32815868
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 8,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "seq244"
+      },
+      "fixture": {
+        "path": "",
+        "sha256": null,
+        "groups": 200,
+        "per_group": 5,
+        "seq": 244,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 102.939,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 17.074,
+          "median_ms": 20.604,
+          "mean_ms": 21.698,
+          "p95_ms": 30.144,
+          "p99_ms": 38.256,
+          "max_ms": 62.182
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 95.745,
+          "median_ms": 102.981,
+          "mean_ms": 108.492,
+          "p95_ms": 133.193,
+          "p99_ms": 160.221,
+          "max_ms": 182.985
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          20.604,
+          20.284
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 124.0,
+        "peak_sampled_mb": 198.0,
+        "hwm_mb": 201.6,
+        "after_scoring_mb": 198.2,
+        "delta_peak_mb": 74.0
+      },
+      "duration_s": null
+    },
+    "164": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          6.66552734375,
+          3.69677734375,
+          1.5712890625
+        ],
+        "mem_total_kb": 32815868
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 8,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "seq164"
+      },
+      "fixture": {
+        "path": "",
+        "sha256": null,
+        "groups": 200,
+        "per_group": 5,
+        "seq": 164,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 101.901,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 10.597,
+          "median_ms": 13.178,
+          "mean_ms": 13.833,
+          "p95_ms": 17.822,
+          "p99_ms": 23.788,
+          "max_ms": 55.864
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 61.635,
+          "median_ms": 66.271,
+          "mean_ms": 69.164,
+          "p95_ms": 86.082,
+          "p99_ms": 100.225,
+          "max_ms": 136.809
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          13.178,
+          13.254
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 123.0,
+        "peak_sampled_mb": 161.2,
+        "hwm_mb": 164.7,
+        "after_scoring_mb": 161.4,
+        "delta_peak_mb": 38.2
+      },
+      "duration_s": null
+    },
+    "124": {
+      "schema": "0c.p2-63.perf/1",
+      "machine": {
+        "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+        "machine": "x86_64",
+        "processor": "",
+        "python": "3.13.7",
+        "cpu_count": 12,
+        "affinity": 12,
+        "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+        "load_average": [
+          7.1220703125,
+          4.04345703125,
+          1.7431640625
+        ],
+        "mem_total_kb": 32815868
+      },
+      "python": "3.13.7",
+      "mode": "bench",
+      "model": {
+        "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+        "bytes": 34242785,
+        "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+      },
+      "ort": {
+        "version": "1.32.0",
+        "numpy": "2.5.5",
+        "providers": [
+          "CPUExecutionProvider"
+        ]
+      },
+      "options": {
+        "intra_op": 8,
+        "inter_op": 1,
+        "spinning": false,
+        "execution_mode": "sequential",
+        "config_name": "seq124"
+      },
+      "fixture": {
+        "path": "",
+        "sha256": null,
+        "groups": 200,
+        "per_group": 5,
+        "seq": 124,
+        "candidates": 1000
+      },
+      "warmup_runs": 30,
+      "passes": 2,
+      "session_load_ms": 106.851,
+      "individual": {
+        "per_candidate": {
+          "samples": 1000,
+          "min_ms": 7.629,
+          "median_ms": 9.48,
+          "mean_ms": 10.214,
+          "p95_ms": 14.326,
+          "p99_ms": 20.322,
+          "max_ms": 30.28
+        },
+        "per_group": {
+          "samples": 200,
+          "min_ms": 43.038,
+          "median_ms": 48.352,
+          "mean_ms": 51.071,
+          "p95_ms": 67.808,
+          "p99_ms": 94.265,
+          "max_ms": 95.918
+        },
+        "selected_pass": 0,
+        "pass_medians_ms": [
+          9.48,
+          10.682
+        ]
+      },
+      "individual_only": true,
+      "batch": {},
+      "batch_sweep": {},
+      "rss": {
+        "after_load_mb": 122.2,
+        "peak_sampled_mb": 151.4,
+        "hwm_mb": 154.9,
+        "after_scoring_mb": 151.6,
+        "delta_peak_mb": 29.2
+      },
+      "duration_s": null
+    }
+  },
+  "soak": {
+    "schema": "0c.p2-63.perf/1",
+    "machine": {
+      "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+      "machine": "x86_64",
+      "processor": "",
+      "python": "3.13.7",
+      "cpu_count": 12,
+      "affinity": 12,
+      "cpu_model": "AMD Ryzen 5 5600X 6-Core Processor",
+      "load_average": [
+        6.74365234375,
+        5.99267578125,
+        5.3037109375
+      ],
+      "mem_total_kb": 32815868
+    },
+    "python": "3.13.7",
+    "mode": "soak",
+    "model": {
+      "path": "/home/fedora/.opencode/plan/0c-ja/phase2/reference/models/trained/reranker-public-core/reranker-public-core.int8.onnx",
+      "bytes": 34242785,
+      "sha256": "0614a6b3412a2faf7c69d14f4b450bcb44c36a25755883c4f18abf146ccaf0e9"
+    },
+    "ort": {
+      "version": "1.32.0",
+      "providers": [
+        "CPUExecutionProvider"
+      ]
+    },
+    "options": {
+      "intra_op": 8,
+      "inter_op": 1,
+      "spinning": false
+    },
+    "fixture": {
+      "path": "scripts/perf/fixtures/p2-63-groups.npz",
+      "groups": 200,
+      "per_group": 5,
+      "seq": 244
+    },
+    "duration_s": 1800.1,
+    "target_period_ms": 200.0,
+    "groups_scored": 8908,
+    "dropped_ticks": 459,
+    "latency": {
+      "samples": 8908,
+      "min_ms": 91.304,
+      "median_ms": 108.948,
+      "mean_ms": 120.75,
+      "p95_ms": 181.386,
+      "p99_ms": 264.128,
+      "max_ms": 900.319,
+      "per_candidate": {
+        "samples": 44540,
+        "min_ms": 15.924,
+        "median_ms": 21.374,
+        "mean_ms": 24.125,
+        "p95_ms": 38.863,
+        "p99_ms": 62.698,
+        "max_ms": 515.487
+      },
+      "first_10pct_median_ms": 112.472,
+      "last_10pct_median_ms": 106.153,
+      "drift_ms": -6.319,
+      "slope_ms_per_hour": -64.201
+    },
+    "rss": {
+      "after_load_mb": 205.7,
+      "first_10pct_median_mb": 208.4,
+      "last_10pct_median_mb": 213.1,
+      "growth_mb": 4.7,
+      "max_mb": 213.4,
+      "hwm_mb": 217.0,
+      "slope_mb_per_hour": 10.428
+    },
+    "samples_path": "scripts/perf/results/soak.jsonl"
+  }
+}
