@@ -167,12 +167,12 @@ P2-22E 固定了 `internal/jadic` 的讀音與排序契約，完整量測與成�
 
 - 讀音：`jadic.Load`／`Parse` 只接受平假名與長音符 `ー`。片假名、片假名與平假名混用、以及其他字元會讓載入失敗，不會留到 `Convert` 才正規化。manifest 的 `reading_script` 可以記錄建置來源，但產品匯入路徑要求 hiragana。
 - 同 surface 排序：成本（換算後，升冪）、讀音、詞性、活用型、活用形。五欄完全相同時保留 pack 內的原始順序。同一份 pack 的 `words.tsv` 因此位元組固定。
-- 成本：P2-22F 起採用 P2-22E 的 mapping D，`words.tsv` 的成本是 `pack_i16_cost * 0.001`，保留正負號，不 clamp、不 offset。單位是 0.001／MeCab・Sudachi 成本單位，越小越優先；負成本是原資料的語意，不是錯誤。114 筆負成本（最低 `-8.313`）原樣寫入，例如「研究所」的 `けんきゅうじょ -4.215` 排在 `けんきゅうしょ -3.955` 之前。
+- 成本：P2-22F 起採用 P2-22E 的 mapping D，`words.tsv` 的成本是 `pack_i16_cost * 0.001`，保留正負號，不 clamp、不 offset。單位是 0.001／MeCab・Sudachi 成本單位，越小越優先；負成本是原資料的語意，不是錯誤。P2-45E 之後，POS 為記号的詞條不進 `words.tsv`，其中負成本者直接丟棄；其餘 113 筆負成本（最低 `-8.313`）原樣寫入，例如「研究所」的 `けんきゅうじょ -4.215` 排在 `けんきゅうしょ -3.955` 之前。
 - 與連接成本結合：解碼器對每條路徑累加「每個詞的詞成本 + 相鄰詞性的 `connection.tsv` 成本」，再取最低總成本。詞成本與連接成本共用同一尺度，可以直接相加；mapping D 不改變任何一筆的相對權重，也不引入每詞固定偏移。connection 的中位數是 `0.4`，若用 `+8.313` offset 會是它的 20.8 倍，會系統性偏向短分割。
 
 ### 完整公開核心詞典（P2-45B）
 
-repo 內的 `lexicon/words.tsv` 只有 140 行（138 筆）curated 種子。完整的 0c-jadic public-core pack 放在外部，不進 Git；匯入後才是 1,147,021 筆詞條、870,298 個 surface。匯入命令是：
+repo 內的 `lexicon/words.tsv` 只有 140 行（138 筆）curated 種子。完整的 0c-jadic public-core pack 放在外部，不進 Git；P2-45E 記号過濾後，匯入結果是 `words.tsv` 1,146,687 筆詞條、870,064 個 surface，加上 `symbols/jadic.tsv` 333 筆記号。匯入命令是：
 
 ```sh
 go run ./cmd/0c-jadic import \
@@ -181,7 +181,9 @@ go run ./cmd/0c-jadic import \
   -connections data/ja/connection.tsv
 ```
 
-本次使用的 pack 位於 `/home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack`；換機器時用同一個 SHA-256 的副本。pack 的 SHA-256 是 `8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest 是 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。匯入使用 importer 預設：成本 scale `0.001`，signed 成本不 clamp、不 offset。`build/ja-import/lexicon/words.tsv` 是 80,582,634 bytes，`connection.tsv` 是 1,667 bytes；兩者都在 `/build` 的忽略範圍，不進 Git。可重跑同一命令重新產生，位元組相同。
+本次使用的 pack 位於 `/home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack`；換機器時用同一個 SHA-256 的副本。pack 的 SHA-256 是 `8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest 是 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。匯入使用 importer 預設：成本 scale `0.001`，signed 成本不 clamp、不 offset。`build/ja-import/lexicon/words.tsv` 是 80,565,113 bytes，`build/ja-import/symbols/jadic.tsv` 是 10,207 bytes，`connection.tsv` 是 1,667 bytes；三者都在 `/build` 的忽略範圍，不進 Git。可重跑同一命令重新產生，位元組相同。
+
+`symbols/jadic.tsv` 沿用 `data/ja/symbols/*.tsv` 的四欄格式：讀音、詞面、描述、分類。分類固定是 `記号`，描述取 pack 的 POS 細分類（例如 `文字`、`一般`）。POS 為 `記号` 的 334 筆中，333 筆寫進此檔；`𝕏`（`えっくす`，成本 `-1609`）成本為負，直接丟棄。片假名但 POS 是名詞的詞條（例如 `ハシ`、`メガ`）仍留在 `words.tsv`。
 
 要編成 Windows 套件用的完整資料包，再跑：
 
