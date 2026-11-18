@@ -45,6 +45,8 @@ P2-42 起 Mixed profile 不再有分開的「輸入語言」：主要語言是 `
 
 - **日文輸入方式**（`ja-input-method`，`romaji` 羅馬字／`kana` 直接かな）、**ライブ変換**（`ja-live-conversion`，預設關）、**記号與顔文字**（`ja-symbols`）、**日文學習**（`ja-learning`）、**日文神經模型**（`ja-model`）。
 
+目前這些日文選項只保存設定：`0c-server` 的日文路徑仍固定使用羅馬字 composer，`core/ja/live`、`core/ja/rewrite` 與 `core/ja/personal` 的程式尚未接進正式 session，`ja-model` 也沒有可用的日文推論模型。P2-30 接上模型與能力旗標前，不要把它們當成已生效的功能。
+
 日文選項沒有放進 `settings.items`，而是由 `settings.Profiles().Language` 帶出，0c-update 原樣轉送成 `profiles.language`。設定程式從那裡讀；`Set ja-model …` 等照常可用，舊版 0c-update 沒有這個欄位時不顯示日文區塊。
 
 引擎設定清單的每個 item 多了 `languages` 與 `capabilities`（舊版 0c-update 沒有時視為通用、沒有能力需求）。`languages` 含 `zh` 的項目在日文模式收起：鍵盤排列、模糊音、聲調（不打聲調、打錯注音時提示）、簡繁轉換、標點與 Emoji 等注音專屬設定；`ja-*` 只在日文模式出現。設定檔的值不動，切回注音照原值顯示。`capabilities` 是 `core/proto` 的旗標（`japanese`、`convert_keys`、`clause_display`、`live_conversion`），語言區塊下方列出四項；引擎在 health／open 回報同名旗標才實際生效，舊引擎沒有 `japanese` 時外殼不送日文按鍵。

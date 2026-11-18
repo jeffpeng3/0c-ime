@@ -1,6 +1,6 @@
 # 打包與發佈
 
-給發行版維護者與本專案的發佈者。一般使用者請到 [官網下載](https://0c.biggo.com/download/)。
+給發行版維護者與本專案的發佈者。一般使用者請到 [官網下載](https://0c.biggo.com/download/)，逐步說明見 [使用者文件](docs/README.md)。
 
 ## 原始碼與模型 tarball
 
@@ -38,7 +38,7 @@ tar -xJf 0c-ime-models-<版本>.tar.xz   # 選用：神經選字與補標點
 | `make assets LANG=all` | 同時處理注音與日文 |
 | `make assets LANG=ja JA_OUT=<目錄>` | 指定日文包輸出位置 |
 
-日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。
+日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。**載入接線注意**：`0c-server` 的日文載入路徑目前讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`，編譯後 `data/ja` 的 `lexicon.bin`／`lm.bin` 尚未接上；在整合完成前，`--ja-data` 只證明打包與雜湊正確，不能宣稱 shipped 日文轉換可用。
 
 日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。編譯器不寫時間戳，同一份 `data/ja` 連跑兩次得到相同雜湊。
 
@@ -94,7 +94,7 @@ python3 scripts/source_release.py verify build/source-release/<版本>/0c-ime-<�
 
 ## Windows 安裝、移除與回復
 
-Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。**產品不內嵌 CPython、numpy 或 onnxruntime Python 套件**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查一次沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。
+Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `scripts/package_windows_installer.py` 包成 NSIS 安裝精靈。**產品不內嵌 CPython、numpy 或 onnxruntime Python 套件**；推論使用原生 ONNX Runtime，`onnxruntime.dll` 與 `vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll` 放在 `0c-server.exe` 旁。版本、大小與 SHA-256 固定在 [models/runtime.lock.json](models/runtime.lock.json)，由 `scripts/prepare_windows_runtime.py` 從固定的 wheel 取出；打包時逐檔核對，完成品再檢查一次沒有任何 `.py`、`.pyc`、`.pyd`、wheel、numpy 或 onnxruntime Python 套件。授權邊界與第三方聲明見 [授權頁](docs/licensing.md)。
 
 `0c-server` 預設 `-neural-backend auto`：建置含 CGO＋`onnxruntime` tag 且執行檔旁有 `onnxruntime.dll` 時使用 native；DLL 不在或載入失敗時直接退回統計轉換，不會啟動 Python。原生後端目前支援選字／reranker 的模型形狀；模型形狀不受支援時回報 `unsupported_model` 並保留統計排序。補標點仍只有 Python worker，因此 Python-free 套件提交時保留原文。
 
@@ -116,9 +116,9 @@ python scripts\package_windows_installer.py --archive build\release\<ZIP> --out 
 
 注音 select／punct ONNX 由 `--model-pair` 出貨（`hf_models.py pair` 的輸出；不含 Python worker），打包時核對 `models.lock` 與 `pairing.lock`。原生產品沒有 `--model-pair` 會拒絕出貨。
 
-日文模型組由 `--model-set` 從 [models/pairing.lock.json](models/pairing.lock.json) 選一組（`ja-public-core` 或 `ja-cc-by-sa`），`--model-source` 指向已匯出的 ONNX，`--model-format` 選 `int8`（預設）或 `fp32`。打包時以 `cmd/0c-model-set` 逐檔核對大小、SHA-256 與日文資料包 manifest，只放入所選 variant，並把 `active.json`、`pairing.lock.json` 放在套件的 `models/`。兩組不得混用。目前的模型組仍是未訓練 placeholder：沒有 `--allow-placeholders` 時拒絕出貨，明確允許時完成品一定有 `MODEL-SET-PLACEHOLDER.txt`，`release.json` 的 `model_set.placeholder` 也是 `true`；placeholder 不是預設值。
+日文模型組由 `--model-set` 從 [models/pairing.lock.json](models/pairing.lock.json) 選一組（`ja-public-core` 或 `ja-cc-by-sa`），`--model-source` 指向已匯出的 ONNX，`--model-format` 選 `int8`（預設）或 `fp32`。打包時以 `cmd/0c-model-set` 逐檔核對大小、SHA-256 與日文資料包 manifest，只放入所選 variant，並把 `active.json`、`pairing.lock.json` 放在套件的 `models/`。兩組不得混用；public-core 標示 CC BY 4.0，cc-by-sa 標示 CC BY-SA 4.0 且只進 experimental，授權義務見 [授權頁](docs/licensing.md)。目前的模型組仍是未訓練 placeholder：沒有 `--allow-placeholders` 時拒絕出貨，明確允許時完成品一定有 `MODEL-SET-PLACEHOLDER.txt`，`release.json` 的 `model_set.placeholder` 也是 `true`；placeholder 不是預設值。
 
-`0c-update` 安裝時逐檔核對 `release.json`，把整個版本目錄換上去；升級保留上一版，`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版。`-restore-user` 額外還原升級前的個人詞庫。`install.ps1 -Uninstall` 或 `0c-update uninstall` 取消 TSF 註冊並停用收據，**不刪**版本目錄、字典、備份或 `%LOCALAPPDATA%\Zuin\user.json`；要清掉所有本機檔案時，先解除安裝，再自行刪除 `%LOCALAPPDATA%\Zuin`。回復到不含日文包的版本時，使用中的版本目錄沒有 `data/ja/`，不會從別版補上；想移除日文包請換成不含 `--ja-data` 的套件再安裝或回復，不要手動刪除版本目錄裡的檔案，收據核對會失敗。
+`0c-update` 安裝時逐檔核對 `release.json`，把整個版本目錄換上去；升級保留上一版，`install.ps1 -Rollback` 或 `0c-update rollback` 回到上一版。`0c-update rollback -restore-user` 額外還原升級前的個人詞庫；`install.ps1` 沒有 `-RestoreUser` 參數。`install.ps1 -Uninstall` 或 `0c-update uninstall` 取消 TSF 註冊並停用收據，**不刪**版本目錄、字典、備份或 `%LOCALAPPDATA%\Zuin\user.json`；要清掉所有本機檔案時，先解除安裝，再自行刪除 `%LOCALAPPDATA%\Zuin`。回復到不含日文包的版本時，使用中的版本目錄沒有 `data/ja/`，不會從別版補上；想移除日文包請換成不含 `--ja-data` 的套件再安裝或回復，不要手動刪除版本目錄裡的檔案，收據核對會失敗。
 
 Linux 與 macOS 套件仍出注音字典與既有模型；日文資料包目前只接入 Windows 套件，等各平台外殼正式載入日文詞典後再擴充。這樣沒有日文包時，注音安裝、更新與回復都不受影響。
 

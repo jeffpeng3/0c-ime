@@ -47,7 +47,7 @@ C 執行階段靜態連結（`.cargo/config.toml` 的 `+crt-static`，x64 與 i6
 
 0.1.0-dev.15 以前的版本使用 `zuin_tsf.dll`、`zuin-server.exe`、`zuin-ui.exe`；新版為 `0c_tsf.dll`、`0c-server.exe`、`0c-ui.exe`。從舊版升級要用**新套件內附**的 `0c-update.exe`（`install.ps1` 與 EXE 安裝精靈都是如此）；舊版工具不認得新檔名，會在變更註冊前拒絕。升級時取消舊 DLL 的註冊，舊版目錄保留為回復目標；不再是回復目標的舊版目錄，會在之後的更新或回復時刪除，仍被應用程式載入的檔案則留到登出後的下一次更新。TSF CLSID 與 profile 不變，已加入的輸入法不必重新加入。
 
-`.\install.ps1 -Rollback` 回復上一版（含回到 zuin-* 舊版）；個人詞庫預設保留，需要還原升級前的詞庫時改用 `0c-update.exe rollback -restore-user`（見升級工具說明）；`-Uninstall` 取消註冊，保留版本檔案、字典、備份與個人詞庫。指令選項可用 `0c-update.exe help` 查詢。新流程已通過 Windows 11 x64 實機驗收；dev.38 起已有簽章 EXE／ZIP，尚未提供 MSI／MSIX，乾淨機與其他應用驗收仍待完成。
+`.\install.ps1 -Rollback` 回復上一版（含回到 zuin-* 舊版）；個人詞庫預設保留，需要還原升級前的詞庫時改用 `0c-update.exe rollback -restore-user`（見升級工具說明）；`-Uninstall` 取消註冊，保留版本檔案、字典、備份與個人詞庫。指令選項見本文件與 [打包與發佈](../../PACKAGING.md)。新流程已通過 Windows 11 x64 實機驗收；dev.38 起已有簽章 EXE／ZIP，尚未提供 MSI／MSIX，乾淨機與其他應用驗收仍待完成。Phase 2 Mixed profile 的 VM 驗收是 **NOT RUN**，見 [test/vm/LIVE-RUN.md](test/vm/LIVE-RUN.md)。
 
 ## 執行方式
 
