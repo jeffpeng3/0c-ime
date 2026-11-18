@@ -51,11 +51,11 @@ slot 機械產生。它的用途是穩定回歸，不是宣稱代表現代日文
 同一份資料連跑兩次，非延遲結果必須完全相同。`-determinism` 會直接比對兩次報告的
 品質欄位與逐題輸出。
 
-## 目前 baseline
+## CI baseline：repo 內種子包
 
-資料包是 repo 內的 `data/ja` 種子包（144 詞條），不是 Mozc 全量包。因此 Anthy 與
-AJIMEE 的分數很低，這是冷啟動數字，不是轉換器上限。T13 換成全量資料包後要重跑並
-更新 baseline。
+資料包是 repo 內的 `data/ja` 種子包（目前 137 詞條），不是 Mozc 全量包。因此 Anthy 與
+AJIMEE 的分數很低，這是冷啟動數字，不是轉換器上限。這張表由沒有 public-core pack
+的 CI 執行，`baseline.json` 的資料包雜湊也綁定這份種子包。
 
 | 題庫 | n | top1 | top5 | 邊界 exact | 邊界 F1 |
 |---|---:|---:|---:|---:|---:|
@@ -67,6 +67,39 @@ AJIMEE 的分數很低，這是冷啟動數字，不是轉換器上限。T13 換
 延遲只記在 `baseline.json` 的 `*_informational` 欄位，不進 CI 門檻；共享 runner 的
 延遲不穩定。品質門檻的允許跌幅全部是 0：任何一個題庫的 top-1、top-5、邊界 exact
 或邊界 F1 下降，`go test ./internal/eval` 就會失敗。
+
+## 完整 public-core 詞典量測（P2-47B）
+
+這一組是安裝包使用的完整詞典，不是 CI baseline。`cmd/0c-eval-ja` 只走統計轉換，
+沒有 reranker 旗標，所以下表是 statistical-only，不含神經重排。
+
+使用的 pack 是 `ja-lexicon-public-core.pack`，SHA-256
+`8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest
+SHA-256 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。
+匯入後 `words.tsv` 是 1,137,895 筆詞條、861,582 個 surface，SHA-256
+`830f6783cb6931751d719dd602c327164f7a72a8443871d153f8948a142c723d`。量測指令：
+
+```sh
+go run ./cmd/0c-jadic import \
+  -pack /home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack \
+  -out build/ja-import \
+  -connections data/ja/connection.tsv -force
+go run ./cmd/0c-eval-ja --data build/ja-import
+```
+
+| 題庫 | n | top1 | top5 | 邊界 exact | 邊界 F1 |
+|---|---:|---:|---:|---:|---:|
+| `ajimee-200` | 200 | 1.0%（2） | 3.5%（7） | 不計 | 不計 |
+| `anthy-corpus1` | 200 | 1.0%（2） | 3.5%（7） | 6.0%（12/199） | 0.327 |
+| `modern-500` | 500 | 0.0%（0） | 0.0%（0） | 0.8%（4/500） | 0.280 |
+| `hard-cases` | 35 | 2.9%（1） | 5.7%（2） | 2.9%（1/35） | 0.302 |
+
+與上面的種子包 baseline 相比，top-1 四組都下降；top-5 只在
+`anthy-corpus1`（2.5%→3.5%）與 `ajimee-200`（1.5%→3.5%）上升。這份 pack 的詞成本
+尺度與 curated 連接矩陣不合，細節見 [日文資料 README](../../data/ja/README.md#完整公開核心詞典p2-45b)。
+
+`baseline.json` 沒有改成這組數字。CI 沒有 public-core pack 時仍以 `data/ja` 種子包
+執行 gate，直接替換 baseline 會讓沒有 pack 的 CI 失敗。
 
 T03 spike 另有兩個外部參考數字，不由這個 harness 產生，也不進 gate（T03 是非正式 spike，不是產品路徑）：
 
