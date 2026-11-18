@@ -60,7 +60,7 @@ func Open(c Config) (*Backend, error) {
 		return nil, err
 	}
 	modelPath := filepath.Join(c.Package, "model.onnx")
-	inputs, outputs, err := ort.GetInputOutputInfo(modelPath)
+	inputs, outputs, err := modelIO(modelPath)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrPackageCorrupt, err)
 	}
@@ -129,8 +129,30 @@ func ensureEnvironment(library string) error {
 	return nil
 }
 
-func detectMode(inputs []ort.InputOutputInfo) (modelMode, int, error) {
-	names := make(map[string]ort.InputOutputInfo, len(inputs))
+// modelIO reads the graph signature from the protobuf, which avoids loading
+// the model once only to discover the layout. If the minimal reader cannot
+// parse the file, fall back to onnxruntime's own loader.
+func modelIO(path string) ([]onnxValue, []onnxValue, error) {
+	inputs, outputs, err := readONNXIO(path)
+	if err == nil {
+		return inputs, outputs, nil
+	}
+	in, out, ortErr := ort.GetInputOutputInfo(path)
+	if ortErr != nil {
+		return nil, nil, err
+	}
+	convert := func(v []ort.InputOutputInfo) []onnxValue {
+		vals := make([]onnxValue, len(v))
+		for i := range v {
+			vals[i] = onnxValue{Name: v[i].Name, ElemType: int32(v[i].DataType), Dims: append([]int64(nil), v[i].Dimensions...)}
+		}
+		return vals
+	}
+	return convert(in), convert(out), nil
+}
+
+func detectMode(inputs []onnxValue) (modelMode, int, error) {
+	names := make(map[string]onnxValue, len(inputs))
 	for _, in := range inputs {
 		names[in.Name] = in
 	}
@@ -150,7 +172,7 @@ func detectMode(inputs []ort.InputOutputInfo) (modelMode, int, error) {
 		if _, ok := names["input_ids"]; ok {
 			if _, ok := names["attention_mask"]; ok {
 				seq := 32
-				if d := names["input_ids"].Dimensions; len(d) == 2 && d[1] > 0 {
+				if d := names["input_ids"].Dims; len(d) == 2 && d[1] > 0 {
 					seq = int(d[1])
 				}
 				return modeReranker, seq, nil
@@ -198,7 +220,7 @@ func (b *Backend) ScoreContext(ctx context.Context, r rerank.Request) ([]float64
 	if len(reading) > 0 {
 		last = reading[len(reading)-1]
 	}
-	neutral := neutralRequest(b.manifest, r.Mode, last)
+	neutral := input.NeutralLast(r.Mode, last, b.manifest.NeutralExpand > 0, b.manifest.NeutralTolerant)
 	candidates := make([]input.Candidate, count)
 	for i, c := range r.Candidates {
 		segs := make([]input.Segment, len(c.Segments))
