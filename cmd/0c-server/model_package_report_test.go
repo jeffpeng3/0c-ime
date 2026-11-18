@@ -41,7 +41,7 @@ func writeModelPackageFixture(t *testing.T) (lockPath, root, dataDir, shot strin
 		id, kind, variant, license, output string
 		shape                              []any
 	}{
-		{"reranker-extra", modelsets.KindReranker, "cc-by-sa", "CC-BY-SA-4.0", "scores", []any{"batch"}},
+		{"reranker", modelsets.KindReranker, "cc-by-sa", "CC-BY-SA-4.0", "scores", []any{"batch"}},
 		{"punctuation-public-core", modelsets.KindPunctuation, "public-core", "MIT", "logits", []any{"batch", "seq", 4}},
 	} {
 		body := []byte("onnx:" + spec.id)

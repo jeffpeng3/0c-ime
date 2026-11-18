@@ -30,7 +30,7 @@ func testLockDoc(t *testing.T, pinned bool, bodies map[string][]byte) []byte {
 	}
 	artifacts := []any{}
 	for i, spec := range []struct{ id, kind, variant, license, name string }{
-		{"reranker-extra", KindReranker, VariantCCBYSA, "CC-BY-SA-4.0", "reranker.int8.onnx"},
+		{"reranker", KindReranker, VariantCCBYSA, "CC-BY-SA-4.0", "reranker.int8.onnx"},
 		{"punctuation-public-core", KindPunctuation, VariantPublicCore, "MIT", "punctuation.int8.onnx"},
 	} {
 		body := bodies[spec.name]

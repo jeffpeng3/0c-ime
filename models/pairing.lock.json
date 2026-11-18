@@ -63,7 +63,7 @@
     "production_eligible": true,
     "artifacts": [
       {
-        "artifact_id": "reranker-extra",
+        "artifact_id": "reranker",
         "attribution": [
           "legal/copyright",
           "data/sources/corpus/experimental.tsv",
@@ -72,13 +72,13 @@
         "dictionary_manifest_sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1",
         "files": {
           "fp32": {
-            "path": "reranker-extra/model.onnx",
+            "path": "reranker/model.onnx",
             "bytes": 135613420,
             "sha256": "4b74ae019b15443f2a30936e9cf53959e60716a30548f17bb1f0d8569fa978e9",
             "quantization": "none (fp32)"
           },
           "int8": {
-            "path": "reranker-extra/model.int8.onnx",
+            "path": "reranker/model.int8.onnx",
             "bytes": 34268510,
             "sha256": "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3",
             "quantization": "dynamic-quint8"
@@ -123,7 +123,7 @@
           "distribution": "default install set; carry the CC BY-SA 4.0 notice; never inside the public-core set",
           "notice": "legal/CC-BY-SA-4.0.txt"
         },
-        "manifest": "reranker-extra/manifest.json",
+        "manifest": "reranker/manifest.json",
         "parameters": 32691713,
         "placeholder": false,
         "production_eligible": true,
@@ -140,7 +140,7 @@
         "variant": "cc-by-sa",
         "version": "cc-by-sa-2026.11.0",
         "hf": {
-          "repository": "jeffpeng3/0c-ja-reranker-extra",
+          "repository": "jeffpeng3/0c-ja-reranker",
           "revision": "7450e10fe8b673560044c5db08ad3006a06d7a6e",
           "license": "CC-BY-SA-4.0",
           "files": {

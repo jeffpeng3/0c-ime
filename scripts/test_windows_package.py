@@ -204,13 +204,13 @@ class ModelPackageTests(unittest.TestCase):
         self.assertEqual(pkg["version"], "2026.11.0")
         artifacts = pkg["artifacts"]
         self.assertEqual([a["artifact_id"] for a in artifacts],
-                         ["reranker-extra", "punctuation-public-core"])
+                         ["reranker", "punctuation-public-core"])
         self.assertEqual([a["kind"] for a in artifacts], ["reranker", "punctuation"])
         self.assertEqual(artifacts[0]["variant"], "cc-by-sa")
         self.assertEqual(artifacts[1]["variant"], "public-core")
         self.assertEqual(artifacts[0]["license"]["id"], "CC-BY-SA-4.0")
         self.assertEqual(artifacts[1]["license"]["id"], "MIT")
-        self.assertEqual(artifacts[0]["hf"]["repository"], "jeffpeng3/0c-ja-reranker-extra")
+        self.assertEqual(artifacts[0]["hf"]["repository"], "jeffpeng3/0c-ja-reranker")
         self.assertEqual(artifacts[0]["hf"]["revision"], "7450e10fe8b673560044c5db08ad3006a06d7a6e")
         self.assertEqual(artifacts[0]["hf"]["files"]["int8"]["sha256"],
                          "edf1afeacb89fa5da3d10462b5d9afd85392a91056634dd9ac60d41e37faeeb3")
@@ -222,19 +222,19 @@ class ModelPackageTests(unittest.TestCase):
 
     def test_release_accepts_pinned_package(self):
         chosen = package_windows.check_model_package("int8", False)
-        self.assertEqual(chosen["artifacts"][0]["artifact_id"], "reranker-extra")
+        self.assertEqual(chosen["artifacts"][0]["artifact_id"], "reranker")
 
     def test_package_carries_cc_by_sa_notice_and_keeps_punctuation_mit(self):
         pkg = package_windows.check_model_package("int8", False, preview=True)
         manifest = package_windows.model_package_manifest(pkg, "int8")
-        self.assertEqual(manifest["artifacts"], ["reranker-extra", "punctuation-public-core"])
+        self.assertEqual(manifest["artifacts"], ["reranker", "punctuation-public-core"])
         licenses = {item["artifact_id"]: item["id"] for item in manifest["licenses"]}
-        self.assertEqual(licenses["reranker-extra"], "CC-BY-SA-4.0")
+        self.assertEqual(licenses["reranker"], "CC-BY-SA-4.0")
         self.assertEqual(licenses["punctuation-public-core"], "MIT")
         stage = Path(tempfile.mkdtemp(prefix="model-notices-"))
         package_windows.write_model_package_notices(stage, pkg)
         notices = (stage / "MODEL-PACKAGE-NOTICES.txt").read_text(encoding="utf-8")
-        self.assertIn("reranker-extra", notices)
+        self.assertIn("artifact: reranker\n", notices)
         self.assertIn("CC-BY-SA-4.0", notices)
         self.assertIn("punctuation-public-core", notices)
         self.assertIn("MIT", notices)

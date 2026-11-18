@@ -432,7 +432,7 @@ def model_package_manifest(pkg, format):
 def write_model_package_notices(stage, pkg):
     """Carry every artifact license into the bundle.
 
-    reranker-extra is CC BY-SA 4.0, so the package must ship the CC BY-SA
+    The reranker is CC BY-SA 4.0, so the package must ship the CC BY-SA
     notice even though punctuation-public-core stays MIT.
     """
     stage = Path(stage)
