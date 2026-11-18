@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://0c.biggo.com/schema/0c.model-package/1",
   "title": "0C product model package",
-  "description": "P2-27 產品側日文模型包。models/pairing.lock.json 的 model_package 區段；外層既有注音字典配對欄位不在本 schema。產品只有一個模型包：CC BY-SA reranker-extra 加 MIT punctuation-public-core，沒有模型組、default_set 或 variant 選擇。每個模型包綁定一個日文詞典包的 manifest SHA-256；deployment 記錄 seq 124、每側 60 tokens 與 top-3 gating。",
+  "description": "P2-27 產品側日文模型包。models/pairing.lock.json 的 model_package 區段；外層既有注音字典配對欄位不在本 schema。產品只有一個模型包：CC BY-SA reranker 加 MIT punctuation-public-core，沒有模型組、default_set 或 variant 選擇。每個模型包綁定一個日文詞典包的 manifest SHA-256；deployment 記錄 seq 124、每側 60 tokens 與 top-3 gating。",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "version", "dictionary", "license", "attribution", "placeholder", "quality", "production_eligible", "artifacts"],
