@@ -107,6 +107,9 @@ type Session struct {
 	styleGrid    bool
 	// Rerank 由宿主在第一次 Handle 前設定；零值保持原引擎。
 	Rerank rerank.Options
+	// DisableModelScoring 由宿主依「不用模型」設定：停用同步重排與候選視窗的背景評分，
+	// 顯示完全照統計順序。零值時模型照設定運作。
+	DisableModelScoring bool
 	// SecureInput 由宿主設定：焦點在密碼框或安全輸入環境時為 true。
 	// 它與每個請求的 Private 一樣併入 s.private，因此模型、前文、學習與
 	// 補標點都走同一條隱私路徑；宿主忘記逐鍵帶 Private 也不會漏。
@@ -204,6 +207,7 @@ type Session struct {
 	rerankCache        map[string]rerankEntry // 分段神經決策快取；提交／取消時清空
 	rerankMemo         map[int]segMemo        // 段級輸入摘要：輸入全同的段整段跳過（含 N-best）；提交／取消時清空
 	rerankMemoHits     int                    // rerankMemo 命中次數，只給測試確認打字時真的命中
+	asyncPending       *asyncCandidate        // 候選視窗的背景評分；只有一個，新的請求先取消舊的
 	noCaches           bool                   // 測試用：不用 rerankMemo 與 sugPrev，與開著時比對結果（rerank_caches_test.go）
 	sugPrev            *suggest.Suggestion    // 補全建議與其輸入摘要；refresh 每鍵跑好幾次，同輸入不重算
 	sugPrevKey         string
@@ -438,6 +442,7 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 			notices = append(notices, "沒有這個候選")
 		}
 	case proto.Close:
+		s.cancelAsync()
 		if s.englishWord {
 			s.englishDismissed = true
 		}
@@ -504,6 +509,7 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 		s.cand.labels = s.candidateLabels(s.cand)
 	}
 	s.rev++
+	s.cancelStaleAsync()
 	s.refreshEnglishCandidates()
 	snap := s.snapshot()
 	if hint := s.markHint(); hint != "" {
@@ -1122,6 +1128,7 @@ func (s *Session) shiftLocks(at, delta int) {
 }
 
 func (s *Session) moveTo(to int) {
+	s.cancelAsync()
 	s.finishUntoned()
 	if !s.comp.Empty() {
 		return // 音節打到一半不移動游標
@@ -1296,7 +1303,15 @@ func writePath(b *strings.Builder, path []decode.Seg) {
 	b.WriteByte('|')
 }
 
+// openCandidates 先照統計引擎建立候選並立刻回傳；有設定背景評分器時另外送出
+// 前 3 名，結果回來後由 Poll 套用。使用者按鍵不必等模型。
 func (s *Session) openCandidates(length int) {
+	s.cancelAsync()
+	s.openCandidatesNow(length)
+	s.startAsyncCandidates()
+}
+
+func (s *Session) openCandidatesNow(length int) {
 	s.styleGrid = false
 	if s.englishWord {
 		s.englishDismissed = false
@@ -1641,6 +1656,7 @@ func (s *Session) moveHighlight(d int) {
 
 // selectCandidate 鎖定選取的詞。手動選取是硬條件；被換掉的原區段記下來供學習使用。
 func (s *Session) selectCandidate(id int) bool {
+	s.cancelAsync()
 	if s.Language() != lang.Zh {
 		r, ok := s.activeRuntime()
 		if !ok || !r.converting {
@@ -1882,6 +1898,7 @@ func (s *Session) punctuate(text string) string {
 }
 
 func (s *Session) reset() {
+	s.cancelAsync()
 	s.languageSelections = nil
 	if s.Language() != lang.Zh {
 		// 只清目前語言；切走時另一邊未完成的組字保留。

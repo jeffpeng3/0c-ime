@@ -30,7 +30,9 @@ type Engine struct {
 	// 由宿主在建立 session 前設定；nil 使用核心預設值。
 	// 資料包可攜帶其開發集校準的前文權重，不寫入個人詞庫。
 	DocumentContextWeight *float64
-	Rerank                rerank.Options    // 宿主在建立 session 前設定；可選、同步、有界評分器。
+	Rerank                rerank.Options // 宿主在建立 session 前設定；可選、同步、有界評分器。
+	// DisableModelScoring 由宿主依「不用模型」設定：新 session 同步與非同步評分都停用。
+	DisableModelScoring   bool
 	Punct                 punct.Punctuator  // 宿主在建立 session 前設定；提交時補標點，nil 停用。
 	DocumentContextOff    bool              // 使用者關閉前文時由宿主設定；外殼的前文確認一律忽略。
 	EscKeepComposition    bool              // 使用者關閉「按 Esc 清除整段組字」時由宿主設定。
@@ -138,6 +140,7 @@ func (e *Engine) OpenSession() uint64 {
 	e.next++
 	e.sessions[e.next] = session.New(e.Model)
 	e.sessions[e.next].Rerank = e.Rerank
+	e.sessions[e.next].DisableModelScoring = e.DisableModelScoring
 	e.sessions[e.next].Punct = e.Punct
 	e.sessions[e.next].DocumentContextOff = e.DocumentContextOff
 	e.sessions[e.next].EscKeepComposition = e.EscKeepComposition
@@ -254,6 +257,9 @@ func (e *Engine) Sessions() (total, composing int) {
 func (e *Engine) CloseSession(id uint64) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+	if s := e.sessions[id]; s != nil {
+		s.Close()
+	}
 	delete(e.sessions, id)
 	delete(e.modeSeen, id)
 	delete(e.modeLocal, id)

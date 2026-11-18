@@ -831,6 +831,9 @@ func (h *Handle) Options() rerank.Options {
 	h.mgr.mu.Unlock()
 	if scorer {
 		options.Scorer = h
+		// 候選視窗的背景評分走同一個 handle；ScoreContext 可被取消，模型未就緒
+		// 或逾時時呼叫端保留統計順序。同步 rerankPath 仍用 Scorer。
+		options.Async = rerank.AsyncOptions{Scorer: h, Timeout: rerank.DefaultAsyncTimeout, TopK: rerank.DefaultAsyncTopK}
 	}
 	return options
 }

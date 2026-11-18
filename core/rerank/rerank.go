@@ -2,7 +2,10 @@
 package rerank
 
 import (
+	"context"
+	"errors"
 	"math"
+	"time"
 	"unicode/utf8"
 
 	"github.com/0c-biggo/0c-ime/core/decode"
@@ -11,6 +14,16 @@ import (
 
 // MaxContextRunes 是送給評分器的已確認前文上限，與序列模型訓練時的前文窗口相同。
 const MaxContextRunes = 64
+
+// DefaultAsyncTimeout 是候選視窗背景評分的上限。模型回來前照統計順序顯示；
+// 超過這個時間就丟棄結果，不再改動已顯示的候選（WSL 的排程尖峰可能接近 1 秒）。
+const DefaultAsyncTimeout = 250 * time.Millisecond
+
+// DefaultAsyncTopK 是背景評分只送統計前幾名。top-3 gating 比整份候選更準也更快。
+const DefaultAsyncTopK = 3
+
+// ErrAsyncTimeout 表示候選視窗的背景評分沒有在時限內回來。呼叫端保留目前順序。
+var ErrAsyncTimeout = errors.New("rerank async deadline exceeded")
 
 // MaxCandidates 是一次評分的候選上限：打出讀音的 N-best 8 個，加上輕聲擴充最多 8 個。
 const MaxCandidates = 16
@@ -35,11 +48,25 @@ type Scorer interface {
 	Score(Request) ([]float64, error)
 }
 
+// ContextScorer 是可取消的非同步評分器。候選視窗的背景評分用它；模型載入、
+// 排隊與逾時由宿主負責，取消後不得再回寫任何 session 狀態。
+type ContextScorer interface {
+	ScoreContext(context.Context, Request) ([]float64, error)
+}
+
+// AsyncOptions 是候選視窗的背景評分設定。零值停用；Scorer 為 nil 時也停用。
+type AsyncOptions struct {
+	Scorer  ContextScorer
+	Timeout time.Duration // 0 用 DefaultAsyncTimeout
+	TopK    int           // 0 用 DefaultAsyncTopK；最多只送 3 個
+}
+
 type Options struct {
 	AllowPartial bool    // 僅限經獨立校準的等長前綴候選；預設仍整例回退。
 	ContextRunes int     // 0 不送前文；序列模型套件宣告 MaxContextRunes。
 	HintGap      float64 // >0 時，融合分數與首選差距小於此值的次佳候選以 Tab 替換提示呈現；0 停用
 	Scorer       Scorer
+	Async        AsyncOptions // 候選視窗的非同步評分；不影響 rerankPath 的同步路徑
 	Weight       float64
 	Margin       float64
 	TextWeight   float64 // >0 時單音節段以 ModeText 評分；0 停用
@@ -48,6 +75,23 @@ type Options struct {
 	// 就另取「最後音節改輕聲」的 N-best，把新候選的引擎分數扣 NeutralExpand 後併入。
 	NeutralExpand float64
 	NeutralBases  map[zhuyin.Syllable]bool
+}
+
+// AsyncTopK 回傳有效的背景評分候選數：預設 3，最多 3。
+func (o AsyncOptions) AsyncTopK() int {
+	k := o.TopK
+	if k <= 0 {
+		k = DefaultAsyncTopK
+	}
+	return min(k, DefaultAsyncTopK)
+}
+
+// AsyncTimeout 回傳有效的背景評分時限。
+func (o AsyncOptions) AsyncTimeout() time.Duration {
+	if o.Timeout <= 0 {
+		return DefaultAsyncTimeout
+	}
+	return o.Timeout
 }
 
 // Supported 採整例回退，不以刪除 Partial/Correction 路徑製造虛假的召回改善。

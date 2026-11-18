@@ -295,10 +295,10 @@ func TestManagerModeSelection(t *testing.T) {
 				t.Fatalf("%s state %s", name, state)
 			}
 		}
-		if h := m.Handle("zh-select"); h == nil || h.Options().Scorer == nil || h.Options().Weight != 0.5 {
+		if h := m.Handle("zh-select"); h == nil || h.Options().Scorer == nil || h.Options().Weight != 0.5 || h.Options().Async.Scorer == nil {
 			t.Fatalf("scorer handle options: %+v", h)
 		}
-		if h := m.Handle("zh-punct"); h == nil || h.Options().Scorer != nil {
+		if h := m.Handle("zh-punct"); h == nil || h.Options().Scorer != nil || h.Options().Async.Scorer != nil {
 			t.Fatalf("punctuator handle must not expose a scorer: %+v", h)
 		}
 		if got := len(l.called()); got != 3 {
