@@ -134,8 +134,8 @@ func TestDecodeLexiconRejectsCorruption(t *testing.T) {
 }
 
 func TestLMRoundTrip(t *testing.T) {
-	lm := NewLM(map[string]float64{"明日": 1.5, "味": 2}, map[[2]string]float64{{"明日", "味"}: 0.7})
-	if lm.Len() != 2 || lm.BigramLen() != 1 {
+	lm := NewLM(map[string]float64{"明日": 1.5, "味": 2, "これから": -0.49}, map[[2]string]float64{{"明日", "味"}: 0.7})
+	if lm.Len() != 3 || lm.BigramLen() != 1 {
 		t.Fatalf("LM = %#v", lm)
 	}
 	data := lm.Encode()
@@ -146,7 +146,7 @@ func TestLMRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Unigram["明日"] != 1.5 || got.Bigram[[2]string{"明日", "味"}] != 0.7 {
+	if got.Unigram["明日"] != 1.5 || got.Unigram["これから"] != -0.49 || got.Bigram[[2]string{"明日", "味"}] != 0.7 {
 		t.Fatalf("解碼 = %#v", got)
 	}
 	if _, err := DecodeLM(append(data, 0)); err == nil {

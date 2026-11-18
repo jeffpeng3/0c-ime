@@ -102,9 +102,9 @@ func (d *Decoder) Candidates(seq reading.Sequence, span lang.Span, ctx lang.Cont
 					Reading:  append(reading.Sequence(nil), e.Reading...),
 					Surface:  e.Surface,
 					Segments: []lang.CandidateSegment{{Reading: append(reading.Sequence(nil), e.Reading...), Surface: e.Surface}},
-					Score:    -entryCost(d.Conn, e),
+					Score:    -d.candidateCost(e),
 				}},
-				Score:  -entryCost(d.Conn, e),
+				Score:  -d.candidateCost(e),
 				Source: lang.SourceConvert,
 			})
 		}
@@ -205,4 +205,10 @@ func (d *Decoder) Prefixes(seq reading.Sequence) []lang.Candidate {
 
 func entryCost(conn lexicon.Connection, e lexicon.Entry) float64 {
 	return e.Cost + connectionCost(conn, lexicon.POSBOS, e.POS) + connectionCost(conn, e.POS, lexicon.POSEOS)
+}
+
+// candidateCost 是單一詞條候選的分數。句首沒有左詞，因此只加 unigram；
+// 沒有 LM 時與 entryCost 相同。
+func (d *Decoder) candidateCost(e lexicon.Entry) float64 {
+	return entryCost(d.Conn, e) + d.lmCost("", e.Surface)
 }

@@ -4,6 +4,7 @@ import (
 	"sort"
 
 	"github.com/0c-biggo/0c-ime/core/ja/lexicon"
+	jalm "github.com/0c-biggo/0c-ime/core/ja/lm"
 	"github.com/0c-biggo/0c-ime/core/lang"
 	"github.com/0c-biggo/0c-ime/core/reading"
 )
@@ -31,7 +32,19 @@ type Decoder struct {
 	Reranker Reranker
 	// PreferHiragana 對平假名讀音套用詞面書寫系統偏好（見 Builder）。
 	PreferHiragana bool
+	// LM 是選填的詞語言模型。nil 時完全不改變原本的詞成本＋連接成本計分。
+	LM *jalm.Model
+	// LMWeight 是 LM 成本（unigram＋bigram）的乘數。0 表示即使載入模型也不使用；
+	// 載入器應在模型可用時填入已校準的預設值。
+	LMWeight float64
 }
+
+// DefaultLMWeight 是載入 lm.bin 後的預設權重。現有可散布模型只有 15 個
+// bigram，且 unigram 幾乎重複詞典的詞成本；modern-500 的 top-1 在 0～4
+// 的每個權重都是 0，hard-cases 的 +1 題來自 unigram 的整體尺度而非 bigram
+// 順序。因此校準結果是 0：模型可以載入與查詢，但預設不改變排序。等有真實
+// bigram 覆蓋的模型時，再以同一組 tuning corpus 重新選值。
+const DefaultLMWeight = 0.0
 
 // hypothesis 是在某個（位置, 詞性）狀態上的一條部分路徑。
 type hypothesis struct {
@@ -41,33 +54,40 @@ type hypothesis struct {
 	key  string // 詞序列的穩定鍵，只用於同分時的排序
 }
 
+// stateKey 是 Viterbi 的狀態。沒有 LM 時 ctx 永遠是空字串，行為與只依詞性
+// 分組完全相同；有 LM 時，只有會成為 bigram 左詞的前一個詞面才需要拆狀態。
+type stateKey struct {
+	pos lexicon.POS
+	ctx string
+}
+
 type posHypotheses struct {
-	pos  lexicon.POS
+	key  stateKey
 	hyps []*hypothesis
 }
 
 type stateSet struct {
-	order []lexicon.POS
-	m     map[lexicon.POS]*posHypotheses
+	order []stateKey
+	m     map[stateKey]*posHypotheses
 }
 
 func newStateSet() *stateSet {
-	return &stateSet{m: map[lexicon.POS]*posHypotheses{}}
+	return &stateSet{m: map[stateKey]*posHypotheses{}}
 }
 
-func (s *stateSet) get(pos lexicon.POS) []*hypothesis {
-	if st, ok := s.m[pos]; ok {
+func (s *stateSet) get(key stateKey) []*hypothesis {
+	if st, ok := s.m[key]; ok {
 		return st.hyps
 	}
 	return nil
 }
 
-func (s *stateSet) add(pos lexicon.POS, h *hypothesis, k int) {
-	st, ok := s.m[pos]
+func (s *stateSet) add(key stateKey, h *hypothesis, k int) {
+	st, ok := s.m[key]
 	if !ok {
-		st = &posHypotheses{pos: pos}
-		s.m[pos] = st
-		s.order = append(s.order, pos)
+		st = &posHypotheses{key: key}
+		s.m[key] = st
+		s.order = append(s.order, key)
 	}
 	st.hyps = insertHypothesis(st.hyps, h, k)
 }
@@ -113,6 +133,15 @@ func (d *Decoder) desiredCandidates() int {
 	return lang.DefaultLimits().MaxCandidates
 }
 
+// lmCost 回傳 left 之後接 cur 的加權 LM 成本。模型不存在或權重為 0 時回傳 0，
+// 讓沒有 lm.bin 的執行環境保持原本的計分與排序。
+func (d *Decoder) lmCost(left, cur string) float64 {
+	if d.LM == nil || d.LMWeight == 0 {
+		return 0
+	}
+	return d.LMWeight * d.LM.Cost(left, cur)
+}
+
 // searchResult 是一條完整路徑與含句尾連接成本的總成本。
 type searchResult struct {
 	h    *hypothesis
@@ -139,19 +168,24 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 	for i := range states {
 		states[i] = newStateSet()
 	}
-	states[0].add(lexicon.POSBOS, &hypothesis{}, k)
+	states[0].add(stateKey{pos: lexicon.POSBOS}, &hypothesis{}, k)
 	for start := 0; start < len(seq); start++ {
 		set := states[start]
 		if len(set.order) == 0 {
 			continue
 		}
 		for _, node := range lat[start] {
-			for _, pos := range set.order {
-				conn := connectionCost(d.Conn, pos, node.Entry.POS)
-				for _, h := range set.get(pos) {
+			for _, key := range set.order {
+				conn := connectionCost(d.Conn, key.pos, node.Entry.POS)
+				for _, h := range set.get(key) {
+					lm := d.lmCost(h.node.Entry.Surface, node.Entry.Surface)
+					next := stateKey{pos: node.Entry.POS}
+					if d.LM != nil && d.LMWeight != 0 && d.LM.HasLeft(node.Entry.Surface) {
+						next.ctx = node.Entry.Surface
+					}
 					dst := states[node.End]
-					dst.add(node.Entry.POS, &hypothesis{
-						cost: h.cost + node.Entry.Cost + conn,
+					dst.add(next, &hypothesis{
+						cost: h.cost + node.Entry.Cost + conn + lm,
 						prev: h,
 						node: node,
 						key:  h.key + "\x00" + node.Entry.Key(),
@@ -163,9 +197,9 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 
 	var finals []searchResult
 	last := states[len(seq)]
-	for _, pos := range last.order {
-		conn := connectionCost(d.Conn, pos, lexicon.POSEOS)
-		for _, h := range last.get(pos) {
+	for _, key := range last.order {
+		conn := connectionCost(d.Conn, key.pos, lexicon.POSEOS)
+		for _, h := range last.get(key) {
 			finals = append(finals, searchResult{h: h, cost: h.cost + conn})
 		}
 	}
