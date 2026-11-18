@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """P2-30C parity oracle for the real Chinese select model.
 
-This runs the shipping Python worker implementation (platforms/neural/runtime/
-sequence_runtime.py) on the cases produced by select_cases_test.go. It records
-the exact tensors the worker's prepare() assembles, the worker's scores, the
+This runs an archived Python reference implementation (sequence_runtime.py from
+a pre-P2-30D checkout) on the cases produced by select_cases_test.go. It records
+the exact tensors the reference prepare() assembles, the reference scores, the
 full candidate ranking, the chosen candidate and per-case latency.
 
-It is a test oracle, not part of the product path. ORT telemetry is disabled
-before importing onnxruntime, matching the worker host.
+It is a development-only test oracle, not part of the product path. The
+repository ships no Python worker. ORT telemetry is disabled before importing
+onnxruntime.
 """
 import time
 

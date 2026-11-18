@@ -3,7 +3,7 @@ package native_test
 // Test-only corpus builder for the P2-30C select-model parity gate. It derives
 // cases from the committed zhuyin golden corpus and the committed upstream
 // vocab/manifest, so no model weights or private text are needed to build them.
-// select_e2e_test.go feeds the same cases to the Python worker and the native
+// select_e2e_test.go feeds the same cases to an archived reference implementation and the native
 // backend.
 
 import (

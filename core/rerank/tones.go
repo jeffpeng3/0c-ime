@@ -26,7 +26,7 @@ func UnknownTonesDeclared(schema string, policy *TonePolicy) bool {
 }
 
 // ValidTonePolicy 回報 schema 與 tone_policy 的組合是不是 worker 會接受的：v1 不能帶 tone_policy，
-// v2 一定要帶合法的 tone_policy（同 models sequence_runtime.py 的檢查）。其他 schema 不帶 tone_policy。
+// v2 一定要帶合法的 tone_policy（同 sequence 套件 manifest 的檢查）。其他 schema 不帶 tone_policy。
 func ValidTonePolicy(schema string, policy *TonePolicy) bool {
 	if schema == SequenceSchemaV2 {
 		return UnknownTonesDeclared(schema, policy)

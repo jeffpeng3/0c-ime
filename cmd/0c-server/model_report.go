@@ -9,8 +9,8 @@ import (
 )
 
 // residencyReport 是 `0c-server -model-report` 的輸出契約（P2-33）。resident_bytes 來自
-// internal/neural.Manager.Residency 的記帳；process_tree_rss_bytes 是引擎與 Python worker
-// 的實際 RSS，兩者一起看才能把模型檔與 Python runtime 基線分開。
+// internal/neural.Manager.Residency 的記帳；process_tree_rss_bytes 是引擎程序樹
+// 的實際 RSS，兩者一起看才能把模型檔與引擎常駐基線分開。
 type residencyReport struct {
 	Schema            int                  `json:"schema"`
 	Mode              neural.Mode          `json:"mode"`
@@ -33,7 +33,7 @@ type residencyReport struct {
 	ProcessRSSBytes int64               `json:"process_rss_bytes"`
 	WorkerRSSBytes  int64               `json:"worker_rss_bytes"`
 	ProcessTreeRSS  int64               `json:"process_tree_rss_bytes"`
-	// OverheadBytes 是實際 RSS 減去模型檔常駐量；包含 Go 引擎、Python、numpy 與 onnxruntime。
+	// OverheadBytes 是實際 RSS 減去模型檔常駐量；包含 Go 引擎與 onnxruntime。
 	OverheadBytes int64 `json:"overhead_bytes"`
 }
 

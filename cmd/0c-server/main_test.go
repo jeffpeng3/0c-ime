@@ -192,10 +192,7 @@ func TestSelectionSettingAndBundledDiscovery(t *testing.T) {
 		os.Symlink(toy, filepath.Join(root, "data"))
 		if withBundle {
 			n := filepath.Join(root, "neural")
-			os.MkdirAll(filepath.Join(n, "python", "bin"), 0o755)
 			os.MkdirAll(filepath.Join(n, "select"), 0o755)
-			os.WriteFile(filepath.Join(n, "python", "bin", "python3"), []byte("#!/bin/sh\nexit 1\n"), 0o755)
-			os.WriteFile(filepath.Join(n, "sequence_runtime.py"), nil, 0o644)
 			os.WriteFile(filepath.Join(n, "select", "manifest.json"), []byte(`{}`), 0o644)
 		}
 		return root
@@ -270,7 +267,7 @@ func TestHealthReportsBackgroundWorkerFailureWhileInputContinues(t *testing.T) {
 	}
 	sock := filepath.Join(dir, "e.sock")
 	server := exec.Command(binary, "-data", data, "-user", filepath.Join(dir, "user.json"), "-socket", sock,
-		"-neural-package", filepath.Join(dir, "select"), "-punct-package", filepath.Join(dir, "punct"), "-neural-python", "/usr/bin/false")
+		"-neural-package", filepath.Join(dir, "select"), "-punct-package", filepath.Join(dir, "punct"))
 	if err := server.Start(); err != nil {
 		t.Fatal(err)
 	}

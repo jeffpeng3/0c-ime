@@ -2,16 +2,18 @@
 
 package native_test
 
-// P2-30C gate: prove the native ONNX path fully replaces the Python worker for
-// the real Chinese select model (Funmula/0c-sequence-d512). The test is gated:
-// it skips unless the model package, the ORT shared library and a Python
-// interpreter with onnxruntime/numpy are provided.
+// P2-30C gate: prove the native ONNX path fully replaces the legacy reference
+// implementation for the real Chinese select model (Funmula/0c-sequence-d512).
+// This is a development gate: build-tagged and env-gated, with the reference
+// script supplied from an archived checkout outside the product tree. The
+// repository ships no Python worker and the test is not a runtime dependency.
 //
-//	NEURAL_SELECT_PACKAGE  package dir with manifest.json, model.onnx, vocab.json
-//	NEURAL_SELECT_ORT_LIB  libonnxruntime.so from the pinned pip wheel
-//	NEURAL_SELECT_PYTHON   python with numpy + onnxruntime
-//	NEURAL_SELECT_OUT      optional path for the JSON report
-//	NEURAL_SELECT_THREADS  optional intra-op threads (default 2)
+//	NEURAL_SELECT_PACKAGE            package dir with manifest.json, model.onnx, vocab.json
+//	NEURAL_SELECT_ORT_LIB            libonnxruntime.so from the pinned pip wheel
+//	NEURAL_SELECT_PYTHON             python with numpy + onnxruntime
+//	NEURAL_SELECT_SEQUENCE_RUNTIME   archived sequence_runtime.py reference
+//	NEURAL_SELECT_OUT                optional path for the JSON report
+//	NEURAL_SELECT_THREADS            optional intra-op threads (default 2)
 
 import (
 	"encoding/json"
@@ -105,8 +107,9 @@ func TestSelectParityGate(t *testing.T) {
 	pkg := os.Getenv("NEURAL_SELECT_PACKAGE")
 	lib := os.Getenv("NEURAL_SELECT_ORT_LIB")
 	python := os.Getenv("NEURAL_SELECT_PYTHON")
-	if pkg == "" || lib == "" || python == "" {
-		t.Skip("set NEURAL_SELECT_PACKAGE, NEURAL_SELECT_ORT_LIB and NEURAL_SELECT_PYTHON to run the select-model gate")
+	worker := os.Getenv("NEURAL_SELECT_SEQUENCE_RUNTIME")
+	if pkg == "" || lib == "" || python == "" || worker == "" {
+		t.Skip("set NEURAL_SELECT_PACKAGE, NEURAL_SELECT_ORT_LIB, NEURAL_SELECT_PYTHON and NEURAL_SELECT_SEQUENCE_RUNTIME to run the select-model gate")
 	}
 	threads := 2
 	if v := os.Getenv("NEURAL_SELECT_THREADS"); v != "" {
@@ -146,7 +149,6 @@ func TestSelectParityGate(t *testing.T) {
 		}
 	}
 
-	worker := filepath.Join("..", "..", "..", "platforms", "neural", "runtime", "sequence_runtime.py")
 	oracleScript := filepath.Join("testdata", "select_oracle.py")
 	cmd := exec.Command(python, oracleScript,
 		"--sequence-runtime", worker,

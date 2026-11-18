@@ -11,8 +11,8 @@ import (
 )
 
 // errONNXCorrupt：模型檔不是完整的 ONNX ModelProto。這裡只做結構探測，不驗證算子、
-// 張量形狀或權重；真正的推論契約仍由 Python worker 載入時核對。目的在於把「截斷、
-// 空檔、被換成別種檔案」歸類成 corrupt，而不是等到 worker 啟動才變成一般失敗。
+// 張量形狀或權重；真正的推論契約仍由 native 後端載入時核對。目的在於把「截斷、
+// 空檔、被換成別種檔案」歸類成 corrupt，而不是等到後端載入才變成一般失敗。
 var errONNXCorrupt = errors.New("onnx model is corrupt")
 
 // validateONNXFile 串流讀取 protobuf 外框，要求 ir_version > 0、有 graph、有

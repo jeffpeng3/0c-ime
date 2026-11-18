@@ -149,30 +149,16 @@ def run(report, entry, pump, key, type_text, expect):
         check('kimpanel_offline_check_failure_visible_and_retry_clears_error')
         def runtime_state(key):
             return json.loads(subprocess.check_output([str(Path.home()/'.local/bin/0c-update'),'status','--json'],text=True))['runtime'].get(key)
-        def kill_worker(name):
-            victims=[]
-            for proc in Path('/proc').iterdir():
-                try:
-                    if proc.name.isdigit() and any(a.endswith(name) for a in (proc/'cmdline').read_bytes().split(b'\0')):
-                        os.kill(int(proc.name),signal.SIGTERM);victims.append(proc.name)
-                except (FileNotFoundError,ProcessLookupError,PermissionError): pass
-            if not victims: raise RuntimeError('No private worker to fail: '+name.decode())
         deadline = time.monotonic()+35
         while runtime_state('selection_state')!='ready' or runtime_state('punctuation_state')!='ready':
             if time.monotonic()>deadline: raise RuntimeError('Models never became ready')
             pump(.3)
-        # 任一模型退回，設定列都要加註：先只殺補標點，確認神經仍就緒，再殺神經選字。
-        kill_worker(b'/punct_runtime.py')
-        wait(settings_label+'（模型已退回）')
-        if runtime_state('punctuation_state')!='fallback' or runtime_state('selection_state')!='ready':
-            raise RuntimeError('Punctuation failure was not isolated')
-        check('kimpanel_punctuation_worker_failure_visible_on_settings_entry')
-        kill_worker(b'/sequence_runtime.py')
-        deadline = time.monotonic()+35
-        while runtime_state('selection_state')!='fallback':
-            if time.monotonic()>deadline: raise RuntimeError('Neural failure not reported')
-            pump(.3)
-        wait(settings_label+'（模型已退回）'); check('kimpanel_neural_worker_failure_visible_on_settings_entry')
+        # P2-30D: the native backend has no worker process to kill. Verify the
+        # healthy menu does not show the fallback label.
+        if settings_label+'（模型已退回）' in wait(settings_label):
+            raise RuntimeError('Models reported fallback while healthy')
+        check('kimpanel_native_models_ready_without_worker_process')
+        report['kimpanel_after_failure'] = dict(props)
         report['kimpanel_after_failure'] = dict(props)
     finally:
         Gio.bus_unown_name(owner)

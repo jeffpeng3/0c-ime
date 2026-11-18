@@ -1,7 +1,7 @@
-// Package input reproduces the Python sequence worker's input assembly.
+// Package input reproduces the reference sequence model's input assembly.
 //
 // It is a direct port of prepare() in
-// platforms/neural/runtime/sequence_runtime.py: the prefix tree, candidate
+// the archived reference implementation of sequence input: the prefix tree, candidate
 // slots, base/tone/type/position arrays, attention mask, proj_pos and target
 // rows. The package is pure Go and has no build tag, so CGO-disabled builds
 // compile and test the assembly without ONNX Runtime.
@@ -28,7 +28,7 @@ const (
 
 var toneMarks = map[rune]int64{'ˊ': 2, 'ˇ': 3, 'ˋ': 4, '˙': toneNeutral}
 
-// Package errors use the same fixed strings as the Python worker so callers
+// Package errors use the same fixed strings as the reference implementation so callers
 // can fall back with the same classification.
 var (
 	ErrInvalidReading         = errors.New("invalid_reading")
@@ -45,7 +45,7 @@ var (
 )
 
 // Segment is one candidate segment. Start and End are rune offsets, matching
-// Python string slicing.
+// reference string slicing.
 type Segment struct {
 	Start      int
 	End        int
@@ -61,14 +61,14 @@ type Candidate struct {
 	Segments []Segment
 }
 
-// Maps are the worker's vocabulary maps: base -> id and character -> id.
+// Maps are the package vocabulary maps: base -> id and character -> id.
 type Maps struct {
 	Bases      map[string]int64
 	Characters map[string]int64
 }
 
 // Request is the subset of rerank.Request that prepare() consumes. ToneKnownSet
-// distinguishes an omitted tone_known from an explicit null; Python rejects
+// distinguishes an omitted tone_known from an explicit null; the reference rejects
 // the latter.
 type Request struct {
 	Context           string
@@ -365,7 +365,7 @@ func syllable(y string, bases map[string]int64) (sound, error) {
 }
 
 // treeKey encodes the first n character ids. The key only needs to be stable
-// within one call, matching Python's tuple prefix keys.
+// within one call, matching the reference tuple prefix keys.
 func treeKey(ids []int64, n int) string {
 	if n == 0 {
 		return ""

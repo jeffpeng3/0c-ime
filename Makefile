@@ -55,7 +55,7 @@ test-windows-package:
 
 # ---- 系統安裝（Linux 發行版套件，#181）----
 # make && make install PREFIX=/usr DESTDIR=<暫存根目錄>：把兩種外殼（Fcitx5、IBus）、引擎、0c-update、設定程式、
-# 圖示、應用程式選單項目、字典與神經推論 worker 放到系統目錄，並放上 distribution.json（由套件管理員更新）。
+# 圖示、應用程式選單項目、字典與模型配對清單放到系統目錄，並放上 distribution.json（由套件管理員更新）。
 # 不寫安裝收據、不建 systemd 單元、不碰任何家目錄；個人資料照舊在 ~/.local/share/zuin。路徑與相依見 platforms/linux-system/README.md。
 PREFIX       ?= /usr/local
 BINDIR       ?= $(PREFIX)/bin
@@ -146,8 +146,6 @@ install: check-version
 	install -d $(DESTDIR)$(ZC_SHARE)/data
 	cp -R --no-preserve=mode,ownership '$(DATA)/.' $(DESTDIR)$(ZC_SHARE)/data/
 	chmod -R u=rwX,go=rX $(DESTDIR)$(ZC_SHARE)/data
-	install -Dm644 platforms/neural/runtime/sequence_runtime.py $(DESTDIR)$(ZC_SHARE)/neural/sequence_runtime.py
-	install -Dm644 platforms/neural/runtime/punct_runtime.py $(DESTDIR)$(ZC_SHARE)/neural/punct_runtime.py
 ifneq ($(wildcard $(PAIRING_LOCK)),)
 	install -Dm644 '$(PAIRING_LOCK)' $(DESTDIR)$(ZC_SHARE)/neural/pairing.lock.json
 	@grep -q "$$(sha256sum '$(DATA)/manifest.json' | cut -d' ' -f1)" '$(PAIRING_LOCK)' || echo '注意：$(PAIRING_LOCK) 不是 $(DATA) 的配對清單，下載的模型不會啟用' >&2

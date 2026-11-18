@@ -618,7 +618,7 @@ func TestWindowsFullInstallAndRollbackManageEnginePointer(t *testing.T) {
 	}
 }
 
-// 先前中斷的安裝或清理留下不完整的版本目錄（例如內附 Python 仍在執行、neural 沒刪乾淨）：
+// 先前中斷的安裝或清理留下不完整的版本目錄（例如舊版的內附 Python 仍在執行、neural 沒刪乾淨）：
 // 同版本再次安裝時要移開重裝，而不是因核對失敗而無法安裝。
 func TestWindowsReinstallsOverIncompleteVersionDirectory(t *testing.T) {
 	base := t.TempDir()

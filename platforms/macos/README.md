@@ -39,7 +39,7 @@ python3 scripts/package_macos.py --preview --version 0.1.0-dev.17 \
 
 輸出 `build/release/0c-<版本>-macos-arm64-preview.tar.gz` 與 `.sha256`，內含 `0c.app`、`0c-update`、說明文件、`release.json` 與 `SHA256SUMS`；打包時以套件內的 `0c-update verify` 核對。需要 Python 3.10 以上執行打包腳本（系統內建 3.9 不支援），一般使用者安裝時不需要 Python。
 
-**簽章與公證：** 加上 `--sign-identity <Developer ID Application 憑證> --keychain <鑰匙圈> --notary-profile <notarytool 設定名稱>` 時，腳本以 Developer ID＋hardened runtime 由內而外重簽 App 內每個 Mach-O（含內附 Python，不需 entitlement）與 `0c-update`，一起送 Apple 公證，通過後把票據 staple 到 App 並以 Gatekeeper 核對，最後才計算雜湊。公開包（非 `--preview`）必須簽章並公證。
+**簽章與公證：** 加上 `--sign-identity <Developer ID Application 憑證> --keychain <鑰匙圈> --notary-profile <notarytool 設定名稱>` 時，腳本以 Developer ID＋hardened runtime 由內而外重簽 App 內每個 Mach-O 與 `0c-update`，一起送 Apple 公證，通過後把票據 staple 到 App 並以 Gatekeeper 核對，最後才計算雜湊。公開包（非 `--preview`）必須簽章並公證。
 
 **設定程式：** `make app SETTINGS_APP=<目錄>/0c-settings.app` 把 `scripts/build_settings_macos.py` 建好的 App 放進 `0c.app/Contents/Helpers/0c-settings.app`（打包腳本的 `--settings` 會處理；沒有它時 App 不含設定程式，選單的「設定…」會說明沒有附設定程式）。它是輸入法 App 的一部分：安裝收據逐檔列出、安裝與回復一起換，`0c-update open-settings` 啟動前依收據核對。
 

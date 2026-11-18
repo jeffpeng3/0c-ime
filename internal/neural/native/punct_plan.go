@@ -363,7 +363,7 @@ func sameStrings(a, b []string) bool {
 	return true
 }
 
-// windowStarts mirrors the Python worker:
+// windowStarts mirrors the reference implementation:
 //
 //	[0] if n <= window, else range(0, n-window, stride) + [n-window]
 func windowStarts(n, window, stride int) []int {
@@ -384,7 +384,7 @@ func windowStarts(n, window, stride int) []int {
 }
 
 // mergeWindowRows picks, for every position, the row from the window whose
-// position is farthest from an edge. It is the Python worker's margin rule.
+// position is farthest from an edge. It is the reference margin rule.
 func mergeWindowRows(n, window int, starts []int, rows [][][]float32) [][]float32 {
 	out := make([][]float32, n)
 	best := make([]int, n)
@@ -535,7 +535,7 @@ func isMark(s string) bool {
 	return unicode.IsPunct(r[0])
 }
 
-// eligibleBoundaries is a line-for-line port of punct_runtime.py.
+// eligibleBoundaries is a line-for-line port of the reference punctuation runtime.
 func eligibleBoundaries(text string) []bool {
 	protected := map[int]bool{}
 	runes := []rune(text)

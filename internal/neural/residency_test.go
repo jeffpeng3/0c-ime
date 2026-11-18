@@ -20,7 +20,8 @@ import (
 	"github.com/0c-biggo/0c-ime/internal/neural/native"
 )
 
-// 沒有原生後端的建置必須回報 native_unavailable，而不是偷偷啟動 Python。
+// A build without the native backend must report native_unavailable and fall
+// back to statistics; there is no interpreter fallback.
 func TestNativePunctuationNeedsNativeBackend(t *testing.T) {
 	if native.Available() {
 		t.Skip("this build contains the native ONNX backend")
@@ -255,11 +256,14 @@ func TestParseMode(t *testing.T) {
 	}
 }
 
-func TestParseBackend(t *testing.T) {
-	for _, value := range []string{"python", "native", " NATIVE "} {
+func TestParseBackendRemovedPython(t *testing.T) {
+	for _, value := range []string{"native", " NATIVE "} {
 		if _, err := ParseBackend(value); err != nil {
 			t.Fatalf("%q: %v", value, err)
 		}
+	}
+	if _, err := ParseBackend("python"); err == nil {
+		t.Fatal("python backend accepted after removal")
 	}
 	if _, err := ParseBackend("rust"); err == nil {
 		t.Fatal("unknown backend accepted")
@@ -279,7 +283,8 @@ func TestLoadModelNativeUnavailable(t *testing.T) {
 	}
 }
 
-// P2-43：原生後端載入失敗時回報固定原因，管理器據此退回統計轉換，不啟動 Python。
+// P2-43: native load failures carry stable reasons and the manager falls back
+// to the statistical engine.
 func TestNativeFailuresCarryStableReasons(t *testing.T) {
 	for _, c := range []struct {
 		err  error

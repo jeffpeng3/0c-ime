@@ -114,8 +114,8 @@ func ensureEnvironment(library string) error {
 	if envReady {
 		return nil
 	}
-	// The C API reads these when the environment is created. The Python worker
-	// sets the same two before importing onnxruntime.
+	// The C API reads these when the environment is created; the native backend
+	// sets both before initializing ORT.
 	_ = os.Setenv("ORT_DISABLE_TELEMETRY", "1")
 	_ = os.Setenv("ORT_RUNNING_UNIT_TESTS", "1")
 	if library != "" {
@@ -182,9 +182,9 @@ func detectMode(inputs []onnxValue) (modelMode, int, error) {
 	return 0, 0, ErrUnsupportedModel
 }
 
-// Score assembles the same tensors as sequence_runtime.py and returns one
+// Score assembles the same tensors as the reference sequence implementation and returns one
 // score per candidate. Multiple branches (neutral-last) take the maximum, as
-// the worker does.
+// the reference implementation does.
 func (b *Backend) Score(r rerank.Request) ([]float64, error) {
 	return b.ScoreContext(context.Background(), r)
 }
@@ -356,7 +356,7 @@ func addTensor[T ort.TensorData](tensors *[]ort.Value, byName map[string]ort.Val
 
 // ScoreTokens runs a reranker-layout model on token ids. It exists so the
 // parity harness can feed the same assembled ids to the native backend and the
-// Python reference. The product sequence path uses Score.
+// reference implementation. The product sequence path uses Score.
 func (b *Backend) ScoreTokens(tokens []int32, seq, vocabCap int) (float64, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()

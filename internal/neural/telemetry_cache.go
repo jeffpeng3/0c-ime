@@ -19,7 +19,7 @@ func TelemetryQueueDir(home, goos string) string {
 	return ""
 }
 
-// RemoveTelemetryQueue 刪掉 0.2.3 以前的 worker 留下、還沒送出的遙測事件（onnxruntime.db 與 SQLite 的附屬檔），
+// RemoveTelemetryQueue 刪掉舊版推論元件留下、還沒送出的遙測事件（onnxruntime.db 與 SQLite 的附屬檔），
 // 免得同一個帳號的其他 onnxruntime 程式之後把它送出。deviceid 與目錄本身不動：那是所有 onnxruntime 程式共用的。
 func RemoveTelemetryQueue(home string) error {
 	dir := TelemetryQueueDir(home, runtime.GOOS)

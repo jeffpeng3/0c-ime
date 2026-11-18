@@ -20,12 +20,13 @@ from package_release import ROOT
 if ROOT != Path(__file__).resolve().parents[1]:
     raise SystemExit(f"打包模組來自另一份原始碼：{ROOT}；請檢查 Python 的 ._pth 或 PYTHONPATH")
 from package_windows import PUBLISHER, TIMESTAMP_URL, authenticode_sign, check_pe, file_version, signer
-from windows_runtime import DLLS as NATIVE_RUNTIME_DLLS, PYTHON_DIRS, PYTHON_FILES, PYTHON_SUFFIXES
+from windows_runtime import (DLLS as NATIVE_RUNTIME_DLLS, PYTHON_DIRS, PYTHON_FILES, PYTHON_SUFFIXES,
+                             RUNTIME_MARKERS)
 from release_feed import metadata
 
 
 def check_python_free(files):
-    """P2-43：安裝精靈不得接受含 CPython、numpy 或 wheel 的套件。"""
+    """P2-43/P2-30D：安裝精靈不得接受含 Python 檔案或 runtime 路徑的套件。"""
     for name in files:
         parts = PurePosixPath(name).parts
         low = name.casefold()
@@ -33,6 +34,16 @@ def check_python_free(files):
             raise ValueError(f'套件含 Python 或 wheel：{name}')
         if any(part.casefold() in PYTHON_DIRS for part in parts[:-1]):
             raise ValueError(f'套件含 Python 目錄：{name}')
+
+
+def check_python_runtime(files, package, root):
+    for name in files:
+        if not name.casefold().endswith(('.exe', '.dll', '.pyd')):
+            continue
+        data = package.read(root + name)
+        hits = [m.decode('ascii', 'replace') for m in RUNTIME_MARKERS if m in data]
+        if hits:
+            raise ValueError(f'二進位仍含 Python runtime 路徑：{name}: {", ".join(sorted(set(hits)))}')
 
 
 def read_bundle(archive):
@@ -56,6 +67,7 @@ def read_bundle(archive):
             raise ValueError('套件超出大小限制')
         names = [p.filename for p in entries if p.filename.endswith('/release.json')]
         root = names[0].rsplit('/', 1)[0] + '/'
+        check_python_runtime(files, package, root)
         seen = set()
         for p in entries:
             name = p.filename

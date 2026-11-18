@@ -362,29 +362,14 @@ try:
         while runtime_state('selection_state')!='ready' or runtime_state('punctuation_state')!='ready':
             if time.monotonic()>until: raise RuntimeError('Models never became ready: '+str(status()['runtime']))
             pump(.3)
-        def kill_worker(name):
-            victims=[]
-            for proc in Path('/proc').iterdir():
-                if proc.name.isdigit():
-                    try:
-                        args=(proc/'cmdline').read_bytes().split(b'\0')
-                        if any(a.endswith(name) for a in args):
-                            os.kill(int(proc.name),signal.SIGTERM);victims.append(proc.name)
-                    except (FileNotFoundError,ProcessLookupError,PermissionError): pass
-            if not victims: raise RuntimeError('No isolated worker to fail: '+name.decode())
-        # 設定列的「（模型已退回）」任一模型退回就要出現：先只殺補標點，確認神經仍就緒，再殺神經選字。
-        kill_worker(b'/punct_runtime.py')
-        wait_menu(settings_label+'（模型已退回）')
-        if runtime_state('punctuation_state')!='fallback' or runtime_state('selection_state')!='ready':
-            raise RuntimeError('Punctuation failure was not isolated: '+str(status()['runtime']))
-        report['checks'].append('tray_punctuation_worker_failure_visible_on_settings_entry')
-        kill_worker(b'/sequence_runtime.py')
-        until=time.monotonic()+35
-        while runtime_state('selection_state')!='fallback':
-            if time.monotonic()>until: raise RuntimeError('Neural failure not reported: '+str(status()['runtime']))
-            pump(.3)
-        items=wait_menu(settings_label+'（模型已退回）')
-        report['checks'].append('tray_neural_worker_failure_visible_on_settings_entry')
+        # P2-30D: the native backend has no worker process to kill. The models
+        # are ready; a fallback cannot be isolated by terminating a child.
+        if runtime_state('punctuation_state')!='ready' or runtime_state('selection_state')!='ready':
+            raise RuntimeError('Native models are not ready: '+str(status()['runtime']))
+        items=wait_menu(settings_label)
+        if settings_label+'（模型已退回）' in items:
+            raise RuntimeError('Models reported fallback while healthy')
+        report['checks'].append('tray_native_models_ready_without_worker_process')
         report['menu_after_failure']=items
     report['passed']=True
 except Exception as error: report['error']=str(error)

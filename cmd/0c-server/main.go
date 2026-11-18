@@ -68,12 +68,9 @@ func serve() string {
 	lockWait := flag.Duration("lock-wait", 5*time.Second, "個人資料目錄被另一個引擎鎖住時最多等這麼久（交接時舊引擎存完檔才放鎖）；逾時照常輸入但不存檔")
 	checkData := flag.Bool("check-data", false, "僅驗證資料包能載入，不開啟管道、不讀寫個人詞庫")
 	neuralPackage := flag.String("neural-package", "", "神經選字 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/select")
-	neuralPython := flag.String("neural-python", "python3", "ONNX worker Python 路徑；指定時也取代內附或系統的 Python")
-	systemPython := flag.String("system-python", neural.SystemPython(), "沒有內附 Python 時使用的系統 Python（需要 numpy、onnxruntime）；空值不使用")
 	installWatchMode := flag.String("install-watch", "auto", "執行檔或字典被套件管理員換掉時自己交接重啟：auto（Linux 系統安裝才啟用）、on、off")
 	installWatchEvery := flag.Duration("install-watch-interval", installWatchInterval, "檢查安裝檔案的間隔")
 	installWatchQuiet := flag.Duration("install-watch-idle", installWatchIdle, "最後一個按鍵之後這麼久才交接")
-	neuralWorker := flag.String("neural-worker", "", "worker 腳本路徑（encoder_runtime.py 或 sequence_runtime.py）")
 	neuralTimeout := flag.Duration("neural-timeout", 100*time.Millisecond, "模型決策期限，上限 100ms；逾時保留原排序")
 	neuralThreads := flag.Int("neural-threads", neural.DefaultThreads(), "模型 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
 	modelMode := flag.String("model-mode", string(neural.ModeAuto), "模型常駐模式：auto（主要語言先載入，其他語言延遲）、all、primary、none；未指定時依 settings.json")
@@ -83,13 +80,12 @@ func serve() string {
 	modelPackageLock := flag.String("model-package-lock", "models/pairing.lock.json", "日文模型包清單（P2-27）")
 	modelPackageRoot := flag.String("model-package-root", "", "已安裝模型包的根目錄（P2-27）；空值時使用個人目錄下的 models")
 	modelReport := flag.Bool("model-report", false, "載入 eager 模型後輸出模型常駐與記憶體報告（JSON）並結束")
-	neuralBackend := flag.String("neural-backend", string(neural.BackendAuto), "模型執行後端：auto（預設；有原生 ONNX Runtime 就用 native，否則退回統計）、native、python（僅開發／Linux）")
+	neuralBackend := flag.String("neural-backend", string(neural.BackendAuto), "模型執行後端：auto（預設；有原生 ONNX Runtime 就用 native，否則退回統計）、native")
 	neuralORTLib := flag.String("neural-ort-lib", os.Getenv("ZUIN_ORT_LIBRARY"), "native 後端使用的 ONNX Runtime 共享函式庫（.so／.dll）；空值用執行檔旁的 onnxruntime.dll／onnxruntime.so 或 runtime/ 子目錄")
 	// 內部相容（P2-40）：Windows 的 Mixed profile 由引擎的混打模式服務，外殼的 open 不帶語言。
 	// 這個旗標只留給舊版設定流程與日文轉換的單獨驗證；P2-42 的設定程式接手後移除。
 	jaLanguage := flag.String("language", "zh", "（內部相容）新 session 的初始語言：zh 或 ja；Mixed profile 不需要")
 	punctPackage := flag.String("punct-package", "", "提交時補標點 ONNX 包；未指定時依 settings.json 使用資料包旁內附的 neural/punct")
-	punctWorker := flag.String("punct-worker", "", "補標點 worker 腳本路徑（punct_runtime.py）；Python 同 -neural-python")
 	punctTimeout := flag.Duration("punct-timeout", 150*time.Millisecond, "補標點期限，上限 500ms；逾時照原文提交")
 	punctThreads := flag.Int("punct-threads", neural.DefaultThreads(), "補標點 CPU threads（1–8，預設為 CPU 邏輯核心數，最多 8）")
 	flag.Parse()
@@ -259,26 +255,17 @@ func serve() string {
 	if manifestErr == nil {
 		dictionarySHA = fmt.Sprintf("%x", sha256.Sum256(dictionaryManifest))
 	}
-	// Python、worker 與模型分開找（#181）：Python 內附優先，Linux 沒有時用系統的 python3；模型依
-	// 安裝包內建 → 個人目錄（#180）的順序；都沒有時統計選字。Linux 找到模型、系統卻沒有 python3 時照樣
-	// 啟動 worker（neural.Bundled）：啟動失敗回報 runtime_missing、每 10 分鐘重試，之後裝好不必重啟引擎。
-	// 0.2.3 以前的 worker 會讓 onnxruntime 留下未送出的遙測事件。0c-update 安裝後也會清，但從舊版背景更新時
-	// 執行安裝的是舊的更新器，碰不到；升級後第一個啟動的一定是新引擎，所以這裡再清一次（檔案不存在時只是幾次 stat）。
+	// Models are data only: no interpreter or worker script. Bundled models win
+	// over personal models (#180); if none exist the statistical engine selects.
+	// Older releases left onnxruntime telemetry queue files behind. 0c-update
+	// also clears them after install, but a background update runs the old
+	// updater; the first start of the new engine clears them once more.
 	if home, err := os.UserHomeDir(); err == nil {
 		if err := neural.RemoveTelemetryQueue(home); err != nil {
 			lg.Printf("舊的推論元件遙測暫存未刪除：%v", err)
 		}
 	}
-	bundled := neural.Find(neural.Options{DataDir: *data, UserDir: filepath.Dir(*user), DictionarySHA256: dictionarySHA, SystemPython: *systemPython})
-	python, pythonSource := bundled.Python, bundled.PythonSource
-	if explicit["neural-python"] {
-		python, pythonSource = *neuralPython, "custom"
-		bundled.Python, bundled.PythonSource = python, pythonSource
-		bundled.HasSelect, bundled.HasPunct = bundled.SelectSource != "", bundled.PunctSource != ""
-	}
-	if pythonSource == "" {
-		pythonSource = "missing"
-	}
+	bundled := neural.Find(neural.Options{DataDir: *data, UserDir: filepath.Dir(*user), DictionarySHA256: dictionarySHA})
 	// #180：沒有內建選字模型時，在 Linux 檢查要不要重新配對（升級換了字典，或正在用的個人目錄配對是舊的
 	// models.lock 配的）或提醒下載。只看安裝的字典（官網安裝的預設位置或系統安裝的 share/0c/data，與 0c-update
 	// 找的同一份）；隔離測試（指定 -user、-socket）與開發時指定別的字典不碰使用者的 0c-update 與個人目錄。
@@ -294,39 +281,23 @@ func serve() string {
 		lg.Printf("未知的模型後端 %q，改用 auto：%v", *neuralBackend, backendErr)
 		backend = neural.BackendAuto
 	}
-	if backend == neural.BackendAuto {
-		resolved := neural.ChooseBackend(backend, neural.NativeAvailable(), *neuralORTLib, runtime.GOOS)
-		if resolved.Backend == neural.BackendNative && *neuralORTLib == "" {
-			*neuralORTLib = resolved.Library
-		}
-		backend, neuralBackendReason = resolved.Backend, resolved.Reason
-		if resolved.Reason == "native_runtime_missing" {
-			lg.Printf("找不到原生 ONNX Runtime（onnxruntime.dll），模型不會載入，改用統計轉換")
-		} else if resolved.Reason == "native_unavailable" {
-			lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
-		}
-	} else if backend == neural.BackendNative {
-		resolved := neural.ChooseBackend(backend, neural.NativeAvailable(), *neuralORTLib, runtime.GOOS)
-		if *neuralORTLib == "" {
-			*neuralORTLib = resolved.Library
-		}
-		neuralBackendReason = resolved.Reason
-		if resolved.Reason == "native_runtime_missing" {
-			lg.Printf("找不到原生 ONNX Runtime（onnxruntime.dll），模型不會載入，改用統計轉換")
-		} else if resolved.Reason == "native_unavailable" {
-			lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
-		}
+	resolved := neural.ChooseBackend(backend, neural.NativeAvailable(), *neuralORTLib)
+	if *neuralORTLib == "" {
+		*neuralORTLib = resolved.Library
+	}
+	backend, neuralBackendReason = resolved.Backend, resolved.Reason
+	if resolved.Reason == neural.ReasonRuntimeMissing {
+		lg.Printf("找不到原生 ONNX Runtime（onnxruntime.dll），模型不會載入，改用統計轉換")
+	} else if resolved.Reason == neural.ReasonNativeUnavailable {
+		lg.Printf("這個建置沒有原生 ONNX 後端（需要 CGO 與 onnxruntime build tag），模型會回退統計引擎")
 	}
 	var selectionSource, punctuationSource string
 	var selectionModel, punctuationModel *neural.Handle
 	var modelManager *neural.Manager
 	if config.Selection == settings.Neural && !explicit["neural-package"] {
 		neuralState = "not_installed"
-		if backend == neural.BackendNative && !bundled.HasSelect && neuralBackendReason != "" {
-			neuralState = "runtime_missing"
-		}
 		if bundled.HasSelect {
-			*neuralPackage, *neuralWorker, *neuralPython = bundled.SelectPackage, bundled.SelectWorker, python
+			*neuralPackage = bundled.SelectPackage
 			selectionSource = bundled.SelectSource
 			if !explicit["neural-threads"] {
 				*neuralThreads = neural.DefaultThreads()
@@ -334,7 +305,7 @@ func serve() string {
 		}
 	}
 	if config.Punctuation && !explicit["punct-package"] && bundled.HasPunct {
-		*punctPackage, *punctWorker, *neuralPython = bundled.PunctPackage, bundled.PunctWorker, python
+		*punctPackage = bundled.PunctPackage
 		punctuationSource = bundled.PunctSource
 		if !explicit["punct-threads"] {
 			*punctThreads = neural.DefaultThreads()
@@ -369,13 +340,13 @@ func serve() string {
 	if *neuralPackage != "" {
 		specs = append(specs, neural.ModelSpec{Name: "zh-select", Language: "zh", Role: neural.RoleSelect,
 			Backend: backend, ORTLibrary: *neuralORTLib,
-			Python: *neuralPython, Script: *neuralWorker, Package: *neuralPackage, DictionarySHA256: dictionarySHA,
+			Package: *neuralPackage, DictionarySHA256: dictionarySHA,
 			Threads: *neuralThreads, Timeout: *neuralTimeout, Preload: true})
 	}
 	if *punctPackage != "" {
 		specs = append(specs, neural.ModelSpec{Name: "zh-punct", Language: "zh", Role: neural.RolePunct,
 			Backend: backend, ORTLibrary: *neuralORTLib,
-			Python: *neuralPython, Script: *punctWorker, Package: *punctPackage,
+			Package: *punctPackage,
 			Threads: *punctThreads, Timeout: *punctTimeout, Preload: true})
 	}
 	languageSeen := map[string]bool{}
@@ -414,9 +385,6 @@ func serve() string {
 				default:
 					eng.Rerank = selectionModel.Options()
 					neuralState = "enabled"
-					if selectionSource != "" && bundled.RuntimeMissing(false) {
-						neuralState = "runtime_missing" // 啟動時就知道沒有 python3；之後的狀態看 selection_state
-					}
 					lg.Printf("神經選字已啟用（背景載入模型）：%s（%d threads，%s）", filepath.Base(*neuralPackage), *neuralThreads, mode)
 				}
 			}
@@ -656,8 +624,7 @@ func serve() string {
 		// #169：引擎認得 output_simplified 請求，「輸出簡體字」可以即時切換；目前的值在 RuntimeInfo 的 output_simplified。
 		// 舊引擎沒有這一項，外殼退回 0c-update set output-simplified … -apply（重啟引擎套用）。
 		"output_simplified_live": "true"}
-	// #181：模型從哪裡來（bundled：安裝包內建；user：個人目錄），推論用哪個 Python（bundled、system、custom、missing）。
-	srv.Info["neural_python"] = pythonSource
+	// #181：模型從哪裡來（bundled：安裝包內建；user：個人目錄）。
 	if selectionSource != "" {
 		srv.Info["selection_source"] = selectionSource
 	}
@@ -767,7 +734,6 @@ func serve() string {
 	if exeErr == nil && (*installWatchMode == "on" || *installWatchMode == "auto" && installWatchEnabled(runtime.GOOS, executable, *data, installs.Default())) {
 		neuralDir := filepath.Join(filepath.Dir(filepath.Clean(*data)), "neural")
 		watch = newInstallWatch([]string{executable, filepath.Join(*data, "manifest.json"),
-			filepath.Join(neuralDir, "sequence_runtime.py"), filepath.Join(neuralDir, "punct_runtime.py"),
 			filepath.Join(neuralDir, "select", "manifest.json"), filepath.Join(neuralDir, "punct", "manifest.json")},
 			runningExecutable(), *installWatchEvery, time.Now())
 		lg.Printf("系統安裝：執行檔或字典被套件管理員換掉時，停手後自己交接到新版（每 %v 檢查）", *installWatchEvery)

@@ -14,7 +14,7 @@ import (
 )
 
 // manifest is the subset of the sequence package manifest the native backend
-// needs. It intentionally mirrors the Python worker's checks.
+// needs. It intentionally mirrors the original package checks.
 type manifest struct {
 	Schema           string             `json:"schema"`
 	ContextPolicy    string             `json:"context_policy"`

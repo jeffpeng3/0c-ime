@@ -2,8 +2,8 @@
 """Collect third-party license texts for what a bundle actually ships.
 
 Sources are the shipped components themselves: the Go toolchain and modules linked into the
-binaries, the bundled CPython and its packages, Rust crates in the Windows build, and headers
-compiled into the Fcitx addon. The dictionary's source attributions stay in data/NOTICE.txt.
+binaries, Rust crates in the Windows build, and headers compiled into the Fcitx addon. The
+dictionary's source attributions stay in data/NOTICE.txt.
 """
 
 import json
@@ -84,35 +84,6 @@ def go_sections(go, goos, packages, goarch="amd64"):
     return out
 
 
-def python_sections(neural, platform):
-    python = Path(neural) / "python"
-    if platform == "windows-amd64":
-        cpython, site = python / "LICENSE.txt", python / "Lib/site-packages"
-        version = "3.14"
-    else:
-        # Intel Mac 內附 3.13（prepare_neural.py 的 RUNTIMES）。
-        libs = [p for p in (python / "lib").glob("python3.*") if (p / "site-packages").is_dir()]
-        if len(libs) != 1:
-            raise ValueError(f"內附 Python 的 lib/python3.* 應恰有一個：{python}")
-        lib = libs[0]
-        cpython, site, version = lib / "LICENSE.txt", lib / "site-packages", lib.name.removeprefix("python")
-    out = [section(f"CPython {version}", [read(cpython)])]
-    crt = [p.name for p in sorted(python.glob("msvcp140*.dll"))]
-    if crt:
-        # prepare_neural.py 隨 onnxruntime 附上的 C++ 執行階段（#80）。
-        out.append(section("Microsoft Visual C++ 執行階段（" + "、".join(crt) + "）", [
-            "Microsoft Visual Studio 2022 可轉散發程式碼，未經修改隨程式散布；"
-            "見 https://learn.microsoft.com/visualstudio/releases/2022/redistribution#visual-c-runtime-files"]))
-    for info in sorted(site.glob("*.dist-info")):
-        name = info.name.removesuffix(".dist-info").replace("-", " ", 1)
-        texts = [read(p) for p in sorted((info / "licenses").rglob("*")) if p.is_file()] if (info / "licenses").is_dir() else []
-        package = site / info.name.split("-")[0]
-        texts += [read(p) for p in sorted(package.glob("*")) if p.is_file() and
-                  (p.name.upper().startswith(LICENSE_NAMES) or p.name == "ThirdPartyNotices.txt")]
-        out.append(section(f"Python 套件 {name}", texts))
-    return out
-
-
 def rust_sections(cargo, workspace, target="x86_64-pc-windows-msvc"):
     meta = json.loads(subprocess.check_output([cargo, "metadata", "--format-version", "1", "--locked",
                                                "--filter-platform", target], text=True, encoding="utf-8", cwd=workspace))
@@ -128,7 +99,11 @@ def rust_sections(cargo, workspace, target="x86_64-pc-windows-msvc"):
 
 
 def collect(platform, neural=None, go="go", cargo=None):
-    """Return the notices text for a bundle; raises when an expected license text is missing."""
+    """Return the notices text for a bundle; raises when an expected license text is missing.
+
+    ``neural`` is accepted for call compatibility but contributes no license
+    section: model attributions are shipped by the model package itself.
+    """
     header = ("靈犀注音（0c）第三方元件聲明\n\n"
               "自有程式依套件內 LICENSE 授權，授權範圍見 legal/README.md 與 TERMS.md。以下是隨套件出貨的第三方元件及其授權條款；"
               "注音字典資料的來源與授權另見 data/NOTICE.txt，日文資料包另見 data/ja/NOTICE.txt。\n\n")
@@ -140,8 +115,6 @@ def collect(platform, neural=None, go="go", cargo=None):
     else:
         parts = go_sections(go, "linux", ["./cmd/0c-server", "./cmd/0c-update", "./cmd/0c-trace"])
         parts.append(section("nlohmann/json 3.11.3（Fcitx5 外殼）", [NLOHMANN_MIT]))
-    if neural:
-        parts += python_sections(neural, platform)
     return header + "\n".join(parts)
 
 

@@ -23,11 +23,11 @@ cd ..\..
 go build -o platforms\windows\target\0c-server.exe .\cmd\0c-server
 ```
 
-C 執行階段靜態連結（`.cargo/config.toml` 的 `+crt-static`，x64 與 i686 都是）：DLL 與候選窗不依賴 Visual C++ 可轉散發套件，沒裝的電腦也註冊得起來（#261）。設了 `RUSTFLAGS` 環境變數會蓋掉這個設定，`scripts/package_windows.py` 打包時會檢查匯入表，發現 `VCRUNTIME140.dll`、`MSVCP140.dll` 等就中止。內附 Python 與 onnxruntime 需要的 `vcruntime140*.dll`、`msvcp140*.dll` 放在 `neural\python\` 裡（#80）。
+C 執行階段靜態連結（`.cargo/config.toml` 的 `+crt-static`，x64 與 i686 都是）：DLL 與候選窗不依賴 Visual C++ 可轉散發套件，沒裝的電腦也註冊得起來（#261）。設了 `RUSTFLAGS` 環境變數會蓋掉這個設定，`scripts/package_windows.py` 打包時會檢查匯入表，發現 `VCRUNTIME140.dll`、`MSVCP140.dll` 等就中止。onnxruntime 需要的 `vcruntime140*.dll`、`msvcp140*.dll` 放在 `0c-server.exe` 旁（#80）；產品不含 Python。
 
 從 Linux 交叉編譯 server 也可以：`GOOS=windows GOARCH=amd64 go build -o build/windows/0c-server.exe ./cmd/0c-server`（沒有 cgo）。
 
-內附神經模型的 `neural\` 不在 Windows 上產生：在 Linux x86-64 上執行 `python3 scripts/prepare_neural.py --platform windows-amd64`，再把輸出目錄複製到 Windows 建置機，原因與步驟見 [神經推論](../neural/README.md#官網可攜套件)。
+內附神經模型的 `neural\` 只有模型資料，不含 Python runtime；可在任一平台上用 `python3 scripts/prepare_neural.py --platform windows-amd64` 產生，步驟見 [神經推論](../neural/README.md#官網可攜套件)。
 
 ## 套件安裝與更新
 

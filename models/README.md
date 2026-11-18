@@ -11,7 +11,7 @@
 
 ## 原生 ONNX Runtime（P2-43）
 
-Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定 `onnxruntime` 1.30.0 與 `msvc_runtime` 14.44.35112 兩個 wheel 的 URL、SHA-256，以及實際出貨的五個 DLL（`onnxruntime.dll`、`vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll`）的大小與 SHA-256。`scripts/prepare_windows_runtime.py` 只從 wheel 取出這些 PE 檔，`scripts/package_windows.py --ort-runtime` 逐檔核對後放在 `0c-server.exe` 旁，並拒絕任何 Python 檔案、wheel、numpy 或 onnxruntime Python 套件。`0c-server` 預設在有 DLL 時使用 native 後端；DLL 不在或模型形狀不受支援時退回統計轉換，原因寫在 health 的 `neural_backend_reason`。runtime 檔不進 Git。
+產品執行階段不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定 `onnxruntime` 1.30.0 與 `msvc_runtime` 14.44.35112 兩個 wheel 的 URL、SHA-256，以及實際出貨的五個 DLL（`onnxruntime.dll`、`vcruntime140.dll`、`vcruntime140_1.dll`、`msvcp140.dll`、`msvcp140_1.dll`）的大小與 SHA-256。`scripts/prepare_windows_runtime.py` 只從 wheel 取出這些 PE 檔，`scripts/package_windows.py --ort-runtime` 逐檔核對後放在 `0c-server.exe` 旁，並拒絕任何 Python 檔案、wheel、numpy 或 onnxruntime Python 套件。`0c-server` 預設在有 DLL 時使用 native 後端；DLL 不在或模型形狀不受支援時退回統計轉換，原因寫在 health 的 `neural_backend_reason`。runtime 檔不進 Git。
 
 ## 字典配對
 
@@ -21,7 +21,7 @@ Windows 產品不內嵌 Python，也不出貨 wheel。`runtime.lock.json` 固定
 
 字典或模型更新，須由維護者重新驗證並更新固定清單；不在一般建置或安裝時任意改寫綁定。遇到模型不支援的字或讀音，仍依 runtime 的既有規則退回統計選字。
 
-推論 worker 在 `platforms/neural/runtime/`。Linux 與 macOS 的發行版提供 Python、NumPy 與 ONNX Runtime 執行環境；Windows 產品不內建 Python，改出貨固定版本的 `onnxruntime.dll` 與 MSVC 執行階段（[models/runtime.lock.json](runtime.lock.json)）。兩個 tarball 都不攜帶可攜 Python、wheel、訓練 checkpoint 或訓練環境。啟動方式見 [神經推論](../platforms/neural/README.md)。
+推論由 Go 原生 ONNX Runtime 後端執行，沒有 Python worker。Windows 產品出貨固定版本的 `onnxruntime.dll` 與 MSVC 執行階段（[models/runtime.lock.json](runtime.lock.json)）；其他平台有共享函式庫時使用 native，缺少時退回統計引擎。兩個 tarball 都不攜帶可攜 Python、wheel、訓練 checkpoint 或訓練環境。啟動方式見 [神經推論](../platforms/neural/README.md)。
 
 ## 日文模型包（P2-27）
 

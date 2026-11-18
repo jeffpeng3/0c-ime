@@ -301,11 +301,13 @@ def copy_neural(source, stage):
     source = source.resolve()
     if any(p.is_symlink() for p in source.rglob("*")):
         raise ValueError("神經套件不接受符號連結")
+    for path in source.rglob("*"):
+        if path.suffix in (".py", ".pyc", ".pyo", ".pyd", ".whl") or path.name in ("python.exe", "python3"):
+            raise ValueError(f"神經套件含 Python runtime：{path}")
     select = json.loads(regular(source / "select/manifest.json").read_text(encoding="utf-8"))
     if select.get("dictionary_sha256") != digest(stage / "data/manifest.json"):
         raise ValueError("神經選字模型與本套件字典不配對")
-    for name in ("sequence_runtime.py", "punct_runtime.py", "punct/manifest.json"):
-        regular(source / name)
+    regular(source / "punct/manifest.json")
     shutil.copytree(source, stage / "neural")
 
 
@@ -403,7 +405,7 @@ def build(args):
         copy_release_docs(release_docs, stage)
         copy_licenses(stage)
         (stage / "THIRD_PARTY_NOTICES.txt").write_text(
-            collect("linux-amd64", stage / "neural" if args.neural else None, go=args.go) + ("\n" + settings_notices if settings_notices else ""),
+            collect("linux-amd64", go=args.go) + ("\n" + settings_notices if settings_notices else ""),
             encoding="utf-8")
         if not public:
             (stage / "PREVIEW.txt").write_text("內部驗證包，非公開發行版。\n")

@@ -81,8 +81,6 @@ def build(args):
             raise ValueError("神經選字模型與本套件字典不配對")
         if any(p.is_symlink() for p in args.neural.rglob("*")):
             raise ValueError("神經套件不接受符號連結")
-        if regular(args.neural / "python/bin/python3").read_bytes()[:8] != MACHO[args.arch]:
-            raise ValueError(f"神經套件的 Python 不是 {args.arch} 版；請以 prepare_neural.py --platform macos-{args.arch} 重建")
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     dirty = bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip())
     if dirty and not args.preview:
@@ -145,7 +143,7 @@ def build(args):
         shutil.copy2(PLATFORM / "README.md", stage / "README-macOS.md")
         copy_licenses(stage)
         (stage / "THIRD_PARTY_NOTICES.txt").write_text(
-            collect(f"macos-{args.arch}", neural, go=args.go)
+            collect(f"macos-{args.arch}", go=args.go)
             + ("\n" + settings_notices if settings_notices else ""), encoding="utf-8")
         if args.preview:
             signing = ("App 以 Developer ID 簽章並經 Apple 公證。" if args.notary_profile else
@@ -193,8 +191,7 @@ def signing_order(target, is_macho):
 
 
 def developer_id_sign(target, identity, keychain=None):
-    """以 Developer ID＋hardened runtime 由內而外重簽（順序見 signing_order）；都加時間戳。
-    內附 Python 在 hardened runtime 下不需要 entitlement（2026-10-01 於 macOS 26 實測）。"""
+    """以 Developer ID＋hardened runtime 由內而外重簽（順序見 signing_order）；都加時間戳。"""
     base = ["codesign", "--force", "--options", "runtime", "--timestamp", "--sign", identity]
     if keychain:
         base += ["--keychain", str(keychain)]
@@ -251,7 +248,7 @@ def main():
     parser.add_argument("--release-docs", required=True, type=Path, help="外部文件目錄，須含 INSTALL.md、PRIVACY.md、UPDATING.md")
     parser.add_argument("--data", required=True, type=Path, help="配對的系統字典目錄（" + "、".join(DATA_FILES) + "）")
     parser.add_argument("--arch", choices=sorted(MACHO), default="arm64", help="arm64（Apple Silicon）或 amd64（Intel）")
-    parser.add_argument("--neural", type=Path, help="prepare_neural.py --platform macos-<arch> 產生的 neural/ 目錄")
+    parser.add_argument("--neural", type=Path, help="prepare_neural.py --platform macos-<arch> 產生的模型目錄（沒有 Python runtime）")
     parser.add_argument("--settings", type=Path, help="scripts/build_settings_macos.py --arch 同架構產生的目錄（0c-settings.app 與 NOTICES.txt）；省略則不內附設定程式")
     parser.add_argument("--version", required=True)
     parser.add_argument("--preview", action="store_true", help="產生明確標示為內部驗證的套件")
