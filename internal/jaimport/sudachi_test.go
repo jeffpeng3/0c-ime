@@ -11,12 +11,13 @@ func TestParseSudachiCSV(t *testing.T) {
 	src := "" +
 		"明日,名詞,副詞可能,*,*,*,*,アシタ,明日,明日,0,0,0,0,*,*,*\n" +
 		"書く,動詞,自立,*,*,五段-カ行,終止形-一般,カク,書く,書く,0,0,0,0,*,*,*\n" +
-		"静か,形容動詞,語幹,*,*,*,*,シズカ,静か,静か,0,0,0,0,*,*,*\n"
+		"静か,形容動詞,語幹,*,*,*,*,シズカ,静か,静か,0,0,0,0,*,*,*\n" +
+		"綺麗,形状詞,一般,*,*,*,*,キレイ,綺麗,綺麗,0,0,0,0,*,*,*\n"
 	entries, err := ParseSudachi(strings.NewReader(src), DefaultSudachiOptions())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 3 {
+	if len(entries) != 4 {
 		t.Fatalf("entries = %#v", entries)
 	}
 	by := map[string]Entry{}
@@ -34,6 +35,9 @@ func TestParseSudachiCSV(t *testing.T) {
 	}
 	if by["静か"].POS != POSAdjectivalNoun || by["静か"].Conjugation != ConjNaAdjective {
 		t.Errorf("静か = %#v", by["静か"])
+	}
+	if by["綺麗"].POS != POSAdjectivalNoun || by["綺麗"].Conjugation != ConjNaAdjective {
+		t.Errorf("綺麗 = %#v", by["綺麗"])
 	}
 	for _, e := range entries {
 		if e.Cost <= 0 {

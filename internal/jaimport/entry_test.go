@@ -69,6 +69,10 @@ func TestMapPOSAndConjugation(t *testing.T) {
 		"動詞,自立,*,*":     POSVerb,
 		"形容詞,自立,*,*":    POSAdjective,
 		"形容動詞,非自立,*,*":  POSAdjectivalNoun,
+		"形状詞,一般,*,*":    POSAdjectivalNoun,
+		"形状,*,*,*":      POSAdjectivalNoun,
+		"shape":         POSAdjectivalNoun,
+		"shape_noun":    POSAdjectivalNoun,
 		"助詞,格助詞,一般,*":   POSParticle,
 		"助動詞,*,*,*":     POSAuxiliary,
 		"接頭詞,名詞接続,*,*":  POSPrefix,
@@ -99,6 +103,27 @@ func TestMapPOSAndConjugation(t *testing.T) {
 		if got := MapConjugation(in); got != want {
 			t.Errorf("MapConjugation(%q) = %q，want %q", in, got, want)
 		}
+	}
+}
+
+func TestMapPOSShapeNoun(t *testing.T) {
+	// UniDic 與 Sudachi 把な形容詞標成形状詞；漏接會落到 POSOther。
+	for _, in := range []string{
+		"形状詞",
+		"形状詞,一般,*,*",
+		"形状",
+		"形状,一般,*,*",
+		"shape",
+		"shape_noun",
+		"Shape",
+		" 形状詞 ,一般,*,*",
+	} {
+		if got := MapPOS(in); got != POSAdjectivalNoun {
+			t.Errorf("MapPOS(%q) = %q，want %q", in, got, POSAdjectivalNoun)
+		}
+	}
+	if got := MapPOS("形状詞,一般,*,*"); got == POSOther {
+		t.Fatal("形状詞 不應落到 POSOther")
 	}
 }
 
