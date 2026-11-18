@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -109,9 +111,34 @@ func (p jaProfile) NewConverter() lang.Converter { return p.dec }
 
 func (p jaProfile) NewPunctuator() lang.Punctuator { return nil }
 
-func loadJaDecoder(dataDir string) (*jadecode.Decoder, *jalexicon.Mem, *jalexicon.Matrix, error) {
-	words, conns, ok := jaDataFiles(dataDir)
+func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexicon.Matrix, error) {
+	dir, ok := jaDataDir(dataDir)
 	if !ok {
+		return nil, nil, nil, errJaDataMissing
+	}
+	// 資料包有 lexicon.bin 時走緊湊載入器；只有來源格式的目錄才解析
+	// lexicon/words.tsv。兩條路徑回傳相同的查詢語意。
+	bin := filepath.Join(dir, "lexicon.bin")
+	if fileExists(bin) {
+		f, err := os.Open(bin)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		var size int64 = -1
+		if st, err := f.Stat(); err == nil {
+			size = st.Size()
+		}
+		lex, err := jalexicon.LoadBinSize(f, size)
+		f.Close()
+		if err != nil {
+			return nil, nil, nil, fmt.Errorf("%s：%w", bin, err)
+		}
+		conn := lex.Matrix()
+		return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
+	}
+	words := filepath.Join(dir, "lexicon", "words.tsv")
+	conns := filepath.Join(dir, "connection.tsv")
+	if !fileExists(words) || !fileExists(conns) {
 		return nil, nil, nil, errJaDataMissing
 	}
 	wf, err := os.Open(words)
@@ -135,15 +162,39 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, *jalexicon.Mem, *jalexico
 	return &jadecode.Decoder{Lex: lex, Conn: conn}, lex, conn, nil
 }
 
-func jaDataFiles(dataDir string) (words, conns string, ok bool) {
+// jaDataDir 找日文資料目錄：先看 <data>/ja，再看 data 本身。第二個候選只有在
+// 目錄看起來是日文包時才採用，避免把注音包的 lexicon.bin 當成日文詞典。
+func jaDataDir(dataDir string) (string, bool) {
 	for _, dir := range []string{filepath.Join(dataDir, "ja"), dataDir} {
-		words = filepath.Join(dir, "lexicon", "words.tsv")
-		conns = filepath.Join(dir, "connection.tsv")
-		if fileExists(words) && fileExists(conns) {
-			return words, conns, true
+		if dir == dataDir && !looksJapanese(dir) {
+			continue
+		}
+		if fileExists(filepath.Join(dir, "lexicon.bin")) ||
+			fileExists(filepath.Join(dir, "lexicon", "words.tsv")) && fileExists(filepath.Join(dir, "connection.tsv")) {
+			return dir, true
 		}
 	}
-	return "", "", false
+	return "", false
+}
+
+// looksJapanese 判斷目錄是不是日文資料包。connection.tsv 與
+// lexicon/words.tsv 是日文來源格式的標記；只有二進位檔時看 manifest language。
+func looksJapanese(dir string) bool {
+	if fileExists(filepath.Join(dir, "connection.tsv")) || fileExists(filepath.Join(dir, "lexicon", "words.tsv")) {
+		return true
+	}
+	b, err := os.ReadFile(filepath.Join(dir, "manifest.json"))
+	if err != nil {
+		return false
+	}
+	var m struct {
+		Format   int    `json:"format"`
+		Language string `json:"language"`
+	}
+	if json.Unmarshal(b, &m) != nil {
+		return false
+	}
+	return m.Format >= 2 && m.Language == "ja"
 }
 
 func fileExists(path string) bool {
