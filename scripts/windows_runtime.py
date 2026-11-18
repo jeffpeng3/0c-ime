@@ -122,7 +122,7 @@ def fetch(url: str, sha256: str, cache: Path) -> Path:
     if not target.exists():
         with tempfile.NamedTemporaryFile(dir=cache, delete=False) as out, urllib.request.urlopen(url) as reply:
             shutil.copyfileobj(reply, out)
-        target.replace(Path(out.name))
+        Path(out.name).replace(target)
     if digest(target) != sha256:
         raise ValueError(f"wheel 雜湊不符：{target.name}")
     return target
