@@ -265,7 +265,11 @@ func (s *Session) languageKey(k string) (handled bool, commit string, ok bool) {
 	}
 	switch action {
 	case lang.ActionInsert:
-		return s.languageInsert(k), "", true
+		handled := s.languageInsert(k)
+		if handled {
+			s.leaveLiteralJapanese(k)
+		}
+		return handled, "", true
 	case lang.ActionConvert:
 		if r.converting {
 			s.languageNextCandidate()

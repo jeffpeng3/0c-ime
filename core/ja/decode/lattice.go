@@ -39,6 +39,9 @@ type Builder struct {
 	UnknownCost  float64
 	Learning     Learning
 	Context      lang.Context
+	// PreferHiragana 讓平假名讀音優先保留平假名／漢字詞面，不讓成本接近的
+	// 片假名詞面或拉丁字母雜訊勝出。零值表示完全照成本排序。
+	PreferHiragana bool
 }
 
 // Build 建立 lattice。seq 的每個單位都是一個かな字元。
@@ -67,6 +70,9 @@ func (b Builder) Build(seq reading.Sequence) Lattice {
 				}
 				nodes = append(nodes, Node{Start: start, End: end, Entry: e})
 			})
+		}
+		if b.PreferHiragana {
+			nodes = applyScriptPolicy(nodes, seq, start)
 		}
 		nodes = append(nodes, Node{
 			Start: start,

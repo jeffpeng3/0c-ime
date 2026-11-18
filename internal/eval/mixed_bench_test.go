@@ -215,8 +215,11 @@ func TestMixedSessionRunnerNoPack(t *testing.T) {
 	if report.Totals.Smoke.MergedSegments != 2 {
 		t.Errorf("merged = %d，want 2（每個長詞合併案例一次）", report.Totals.Smoke.MergedSegments)
 	}
-	if report.Totals.Smoke.MissingSegments != 2 {
-		t.Errorf("missing = %d，want 2", report.Totals.Smoke.MissingSegments)
+	if report.Totals.Smoke.MissingSegments != 0 {
+		t.Errorf("missing = %d，want 0；合併的後段不應算缺段", report.Totals.Smoke.MissingSegments)
+	}
+	if report.Totals.Smoke.CompleteCases != report.Totals.Cases {
+		t.Errorf("complete = %d/%d，合併長詞應算完成", report.Totals.Smoke.CompleteCases, report.Totals.Cases)
 	}
 	if report.Totals.Smoke.InvalidSegments != 0 || report.Totals.Smoke.UnorderedDirectKeys != 0 {
 		t.Errorf("沒有 pack 的執行不應有結構錯誤：%+v", report.Totals.Smoke)
@@ -275,8 +278,8 @@ func TestMixedSessionRunnerWithReferencePack(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSmokeHealthy(t, report)
-	if report.Totals.Smoke.MergedSegments != 2 || report.Totals.Smoke.MissingSegments != 2 {
-		t.Errorf("長詞合併觀察 = merged %d missing %d，want 2/2",
+	if report.Totals.Smoke.MergedSegments != 2 || report.Totals.Smoke.MissingSegments != 0 {
+		t.Errorf("長詞合併觀察 = merged %d missing %d，want 2/0",
 			report.Totals.Smoke.MergedSegments, report.Totals.Smoke.MissingSegments)
 	}
 	if problems := MixedBenchProblems(entries, manifest, testFileSHA(t, mixedBenchManifestPath), report); len(problems) > 0 {
@@ -330,6 +333,9 @@ func TestMixedSessionRunnerMergedSegments(t *testing.T) {
 	}
 	if pred.MergedSegments != 1 {
 		t.Fatalf("merged = %d，want 1", pred.MergedSegments)
+	}
+	if len(pred.Merged) != 1 || pred.Merged[0].First != 0 || pred.Merged[0].Last != 1 {
+		t.Fatalf("merged spans = %+v，want 0..1", pred.Merged)
 	}
 	if len(pred.Segments) != 1 || pred.Segments[0].InputIndex != 0 || pred.Segments[0].Surface != "麻婆豆腐" {
 		t.Fatalf("segments = %+v，want 只有合併後的麻婆豆腐", pred.Segments)

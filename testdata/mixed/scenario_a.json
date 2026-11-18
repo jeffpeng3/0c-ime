@@ -70,9 +70,6 @@
         {
           "input_index": 2,
           "surface": "です",
-          "accept": [
-            "デス"
-          ],
           "language": "ja",
           "variant": "ja"
         },
@@ -166,7 +163,7 @@
     },
     {
       "id": "a-romaji-spec",
-      "notes": "P2-16 規格範例的 watashiwa：統計轉換目前選 ワタ私話，不是參考的 私わ。這一題保留為 clean 的已知缺口，不調整題庫遷就引擎。",
+      "notes": "P2-16 規格範例的 watashiwa：羅馬字讀音必須維持平假名／漢字詞面，輸出 私わ；不可被成本相近的片假名 ワタ 或 私話 拼法拆走。",
       "tags": [
         "clean"
       ],

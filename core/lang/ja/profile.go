@@ -52,7 +52,10 @@ func (b mixedBase) NewConverter() lang.Converter {
 	if b.lex == nil {
 		return nil
 	}
-	dec := &jadecode.Decoder{Lex: b.lex}
+	// 羅馬字／かな輸入的讀音是平假名，轉換應優先保留平假名或漢字詞面。
+	// 參考詞典同時收錄 です 與 デス、私 與 ワタ 時，成本幾乎相同會讓片假名
+	// 或拉丁字母雜訊勝出；PreferHiragana 只調整混打 profile，不改一般解碼器。
+	dec := &jadecode.Decoder{Lex: b.lex, PreferHiragana: true}
 	if b.conn != nil {
 		dec.Conn = b.conn
 	}
@@ -70,3 +73,10 @@ func NewMixedProfile(lex Source, conn *Matrix, cfg Config) lang.Profile {
 // IsLiteral 回報一段 ASCII 按鍵是否會被混打組字器照字面處理。session 用它
 // 判斷待定按鍵是否仍是英文，避免搶走打到一半的英文詞。
 func IsLiteral(raw string, cfg Config) bool { return mixed.LiteralFor(raw, cfg) }
+
+// IsKana 回報一段 ASCII 按鍵是否會完整組成かな（不是照字面，且是合法羅馬字）。
+// session 用它在推斷出來的日文片段變成純字面英數時退回注音路徑。
+func IsKana(raw string, cfg Config) bool {
+	_, _, ok := mixed.KanaFor(raw, cfg)
+	return ok
+}

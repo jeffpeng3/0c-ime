@@ -265,6 +265,13 @@ func TestMixedAcceptAlternatives(t *testing.T) {
 	if a == nil {
 		t.Fatal("缺少情境 A")
 	}
+	// 題庫本體已不再用 accept 放寬 デス；這個測試臨時加上 accept，專門驗證
+	// accept 詞面會算片段正確，但不會讓 text_correct 變成 true。
+	for i := range a.Cases {
+		if a.Cases[i].ID == "a-canonical-mixed" {
+			a.Cases[i].Expect[2].Accept = []string{"デス"}
+		}
+	}
 	rep := RunMixed(a, "fixture", MixedRunnerFunc(func(cs MixedCase) (MixedPrediction, error) {
 		p, _ := perfectRunner(cs)
 		if cs.ID == "a-canonical-mixed" {
@@ -365,5 +372,45 @@ func TestMixedValidationRejectsBrokenCorpus(t *testing.T) {
 func TestMixedLoaderRejectsEmptyDir(t *testing.T) {
 	if _, err := LoadMixedCorpusDir(t.TempDir()); err == nil {
 		t.Fatal("空目錄應回傳錯誤")
+	}
+}
+
+// 長詞合併是正確產品行為：一個輸出片段覆蓋兩個 input 時，只算一個評分片段，
+// 後段不是缺段；整句文字仍要完全正確。
+func TestMergedPredictionCountsAsOneSegment(t *testing.T) {
+	cs := MixedCase{
+		ID:   "merged",
+		Tags: []string{MixedTidyTag},
+		Input: []MixedInputSegment{
+			{Script: segment.ScriptLatin, Text: "toukyou", Reading: reading.Sequence{"と", "う", "き", "ょ", "う"}},
+			{Script: segment.ScriptLatin, Text: "daigaku", Reading: reading.Sequence{"だ", "い", "が", "く"}},
+		},
+		Expect: []MixedExpectSegment{
+			{InputIndex: 0, Surface: "東京", Language: "ja", Variant: "ja"},
+			{InputIndex: 1, Surface: "大学", Language: "ja", Variant: "ja"},
+		},
+	}
+	runner := MixedRunnerFunc(func(MixedCase) (MixedPrediction, error) {
+		return MixedPrediction{
+			Text:           "東京大学",
+			MergedSegments: 1,
+			Merged:         []MixedMergedSpan{{First: 0, Last: 1}},
+			Segments: []MixedPredictedSegment{{
+				InputIndex: 0,
+				Surface:    "東京大学",
+				Language:   "ja",
+				Variant:    "ja",
+			}},
+		}, nil
+	})
+	got := runMixedCase(cs, runner)
+	if got.Smoke.MissingSegments != 0 || !got.Smoke.Complete {
+		t.Fatalf("合併不應算缺段：%+v", got.Smoke)
+	}
+	if got.Segment.N != 1 || got.Segment.JointCorrect != 1 {
+		t.Fatalf("合併應只算一個片段：%+v", got.Segment)
+	}
+	if !got.Smoke.TextMatchesSegments || !got.TextCorrect {
+		t.Fatalf("合併文字或片段串接不正確：smoke=%+v text=%q", got.Smoke, got.Output)
 	}
 }

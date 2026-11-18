@@ -37,8 +37,8 @@ import (
 //
 // 句子中間換語言時，目前產品會以一次送出（Enter）結束前一段組字；題庫用
 // composition 名稱表達這件事。同一個 composition 內可以混合注音與 Latin，
-// 也可以讓長詞跨過多個 input 片段合併（此時 runner 會回報 merged_segments，
-// 對應的後段沒有自己的輸出片段，如實記成 missing_segments）。
+// 也可以讓長詞跨過多個 input 片段合併；runner 會回報 merged 範圍，讓評分把
+// 被覆蓋的 input 視為同一個片段，而不是把後段當成缺段。
 type MixedSessionRunner struct {
 	cfg MixedSessionConfig
 }
@@ -190,6 +190,11 @@ func (r *MixedSessionRunner) Predict(cs MixedCase) (MixedPrediction, error) {
 				assigned = append(assigned, sp.seg)
 				if i < res.last && sp.end > hi {
 					pred.MergedSegments++
+					last := i
+					for last+1 <= res.last && unitStart[last+1] < sp.end {
+						last++
+					}
+					pred.Merged = append(pred.Merged, MixedMergedSpan{First: i, Last: last})
 				}
 				si++
 			}
