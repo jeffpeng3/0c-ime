@@ -1,0 +1,1280 @@
+{
+  "schema": 1,
+  "corpus": "mixed-ja-zh-en-regression",
+  "corpus_sha256": "afd211f38742aba650b4593a3a6a512b7360d9b336edd735fb153c012b39ee5c",
+  "cases": [
+    {
+      "id": "ja-word-kyou",
+      "category": "ja-word",
+      "input": "kyou",
+      "expect": "今日",
+      "output": "今日",
+      "candidates": [
+        "今日",
+        "きょう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-ashita",
+      "category": "ja-word",
+      "input": "ashita",
+      "expect": "明日",
+      "output": "明日",
+      "candidates": [
+        "明日",
+        "あした"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-kinou",
+      "category": "ja-word",
+      "input": "kinou",
+      "expect": "昨日",
+      "output": "昨日",
+      "candidates": [
+        "昨日",
+        "きのう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-nihon",
+      "category": "ja-word",
+      "input": "nihon",
+      "expect": "日本",
+      "output": "日本",
+      "candidates": [
+        "日本",
+        "二本",
+        "に本",
+        "二ほん"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-nihongo",
+      "category": "ja-word",
+      "input": "nihongo",
+      "expect": "日本語",
+      "output": "日本語",
+      "candidates": [
+        "日本語",
+        "日本ご",
+        "二本ご",
+        "に本ご"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-hito",
+      "category": "ja-word",
+      "input": "hito",
+      "expect": "人",
+      "output": "人",
+      "candidates": [
+        "人",
+        "ひと"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-watashi",
+      "category": "ja-word",
+      "input": "watashi",
+      "expect": "私",
+      "output": "私",
+      "candidates": [
+        "私",
+        "わたし"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-gakkou",
+      "category": "ja-word",
+      "input": "gakkou",
+      "expect": "学校",
+      "output": "学校",
+      "candidates": [
+        "学校",
+        "がっ子う",
+        "がっこう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-kaisha",
+      "category": "ja-word",
+      "input": "kaisha",
+      "expect": "会社",
+      "output": "会社",
+      "candidates": [
+        "会社",
+        "かいしゃ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-shigoto",
+      "category": "ja-word",
+      "input": "shigoto",
+      "expect": "仕事",
+      "output": "仕事",
+      "candidates": [
+        "仕事",
+        "しごと"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-tenki",
+      "category": "ja-word",
+      "input": "tenki",
+      "expect": "天気",
+      "output": "天気",
+      "candidates": [
+        "天気",
+        "てんき"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-denwa",
+      "category": "ja-word",
+      "input": "denwa",
+      "expect": "電話",
+      "output": "電話",
+      "candidates": [
+        "電話",
+        "でんわ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-mizu",
+      "category": "ja-word",
+      "input": "mizu",
+      "expect": "水",
+      "output": "水",
+      "candidates": [
+        "水",
+        "みず"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-hon",
+      "category": "ja-word",
+      "input": "hon",
+      "expect": "本",
+      "output": "本",
+      "candidates": [
+        "本",
+        "ほん"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-kuruma",
+      "category": "ja-word",
+      "input": "kuruma",
+      "expect": "車",
+      "output": "車",
+      "candidates": [
+        "車",
+        "来るま",
+        "くるま"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-densha",
+      "category": "ja-word",
+      "input": "densha",
+      "expect": "電車",
+      "output": "電車",
+      "candidates": [
+        "電車",
+        "でんしゃ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-eki",
+      "category": "ja-word",
+      "input": "eki",
+      "expect": "駅",
+      "output": "駅",
+      "candidates": [
+        "駅",
+        "えき"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-toukyou",
+      "category": "ja-word",
+      "input": "toukyou",
+      "expect": "東京",
+      "output": "東京",
+      "candidates": [
+        "東京",
+        "とう今日",
+        "とうきょう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-oosaka",
+      "category": "ja-word",
+      "input": "oosaka",
+      "expect": "大阪",
+      "output": "大阪",
+      "candidates": [
+        "大阪",
+        "おおさか"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-shashin",
+      "category": "ja-word",
+      "input": "shashin",
+      "expect": "写真",
+      "output": "写真",
+      "candidates": [
+        "写真",
+        "しゃしん"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-ongaku",
+      "category": "ja-word",
+      "input": "ongaku",
+      "expect": "音楽",
+      "output": "音楽",
+      "candidates": [
+        "音楽",
+        "おんがく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-eiga",
+      "category": "ja-word",
+      "input": "eiga",
+      "expect": "映画",
+      "output": "映画",
+      "candidates": [
+        "映画",
+        "えいが"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-tomodachi",
+      "category": "ja-word",
+      "input": "tomodachi",
+      "expect": "友達",
+      "output": "友達",
+      "candidates": [
+        "友達",
+        "ともだち"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-kazoku",
+      "category": "ja-word",
+      "input": "kazoku",
+      "expect": "家族",
+      "output": "家族",
+      "candidates": [
+        "家族",
+        "かぞく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-kotoba",
+      "category": "ja-word",
+      "input": "kotoba",
+      "expect": "言葉",
+      "output": "言葉",
+      "candidates": [
+        "言葉",
+        "子とば",
+        "ことば"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-imi",
+      "category": "ja-word",
+      "input": "imi",
+      "expect": "意味",
+      "output": "意味",
+      "candidates": [
+        "意味",
+        "いみ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-namae",
+      "category": "ja-word",
+      "input": "namae",
+      "expect": "名前",
+      "output": "名前",
+      "candidates": [
+        "名前",
+        "なまえ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-word-sekai",
+      "category": "ja-word",
+      "input": "sekai",
+      "expect": "世界",
+      "output": "世界",
+      "candidates": [
+        "世界",
+        "せかい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-taberu",
+      "category": "ja-okurigana",
+      "input": "taberu",
+      "expect": "食べる",
+      "output": "食べる",
+      "candidates": [
+        "食べる",
+        "たべる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-nomu",
+      "category": "ja-okurigana",
+      "input": "nomu",
+      "expect": "飲む",
+      "output": "飲む",
+      "candidates": [
+        "飲む",
+        "のむ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-yomu",
+      "category": "ja-okurigana",
+      "input": "yomu",
+      "expect": "読む",
+      "output": "読む",
+      "candidates": [
+        "読む",
+        "よむ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-kaku",
+      "category": "ja-okurigana",
+      "input": "kaku",
+      "expect": "書く",
+      "output": "書く",
+      "candidates": [
+        "書く",
+        "かく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-hanasu",
+      "category": "ja-okurigana",
+      "input": "hanasu",
+      "expect": "話す",
+      "output": "話す",
+      "candidates": [
+        "話す",
+        "離す",
+        "はなす"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-miru",
+      "category": "ja-okurigana",
+      "input": "miru",
+      "expect": "見る",
+      "output": "見る",
+      "candidates": [
+        "見る",
+        "みる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-okiru",
+      "category": "ja-okurigana",
+      "input": "okiru",
+      "expect": "起きる",
+      "output": "起きる",
+      "candidates": [
+        "起きる",
+        "おきる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-oshieru",
+      "category": "ja-okurigana",
+      "input": "oshieru",
+      "expect": "教える",
+      "output": "教える",
+      "candidates": [
+        "教える",
+        "おしえる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-takai",
+      "category": "ja-okurigana",
+      "input": "takai",
+      "expect": "高い",
+      "output": "高い",
+      "candidates": [
+        "高い",
+        "たかい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-atarashii",
+      "category": "ja-okurigana",
+      "input": "atarashii",
+      "expect": "新しい",
+      "output": "新しい",
+      "candidates": [
+        "新しい",
+        "あたらしい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-tanoshii",
+      "category": "ja-okurigana",
+      "input": "tanoshii",
+      "expect": "楽しい",
+      "output": "楽しい",
+      "candidates": [
+        "楽しい",
+        "たのしい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-ookii",
+      "category": "ja-okurigana",
+      "input": "ookii",
+      "expect": "大きい",
+      "output": "大きい",
+      "candidates": [
+        "大きい",
+        "おおきい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-chiisai",
+      "category": "ja-okurigana",
+      "input": "chiisai",
+      "expect": "小さい",
+      "output": "小さい",
+      "candidates": [
+        "小さい",
+        "ちいさい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-oku-samui",
+      "category": "ja-okurigana",
+      "input": "samui",
+      "expect": "寒い",
+      "output": "寒い",
+      "candidates": [
+        "寒い",
+        "さむい"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-kyouha",
+      "category": "ja-particle",
+      "input": "kyouha",
+      "expect": "今日は",
+      "output": "今日は",
+      "candidates": [
+        "今日は",
+        "きょうは"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-gakkouhe",
+      "category": "ja-particle",
+      "input": "gakkouhe",
+      "expect": "学校へ",
+      "output": "学校へ",
+      "candidates": [
+        "学校へ",
+        "がっ子うへ",
+        "がっこうへ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-nihonno",
+      "category": "ja-particle",
+      "input": "nihonno",
+      "expect": "日本の",
+      "output": "日本の",
+      "candidates": [
+        "日本の",
+        "二本の",
+        "に本の"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-watashiha",
+      "category": "ja-particle",
+      "input": "watashiha",
+      "expect": "私は",
+      "output": "私は",
+      "candidates": [
+        "私は",
+        "わたしは"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-honwo",
+      "category": "ja-particle",
+      "input": "honwo",
+      "expect": "本を",
+      "output": "本を",
+      "candidates": [
+        "本を",
+        "ほんを"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-gakkoude",
+      "category": "ja-particle",
+      "input": "gakkoude",
+      "expect": "学校で",
+      "output": "学校で",
+      "candidates": [
+        "学校で",
+        "がっ子うで",
+        "がっこうで"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-tomodachito",
+      "category": "ja-particle",
+      "input": "tomodachito",
+      "expect": "友達と",
+      "output": "友達と",
+      "candidates": [
+        "友達と",
+        "ともだちと"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-part-ekikara",
+      "category": "ja-particle",
+      "input": "ekikara",
+      "expect": "駅から",
+      "output": "駅から",
+      "candidates": [
+        "駅から",
+        "えきから"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-samui",
+      "category": "ja-sentence",
+      "input": "kyouhasamui",
+      "expect": "今日は寒い",
+      "output": "今日は寒い",
+      "candidates": [
+        "今日は寒い",
+        "今日はさむい",
+        "きょうは寒い"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-eiga",
+      "category": "ja-sentence",
+      "input": "kyouhaeigawomiru",
+      "expect": "今日は映画を見る",
+      "output": "今日は映画を見る",
+      "candidates": [
+        "今日は映画を見る",
+        "今日は映画をみる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-gakusei",
+      "category": "ja-sentence",
+      "input": "watashihagakuseidesu",
+      "expect": "私は学生です",
+      "output": "私は学生です",
+      "candidates": [
+        "私は学生です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-benkyou",
+      "category": "ja-sentence",
+      "input": "nihongowobenkyousuru",
+      "expect": "日本語を勉強する",
+      "output": "日本語を勉強する",
+      "candidates": [
+        "日本語を勉強する",
+        "日本ごを勉強する",
+        "二本ごを勉強する",
+        "に本ごを勉強する"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-hon",
+      "category": "ja-sentence",
+      "input": "kyouhahonwokau",
+      "expect": "今日は本を買う",
+      "output": "今日は本を買う",
+      "candidates": [
+        "今日は本を買う",
+        "今日は本をかう",
+        "今日はほんを買う"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-hanasu",
+      "category": "ja-sentence",
+      "input": "gakkoudehanasu",
+      "expect": "学校で話す",
+      "output": "学校で話す",
+      "candidates": [
+        "学校で話す",
+        "学校で離す",
+        "学校ではなす"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-kazoku",
+      "category": "ja-sentence",
+      "input": "kazokutotoukyouheiku",
+      "expect": "家族と東京へ行く",
+      "output": "家族と東京へ行く",
+      "candidates": [
+        "家族と東京へ行く",
+        "家族ととう今日へ行く",
+        "家族と東京へいく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-long",
+      "category": "ja-sentence",
+      "input": "kyouhagakkoudewatashihanihongowobenkyousuru",
+      "expect": "今日は学校で私は日本語を勉強する",
+      "output": "今日は学校で私は日本語を勉強する",
+      "candidates": [
+        "今日は学校で私は日本語を勉強する",
+        "今日は学校で私は日本ごを勉強する",
+        "今日は学校で私はに本ごを勉強する",
+        "今日は学校で私は二本ごを勉強する"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "ja-sent-tenki",
+      "category": "ja-sentence",
+      "input": "ashitatenkigayoidesu",
+      "expect": "明日天気が良いです",
+      "output": "明日天気が良いです",
+      "candidates": [
+        "明日天気が良いです",
+        "明日天気がよいです"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "kata-meeru",
+      "category": "katakana",
+      "input": "めーる",
+      "expect": "メール",
+      "output": "目ーる",
+      "candidates": [
+        "目ーる",
+        "めーる"
+      ],
+      "rank": 0
+    },
+    {
+      "id": "kata-ahiru",
+      "category": "katakana",
+      "input": "ahiru",
+      "expect": "アヒル",
+      "output": "アヒル",
+      "candidates": [
+        "アヒル",
+        "あひる"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "kata-meeru-direct",
+      "category": "katakana",
+      "input": "メール",
+      "expect": "メール",
+      "output": "メール",
+      "candidates": [
+        "メール"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "kata-ahiru-direct",
+      "category": "katakana",
+      "input": "アヒル",
+      "expect": "アヒル",
+      "output": "アヒル",
+      "candidates": [
+        "アヒル"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-jin-tian-kyou",
+      "category": "mixed-zh-ja",
+      "input": "ㄐㄧㄣㄊㄧㄢkyou",
+      "expect": "今天今日",
+      "output": "今天今日",
+      "candidates": [
+        "今天今日",
+        "今天きょう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-wo-desu",
+      "category": "mixed-zh-ja",
+      "input": "ㄨㄛˇdesu",
+      "expect": "我です",
+      "output": "我です",
+      "candidates": [
+        "我です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-ni-gakkou",
+      "category": "mixed-zh-ja",
+      "input": "ㄋㄧˇgakkou",
+      "expect": "你学校",
+      "output": "你学校",
+      "candidates": [
+        "你学校",
+        "你がっ子う",
+        "你がっこう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-taiwan-nihon",
+      "category": "mixed-zh-ja",
+      "input": "ㄊㄞˊㄨㄢnihon",
+      "expect": "台灣日本",
+      "output": "台灣日本",
+      "candidates": [
+        "台灣日本",
+        "台灣二本",
+        "台灣に本",
+        "台灣二ほん"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-hao-tenki",
+      "category": "mixed-zh-ja",
+      "input": "ㄏㄠˇtenki",
+      "expect": "好天気",
+      "output": "好天気",
+      "candidates": [
+        "好天気",
+        "好てんき"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-kafei-mizu",
+      "category": "mixed-zh-ja",
+      "input": "ㄎㄚㄈㄟmizu",
+      "expect": "咖啡水",
+      "output": "咖啡水",
+      "candidates": [
+        "咖啡水",
+        "咖啡みず"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-jin-tian-tianqi",
+      "category": "mixed-zh-ja",
+      "input": "ㄐㄧㄣㄊㄧㄢㄊㄧㄢㄑㄧˋ",
+      "expect": "今天天氣",
+      "output": "今天天氣",
+      "candidates": [
+        "今天天氣"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-ni-hao-kaisha",
+      "category": "mixed-zh-ja",
+      "input": "ㄋㄧˇㄏㄠˇkaisha",
+      "expect": "你好会社",
+      "output": "你好会社",
+      "candidates": [
+        "你好会社",
+        "你好かいしゃ"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-shi-nihon",
+      "category": "mixed-zh-ja",
+      "input": "ㄕˋnihon",
+      "expect": "是日本",
+      "output": "是日本",
+      "candidates": [
+        "是日本",
+        "是二本",
+        "是に本",
+        "是二ほん",
+        "事日本"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-xihuan-ongaku",
+      "category": "mixed-zh-ja",
+      "input": "ㄒㄧˇㄏㄨㄢongaku",
+      "expect": "喜歡音楽",
+      "output": "喜歡音楽",
+      "candidates": [
+        "喜歡音楽",
+        "喜歡おんがく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-you-desu",
+      "category": "mixed-zh-ja",
+      "input": "ㄧㄡˇdesu",
+      "expect": "有です",
+      "output": "有です",
+      "candidates": [
+        "有です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-zhege-hon",
+      "category": "mixed-zh-ja",
+      "input": "ㄓㄜˋㄍㄜ˙hon",
+      "expect": "這個本",
+      "output": "這個本",
+      "candidates": [
+        "這個本",
+        "這個ほん"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-dajia-gakkou",
+      "category": "mixed-zh-ja",
+      "input": "ㄉㄚˋㄐㄧㄚgakkou",
+      "expect": "大家学校",
+      "output": "大家学校",
+      "candidates": [
+        "大家学校",
+        "大家がっ子う",
+        "大家がっこう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "mix-xiaochi-mizu",
+      "category": "mixed-zh-ja",
+      "input": "ㄒㄧㄠˇㄔmizu",
+      "expect": "小吃水",
+      "output": "小吃水",
+      "candidates": [
+        "小吃水",
+        "小吃みず"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-kyou-api",
+      "category": "ja-english",
+      "input": "kyou API",
+      "expect": "今日 API",
+      "output": "今日 API",
+      "candidates": [
+        "今日 API",
+        "きょう API"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-gakkou-web",
+      "category": "ja-english",
+      "input": "gakkou website",
+      "expect": "学校 website",
+      "output": "学校 website",
+      "candidates": [
+        "学校 website",
+        "がっ子う website",
+        "がっこう website"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-hello-kyou",
+      "category": "ja-english",
+      "input": "hello kyou",
+      "expect": "hello 今日",
+      "output": "hello 今日",
+      "candidates": [
+        "hello 今日",
+        "hello きょう"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-watashi-pc",
+      "category": "ja-english",
+      "input": "watashi no PC",
+      "expect": "私 の PC",
+      "output": "私 の PC",
+      "candidates": [
+        "私 の PC",
+        "わたし の PC"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-nihon-api-desu",
+      "category": "ja-english",
+      "input": "nihon no API desu",
+      "expect": "日本 の API です",
+      "output": "日本 の API です",
+      "candidates": [
+        "日本 の API です",
+        "二本 の API です",
+        "に本 の API です",
+        "二ほん の API です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-test-desu",
+      "category": "ja-english",
+      "input": "test desu",
+      "expect": "test です",
+      "output": "test です",
+      "candidates": [
+        "test です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-code-kaku",
+      "category": "ja-english",
+      "input": "code wo kaku",
+      "expect": "code を 書く",
+      "output": "code を 書く",
+      "candidates": [
+        "code を 書く",
+        "code を かく"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-github-project",
+      "category": "ja-english",
+      "input": "github project",
+      "expect": "github project",
+      "output": "github project",
+      "candidates": [
+        "github project"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-kyou-test",
+      "category": "ja-english",
+      "input": "kyouha test desu",
+      "expect": "今日は test です",
+      "output": "今日は test です",
+      "candidates": [
+        "今日は test です",
+        "きょうは test です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-server-error",
+      "category": "ja-english",
+      "input": "server no error",
+      "expect": "server の error",
+      "output": "server の error",
+      "candidates": [
+        "server の error"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-docker-update",
+      "category": "ja-english",
+      "input": "docker update",
+      "expect": "docker update",
+      "output": "docker update",
+      "candidates": [
+        "docker update"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "en-api2026-desu",
+      "category": "ja-english",
+      "input": "API2026 desu",
+      "expect": "API2026 です",
+      "output": "API2026 です",
+      "candidates": [
+        "API2026 です"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-123",
+      "category": "numbers-symbols",
+      "input": "123",
+      "expect": "123",
+      "output": "123",
+      "candidates": [
+        "123"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-2026",
+      "category": "numbers-symbols",
+      "input": "2026",
+      "expect": "2026",
+      "output": "2026",
+      "candidates": [
+        "2026"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-plus",
+      "category": "numbers-symbols",
+      "input": "1+1",
+      "expect": "1+1",
+      "output": "1+1",
+      "candidates": [
+        "1+1"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-percent",
+      "category": "numbers-symbols",
+      "input": "100%",
+      "expect": "100%",
+      "output": "100%",
+      "candidates": [
+        "100%"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-api2026",
+      "category": "numbers-symbols",
+      "input": "API2026",
+      "expect": "API2026",
+      "output": "API2026",
+      "candidates": [
+        "API2026"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-version",
+      "category": "numbers-symbols",
+      "input": "version2",
+      "expect": "version2",
+      "output": "version2",
+      "candidates": [
+        "version2"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-upper",
+      "category": "numbers-symbols",
+      "input": "A-B",
+      "expect": "A-B",
+      "output": "A-B",
+      "candidates": [
+        "A-B"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "num-spaced",
+      "category": "numbers-symbols",
+      "input": "1 + 2",
+      "expect": "1 + 2",
+      "output": "1 + 2",
+      "candidates": [
+        "1 + 2"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-period",
+      "category": "punctuation",
+      "input": "kyou.",
+      "expect": "今日.",
+      "output": "今日.",
+      "candidates": [
+        "今日.",
+        "きょう."
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-jp-period",
+      "category": "punctuation",
+      "input": "kyou。",
+      "expect": "今日。",
+      "output": "今日。",
+      "candidates": [
+        "今日。",
+        "きょう。"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-bang",
+      "category": "punctuation",
+      "input": "gakkou!",
+      "expect": "学校!",
+      "output": "学校!",
+      "candidates": [
+        "学校!",
+        "がっ子う!",
+        "がっこう!"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-question",
+      "category": "punctuation",
+      "input": "desu?",
+      "expect": "です?",
+      "output": "です?",
+      "candidates": [
+        "です?"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-comma",
+      "category": "punctuation",
+      "input": "kyou, ashita",
+      "expect": "今日, 明日",
+      "output": "今日, 明日",
+      "candidates": [
+        "今日, 明日",
+        "今日, あした",
+        "きょう, 明日",
+        "きょう, あした"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-zh-period",
+      "category": "punctuation",
+      "input": "ㄐㄧㄣㄊㄧㄢ。",
+      "expect": "今天。",
+      "output": "今天。",
+      "candidates": [
+        "今天。"
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-kata-period",
+      "category": "punctuation",
+      "input": "ahiru.",
+      "expect": "アヒル.",
+      "output": "アヒル.",
+      "candidates": [
+        "アヒル.",
+        "あひる."
+      ],
+      "rank": 1
+    },
+    {
+      "id": "punct-space",
+      "category": "punctuation",
+      "input": "kyou desu ",
+      "expect": "今日 です ",
+      "output": "今日 です ",
+      "candidates": [
+        "今日 です ",
+        "きょう です "
+      ],
+      "rank": 1
+    }
+  ],
+  "sha256": "67090841bd7b56100dc0f4fa6485d80bd28ba6baee1a5eb4cf8923cdc495f911"
+}
