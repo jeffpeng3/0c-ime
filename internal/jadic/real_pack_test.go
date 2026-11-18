@@ -15,19 +15,22 @@ import (
 // ja-lexicon-public-core.pack（manifest.json 放在旁邊）才會執行。
 const referencePackEnv = "OC_JADIC_REFERENCE_PACK"
 
-// referenceWordsSHA256 是參考 pack 在 P2-45E 記号過濾後，以 mapping D 匯入兩次都
-// 必須相同的 words.tsv 雜湊。它同時固定 signed 成本、同 surface 排序與 bytes 輸出格式。
-const referenceWordsSHA256 = "b0ff5cbdeaab714b3ce780f7f0ba57f89269b452b3eb84fad9759a89fc4d3557"
+// referenceWordsSHA256 是參考 pack 在 P2-45F 記号與非日文詞面過濾後，以 mapping D
+// 匯入兩次都必須相同的 words.tsv 雜湊。它同時固定 signed 成本、同 surface 排序與
+// bytes 輸出格式。
+const referenceWordsSHA256 = "c6470e46daabc6c439238e44556aae1152a0067ed158b3033d190ab3ad15aad4"
 
 // P2-45E 之後，words.tsv 不再包含 POS 為記号的 334 筆；其中 1 筆負成本記号丟棄，
-// 333 筆寫進 symbols/jadic.tsv。只有記号的 surface 也從 words.tsv 消失。
+// 333 筆寫進 symbols/jadic.tsv。P2-45F 再丟棄詞面不含日文字元的 8792 筆，
+// 包含 9 筆負成本垃圾詞；片假名與漢字的負成本詞仍保留。
 const (
-	referenceWordEntries   = 1146687
-	referenceWordSurfaces  = 870064
-	referenceSymbolEntries = 333
-	referenceFilteredSyms  = 334
-	referenceSymbolNeg     = 1
-	referenceWordNegatives = 113
+	referenceWordEntries    = 1137895
+	referenceWordSurfaces   = 861582
+	referenceSymbolEntries  = 333
+	referenceFilteredSyms   = 334
+	referenceFilteredNonJap = 8792
+	referenceSymbolNeg      = 1
+	referenceWordNegatives  = 104
 )
 
 func TestReferencePack(t *testing.T) {
@@ -123,6 +126,12 @@ func TestReferencePackImportStable(t *testing.T) {
 			res.Stats.SymbolNegativeCosts != referenceSymbolNeg {
 			t.Fatalf("run %d symbol stats = %+v", run, res.Stats)
 		}
+		if res.Stats.FilteredNonJapanese != referenceFilteredNonJap {
+			t.Fatalf("run %d 非日文詞面 = %d，want %d", run, res.Stats.FilteredNonJapanese, referenceFilteredNonJap)
+		}
+		if len(res.Stats.NonJapaneseSurfaces) == 0 {
+			t.Fatalf("run %d 缺少非日文詞面樣本", run)
+		}
 		if res.Stats.NegativeCosts != referenceWordNegatives {
 			t.Fatalf("run %d 負成本 = %d，want %d", run, res.Stats.NegativeCosts, referenceWordNegatives)
 		}
@@ -157,7 +166,7 @@ func TestReferencePackImportStable(t *testing.T) {
 		sums = append(sums, hex.EncodeToString(sum[:]))
 
 		negatives := 0
-		var institute []string
+		var institute, art []string
 		for _, line := range strings.Split(string(data), "\n") {
 			if line == "" || strings.HasPrefix(line, "#") {
 				continue
@@ -165,6 +174,9 @@ func TestReferencePackImportStable(t *testing.T) {
 			f := strings.Split(line, "\t")
 			if len(f) < 3 {
 				t.Fatalf("words.tsv 欄位不足：%q", line)
+			}
+			if !containsJapanese(f[0]) {
+				t.Fatalf("run %d words.tsv 含非日文詞面 %q", run, f[0])
 			}
 			cost, err := strconv.ParseFloat(f[2], 64)
 			if err != nil {
@@ -176,12 +188,18 @@ func TestReferencePackImportStable(t *testing.T) {
 			if f[0] == "研究所" {
 				institute = append(institute, line)
 			}
+			if f[0] == "アート" {
+				art = append(art, line)
+			}
 		}
 		if negatives != referenceWordNegatives {
 			t.Fatalf("run %d words.tsv 負成本列 = %d，want %d", run, negatives, referenceWordNegatives)
 		}
 		if len(institute) != 2 || !strings.HasPrefix(institute[0], "研究所\tけ ん き ゅ う じ ょ\t-4.215\t") {
 			t.Fatalf("研究所 順序 = %#v", institute)
+		}
+		if len(art) < 2 || !strings.HasPrefix(art[0], "アート\tあ ー と\t-8.313\t") {
+			t.Fatalf("負成本片假名 アート 應保留 = %#v", art)
 		}
 	}
 	if sums[0] != sums[1] {

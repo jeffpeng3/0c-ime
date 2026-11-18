@@ -56,6 +56,7 @@ func usage() {
          [-connections <data/ja/connection.tsv>] [-force]
       把 pack 寫成產品可編譯的 lexicon/words.tsv、symbols/jadic.tsv 與 jadic-import.json。
       POS 為記号的詞條只進記号辭典；負成本記号直接丟棄。
+      詞面不含日文字元（平假名、片假名、漢字、長音符）的詞條也丟棄。
       預設輸出 build/ja-jadic；不寫入 checked-in data/。
 
   convert -data <執行期目錄> [-top 5] <讀音>...
@@ -144,6 +145,11 @@ func runImport(args []string) error {
 	fmt.Printf("詞條：%s\n記号：%s\n回執：%s\n", res.WordsPath, res.SymbolsPath, res.ReceiptPath)
 	fmt.Printf("POS 過濾：記号 %d 筆（輸出 %d 筆、負成本丟棄 %d 筆）；剩餘詞條 %d 筆\n",
 		res.Stats.FilteredSymbols, res.Stats.SymbolEntries, res.Stats.SymbolNegativeCosts, res.Stats.Entries)
+	fmt.Printf("非日文詞面過濾：丟棄 %d 筆（emoji、拉丁字母、數字、符號）；剩餘詞條 %d 筆\n",
+		res.Stats.FilteredNonJapanese, res.Stats.Entries)
+	if len(res.Stats.NonJapaneseSurfaces) > 0 {
+		fmt.Printf("非日文詞面樣本：%s\n", strings.Join(res.Stats.NonJapaneseSurfaces, "、"))
+	}
 	fmt.Printf("成本換算：%s；words.tsv 負成本保留 %d 筆\n", jadic.CostRule, res.Stats.NegativeCosts)
 	if len(res.Stats.KatakanaSymbols) > 0 {
 		fmt.Printf("記号詞性樣本（詞面含片假名）：%s\n", strings.Join(res.Stats.KatakanaSymbols, "、"))

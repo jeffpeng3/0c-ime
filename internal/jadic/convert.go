@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/0c-biggo/0c-ime/core/reading"
 	"github.com/0c-biggo/0c-ime/internal/jaimport"
@@ -47,6 +48,9 @@ const SymbolCategory = "記号"
 // symbolSampleLimit 是片假名記号樣本的上限；只供人決定是否放寬過濾規則。
 const symbolSampleLimit = 8
 
+// nonJapaneseSampleLimit 是非日文詞面的樣本上限；只供人檢查過濾結果。
+const nonJapaneseSampleLimit = 8
+
 // ConvertStats 是轉換結果統計。Entries 與 Surfaces 只算實際寫進 words.tsv 的詞條。
 type ConvertStats struct {
 	// Entries 是寫進 words.tsv 的詞條數。
@@ -55,6 +59,11 @@ type ConvertStats struct {
 	Surfaces int
 	// FilteredSymbols 是因 POS 為記号而被移出 words.tsv 的詞條數；含負成本丟棄者。
 	FilteredSymbols int
+	// FilteredNonJapanese 是詞面不含平假名、片假名、漢字或長音符而被移出
+	// words.tsv 的詞條數。POS 為記号的詞條優先計入 FilteredSymbols，不重複計算。
+	FilteredNonJapanese int
+	// NonJapaneseSurfaces 是上述規則丟棄的詞面樣本（最多 nonJapaneseSampleLimit 筆、去重）。
+	NonJapaneseSurfaces []string
 	// SymbolEntries 是實際寫進記号辭典的詞條數。
 	SymbolEntries int
 	// SymbolNegativeCosts 是成本為負而直接丟棄的記号詞條數。
@@ -89,8 +98,9 @@ type symbolRow struct {
 // 詞面、空白分隔讀音、產品成本、產品詞性、來源、活用型。
 //
 // POS 為記号的詞條不寫進 words.tsv，改寫進 opt.Symbols 的四欄記号辭典；
-// 成本為負的記号詞條直接丟棄並計入 SymbolNegativeCosts。其他詞條（包含
-// 片假名的一般名詞）照舊保留。
+// 成本為負的記号詞條直接丟棄並計入 SymbolNegativeCosts。其餘詞條若詞面不含
+// 平假名、片假名、漢字或長音符，也丟棄並計入 FilteredNonJapanese；emoji、
+// 拉丁字母、數字與符號因此不進 IME 詞典。片假名與漢字詞即使成本為負仍保留。
 //
 // 輸出順序是契約的一部分：surface 依 pack 的 code point 序，同一 surface 內依
 // 成本（換算後）、讀音、詞性、活用型、活用形排序，五欄完全相同時保留 pack 內的
@@ -125,6 +135,7 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 	rows := make([]convertedRow, 0, 128)
 	symbols := make([]symbolRow, 0, 64)
 	seenSymbols := map[string]bool{}
+	seenNonJapanese := map[string]bool{}
 	currentSurface := ""
 	visitedSurfaces := 0
 	flush := func() error {
@@ -216,6 +227,16 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 			}
 			return nil
 		}
+		if !containsJapanese(e.Surface) {
+			// emoji、拉丁字母、數字與符號不是 IME 的詞；不論成本正負都丟棄，
+			// 避免負成本垃圾詞壓過真正的日文候選。
+			stats.FilteredNonJapanese++
+			if len(stats.NonJapaneseSurfaces) < nonJapaneseSampleLimit && !seenNonJapanese[e.Surface] {
+				seenNonJapanese[e.Surface] = true
+				stats.NonJapaneseSurfaces = append(stats.NonJapaneseSurfaces, e.Surface)
+			}
+			return nil
+		}
 		if pos == jaimport.POSOther {
 			stats.UnknownPOS++
 		}
@@ -249,9 +270,9 @@ func Convert(w io.Writer, p *Pack, opt ConvertOptions) (ConvertStats, error) {
 	if err := flushSymbols(); err != nil {
 		return stats, fmt.Errorf("jadic: %w", err)
 	}
-	if total := stats.Entries + stats.FilteredSymbols; total != p.EntryCount() {
-		return stats, fmt.Errorf("jadic: 轉換詞條數 %d 與 pack 的 %d 不符（words %d、filtered symbols %d）",
-			total, p.EntryCount(), stats.Entries, stats.FilteredSymbols)
+	if total := stats.Entries + stats.FilteredSymbols + stats.FilteredNonJapanese; total != p.EntryCount() {
+		return stats, fmt.Errorf("jadic: 轉換詞條數 %d 與 pack 的 %d 不符（words %d、filtered symbols %d、filtered non-Japanese %d）",
+			total, p.EntryCount(), stats.Entries, stats.FilteredSymbols, stats.FilteredNonJapanese)
 	}
 	if visitedSurfaces != p.SurfaceCount() {
 		return stats, fmt.Errorf("jadic: 轉換 surface 數 %d 與 pack 的 %d 不符", visitedSurfaces, p.SurfaceCount())
@@ -296,6 +317,17 @@ func symbolDescription(pos string) (string, error) {
 func containsKatakana(s string) bool {
 	for _, r := range s {
 		if (r >= 0x30A0 && r <= 0x30FF) || (r >= 0xFF66 && r <= 0xFF9F) {
+			return true
+		}
+	}
+	return false
+}
+
+// containsJapanese 回報詞面是否含平假名、片假名、漢字或日文長音符。
+// 長音符 U+30FC 的 script 是 Common，不在 unicode.Katakana，因此另外檢查。
+func containsJapanese(s string) bool {
+	for _, r := range s {
+		if r == 'ー' || unicode.In(r, unicode.Hiragana, unicode.Katakana, unicode.Han) {
 			return true
 		}
 	}
