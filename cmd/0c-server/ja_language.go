@@ -178,7 +178,20 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexi
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
-	dec, model, err := jaDecoderWithLM(lex, conn, dir)
+	var decodeConn jalexicon.Connection = conn
+	if ctxPath := filepath.Join(dir, "connection.bin"); fileExists(ctxPath) {
+		bf, err := os.Open(ctxPath)
+		if err != nil {
+			return nil, nil, nil, nil, err
+		}
+		ctx, err := jalexicon.LoadContextMatrix(bf)
+		bf.Close()
+		if err != nil {
+			return nil, nil, nil, nil, fmt.Errorf("%s：%w", ctxPath, err)
+		}
+		decodeConn = &jalexicon.Connections{POS: conn, Context: ctx}
+	}
+	dec, model, err := jaDecoderWithLM(lex, decodeConn, dir)
 	if err != nil {
 		return nil, nil, nil, nil, err
 	}
@@ -188,7 +201,7 @@ func loadJaDecoder(dataDir string) (*jadecode.Decoder, jalexicon.Source, *jalexi
 // jaDecoderWithLM 建立 decoder，並在資料目錄有 lm.bin 時掛上語言模型。
 // lm.bin 是選填的編譯產物；不存在時回傳 nil 模型，decoder 保持原本的詞成本
 // 加連接成本排序。權重固定用 DefaultLMWeight，目前為 0，因此預設排序不變。
-func jaDecoderWithLM(lex jalexicon.Source, conn *jalexicon.Matrix, dir string) (*jadecode.Decoder, *jalm.Model, error) {
+func jaDecoderWithLM(lex jalexicon.Source, conn jalexicon.Connection, dir string) (*jadecode.Decoder, *jalm.Model, error) {
 	model, err := jaload.LoadLM(filepath.Join(dir, "lm.bin"))
 	if err != nil {
 		return nil, nil, err

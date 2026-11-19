@@ -102,6 +102,12 @@ type Entry struct {
 	// 負值合法，代表比 0 更優先。範圍見 MinWordCost 與 MaxWordCost。
 	Cost float64
 	POS  POS
+	// LeftID 與 RightID 是來源詞典的連接 context ID（Mozc 的 lid/rid）。
+	// HasContext 為 false 時，解碼器只用 POS 連接成本；未知詞 fallback 也是 false。
+	// ID 0 是 BOS/EOS；一般詞條使用 1 以上。
+	LeftID     uint16
+	RightID    uint16
+	HasContext bool
 }
 
 // 產品詞成本容許的範圍。0c-jadic 匯入把 pack 的 signed i16 成本乘上 0.001，
@@ -316,6 +322,21 @@ func Load(r io.Reader) (*Mem, error) {
 				return nil, fmt.Errorf("第 %d 行：%w", ln, err)
 			}
 			e.POS = p
+		}
+		// 第七、八欄是選填的 Mozc left/right context ID。舊的六欄資料沒有這兩欄，
+		// 繼續走 POS 連接矩陣；有兩欄時解碼器可以改用 context 矩陣。
+		if len(f) > 7 && f[6] != "" && f[7] != "" {
+			left, err := strconv.Atoi(f[6])
+			if err != nil || left < 0 || left > 65535 {
+				return nil, fmt.Errorf("第 %d 行：left context ID %q 不合法", ln, f[6])
+			}
+			right, err := strconv.Atoi(f[7])
+			if err != nil || right < 0 || right > 65535 {
+				return nil, fmt.Errorf("第 %d 行：right context ID %q 不合法", ln, f[7])
+			}
+			e.LeftID = uint16(left)
+			e.RightID = uint16(right)
+			e.HasContext = true
 		}
 		if err := m.Add(e); err != nil {
 			return nil, fmt.Errorf("第 %d 行：%w", ln, err)

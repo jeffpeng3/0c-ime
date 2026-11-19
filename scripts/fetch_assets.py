@@ -182,6 +182,16 @@ def build_ja(root, output, go="go", source=None):
                     copy = stage / "symbols" / path.relative_to(imported_symbols)
                     copy.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(path, copy)
+        # Imported Mozc data carries context IDs in words.tsv and a connection.bin
+        # matrix. 0c-compile's lexicon.bin only stores POS costs, so keep the
+        # importer's runtime layout for the files 0c-server actually loads.
+        if imported:
+            for name in ("lexicon/words.tsv", "connection.tsv", "connection.bin", "connection.source"):
+                runtime = source / name
+                if runtime.is_file():
+                    target = stage / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(runtime, target)
         if output.exists():
             shutil.rmtree(output)
         os.rename(stage, output)

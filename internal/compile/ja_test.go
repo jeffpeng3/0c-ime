@@ -444,3 +444,19 @@ func mustReading(t *testing.T, s string) reading.Sequence {
 	}
 	return out
 }
+
+func TestConnectionOriginUsesExplicitSource(t *testing.T) {
+	d := &JAData{
+		Sources: map[string]Source{
+			"curated": {ID: "curated"},
+			"ja-mozc": {ID: "ja-mozc"},
+		},
+	}
+	if got := connectionOrigin(d); got != "curated" {
+		t.Fatalf("沒有 connection.source 時 = %q, want curated", got)
+	}
+	d.ConnectionOrigin = "ja-mozc"
+	if got := connectionOrigin(d); got != "ja-mozc" {
+		t.Fatalf("connection.source = %q, want ja-mozc", got)
+	}
+}

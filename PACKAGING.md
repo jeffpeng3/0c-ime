@@ -34,15 +34,19 @@ tar -xJf 0c-ime-models-<版本>.tar.xz   # 選用：神經選字與補標點
 | `make assets` | 注音字典與配對模型放在 `assets/data/`、`models/select/`、`models/punct/` |
 | `make assets MODELS=0` | 只放注音字典，不加模型 |
 | `make assets MODELS_ONLY=1` | 只換 `models/select/`、`models/punct/`；`assets/data/` 必須已存在，配對清單要與目前字典相符 |
-| `make ja-import JA_PACK=<pack>` | 用 `0c-jadic import` 把外部 public-core pack 匯入 `build/ja-import`；連接成本取自 `data/ja/connection.tsv` |
+| `make ja-mozc` | 下載固定 tag/commit 的 Mozc OSS `dictionary_oss`，驗證 SHA-256，匯入 `build/ja-mozc`（含 POS 與 context 連接矩陣） |
+| `make ja-mozc-assets` | `make ja-mozc` 後直接編譯 `build/ja`，Windows 套件再取用 |
+| `make ja-import JA_PACK=<pack>` | 歷史路徑：用 `0c-jadic import` 把外部 public-core pack 匯入 `build/ja-import`；連接成本取自 `data/ja/connection.tsv` |
 | `make assets LANG=ja` | 以 `0c-compile -lang ja -public` 編譯 `data/ja` 種子，輸出 `build/ja`，並複製 `symbols/` |
-| `make assets LANG=ja JA_SRC=build/ja-import` | 用匯入的完整詞典編譯 `build/ja`，Windows 套件再取用 |
+| `make assets LANG=ja JA_SRC=build/ja-mozc` | 用 Mozc 匯入結果編譯 `build/ja`，Windows 套件再取用 |
 | `make assets LANG=all` | 同時處理注音與日文 |
 | `make assets LANG=ja JA_OUT=<目錄>` | 指定日文包輸出位置 |
 
-完整日文詞典是 0c-jadic public-core pack（1,147,021 筆、870,298 surfaces，來自 UniDic BSD、IPADic 與 curated）。pack 與匯入後的 TSV 都不進 Git；`make ja-import` 以 `go run ./cmd/0c-jadic import -pack <pack> -out build/ja-import -connections data/ja/connection.tsv` 重新產生。**連接成本矩陣仍取自 `data/ja/connection.tsv` 的 curated 種子**，因為 pack 不含矩陣，repo 內也沒有 Mozc／IPADic 的完整矩陣。用完整詞典編譯出的 `build/ja` 約 160 MB，執行期 `lexicon/words.tsv` 約 39.3 MB、`connection.tsv` 約 1.5 KB；`0c-compile` 約 26 秒，冷啟動載入約 3.5 秒，解碼器常駐估計約 307 MiB。這是隨詞條數線性成長的資料，不是編譯進二進位。
+正式日文詞典是 Mozc OSS `dictionary_oss` tag `3.35.6354`（commit `0136c35782536cb43d710575c311cd4185982738`），匯入後 1,219,525 筆詞條、982,694 個 surface，另加 158 筆記号。原始詞典與匯入 TSV 都不進 Git；`make ja-mozc` 會下載到 `build/mozc-3.35.6354/`、逐檔驗證 SHA-256，再以 `go run ./cmd/0c-jadic mozc -package-dir ... -out build/ja-mozc` 產生 `lexicon/words.tsv`、`connection.tsv`、`connection.bin` 與 `symbols/jadic.tsv`。
 
-**品質限制**：public-core 的 UniDic 詞成本與 curated 連接矩陣尺度不同，統計 top1 只有 0～2.9%。`kyouha` 會選「教派」、`ashita` 會選「アシタ」，只有長詞如「東京大学」能正確合併。詳細候選與量測見 [日文資料 README](data/ja/README.md#完整公開核心詞典p2-45b)。在補上 IME 用的成本或連接矩陣前，`JA_SRC` 只用於內部驗證與打包，不要宣稱正式日文輸入品質。日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。**載入布局**：`0c-server` 的日文載入路徑讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`，不讀 `lexicon.bin`。`0c-japack` 從編譯後的 `lexicon.bin` 匯出這兩個 TSV；`make assets LANG=ja` 與 Windows 的 `--ja-data` 都會產生這個布局。
+Mozc 的連接成本來自 `connection_single_column.txt` 的 2,672×2,672 context 矩陣，不再使用 `data/ja/connection.tsv` 的 82 筆 curated 成本。`connection.bin` 是 13.6 MiB 的 context 矩陣；`connection.tsv` 是 POS 對 fallback。`0c-compile` 編譯出的 `lexicon.bin` 仍用於 manifest 與模型配對，但 `scripts/fetch_assets.py` 會把 Mozc 匯入目錄的 `lexicon/words.tsv`、`connection.tsv`、`connection.bin` 複製到執行期布局，保留 left/right context ID。`build/ja` 約 160 MB，執行期 `lexicon/words.tsv` 約 83 MB；冷啟動載入與記憶體隨詞條數線性成長，不是編譯進二進位。
+
+**品質**：Mozc 詞成本與 context 連接矩陣把四語料 top-1 從 0～2.9% 提升到 46.0～86.0%，modern-500 的 top-5 是 98.0%、邊界 F1 0.902。完整對照、POS 對應與成本換算見 [日文資料 README](data/ja/README.md#p2-53mozc-oss-詞典目前路徑)。剩餘錯誤以同音詞與詞彙偏好為主，不是連接矩陣問題。日文包沒有另附神經模型 tarball。P2-01 起正式產品不 import 或啟動 llama.cpp、GGUF、zenz，日文只用統計詞典轉換。日文 ONNX 模型會在 P2-25 匯出、P2-30 接上，屆時再依新的 manifest 與打包流程出貨；目前的移除狀態見 [日文 runtime 說明](platforms/neural/ja/README.md)。T03 的實驗程式只留在 `scripts/spike/ja-zenz/`，不是產品路徑。**載入布局**：`0c-server` 的日文載入路徑讀 `data/ja/lexicon/words.tsv` 與 `data/ja/connection.tsv`，有 `connection.bin` 時優先使用 context 矩陣，不讀 `lexicon.bin`。`0c-japack` 仍可從編譯後的 `lexicon.bin` 匯出 POS-only TSV；Mozc 路徑由 `make ja-mozc` 直接產生完整執行期布局，`make assets LANG=ja JA_SRC=build/ja-mozc` 與 Windows 的 `--ja-data` 都會保留它。
 
 日文包的 `manifest.json` 是 format 2、`language: ja`，`lexicon.bin`、`lm.bin`、`lexicon.tsv`、`NOTICE.txt`、`report.txt` 由編譯器產生；`symbols/` 是 T22 的記号與顔文字 TSV。打包時的執行期映射是：
 
@@ -113,8 +117,8 @@ Windows 套件由 `scripts/package_windows.py` 在 Windows x64 建置，再用 `
 完整套件需要外部文件目錄的 `INSTALL.md`、`PRIVACY.md`、`UPDATING.md`：
 
 ```powershell
-make ja-import JA_PACK=<ja-lexicon-public-core.pack>
-make assets LANG=ja JA_SRC=build/ja-import
+make ja-mozc
+make assets LANG=ja JA_SRC=build/ja-mozc
 python scripts\prepare_windows_runtime.py --out build\runtime
 python -B scripts\hf_models.py pair --data assets\data --out build\models-pair
 python scripts\package_windows.py --data assets\data --ja-data build\ja --ort-runtime build\runtime `

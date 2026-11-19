@@ -76,8 +76,8 @@ Files: data/ja/lexicon/words.tsv
 Copyright: 2026 Funmula Co., Limited
 License: CC-BY-SA-4.0
 Comment: 0c 人工維護的日文種子詞條、連接成本與詞頻；編譯後資料包只在原始碼 tarball 或安裝包內，
- 逐來源授權聲明見 data/ja/NOTICE.txt。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，
- 依 data/sources/ledger.tsv 另行標示混合授權。
+ 逐來源授權聲明見 data/ja/NOTICE.txt。正式日文詞典由 Mozc OSS dictionary_oss 匯入，
+ 依 data/sources/ledger.tsv 標示混合授權。
 
 Files: data/ja/symbols/symbols.tsv
        data/ja/symbols/kaomoji.tsv

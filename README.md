@@ -35,7 +35,7 @@
 
 > **English** — 0C (靈犀注音) is a Zhuyin (Bopomofo) input method for Traditional Chinese. An on-device Transformer language model reads what you have just written and picks the right homophones, so you can type a whole sentence without stopping to choose characters. It runs entirely on your computer, and ships shells for Fcitx5, IBus, macOS InputMethodKit and Windows TSF.
 
-> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと、Windows の単一 Mixed プロファイルを用意しています。変換品質の数字はまだ小さな種子辞書の実測値で、Mozc などと比較できる段階ではありません。日本語の既定モデルセット（extra reranker＋public 句読点）は HF revision を固定済みですが、まだ推論には接続しておらず、Windows の Phase 2 VM 検証は NOT RUN です。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
+> **日本語（プレビュー）** — 0C は繁体字中国語の注音入力のほか、日本語のかな漢字変換を開発中です。ローマ字・かな入力、文節変換、学習、予測、記号・顔文字に対応するコアと、Windows の単一 Mixed プロファイルを用意しています。変換品質は Mozc OSS 辞書と context 連接行列を使った実測値で、modern-500 の top-1 は 86.0% です。同音語や語彙嗜好の誤りは残るため、まだ正式サポートではありません。日本語の既定モデルセット（extra reranker＋public 句読点）は HF revision を固定済みですが、まだ推論には接続しておらず、Windows の Phase 2 VM 検証は NOT RUN です。詳しくは[日文輸入（預覽）](#-日文輸入預覽)。
 
 ## ✨ 特色
 
@@ -96,12 +96,12 @@ Windows 只有一個「Mixed」輸入法，注音、日文羅馬字與英文在�
 - Windows TSF 只有一個 Mixed profile。注音、日文羅馬字與英文在同一個組字區，不再有 ja-JP「靈犀日本語」profile；舊版留下的 ja-JP 會在升級時清掉。
 - `0c-compile -lang ja -public` 編譯的日文資料包，隨附 `data/ja/NOTICE.txt` 的逐來源授權。
 
-repo 內的日文資料包是 140 行（137 筆詞條）的種子包。完整的 0c-jadic public-core pack 不進 Git，要用 `make ja-import JA_PACK=<pack>` 匯入 `build/ja-import`，再用 `make assets LANG=ja JA_SRC=build/ja-import` 編譯；P2-45F 的 importer 匯入 1,137,895 筆詞條、861,582 個 surface，編譯後合併為 909,864 筆。pack 沒有連接成本矩陣，目前仍用 `data/ja/connection.tsv` 的 curated 種子。這份完整詞典的統計 top1 只有 0～2.9%，`kyouha` 會選「教派」、`ashita` 會選「アシタ」，還不能當正式日文輸入品質。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
+repo 內的日文資料包是 140 行（137 筆詞條）的種子包。正式日文詞典改成 Mozc OSS `dictionary_oss` tag `3.35.6354`（commit `0136c35782536cb43d710575c311cd4185982738`），`make ja-mozc` 會下載、逐檔驗證 SHA-256、匯入到 `build/ja-mozc`；匯入後是 1,219,525 筆詞條、982,694 個 surface，並帶 2,672×2,672 的 context 連接矩陣。原始詞典與產物都不進 Git。`make assets LANG=ja` 不指定 `JA_SRC` 時仍編譯種子。Windows 套件可選擇內附 `data/ja/`：
 
 ```sh
 make assets LANG=zh                 # 注音字典與模型
-make ja-import JA_PACK=<pack>       # 匯入完整 public-core 詞典到 build/ja-import
-make assets LANG=ja JA_SRC=build/ja-import  # 用完整詞典編譯 build/ja
+make ja-mozc                        # 下載並匯入 Mozc 詞典到 build/ja-mozc
+make ja-mozc-assets                  # 再編譯成 build/ja
 make assets LANG=all                # 注音與日文一起準備
 make assets MODELS_ONLY=1           # 只換注音模型，需已有 assets/data
 python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
@@ -109,11 +109,11 @@ python3 scripts/package_windows.py --data assets/data --ja-data build/ja ...
 
 系統需求與注音相同：Windows 10 1803 以上 x64 或 Windows 11 x64。安裝後直接從中文（台灣）的鍵盤清單選「Mixed」，不需要另裝 ja-JP 語言。沒有日文資料包時，注音、英文與更新流程照常，日文功能不載入詞典，不影響注音。
 
-`make assets LANG=ja` 會把 `data/ja` 編譯成 `build/ja`，並用 `0c-japack` 從 `lexicon.bin` 匯出引擎載入的 `lexicon/words.tsv` 與 `connection.tsv`。Windows 套件的 `--ja-data` 會把這些執行期檔案連同編譯產物放進 `data/ja/`。日文模型包由 Hugging Face 提供已 pin 的 reranker（CC BY-SA 4.0）與 punctuation（MIT）；產品只有這一個模型包，沒有其他選擇。日文 reranker 與標點模型已接入引擎；模型不可用時保留統計轉換。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
+`make ja-mozc-assets` 會把 Mozc 匯入目錄編譯成 `build/ja`，並保留引擎載入的 `lexicon/words.tsv`、`connection.tsv` 與 context `connection.bin`。Windows 套件的 `--ja-data` 會把這些執行期檔案連同編譯產物放進 `data/ja/`。日文模型包由 Hugging Face 提供已 pin 的 reranker（CC BY-SA 4.0）與 punctuation（MIT）；產品只有這一個模型包，沒有其他選擇。日文 reranker 與標點模型已接入引擎；模型不可用時保留統計轉換。Phase 2 的 Windows VM 驗收是 **NOT RUN**，見 [VM 執行紀錄](platforms/windows/test/vm/LIVE-RUN.md)。正式產品不 import 或啟動 llama.cpp、GGUF、zenz。
 
 ### 量測
 
-量測分成兩組，不能混用。repo 內的 `data/ja` 種子包是 CI gate 的 baseline；安裝包使用的完整 public-core 詞典另外量。兩組都只走統計轉換，沒有接 reranker。
+量測分成兩組，不能混用。repo 內的 `data/ja` 種子包是 CI gate 的 baseline；安裝包使用的 Mozc 詞典另外量。兩組都只走統計轉換，沒有接 reranker。
 
 **CI baseline：repo 內種子包**
 
@@ -126,26 +126,23 @@ T33 在凍結的題庫上量測種子包。分數低是因為種子包覆蓋不�
 | `anthy-corpus1` | 200 | 2.5% | 2.5% | 1.5% | 0.253 |
 | `ajimee-200` | 200 | 1.5% | 1.5% | 不計 | 不計 |
 
-**安裝包詞典：public-core（P2-47B 實測）**
+**安裝包詞典：Mozc OSS（P2-53 實測）**
 
-使用 `ja-lexicon-public-core.pack`，SHA-256 `8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840`，manifest SHA-256 `4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1`。匯入後 `words.tsv` 是 1,137,895 筆詞條、861,582 個 surface、SHA-256 `830f6783cb6931751d719dd602c327164f7a72a8443871d153f8948a142c723d`；連接成本仍用 `data/ja/connection.tsv`。量測指令：
+Mozc OSS `dictionary_oss` tag `3.35.6354` 匯入後 `words.tsv` 是 1,219,525 筆詞條、982,694 個 surface；連接成本來自 Mozc 的 context 矩陣，不再用 curated 種子。量測指令：
 
 ```sh
-go run ./cmd/0c-jadic import \
-  -pack /home/fedora/.opencode/plan/0c-ja/phase2/reference/pack/ja-lexicon-public-core.pack \
-  -out build/ja-import \
-  -connections data/ja/connection.tsv -force
-go run ./cmd/0c-eval-ja --data build/ja-import
+make ja-mozc
+go run ./cmd/0c-eval-ja -data build/ja-mozc
 ```
 
 | 題庫 | n | 首選 top-1 | 前 5 名 top-5 | 文節邊界 exact | 邊界 F1 |
 |---|---:|---:|---:|---:|---:|
-| `modern-500` | 500 | 0.0%（0） | 0.0%（0） | 0.8%（4/500） | 0.280 |
-| `hard-cases` | 35 | 2.9%（1） | 5.7%（2） | 2.9%（1/35） | 0.302 |
-| `anthy-corpus1` | 200 | 1.0%（2） | 3.5%（7） | 6.0%（12/199） | 0.327 |
-| `ajimee-200` | 200 | 1.0%（2） | 3.5%（7） | 不計 | 不計 |
+| `modern-500` | 500 | 86.0% | 98.0% | 88.2% | 0.902 |
+| `hard-cases` | 35 | 54.3% | 97.1% | 68.6% | 0.863 |
+| `anthy-corpus1` | 200 | 62.0% | 84.5% | 35.2% | 0.727 |
+| `ajimee-200` | 200 | 46.0% | 65.5% | 不計 | 不計 |
 
-和種子包 baseline 相比，完整詞典的 top-1 沒有上升：`modern-500` 23.2%→0.0%、`hard-cases` 14.3%→2.9%、`anthy-corpus1` 2.5%→1.0%、`ajimee-200` 1.5%→1.0%。top-5 只在 Anthy 與 AJIMEE 增加，邊界 F1 在 Anthy 與 hard-cases 增加。擴充詞條沒有轉成 top-1 改善，和 [日文資料 README](data/ja/README.md#完整公開核心詞典p2-45b) 記錄的成本尺度與連接矩陣問題一致。
+同一個 harness 下，public-core 的 top-1 是 0.0%／2.9%／1.0%／1.0%（依上表順序），top-5 是 0.0%／5.7%／3.5%／3.5%。Mozc 的剩餘錯誤以同音詞與詞彙偏好為主，例如 Mozc OSS 偏「子ども」而題庫要「子供」；完整對照與 POS 對應見 [日文資料 README](data/ja/README.md#p2-53mozc-oss-詞典目前路徑)。
 
 `testdata/ja/baseline.json` 仍綁定種子包。CI 沒有 public-core pack，`TestJARegressionGate` 會直接跑 `data/ja`，所以不能把 baseline 換成上表而不破壞 CI。規則、題庫雜湊與 CI 門檻見 [testdata/ja/README.md](testdata/ja/README.md)。延遲只在同一台機器比較，不進 CI 門檻。
 

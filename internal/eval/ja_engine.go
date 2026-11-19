@@ -46,9 +46,24 @@ func LoadJADecoder(dir string) (*decode.Decoder, JAEngineInfo, error) {
 		return nil, info, err
 	}
 	defer cf.Close()
-	conn, err := lexicon.LoadConnections(cf)
+	posConn, err := lexicon.LoadConnections(cf)
 	if err != nil {
 		return nil, info, fmt.Errorf("%s: %w", conns, err)
+	}
+	var conn lexicon.Connection = posConn
+	// connection.bin 是選填的 Mozc context 矩陣。存在時 decoder 用 left/right
+	// context ID 計分；POS 矩陣保留給文節合併與沒有 ID 的未知詞。
+	if ctxPath := filepath.Join(dir, "connection.bin"); fileExists(ctxPath) {
+		bf, err := os.Open(ctxPath)
+		if err != nil {
+			return nil, info, err
+		}
+		ctx, err := lexicon.LoadContextMatrix(bf)
+		bf.Close()
+		if err != nil {
+			return nil, info, fmt.Errorf("%s: %w", ctxPath, err)
+		}
+		conn = &lexicon.Connections{POS: posConn, Context: ctx}
 	}
 
 	// lm.bin 是選填的。它在編譯後資料包的根目錄，和 lexicon/words.tsv 的

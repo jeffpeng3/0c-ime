@@ -104,7 +104,7 @@ go-winio 只用於 Windows 的 named pipe，Linux 與 macOS 的執行檔不含�
 
 ### 日文資料
 
-`data/ja/` 的種子詞條、連接成本與詞頻由本專案維護，採 CC BY-SA 4.0；`data/ja/symbols/` 的記号與顔文字由本專案整理，採 AGPL-3.0-only。編譯器 `0c-compile -lang ja -public` 會逐來源檢查 `data/sources/ledger.tsv`、可散布標記與 `data/sources/licenses/ja-*.txt`，輸出的 `data/ja/NOTICE.txt` 保留完整姓名標示。日後匯入 Mozc、SudachiDict、UniDic 或 Wikipedia 時，依各自授權與混合邊界標示，不整體改寫成單一授權。日文神經模型目前不隨產品出貨：P2-01 已移除 llama.cpp、GGUF、zenz 路徑，日文只用統計詞典。P2-25 匯出 ONNX 模型、P2-30 接上 runtime 後，再依模型授權與訓練資料更新本節；T03 的實驗記錄在 `scripts/spike/ja-zenz/`，不是正式產品路徑。
+repo 內的 `data/ja/` 種子詞條、連接成本與詞頻由本專案維護，採 CC BY-SA 4.0；`data/ja/symbols/` 的記号與顔文字由本專案整理，採 AGPL-3.0-only。正式日文詞典由 Mozc OSS `dictionary_oss`（tag 3.35.6354、commit 0136c357）匯入，授權是 BSD-3-Clause AND NAIST-IPAdic AND ICOT-Free-Software，沖繩辭書 Public Domain；這些都是保留聲明的寬鬆授權，沒有 copyleft，也不含 non-commercial 限制。編譯器 `0c-compile -lang ja -public` 會逐來源檢查 `data/sources/ledger.tsv`、可散布標記與 `data/sources/licenses/ja-*.txt`，輸出的 `data/ja/NOTICE.txt` 保留完整姓名標示。Mozc 資料依自己的混合邊界標示，不整體改寫成 Apache-2.0 或單一 BSD-3-Clause。日文神經模型目前不隨產品出貨：P2-01 已移除 llama.cpp、GGUF、zenz 路徑，日文只用統計詞典。P2-25 匯出 ONNX 模型、P2-30 接上 runtime 後，再依模型授權與訓練資料更新本節；T03 的實驗記錄在 `scripts/spike/ja-zenz/`，不是正式產品路徑。
 
 ### 圖示與圖片
 

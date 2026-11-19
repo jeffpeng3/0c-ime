@@ -1,8 +1,9 @@
 Mozc OSS 日文詞典（dictionary_oss）
 
-來源：https://github.com/google/mozc/tree/a4541df29db443b49f81cf54665873b68fde9efa/src/data/dictionary_oss
-版本：commit a4541df29db443b49f81cf54665873b68fde9efa（2026-11-09）
-使用範圍：dictionary00.txt 至 dictionary09.txt、id.def、connection_single_column.txt、suffix.txt，以及同授權範圍的 src/data/dictionary_manual。
+來源：https://github.com/google/mozc/tree/0136c35782536cb43d710575c311cd4185982738/src/data/dictionary_oss
+版本：tag 3.35.6354；commit 0136c35782536cb43d710575c311cd4185982738（2026-10-16）
+使用範圍：dictionary00.txt 至 dictionary09.txt、id.def、connection_single_column.txt、dictionary_filter.tsv、aux_dictionary.tsv。逐檔 SHA-256 見 data/sources/ja-mozc-3.35.6354.sha256。
+上游沒有把 dictionary_oss 標成 Apache-2.0；本檔以下全文是實際隨資料散布的 BSD-3-Clause、NAIST/IPAdic、ICOT 與沖繩辭書條款。
 
 本資料是混合授權，不可整體當成 BSD-3-Clause：
 1. Mozc 專案檔案與 Google 追加詞條：BSD-3-Clause。

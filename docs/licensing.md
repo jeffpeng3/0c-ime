@@ -29,7 +29,7 @@ Copyright (C) 2026 Funmula Co., Limited
 
 日文產品只有一個固定的模型包：reranker 是 CC BY-SA 4.0，punctuation 是 MIT。公開核心 reranker 只留在訓練 repo 作評估參考，不出現在產品 lock、文件或安裝路徑。注音 `select/`、`punct/` 與日文模型的檔案與授權以各模型 `LICENSE` 與 [models/README.md](../models/README.md) 為準。
 
-公開核心不使用 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN 或 NEologd 來源。
+公開核心訓練資料不使用 CC BY-SA、non-commercial、ODC-BY、Common Crawl 衍生、Mozc、UniDic 的 CC BY-NC-SA 與古文／方言版本、SudachiDict、NEologin、JUMAN 或 NEologd 來源。產品日文詞典是另一個交付，使用 Mozc OSS 詞典，見下一節。
 
 ## CC BY-SA 實驗資料與模型
 
@@ -83,7 +83,18 @@ CC BY-SA 資料與模型以 **CC BY-SA 4.0** 釋出，與公開核心分開 mani
 
 產品注音詞庫的 `curated` 詞條與 `0c_collect` 統計採 **CC BY-SA 4.0**。這是產品資料，與上面「公開核心訓練資料」是不同軌道；公開核心版本另外以 permissive notice-only 授權，不撤回產品資料的 CC BY-SA。
 
-日文資料包逐來源標示。`data/ja/` 的詞條、連接成本與詞頻目前採 CC BY-SA 4.0，記号與顔文字辭典採 AGPL-3.0-only；編譯後的 `data/ja/NOTICE.txt` 列出實際來源、版本、授權與姓名標示。日後匯入 Mozc、SudachiDict 或 Wikipedia 時維持各自的混合授權，不整體改標。
+日文資料包逐來源標示。repo 內的 `data/ja/` 種子詞條、連接成本與詞頻採 CC BY-SA 4.0，記号與顔文字辭典採 AGPL-3.0-only；正式日文詞典由 Mozc OSS `dictionary_oss` 匯入，編譯後的 `data/ja/NOTICE.txt` 列出實際來源、版本、授權與姓名標示。Mozc 資料維持自己的混合授權，不整體改標。
+
+### Mozc OSS 日文詞典
+
+正式日文詞典使用 `https://github.com/google/mozc` 的 `src/data/dictionary_oss`，版本 tag `3.35.6354`、commit `0136c35782536cb43d710575c311cd4185982738`。上游 `LICENSE` 與 `README.txt` 確認這份資料**不是 Apache-2.0**，實際條款是：
+
+- Mozc 專案檔案與 Google 追加詞：BSD-3-Clause。
+- 詞條、品詞與連接成本衍生自 mecab-ipadic-2.7.0-20070801：NAIST/IPAdic。
+- 大部分詞條來自 ICOT Free Software，散布時保留 ICOT 的 NO WARRANTY。
+- 沖繩辭書：Public Domain。
+
+散布日文詞典時必須同時保留上述完整聲明，不能只寫 `BSD-3-Clause`、`Apache-2.0` 或 `CC BY 4.0`。完整條款在 [data/sources/licenses/ja-mozc.txt](../data/sources/licenses/ja-mozc.txt)，逐檔 SHA-256 在 [data/sources/ja-mozc-3.35.6354.sha256](../data/sources/ja-mozc-3.35.6354.sha256)。原始詞典與 `build/ja-mozc*` 不進 Git。
 
 英文詞表授權在 `data/english/LICENSE.txt`，編譯後的通知在 `data/english/NOTICE.txt`。
 
