@@ -1,0 +1,242 @@
+name: Windows installer
+
+# P2-50：從零產生完整的 Windows 安裝包。過去預覽版是在 Fedora 手動交叉建置，缺
+# 0c-settings.exe，bin\ 也沒有 0c-server.exe，設定程式的「模型」頁因此找不到引擎與字典。
+# 這個 workflow 在 windows-2022 上取得所有固定輸入、建置每一個出貨程式、打包 ZIP 與
+# NSIS setup.exe，再用 scripts/check_windows_payload.py 驗證完成品：
+#   - 缺任何必要檔（引擎、UI、設定、TSF、更新器、MCP、ONNX/MSVC DLL、字典、模型、授權）就失敗；
+#   - 出現 Python 檔、wheel 或 x86 的額外執行檔就失敗；
+#   - 模擬安裝後，以套件內的 0c-update status 驗證設定程式解析到的 server 與 data 都在
+#     使用中的版本目錄，並用同一個 data 執行 0c-server -check-data。
+# 不在 CI 執行任何 ONNX 推論；模型只下載、核對雜湊與打包。
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 套件版本（例如 0.2.13-preview.1）
+        required: true
+        type: string
+  push:
+    # 分支推送也會完整建置一次，讓 CI 直接證明安裝包可產生；版本用 BRANCH_VERSION。
+    branches:
+      - 'p2/**'
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  # P2-50：字典與日文 pack 的固定來源。字典由 fetch_assets.py 從 0c-biggo/0c-ime 的
+  # source release 取得；pack、manifest、tokenizer 由 models/payload-assets.lock.json 固定。
+  CHINESE_RELEASE: v0.2.12
+  BRANCH_VERSION: 0.2.13-preview.1
+  CARGO_TERM_COLOR: never
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve the version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.version || '' }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            version="${INPUT_VERSION}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#v}"
+          else
+            version="${BRANCH_VERSION}"
+          fi
+          version="${version#v}"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "invalid version: '$version' (use 0.2.13 or 0.2.13-preview.1)" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  settings:
+    needs: prepare
+    uses: ./.github/workflows/build-settings.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+
+  installer:
+    needs: [prepare, settings]
+    runs-on: windows-2022
+    timeout-minutes: 120
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Cache Cargo
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            platforms/windows/target
+          key: ${{ runner.os }}-installer-cargo-${{ hashFiles('platforms/windows/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-installer-cargo-
+      - name: Install mingw, NSIS and the 32-bit Rust target
+        shell: pwsh
+        run: |
+          choco install mingw nsis --no-progress -y
+          "C:\ProgramData\mingw64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Append
+          rustup target add i686-pc-windows-msvc
+      - name: Show the toolchains
+        shell: bash
+        run: |
+          go version
+          gcc --version | head -1
+          python --version
+          rustc --version
+          makensis -VERSION
+      - name: Verify the source tree
+        shell: bash
+        run: |
+          python scripts/check_public_tree.py
+          python -m unittest discover -s scripts -p 'test_windows_package.py'
+          python -m unittest discover -s scripts -p 'test_payload_assets.py'
+      - name: Fetch the pinned Chinese dictionary
+        shell: bash
+        run: |
+          python scripts/fetch_assets.py --release "$CHINESE_RELEASE" --no-models
+      - name: Fetch the pinned Japanese pack, manifest and tokenizer
+        shell: bash
+        run: |
+          python scripts/fetch_pinned_payload.py --out build/ja-assets --model-cache build/cache/ja-models
+      - name: Import and compile the Japanese data pack
+        shell: bash
+        run: |
+          go run ./cmd/0c-jadic import -pack build/ja-assets/ja-lexicon-public-core.pack \
+            -manifest build/ja-assets/manifest.json -out build/ja-import \
+            -connections data/ja/connection.tsv -force
+          python scripts/fetch_assets.py --lang ja --ja-source build/ja-import --ja-out build/ja
+          test -f build/ja/lexicon/words.tsv
+          test -f build/ja/connection.tsv
+      - name: Fetch and pair the Chinese models
+        shell: bash
+        run: |
+          python -B scripts/hf_models.py fetch
+          python -B scripts/hf_models.py pair --data assets/data --out build/models-pair
+      - name: Fetch the Japanese model package
+        shell: bash
+        run: |
+          # tokenizer.model 不在 Hugging Face；上一步已放進快取，其他檔案由 pinned revision 下載。
+          go run ./cmd/0c-model-set fetch -format int8 -out build/ja-models \
+            -lock models/pairing.lock.json -cache build/cache/ja-models
+      - name: Fetch the pinned native ONNX Runtime and MSVC DLLs
+        shell: bash
+        run: |
+          python scripts/prepare_windows_runtime.py --out build/runtime --cache build/runtime-cache
+      - name: Build the Windows engine and tools
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          CC: gcc
+        run: |
+          set -o pipefail
+          mkdir -p build/windows
+          go build -tags onnxruntime -trimpath -ldflags "-X main.buildVersion=$VERSION" \
+            -o build/windows/0c-server.exe ./cmd/0c-server
+          CGO_ENABLED=0 go build -trimpath -ldflags "-X main.buildVersion=$VERSION" \
+            -o build/windows/0c-update.exe ./cmd/0c-update
+          CGO_ENABLED=0 go build -trimpath -ldflags "-H windowsgui -X main.buildVersion=$VERSION" \
+            -o build/windows/0c-updatew.exe ./cmd/0c-updatew
+          CGO_ENABLED=0 go build -trimpath -ldflags "-X main.buildVersion=$VERSION" \
+            -o build/windows/0c-mcp.exe ./cmd/0c-mcp
+          go version -m build/windows/0c-server.exe
+      - name: Build the Windows shell, UI and TSF DLLs
+        shell: bash
+        working-directory: platforms/windows
+        run: |
+          set -o pipefail
+          cargo build --release --locked
+          cargo build --release --locked --target i686-pc-windows-msvc -p zuin-tsf
+      - name: Download the settings program
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: windows-settings
+          path: build/settings-src/windows-amd64
+      - name: Verify every locally built binary
+        shell: bash
+        run: |
+          for output in \
+            build/windows/0c-server.exe build/windows/0c-update.exe \
+            build/windows/0c-updatew.exe build/windows/0c-mcp.exe \
+            platforms/windows/target/release/0c_tsf.dll \
+            platforms/windows/target/release/0c-ui.exe \
+            platforms/windows/target/i686-pc-windows-msvc/release/0c_tsf.dll \
+            build/settings-src/windows-amd64/0c-settings.exe; do
+            test -f "$output" || { echo "missing build output: $output" >&2; exit 1; }
+          done
+      - name: Package the portable ZIP
+        shell: bash
+        run: |
+          python scripts/package_windows.py \
+            --data assets/data --ja-data build/ja \
+            --ort-runtime build/runtime --model-pair build/models-pair \
+            --ja-model --model-source build/ja-models \
+            --release-docs platforms/windows/installer/release-docs \
+            --settings build/settings-src/windows-amd64 \
+            --version "$VERSION" --out build/release --preview --x86
+      - name: Build the NSIS setup.exe
+        shell: bash
+        run: |
+          zip=$(ls build/release/*.zip)
+          python scripts/package_windows_installer.py --archive "$zip" --out build/release \
+            --makensis "C:\\Program Files (x86)\\NSIS\\makensis.exe"
+      - name: Write SHA256SUMS
+        shell: bash
+        run: |
+          cd build/release
+          sha256sum *.zip *setup.exe | sort -k2 > SHA256SUMS
+          cat SHA256SUMS
+      - name: Verify the complete payload and the settings resolution
+        shell: bash
+        run: |
+          zip=$(ls build/release/*.zip)
+          python scripts/check_windows_payload.py --archive "$zip" \
+            --updater build/windows/0c-update.exe --json | tee build/release/payload-check.json
+      - name: Record the artifacts
+        shell: bash
+        run: |
+          cd build/release
+          {
+            echo "## Windows installer ${VERSION}"
+            echo
+            echo '```'
+            cat SHA256SUMS
+            ls -l *.zip *setup.exe
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload setup.exe, portable ZIP and checksums
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: windows-installer-${{ needs.prepare.outputs.version }}
+          path: |
+            build/release/*setup.exe
+            build/release/*.zip
+            build/release/SHA256SUMS
+            build/release/payload-check.json
+          if-no-files-found: error
+          retention-days: 30

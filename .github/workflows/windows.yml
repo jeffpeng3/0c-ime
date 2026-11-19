@@ -193,40 +193,10 @@ jobs:
           retention-days: 14
 
   windows-settings:
-    # P2-47F：建置「靈犀注音設定」Windows 版。cross-build 與 windows job 都沒有建這個程式，
-    # 所以安裝包一直缺 0c-settings.exe（設定打不開）。這裡只建置與上傳未簽章產物，
-    # 簽章與版本資源仍由 scripts/package_windows.py 在建置機上一起做。
-    runs-on: windows-2022
-    timeout-minutes: 40
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - name: Show the toolchain versions
-        shell: pwsh
-        run: |
-          rustc --version
-          cargo --version
-          python --version
-      - name: Build the settings program
-        shell: pwsh
-        run: |
-          python scripts/build_settings_windows.py --version 0.2.13-preview.1 --out build/settings
-      - name: Verify the build outputs
-        shell: bash
-        run: |
-          test -f build/settings/windows-amd64/0c-settings.exe
-          test -f build/settings/windows-amd64/NOTICES.txt
-          ls -l build/settings/windows-amd64/
-      - name: Upload the settings program
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: windows-settings
-          path: |
-            build/settings/windows-amd64/0c-settings.exe
-            build/settings/windows-amd64/NOTICES.txt
-          if-no-files-found: error
-          retention-days: 14
+    # P2-47F / P2-50：設定程式的建置步驟抽到 build-settings.yml，完整安裝包 workflow 也用同一份。
+    uses: ./.github/workflows/build-settings.yml
+    with:
+      version: 0.2.13-preview.1
 
   cross-build:
     # Phase 2 完成條件包含 GOOS=windows go build ./...（P2-01、P2-02）。
