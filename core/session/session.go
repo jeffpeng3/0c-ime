@@ -239,6 +239,9 @@ type Session struct {
 	japaneseRun       bool
 	japaneseCfg       jlang.Config
 	japaneseConfigure jlang.ConverterConfig
+	japaneseKanaFirst bool          // P2-52：同形時優先かな（設定 ja-ambiguous=kana）
+	japaneseLex       jlang.Source  // 重新安裝 profile 時沿用同一個詞典
+	japaneseConn      *jlang.Matrix // 重新安裝 profile 時沿用同一個連接矩陣
 	// lastLanguage 是上一次送出的最後一個片段語言（P2-15）。選字時用它判斷跨語言偏好：
 	// 句首或被清掉後是空字串，代表沒有前文語言。
 	lastLanguage lang.ID
@@ -622,6 +625,12 @@ func (s *Session) EnglishMode() bool { return s.english }
 func (s *Session) key(k string) (handled bool, commit string) {
 	// 日文 runtime 已經沒有組字時先回到注音，下一個按鍵重新依按鍵推斷語言。
 	s.leaveEmptyJapanese()
+	// P2-52：Shift+Tab 把目前的待定英數段明確改成かな。只在注音路徑、沒有
+	// 候選窗、有待定按鍵時作用；打不成合法羅馬字時照舊吃掉、原樣保留。
+	if k == proto.KeyBackTab && s.japaneseOn && s.Language() == lang.Zh && !s.english && s.cand == nil && s.mixed.raw != "" {
+		s.forceJapaneseRun()
+		return true, ""
+	}
 	if handled, commit, ok := s.languageKey(k); ok {
 		return handled, commit
 	}

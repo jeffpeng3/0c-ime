@@ -59,7 +59,9 @@ func (s *Session) installJapanese(lex jlang.Source, conn *jlang.Matrix) {
 	}
 	cfg := jlang.DefaultConfig()
 	cfg.Dictionary = s.English
+	cfg.PreferKana = s.japaneseKanaFirst
 	s.japaneseCfg = cfg
+	s.japaneseLex, s.japaneseConn = lex, conn
 	s.languages[lang.Ja] = jlang.NewMixedProfileConfigured(lex, conn, cfg, s.japaneseConfigure)
 	delete(s.runtimes, lang.Ja)
 	if s.Language() != lang.Zh {
@@ -73,6 +75,23 @@ func (s *Session) installJapanese(lex jlang.Source, conn *jlang.Matrix) {
 func (s *Session) JapaneseEnabled() bool {
 	return s != nil && s.japaneseOn
 }
+
+// SetJapaneseKanaFirst 設定日英同形時是否優先かな（P2-52，settings 的 ja-ambiguous=kana）。
+// 必須在開始打字前設定；已經註冊日文 profile 時會用同一個詞典重建 runtime，
+// 未完成的日文組字會清掉。零值維持英文優先，既有使用者行為不變。
+func (s *Session) SetJapaneseKanaFirst(on bool) {
+	if s == nil || s.japaneseKanaFirst == on {
+		return
+	}
+	s.japaneseKanaFirst = on
+	if s.japaneseOn {
+		s.installJapanese(s.japaneseLex, s.japaneseConn)
+		s.japaneseOn = true
+	}
+}
+
+// JapaneseKanaFirst 回報日英同形時是否優先かな。
+func (s *Session) JapaneseKanaFirst() bool { return s != nil && s.japaneseKanaFirst }
 
 // japanesePending 回報目前的待定按鍵是否應該交給日文 runtime。
 //
@@ -95,9 +114,22 @@ func (s *Session) japanesePending() bool {
 		return false
 	}
 	if s.englishPrior(raw) {
-		return false
+		// かな優先只蓋過詞典英文詞與英文詞前綴；使用者加到「我的詞彙」的
+		// 英文詞、學過的英文詞仍是明確的英文，不因為設定變成かな。
+		if !s.japaneseKanaFirst || s.strongEnglishPrior(raw) {
+			return false
+		}
 	}
 	return true
+}
+
+// strongEnglishPrior 是比詞典更明確的英文證據：使用者加的英文詞（含前綴）
+// 與個人學到、已達門檻的英文詞。設定優先かな時仍讓它們照英文。
+func (s *Session) strongEnglishPrior(raw string) bool {
+	if s.vocabEnglishPrefix(raw) {
+		return true
+	}
+	return s.model != nil && s.model.EnglishKnown(raw)
 }
 
 // englishPrior 回報 raw 是否仍是英文詞或「我的詞彙」的前綴。
@@ -164,7 +196,29 @@ func (s *Session) startJapaneseRun() bool {
 	if !s.japanesePending() {
 		return false
 	}
+	return s.beginJapaneseRun(s.mixed.raw, false)
+}
+
+// forceJapaneseRun 是 Shift+Tab 的明確かな鍵（P2-52）：不看 ja-ambiguous 的
+// 預設優先順序，只要整段待定按鍵能完整組成合法羅馬字就轉成かな，保留已打的
+// 前綴。大寫、網址、識別字與打不成羅馬字的按鍵不動。
+func (s *Session) forceJapaneseRun() bool {
+	if s == nil || !s.japaneseOn || s.Language() != lang.Zh || s.english || s.cand != nil {
+		return false
+	}
 	raw := s.mixed.raw
+	if len(raw) < 2 || !asciiLetters(raw) || len(s.syls) > 0 || !s.comp.Empty() {
+		return false
+	}
+	cfg := s.japaneseCfg
+	cfg.PreferKana = true
+	if jlang.IsLiteral(raw, cfg) || !jlang.IsKana(raw, cfg) {
+		return false
+	}
+	return s.beginJapaneseRun(raw, true)
+}
+
+func (s *Session) beginJapaneseRun(raw string, forceKana bool) bool {
 	s.clearMixed()
 	s.mixedOrigins = nil
 	s.cand = nil
@@ -176,6 +230,11 @@ func (s *Session) startJapaneseRun() bool {
 	}
 	for _, k := range raw {
 		r.composer.Insert(string(k))
+	}
+	if forceKana {
+		if f, ok := r.composer.(interface{ ForceKana() bool }); ok {
+			f.ForceKana()
+		}
 	}
 	s.japaneseRun = true
 	s.refresh()

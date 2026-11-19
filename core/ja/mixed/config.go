@@ -15,6 +15,10 @@ type Config struct {
 	// MinEnglishLen 是詞典英文詞照字面處理的最短長度，零值代表 3。
 	// 兩字母的羅馬字（go、no、to）因此仍以かな為主。
 	MinEnglishLen int
+	// PreferKana 讓合法羅馬字優先於詞典英文詞（P2-52）：kanji、sake 這類
+	// 同時是英文與かな的按鍵組成かな。大寫、全角、網址、識別字、數字與
+	// 學過的英文詞仍照字面；零值維持原本的英文優先。
+	PreferKana bool
 	// MaxCandidates 是組字與単一文節一次列出的候選上限，零值代表 8。
 	MaxCandidates int
 }

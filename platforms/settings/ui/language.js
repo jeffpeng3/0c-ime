@@ -23,7 +23,7 @@
   // P2-42 起 Mixed profile 不再有 language／language-memory／language-hotkey；保留空清單
   // 讓舊版 0c-update 的契約與舊測試仍可讀。日文選項照舊。
   const LANGUAGE_KEYS = [];
-  const JAPANESE_KEYS = ['ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'];
+  const JAPANESE_KEYS = ['ja-input-method', 'ja-ambiguous', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'];
   const LANGUAGE_PAGE_KEYS = LANGUAGE_KEYS.concat(JAPANESE_KEYS);
   // 舊契約（T27）的語言鍵：只在讀舊版 0c-update 的快照時使用，不再顯示。
   const LEGACY_LANGUAGE_KEYS = ['language', 'language-memory', 'language-hotkey'];

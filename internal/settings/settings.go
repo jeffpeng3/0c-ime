@@ -67,6 +67,13 @@ const (
 	JaInputKana   = "kana"   // 直接かな
 )
 
+// 日英同形時的優先順序（P2-52，ja-ambiguous）。預設 english：kanji、sake 這類
+// 同時是英文詞與合法羅馬字的按鍵照英文，與舊版完全相同；kana：優先組成かな。
+const (
+	JaAmbiguousEnglish = "english" // 詞典英文詞優先（預設，維持既有行為）
+	JaAmbiguousKana    = "kana"    // 合法羅馬字優先
+)
+
 // 模型常駐模式（P2-33）；值與 internal/neural.Mode 相同。
 //
 //	auto    主要語言先載入，其他語言第一次用到時才載入（預設）
@@ -180,6 +187,9 @@ type Settings struct {
 	Language string `json:"-"`
 	// JaInputMethod 是日文的輸入方式（T27）：romaji（預設，羅馬字）或 kana（直接かな）。
 	JaInputMethod string `json:"ja_input_method"`
+	// JaAmbiguous 是日英同形時的優先順序（P2-52）：english（預設，詞典英文詞優先，
+	// 與舊版相同）或 kana（合法羅馬字優先）。不影響大寫、網址、識別字與「我的詞彙」英文詞。
+	JaAmbiguous string `json:"ja_ambiguous"`
 	// JaLiveConversion：ライブ変換（T27）。預設 false：按変換才轉換；開啟時輸入中即時轉換。
 	// 需要引擎回報 live_conversion 能力，舊引擎照舊只有変換。
 	JaLiveConversion bool `json:"ja_live_conversion"`
@@ -344,7 +354,7 @@ func Default() Settings {
 	s := Settings{Selection: Neural, Punctuation: false, DocumentContext: true, CandidateCursor: defaultCandidateCursor(runtime.GOOS), CandidateLayout: "vertical", EmojiShortcut: "equals", EmojiEqualsFirst: true, EscClear: true, SpaceSelects: true, KeyboardLayout: LayoutStandard, SelectionKeys: SelectDigits, CtrlPunctuation: true, ZhuyinErrorHint: true,
 		ToggleKey: defaultToggleKey(runtime.GOOS), ModeMemory: defaultModeMemory(runtime.GOOS), StartMode: StartZhuyin,
 		OutputVariant: VariantTraditional,
-		JaInputMethod: JaInputRomaji, JaLiveConversion: false, JaSymbols: true, JaLearning: true, JaModel: true,
+		JaInputMethod: JaInputRomaji, JaAmbiguous: JaAmbiguousEnglish, JaLiveConversion: false, JaSymbols: true, JaLearning: true, JaModel: true,
 		ModelMode: ModelModeAuto, PrimaryLanguage: LanguageZh, ModelResidencyMB: ModelResidencyAutoMB, AllowPlaceholders: false}
 	s.Language = s.PrimaryLanguage // 相容投影（P2-42）
 	s.LeftShift = s.TogglesLeft()  // 舊欄位跟著切換鍵：Windows 預設左右 Shift 時是 true（#206）
@@ -528,6 +538,7 @@ func (s *Settings) UnmarshalJSON(b []byte) error {
 		{"mode_memory", &s.ModeMemory, []string{ModeNative, ModeShared}},
 		{"start_mode", &s.StartMode, []string{StartZhuyin, StartEnglish}},
 		{"ja_input_method", &s.JaInputMethod, []string{JaInputRomaji, JaInputKana}},
+		{"ja_ambiguous", &s.JaAmbiguous, []string{JaAmbiguousEnglish, JaAmbiguousKana}},
 		{"model_mode", &s.ModelMode, []string{ModelModeAuto, ModelModeAll, ModelModePrimary, ModelModeNone}},
 		{"primary_language", &s.PrimaryLanguage, []string{LanguageZh, LanguageJa}},
 		{"output_variant", &s.OutputVariant, []string{VariantTraditional, VariantSimplified, VariantShinjitai}},
@@ -632,7 +643,7 @@ func (s Settings) MarshalJSON() ([]byte, error) {
 	for _, field := range []struct {
 		key   string
 		value any
-	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_variant", s.effectiveOutputVariant()}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}, {"ja_input_method", s.JaInputMethod}, {"ja_live_conversion", s.JaLiveConversion}, {"ja_symbols", s.JaSymbols}, {"ja_learning", s.JaLearning}, {"ja_model", s.JaModel}, {"model_mode", s.ModelMode}, {"primary_language", s.effectivePrimaryLanguage()}, {"model_residency_mb", s.ModelResidencyMB}, {"allow_placeholders", s.AllowPlaceholders}} {
+	}{{"selection", s.Selection}, {"punctuation", s.Punctuation}, {"document_context", s.DocumentContext}, {"mixed_input", s.MixedInput}, {"english_autocomplete", s.EnglishAutocomplete}, {"left_shift", s.LeftShift}, {"esc_clear", s.EscClear}, {"space_selects", s.SpaceSelects}, {"candidate_cursor", s.CandidateCursor}, {"advance_after_select", s.AdvanceAfterSelect}, {"candidate_layout", s.CandidateLayout}, {"emoji_shortcut", s.EmojiShortcut}, {"emoji_equals_first", s.EmojiEqualsFirst}, {"keyboard_layout", s.KeyboardLayout}, {"selection_keys", s.SelectionKeys}, {"toggle_key", s.ToggleKey}, {"mode_memory", s.ModeMemory}, {"start_mode", s.StartMode}, {"output_variant", s.effectiveOutputVariant()}, {"simplified_hotkey", s.SimplifiedHotkey}, {"ctrl_punctuation", s.CtrlPunctuation}, {"shift_symbol_halfwidth", s.ShiftSymbolHalfwidth}, {"all_symbols_halfwidth", s.AllSymbolsHalfwidth}, {"cjk_latin_space", s.CJKLatinSpace}, {"zhuyin_error_hint", s.ZhuyinErrorHint}, {"caps_lock_english", s.CapsLockEnglish}, {"toneless", s.Toneless}, {"ja_input_method", s.JaInputMethod}, {"ja_ambiguous", s.effectiveJaAmbiguous()}, {"ja_live_conversion", s.JaLiveConversion}, {"ja_symbols", s.JaSymbols}, {"ja_learning", s.JaLearning}, {"ja_model", s.JaModel}, {"model_mode", s.ModelMode}, {"primary_language", s.effectivePrimaryLanguage()}, {"model_residency_mb", s.ModelResidencyMB}, {"allow_placeholders", s.AllowPlaceholders}} {
 		if err := typed(field.key, field.value); err != nil {
 			return nil, err
 		}
@@ -687,7 +698,7 @@ func (s Settings) notes() []string {
 	if s.extra != "" {
 		_ = json.Unmarshal([]byte(s.extra), &kept)
 	}
-	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_variant", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless", "ja_input_method", "ja_live_conversion", "ja_symbols", "ja_learning", "ja_model", "model_mode", "primary_language", "model_residency_mb", "allow_placeholders"} {
+	for _, key := range []string{"selection", "punctuation", "document_context", "mixed_input", "english_autocomplete", "left_shift", "esc_clear", "space_selects", "candidate_cursor", "advance_after_select", "candidate_layout", "emoji_shortcut", "emoji_equals_first", "keyboard_layout", "selection_keys", "toggle_key", "mode_memory", "start_mode", "output_variant", "simplified_hotkey", "ctrl_punctuation", "shift_symbol_halfwidth", "all_symbols_halfwidth", "cjk_latin_space", "zhuyin_error_hint", "caps_lock_english", "toneless", "ja_input_method", "ja_ambiguous", "ja_live_conversion", "ja_symbols", "ja_learning", "ja_model", "model_mode", "primary_language", "model_residency_mb", "allow_placeholders"} {
 		if raw, ok := kept[key]; ok {
 			out = append(out, fmt.Sprintf("%s：本版不認得 %s，暫用預設值，存檔時保留原值", strings.ReplaceAll(key, "_", "-"), raw))
 			delete(kept, key)
@@ -903,6 +914,8 @@ func (s Settings) valueLabels(key string) map[string]string {
 		return map[string]string{LanguageZh: "注音", LanguageJa: "日文"}
 	case "ja-input-method":
 		return map[string]string{JaInputRomaji: "羅馬字", JaInputKana: "直接かな"}
+	case "ja-ambiguous":
+		return map[string]string{JaAmbiguousEnglish: "英文優先（預設）", JaAmbiguousKana: "かな優先"}
 	case "output-variant":
 		return map[string]string{VariantTraditional: "繁體中文", VariantSimplified: "簡體中文", VariantShinjitai: "日文新字體"}
 	case "primary-language":
@@ -1114,6 +1127,8 @@ func languageSpecs() []spec {
 	return []spec{
 		{"ja-input-method", "日文輸入方式", "羅馬字逐鍵輸入（ka 打成か），或直接用かな輸入（かな鍵盤、觸控）；不影響注音。", JaInputRomaji, []string{JaInputRomaji, JaInputKana},
 			func(s Settings) string { return s.JaInputMethod }},
+		{"ja-ambiguous", "日英同形時優先", "同時是英文詞與合法羅馬字時（kanji、sake、sushi）要打英文還是かな。英文優先保留舊行為；かな優先讓合法羅馬字直接組成かな，仍可用 Shift+Tab 臨時改成かな，大寫、網址、識別字與「我的詞彙」英文詞不受影響。", JaAmbiguousEnglish, []string{JaAmbiguousEnglish, JaAmbiguousKana},
+			func(s Settings) string { return s.effectiveJaAmbiguous() }},
 		{"ja-live-conversion", "ライブ変換", "輸入的同時即時轉換成漢字；關閉時按変換或空白才轉換。需要引擎支援ライブ変換，舊引擎照舊只有変換。", "off", []string{"on", "off"},
 			func(s Settings) string { return onOff(s.JaLiveConversion) }},
 		{"ja-symbols", "記号與顔文字", "日文変換候選列出記号與顔文字；關閉時只列詞語。", "on", []string{"on", "off"},
@@ -1176,6 +1191,17 @@ func LanguageHotkeyLabel(goos string) string {
 
 // Japanese 回報主要語言是不是日文。未設定或讀不懂時一律當成注音，舊設定檔行為不變。
 func (s Settings) Japanese() bool { return s.PrimaryLanguage == LanguageJa }
+
+// effectiveJaAmbiguous 把空值或讀不懂的值收斂成 english，讓舊設定檔維持既有行為。
+func (s Settings) effectiveJaAmbiguous() string {
+	if s.JaAmbiguous == JaAmbiguousKana {
+		return JaAmbiguousKana
+	}
+	return JaAmbiguousEnglish
+}
+
+// JaAmbiguousKanaFirst 是引擎實際使用值：只有明確選かな時才是 true。
+func (s Settings) JaAmbiguousKanaFirst() bool { return s.effectiveJaAmbiguous() == JaAmbiguousKana }
 
 // effectiveOutputVariant 把空值或讀不懂的變體收斂成繁體，讓輸出與舊版一致。
 func (s Settings) effectiveOutputVariant() string {
@@ -1601,6 +1627,9 @@ func (s *Settings) set(key, value string) error {
 	case "ja-input-method":
 		s.JaInputMethod = value
 		s.forget("ja_input_method")
+	case "ja-ambiguous":
+		s.JaAmbiguous = value
+		s.forget("ja_ambiguous")
 	case "ja-live-conversion":
 		s.JaLiveConversion = value == "on"
 		s.forget("ja_live_conversion")

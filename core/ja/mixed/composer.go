@@ -29,12 +29,13 @@ type Composer struct {
 	base reading.Sequence
 	kind []bool // base 每一項是否為照字面的英數；false 是日文讀音
 
-	run       string
-	runUnits  reading.Sequence
-	pending   string
-	literal   bool
-	kanaValid bool
-	forced    bool
+	run        string
+	runUnits   reading.Sequence
+	pending    string
+	literal    bool
+	kanaValid  bool
+	forced     bool
+	kanaForced bool // 使用者明確要求這一段英數按鍵組成かな（P2-52）
 }
 
 var _ lang.Composer = (*Composer)(nil)
@@ -303,8 +304,25 @@ func (c *Composer) AcceptEnglish() bool {
 		return false
 	}
 	c.forced = true
+	c.kanaForced = false
 	c.recompute()
 	return true
+}
+
+// ForceKana 把目前的英數段明確改成かな（P2-52）：即使整段剛好是英文詞
+// （kanji、sake），只要按鍵能完整組成合法羅馬字就組成かな，並在這一小段
+// 結束前維持かな。打不成合法羅馬字（kubectl、hello）時不動，回傳 false。
+func (c *Composer) ForceKana() bool {
+	if c == nil || c.run == "" || hasASCIIUpper(c.run) {
+		return false
+	}
+	if _, valid := c.replay(c.run); !valid {
+		return false
+	}
+	c.forced = false
+	c.kanaForced = true
+	c.recompute()
+	return !c.literal
 }
 
 // LearnCurrent 把目前英數段學進英文詞彙。只有照字面的英數段會被學習。
@@ -365,6 +383,7 @@ func (c *Composer) startRun() {
 	if c.run == "" {
 		c.flushJapanesePending()
 		c.forced = false
+		c.kanaForced = false
 	}
 }
 
@@ -372,7 +391,7 @@ func (c *Composer) startRun() {
 // 最長的かな前綴切開，讓「きょうはAPI」「きょうはhttps://…」可以一次打完，
 // 不必先変換或送出日文段。
 func (c *Composer) appendRunKey(key string) {
-	if c.run != "" && !c.literal {
+	if c.run != "" && !c.literal && !c.kanaForced {
 		previous := c.run
 		combined := previous + key
 		if literal, _ := c.literalFor(combined); literal && c.applySplit(combined, previous) {
@@ -515,6 +534,11 @@ func (c *Composer) decideLiteral(kanaValid bool) bool {
 	if c == nil {
 		return false
 	}
+	// 明確要求かな時，只有打不成合法羅馬字的按鍵才照字面；大寫與識別字已在
+	// ForceKana 之前擋掉，後續追加的按鍵也留在同一段かな。
+	if c.kanaForced {
+		return !kanaValid
+	}
 	return c.decideLiteralText(c.run, kanaValid, c.forced)
 }
 
@@ -529,7 +553,7 @@ func (c *Composer) decideLiteralText(raw string, kanaValid, forced bool) bool {
 	case KindURL, KindEmail, KindIdentifier, KindFullWidthAlnum, KindNumber:
 		return true
 	case KindEnglish:
-		if utf8.RuneCountInString(raw) >= c.cfg.MinEnglishLen {
+		if utf8.RuneCountInString(raw) >= c.cfg.MinEnglishLen && !c.cfg.PreferKana {
 			return true
 		}
 	}
@@ -603,6 +627,7 @@ func (c *Composer) clearRun() {
 	c.literal = false
 	c.kanaValid = false
 	c.forced = false
+	c.kanaForced = false
 }
 
 func (c *Composer) result(before reading.Sequence) lang.ComposeResult {

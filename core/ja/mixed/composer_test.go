@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/0c-biggo/0c-ime/core/english"
 	"github.com/0c-biggo/0c-ime/core/ja/input"
 	"github.com/0c-biggo/0c-ime/core/ja/mixed"
 	"github.com/0c-biggo/0c-ime/core/lang"
@@ -267,4 +268,36 @@ func sequenceString(seq reading.Sequence) string {
 		b.WriteString(string(u))
 	}
 	return b.String()
+}
+
+// P2-52：同一個詞同時是詞典英文與合法羅馬字時，PreferKana 讓かな勝出；
+// ForceKana 則是不改設定的明確出口。兩者都不碰大寫與打不成羅馬字的英數。
+func TestComposerPreferKanaAndForceKana(t *testing.T) {
+	dict := english.New([]english.Word{{Text: "kanji", Weight: 60}, {Text: "sushi", Weight: 60}})
+
+	c := mixed.NewComposer(lang.InputMethod{ID: "romaji"}, mixed.Config{Dictionary: dict})
+	typeMixed(t, c, "kanji")
+	if got := c.DisplayText(); got != "kanji" {
+		t.Fatalf("預設英文優先：%q", got)
+	}
+	if !c.ForceKana() || c.DisplayText() != "かんじ" {
+		t.Fatalf("ForceKana 後 = %q", c.DisplayText())
+	}
+
+	c = mixed.NewComposer(lang.InputMethod{ID: "romaji"}, mixed.Config{Dictionary: dict, PreferKana: true})
+	typeMixed(t, c, "sushi")
+	if got := c.DisplayText(); got != "すし" {
+		t.Fatalf("PreferKana = %q，want すし", got)
+	}
+	if _, literal := c.Run(); literal {
+		t.Fatal("PreferKana 時 sushi 不應照字面")
+	}
+
+	for _, keys := range []string{"kubectl", "Kanji"} {
+		c = mixed.NewComposer(lang.InputMethod{ID: "romaji"}, mixed.Config{Dictionary: dict})
+		typeMixed(t, c, keys)
+		if c.ForceKana() || c.DisplayText() != keys {
+			t.Fatalf("%s 不應被 ForceKana 改動：%q", keys, c.DisplayText())
+		}
+	}
 }

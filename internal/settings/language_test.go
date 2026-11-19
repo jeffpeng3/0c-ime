@@ -141,7 +141,7 @@ func TestLanguageItemsSayWhichLanguageAndCapabilityTheyNeed(t *testing.T) {
 			t.Errorf("%s 應只在注音模式出現：%v", key, got)
 		}
 	}
-	for _, key := range []string{"ja-input-method", "ja-live-conversion", "ja-symbols", "ja-learning", "ja-model"} {
+	for _, key := range []string{"ja-input-method", "ja-ambiguous", "ja-live-conversion", "ja-symbols", "ja-learning", "ja-model"} {
 		if got := items[key].Languages; len(got) != 1 || got[0] != LanguageJa {
 			t.Errorf("%s 應只在日文模式出現：%v", key, got)
 		}
