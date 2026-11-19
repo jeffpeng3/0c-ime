@@ -31,17 +31,12 @@ class FetchPinnedPayloadTests(unittest.TestCase):
         root = Path(tempfile.mkdtemp(prefix="payload-assets-"))
         source = root / "source"
         source.mkdir()
-        files = {}
-        for name, body in {"pack": b"pack-bytes", "manifest.json": b"{}", "public_core_ja.model": b"tokenizer"}.items():
-            (source / name).write_bytes(body)
-            files[name] = (body, (source / name).as_uri())
+        tokenizer = source / "public_core_ja.model"
+        tokenizer.write_bytes(b"tokenizer")
         lock = {
             "schema": "0c.payload-assets/1",
             "assets": {
-                "ja_pack": {"name": "pack", "url": files["pack"][1], "bytes": len(files["pack"][0]), "sha256": sha(files["pack"][0])},
-                "ja_manifest": {"name": "ja-pack-manifest.json", "download_name": "manifest.json",
-                                "url": files["manifest.json"][1], "bytes": 2, "sha256": sha(b"{}")},
-                "ja_tokenizer": {"name": "public_core_ja.model", "url": files["public_core_ja.model"][1],
+                "ja_tokenizer": {"name": "public_core_ja.model", "url": tokenizer.as_uri(),
                                  "bytes": 9, "sha256": sha(b"tokenizer")},
             },
         }
@@ -57,8 +52,7 @@ class FetchPinnedPayloadTests(unittest.TestCase):
         loaded = fetch_pinned_payload.load_lock(lock_path)
         out = root / "out"
         downloaded = fetch_pinned_payload.download_assets(loaded, out)
-        self.assertEqual((out / "manifest.json").read_bytes(), b"{}")
-        self.assertEqual(Path(downloaded["ja_pack"]).read_bytes(), b"pack-bytes")
+        self.assertEqual((out / "public_core_ja.model").read_bytes(), b"tokenizer")
         seeded = fetch_pinned_payload.seed_tokenizer(downloaded["ja_tokenizer"], root / "cache", pairing)
         self.assertEqual(Path(seeded[0]).read_bytes(), b"tokenizer")
         self.assertEqual(Path(seeded[0]), root / "cache/owner/ja-reranker/abc/public_core_ja.model")
@@ -75,8 +69,8 @@ class FetchPinnedPayloadTests(unittest.TestCase):
         lock = fetch_pinned_payload.load_lock()
         self.assertEqual(lock["chinese"]["tag"], "v0.2.12")
         self.assertEqual(lock["release"]["tag"], "p2-assets-2026.11.0")
-        self.assertEqual(lock["assets"]["ja_pack"]["sha256"],
-                         "8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840")
+        self.assertNotIn("ja_pack", lock["assets"])
+        self.assertNotIn("ja_manifest", lock["assets"])
         self.assertEqual(lock["assets"]["ja_tokenizer"]["sha256"],
                          "b25260c9c3d90a754c719e62eea6b8125f08448d48dd4d1755c18edbd00e2078")
         targets = fetch_pinned_payload.tokenizer_targets()
@@ -89,7 +83,8 @@ class PayloadCheckTests(unittest.TestCase):
     def test_expected_payload_names_cover_the_shipped_layout(self):
         for name in ("0c-server.exe", "0c-ui.exe", "0c-settings.exe", "x86/0c_tsf.dll",
                      "0c-update.exe", "0c-updatew.exe", "0c-mcp.exe",
-                     "data/ja/lexicon/words.tsv", "models/active.json"):
+                     "data/ja/lexicon/words.tsv", "data/ja/connection.bin",
+                     "data/ja/connection.source", "data/ja/NOTICE.txt", "models/active.json"):
             self.assertIn(name, check_windows_payload.EXPECTED)
 
     def test_missing_file_and_python_or_extra_x86_are_rejected(self):

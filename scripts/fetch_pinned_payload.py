@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """下載 Windows 安裝包需要的固定輸入，逐檔核對大小與 SHA-256。
 
-這些檔案不在 Hugging Face，也不進 Git：日文 public-core pack、它的 manifest，以及
-日文 reranker／補標點模型共用的 SentencePiece tokenizer。來源固定在本 repo 的 assets
-release，記錄在 models/payload-assets.lock.json；字典本身仍由 scripts/fetch_assets.py
-從 pinned 的 upstream source release 取得。
+這個檔案不在 Hugging Face，也不進 Git：日文 reranker／補標點模型共用的
+SentencePiece tokenizer。來源固定在本 repo 的 assets release，記錄在
+models/payload-assets.lock.json。注音字典由 scripts/fetch_assets.py 從 pinned 的
+upstream source release 取得；日文詞典由 scripts/fetch_mozc_dictionary.sh 從 pinned
+Mozc commit 取得。
 
 把 tokenizer 放進 0c-model-set 的下載快取（<repo>/<revision>/<檔名>），後續
 `0c-model-set fetch` 會依 pairing lock 核對它，其他日文模型檔才從 Hugging Face 下載。
@@ -43,9 +44,8 @@ def load_lock(path=LOCK):
                 raise ValueError(f"{key} 缺少 {field}")
         if len(spec["sha256"]) != 64 or spec.get("bytes", 0) <= 0:
             raise ValueError(f"{key} 沒有固定大小與 SHA-256")
-    for key in ("ja_pack", "ja_manifest", "ja_tokenizer"):
-        if key not in lock.get("assets", {}):
-            raise ValueError(f"payload assets lock 缺少 {key}")
+    if "ja_tokenizer" not in lock.get("assets", {}):
+        raise ValueError("payload assets lock 缺少 ja_tokenizer")
     return lock
 
 
@@ -131,8 +131,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--lock", type=Path, default=LOCK)
     parser.add_argument("--pairing", type=Path, default=PAIRING)
-    parser.add_argument("--out", type=Path, default=ROOT / "build/ja-assets",
-                        help="pack 與 manifest 的目錄（manifest 一律命名為 manifest.json）")
+    parser.add_argument("--out", type=Path, default=ROOT / "build/payload-assets",
+                        help="tokenizer 的下載目錄")
     parser.add_argument("--model-cache", type=Path, default=ROOT / "build/cache/ja-models",
                         help="0c-model-set 的日文模型快取；tokenizer 會放進對應的 repo/revision")
     args = parser.parse_args()

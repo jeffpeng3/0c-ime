@@ -131,13 +131,13 @@ python scripts\package_windows_installer.py --archive build\release\<ZIP> --out 
 
 [.github/workflows/windows-installer.yml](.github/workflows/windows-installer.yml) 在 `windows-2022` 從零產生同一個完整套件：`workflow_dispatch` 輸入版本，或 push `v*` tag 時執行。它會：
 
-1. 用 `scripts/fetch_assets.py --release v0.2.12 --no-models` 取得 pinned 的注音字典；日文 pack、manifest 與 tokenizer 由 `scripts/fetch_pinned_payload.py` 依 [models/payload-assets.lock.json](models/payload-assets.lock.json) 從本 repo 的 pinned assets release 下載並核對 SHA-256。
-2. 以 `0c-jadic import` 匯入 public-core pack，再用 `fetch_assets.py --lang ja --ja-source` 執行 `0c-compile` 與 `0c-japack` 產生 `build/ja`。
+1. 用 `scripts/fetch_assets.py --release v0.2.12 --no-models` 取得 pinned 的注音字典；`tokenizer.model` 由 `scripts/fetch_pinned_payload.py` 依 [models/payload-assets.lock.json](models/payload-assets.lock.json) 從本 repo 的 pinned assets release 下載並核對 SHA-256。
+2. 用 `make ja-mozc` 下載並匯入 pinned 的 Mozc OSS dictionary_oss 3.35.6354，逐檔核對 [data/sources/ja-mozc-3.35.6354.sha256](data/sources/ja-mozc-3.35.6354.sha256)，再用 `make ja-mozc-assets` 執行 `0c-compile` 與 `0c-japack` 產生 `build/ja`；`connection.bin` 與 `connection.source` 會一起進套件。
 3. 從 Hugging Face 的 pinned revision 下載注音 select／punct 與日文 reranker／punctuation，逐檔核對 `models.lock.json`、`pairing.lock.json`；`tokenizer.model` 使用同一個 assets release。
 4. 從 runtime lock 的 pinned wheel 取出 `onnxruntime.dll` 與四個 MSVC DLL。
 5. 建置 `0c-server.exe`（CGO＋`onnxruntime`）、`0c-update.exe`、`0c-updatew.exe`、`0c-mcp.exe`、x64／x86 TSF DLL、`0c-ui.exe` 與 `0c-settings.exe`。
 6. 用 `scripts/package_windows.py --settings --x86` 與 `scripts/package_windows_installer.py` 產生 ZIP、`setup.exe` 與 `SHA256SUMS`。
-7. 用 `scripts/check_windows_payload.py` 驗證完成品：必要檔一個都不能少、不得有 Python 檔或未預期的 x86 執行檔；再把套件模擬安裝到 `%LOCALAPPDATA%\Zuin\versions\…`，執行套件內的 `0c-update status -json`，確認設定程式解析到的 `0c-server` 與 `-data` 都存在，並用同一個 data 執行 `0c-server -check-data`。
+7. 用 `scripts/check_windows_payload.py` 驗證完成品：必要檔一個都不能少（含 13.6 MiB 的 `data/ja/connection.bin` 與 Mozc NOTICE）、不得有 Python 檔或未預期的 x86 執行檔；再把套件模擬安裝到 `%LOCALAPPDATA%\Zuin\versions\…`，執行套件內的 `0c-update status -json`，確認設定程式解析到的 `0c-server` 與 `-data` 都存在，並用同一個 data 執行 `0c-server -check-data`。
 
 CI 不執行任何 ONNX 推論，也不把字典、模型或二進位提交到 Git。公開版仍需要簽章；CI 產生的是 `internal-preview` 套件。
 

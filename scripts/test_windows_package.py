@@ -240,6 +240,9 @@ class ModelPackageTests(unittest.TestCase):
         self.assertFalse(pkg["placeholder"])
         self.assertTrue(pkg["production_eligible"])
         self.assertEqual(pkg["version"], "2026.11.0")
+        self.assertEqual(pkg["dictionary"]["pack_id"], "ja-mozc")
+        self.assertEqual(pkg["dictionary"]["manifest_sha256"],
+                         "5537fa3282b31c4286b8bbe40ce1c58e699523ddaafef935d36a7134ee0a85fe")
         artifacts = pkg["artifacts"]
         self.assertEqual([a["artifact_id"] for a in artifacts],
                          ["reranker", "punctuation-public-core"])

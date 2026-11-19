@@ -4,7 +4,8 @@ name: Windows installer
 # 0c-settings.exe，bin\ 也沒有 0c-server.exe，設定程式的「模型」頁因此找不到引擎與字典。
 # 這個 workflow 在 windows-2022 上取得所有固定輸入、建置每一個出貨程式、打包 ZIP 與
 # NSIS setup.exe，再用 scripts/check_windows_payload.py 驗證完成品：
-#   - 缺任何必要檔（引擎、UI、設定、TSF、更新器、MCP、ONNX/MSVC DLL、字典、模型、授權）就失敗；
+#   - 缺任何必要檔（引擎、UI、設定、TSF、更新器、MCP、ONNX/MSVC DLL、字典、模型、
+#     Mozc connection.bin、授權）就失敗；
 #   - 出現 Python 檔、wheel 或 x86 的額外執行檔就失敗；
 #   - 模擬安裝後，以套件內的 0c-update status 驗證設定程式解析到的 server 與 data 都在
 #     使用中的版本目錄，並用同一個 data 執行 0c-server -check-data。
@@ -32,8 +33,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  # P2-50：字典與日文 pack 的固定來源。字典由 fetch_assets.py 從 0c-biggo/0c-ime 的
-  # source release 取得；pack、manifest、tokenizer 由 models/payload-assets.lock.json 固定。
+  # P2-50：固定輸入來源。注音字典由 fetch_assets.py 從 0c-biggo/0c-ime 的 source
+  # release 取得；日文詞典由 fetch_mozc_dictionary.sh 從 pinned Mozc commit 取得；
+  # tokenizer 由 models/payload-assets.lock.json 固定。
   CHINESE_RELEASE: v0.2.12
   BRANCH_VERSION: 0.2.13-preview.1
   CARGO_TERM_COLOR: never
@@ -100,9 +102,10 @@ jobs:
       - name: Install mingw, NSIS and the 32-bit Rust target
         shell: pwsh
         run: |
-          choco install mingw nsis --no-progress -y
+          choco install mingw nsis make --no-progress -y
           "C:\ProgramData\mingw64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
           "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "C:\Program Files\Git\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
           "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Append
           rustup target add i686-pc-windows-msvc
       - name: Show the toolchains
@@ -123,19 +126,22 @@ jobs:
         shell: bash
         run: |
           python scripts/fetch_assets.py --release "$CHINESE_RELEASE" --no-models
-      - name: Fetch the pinned Japanese pack, manifest and tokenizer
+      - name: Fetch the pinned tokenizer
         shell: bash
         run: |
-          python scripts/fetch_pinned_payload.py --out build/ja-assets --model-cache build/cache/ja-models
-      - name: Import and compile the Japanese data pack
+          python scripts/fetch_pinned_payload.py --out build/payload-assets --model-cache build/cache/ja-models
+      - name: Fetch and import the pinned Mozc dictionary
         shell: bash
         run: |
-          go run ./cmd/0c-jadic import -pack build/ja-assets/ja-lexicon-public-core.pack \
-            -manifest build/ja-assets/manifest.json -out build/ja-import \
-            -connections data/ja/connection.tsv -force
-          python scripts/fetch_assets.py --lang ja --ja-source build/ja-import --ja-out build/ja
-          test -f build/ja/lexicon/words.tsv
-          test -f build/ja/connection.tsv
+          make ja-mozc
+          (cd build/mozc-3.35.6354 && sha256sum -c "$GITHUB_WORKSPACE/data/sources/ja-mozc-3.35.6354.sha256")
+      - name: Compile the Japanese data pack
+        shell: bash
+        run: |
+          make ja-mozc-assets
+          for name in lexicon/words.tsv connection.tsv connection.bin connection.source; do
+            test -f "build/ja/$name" || { echo "missing Japanese runtime file: $name" >&2; exit 1; }
+          done
       - name: Fetch and pair the Chinese models
         shell: bash
         run: |

@@ -760,6 +760,9 @@ class ReleaseTests(unittest.TestCase):
         symbols = directory / "symbols"
         symbols.mkdir()
         (symbols / "symbols.tsv").write_text("きごう\t※\t米印\t記号\n", encoding="utf-8")
+        # P2-53：Mozc 匯入的 context 矩陣與來源；舊資料沒有這兩個檔。
+        (directory / "connection.bin").write_bytes(b"\0" * (1 << 20))
+        (directory / "connection.source").write_text("ja-mozc\n", encoding="utf-8")
         return directory
 
     def test_japanese_pack_is_validated_and_staged_without_touching_chinese(self):
@@ -774,6 +777,8 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
         for name in packager.JA_RUNTIME_FILES:
             self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
+        for name in packager.JA_CONTEXT_FILES:
+            self.assertEqual((destination / "ja" / name).read_bytes(), (pack / name).read_bytes())
         self.assertEqual((destination / "ja/symbols/symbols.tsv").read_text(encoding="utf-8"),
                          "きごう\t※\t米印\t記号\n")
         self.assertEqual((destination / "lm.bin").read_bytes(), b"chinese")
@@ -784,6 +789,14 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "雜湊"):
             packager.check_ja_data(pack, public=True)
         (pack / "lexicon.bin").write_bytes(b"lexicon")
+        (pack / "connection.source").unlink()
+        with self.assertRaisesRegex(ValueError, "context 布局不完整"):
+            packager.check_ja_data(pack, public=True)
+        (pack / "connection.source").write_text("ja-mozc\n", encoding="utf-8")
+        (pack / "connection.bin").write_bytes(b"tiny")
+        with self.assertRaisesRegex(ValueError, "connection.bin 太小"):
+            packager.check_ja_data(pack, public=True)
+        (pack / "connection.bin").write_bytes(b"\0" * (1 << 20))
         zh = self.ja_pack("zh-pack", language="zh")
         with self.assertRaisesRegex(ValueError, "language=ja"):
             packager.check_ja_data(zh, public=False)

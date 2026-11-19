@@ -31,10 +31,10 @@
     "dictionary": {
       "format": 2,
       "language": "ja",
-      "manifest_sha256": "b6ea0158b469f0dd4b8e26fd8d3829041d90a4fba743dea700edb6d38c202031",
-      "pack_id": "public-core",
-      "source": "0c-ja phase2 reference pack (2026-11-18); update when the shipped data/ja pack changes",
-      "version": "public-core-20261118"
+      "manifest_sha256": "5537fa3282b31c4286b8bbe40ce1c58e699523ddaafef935d36a7134ee0a85fe",
+      "pack_id": "ja-mozc",
+      "source": "Mozc OSS dictionary_oss 3.35.6354 (0136c357); imported by 0c-jadic mozc",
+      "version": "mozc-3.35.6354"
     },
     "deployment": {
       "sequence_length": 124,
@@ -69,7 +69,7 @@
           "data/sources/corpus/experimental.tsv",
           "data/sources/licenses/ja-wiki.txt"
         ],
-        "dictionary_manifest_sha256": "b6ea0158b469f0dd4b8e26fd8d3829041d90a4fba743dea700edb6d38c202031",
+        "dictionary_manifest_sha256": "5537fa3282b31c4286b8bbe40ce1c58e699523ddaafef935d36a7134ee0a85fe",
         "files": {
           "fp32": {
             "path": "reranker-extra/model.onnx",
@@ -202,7 +202,7 @@
           "data/sources/corpus/public-core.tsv",
           "data/sources/licenses/ja-unidic.txt"
         ],
-        "dictionary_manifest_sha256": "b6ea0158b469f0dd4b8e26fd8d3829041d90a4fba743dea700edb6d38c202031",
+        "dictionary_manifest_sha256": "5537fa3282b31c4286b8bbe40ce1c58e699523ddaafef935d36a7134ee0a85fe",
         "files": {
           "fp32": {
             "path": "punctuation-public-core/punctuation-public-core.fp32.onnx",

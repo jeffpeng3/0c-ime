@@ -32,8 +32,10 @@ EXPECTED = (
     "data/manifest.json", "data/lexicon.bin", "data/lm.bin",
     "data/NOTICE.txt", "data/report.txt",
     "data/english/manifest.json", "data/english/words.bin",
-    "data/ja/manifest.json", "data/ja/lexicon.bin", "data/ja/lm.bin",
+    "data/ja/manifest.json", "data/ja/NOTICE.txt", "data/ja/report.txt",
+    "data/ja/lexicon.bin", "data/ja/lm.bin", "data/ja/lexicon.tsv",
     "data/ja/lexicon/words.tsv", "data/ja/connection.tsv",
+    "data/ja/connection.bin", "data/ja/connection.source",
     "neural/select/manifest.json", "neural/select/model.onnx",
     "neural/punct/manifest.json", "neural/punct/model.onnx",
     "models/active.json", "models/pairing.lock.json",
@@ -50,6 +52,8 @@ EXPECTED = (
 
 # 只允許 32 位元的 TSF DLL；其他 PE 必須是 x64。
 X86_ALLOWED = {"x86/0c_tsf.dll"}
+# Mozc 的 ContextMatrix 約 13.6 MiB；太小的檔案代表匯入或打包漏了內容。
+MIN_JA_CONNECTION_BYTES = 10 << 20
 
 
 def sha(data):
@@ -149,14 +153,25 @@ def check_data_manifests(package_archive, root, files):
                 path = prefix + name
                 if path not in files:
                     raise ValueError(f"{prefix}manifest.json 列出的檔案不存在：{name}")
-                if sha(package.read(root + path)) != info.get("sha256"):
+                # 注音資料在打包時以 0c-compile -seal 保護，manifest 記的是未封存的
+                # 雜湊；逐檔完整性已由 release.json 驗證。日文包沒有封存，照 manifest 核對。
+                if prefix == "data/ja/" and sha(package.read(root + path)) != info.get("sha256"):
                     raise ValueError(f"{prefix}{name} 與 manifest 不符")
             if prefix == "data/ja/":
                 if manifest.get("format") != 2 or manifest.get("language") != language:
                     raise ValueError("日文資料包不是 format 2 的 ja 套件")
-                for name in ("lexicon/words.tsv", "connection.tsv"):
+                for name in ("lexicon/words.tsv", "connection.tsv", "connection.bin", "connection.source"):
                     if prefix + name not in files:
                         raise ValueError(f"日文執行期布局缺少 {name}")
+                info = files[prefix + "connection.bin"]
+                if info.file_size < MIN_JA_CONNECTION_BYTES:
+                    raise ValueError(f"日文 connection.bin 太小：{info.file_size} bytes")
+                notice = package.read(root + prefix + "NOTICE.txt").decode("utf-8")
+                if "Mozc" not in notice:
+                    raise ValueError("日文 NOTICE.txt 沒有 Mozc 授權聲明")
+                active = json.loads(package.read(root + "models/active.json"))
+                if active.get("dictionary", {}).get("manifest_sha256") != sha(package.read(root + "data/ja/manifest.json")):
+                    raise ValueError("models/active.json 綁定的字典不是出貨的 data/ja")
 
 
 def install_layout(archive, local_app_data):
