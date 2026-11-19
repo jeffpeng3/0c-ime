@@ -6,9 +6,9 @@
 
 ### 公開摘要
 
-- 日文輸入仍是預覽，尚未列為正式支援。這個版本整理日文資料包、Windows 套件與文件，讓後續整合有可重現的打包流程；注音、英文、更新與個人學習行為不變。
-- 日文資料包可以用 `make assets LANG=ja` 從 `data/ja` 編譯，Windows 套件可選擇內附 `data/ja/`。沒有日文包時，注音照常安裝、更新與回復。
-- 日文品質只引用 T33 的統計轉換 baseline。目前的 137 詞條種子包分數低，不能拿來和注音的 86.0% 或 Mozc 比較，也不代表轉換器上限。
+- 日文輸入仍是預覽，尚未列為正式支援。這個版本把正式日文詞典換成 Mozc OSS `dictionary_oss`，加入 IME 詞成本與 2,672×2,672 context 連接矩陣；注音、英文、更新與個人學習行為不變。
+- `make ja-mozc` 會下載固定 tag/commit 的 Mozc 詞典、逐檔驗證 SHA-256、匯入 `build/ja-mozc`；`make ja-mozc-assets` 再編譯成 Windows 日文包。原始詞典與產物不進 Git。
+- 日文四語料 top-1 從 public-core 的 0～2.9% 提升到 46.0～86.0%；modern-500 top-5 98.0%、邊界 F1 0.902。剩餘錯誤以同音詞與詞彙偏好為主。
 
 ### 原始碼套件
 
@@ -16,7 +16,7 @@
 - Windows 打包：`scripts/package_windows.py --ja-data <日文包>` 把日文包放進 `data/ja/`，並在 `release.json` 記錄 `ja_data_format` 與 `ja_data_manifest_sha256`。`check_ja_data` 驗證 format 2、`language: ja`、manifest 雜湊、公開來源與 `symbols/*.tsv`；沒有 `--ja-data` 時套件維持原本的注音布局。
 - 授權：`legal/README.md`、`legal/TERMS.md`、`legal/DFSG-free.md` 與 `legal/copyright` 補上日文詞條、記号與顔文字、以及選用 zenz GGUF 的邊界。日文資料包的逐來源聲明仍在編譯輸出的 `data/ja/NOTICE.txt`。
 - 文件：README 增加日文預覽、系統需求、安裝與資產指令；PACKAGING 增加語言資產、Windows 安裝／移除／回復流程；CLI 範例補上 `0c-compile -lang ja` 與 `0c-eval-ja`。
-- T33 baseline（`testdata/ja/baseline.json`）：`modern-500` top-1 23.2%、top-5 23.2%、邊界 exact 14.4%、邊界 F1 0.445；`hard-cases` 14.3%／14.3%／14.3%／0.238；`anthy-corpus1` 2.5%／2.5%／1.5%／0.253；`ajimee-200` 1.5%／1.5%，邊界不計。延遲只在同一台機器比較，不進 CI 門檻。
+- T33 baseline（`testdata/ja/baseline.json`）：`modern-500` top-1 23.2%、top-5 23.2%、邊界 exact 14.4%、邊界 F1 0.445；`hard-cases` 14.3%／14.3%／14.3%／0.238；`anthy-corpus1` 2.5%／2.5%／1.5%／0.253；`ajimee-200` 1.5%／1.5%，邊界不計。這是 checked-in 種子包的 baseline；P2-53 的 Mozc 量測另列在 `data/ja/README.md`。延遲只在同一台機器比較，不進 CI 門檻。
 
 ## 0.2.12（2026-11-16，public-beta）
 

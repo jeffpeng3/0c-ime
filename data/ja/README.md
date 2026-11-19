@@ -6,6 +6,166 @@ P2-01 起，正式產品不 import 或啟動 llama.cpp、GGUF、zenz；日文轉
 
 逐檔清單在 [ja-files.tsv](../sources/ja-files.tsv)，來源摘要與邊界在 [ja-sources.tsv](../sources/ja-sources.tsv)，完整授權全文在 [sources/licenses/ja-*.txt](../sources/licenses/)。
 
+## P2-53：Mozc OSS 詞典（目前路徑）
+
+P2-53 起，完整日文資料改由 Mozc OSS `dictionary_oss` 匯入。public-core pack 保留為歷史對照，不再是建議路徑。
+
+### 上游身分與授權
+
+| 項目 | 值 |
+|---|---|
+| Repository | `https://github.com/google/mozc` |
+| Tag | `3.35.6354` |
+| Commit | `0136c35782536cb43d710575c311cd4185982738` |
+| 資料目錄 | `src/data/dictionary_oss/` |
+| 下載方式 | `scripts/fetch_mozc_dictionary.sh build/mozc-3.35.6354`，逐檔比對 SHA-256 |
+| 一行重建 | `make ja-mozc`，產物在 `build/ja-mozc/` |
+
+上游 `LICENSE` 與 `src/data/dictionary_oss/README.txt` 確認，`dictionary_oss` **不是 Apache-2.0**。實際條款是：
+
+- Mozc 專案檔案與 Google 追加詞：BSD-3-Clause。
+- 詞條、品詞與連接成本衍生自 `mecab-ipadic-2.7.0-20070801`：NAIST/IPAdic 授權。
+- 大部分詞條來自 ICOT Free Software，散布時保留 ICOT 的 NO WARRANTY。
+- 沖繩辭書：Public Domain。
+
+因此帳本與 NOTICE 一律標成 `BSD-3-Clause AND NAIST-IPAdic AND ICOT-Free-Software；沖繩辭書 Public Domain`，不整體改寫成 Apache-2.0 或單一 BSD-3-Clause。P2-53 的使用已由產品決策核准；本節只記錄上游實際條款。
+
+匯入實際使用的檔案與 SHA-256：
+
+```text
+8103d07c4eb18892282983299cbb20284a0f74bc596dda63831787b69aa7ce6c  aux_dictionary.tsv
+68823a1f6617372ccb89afdbcb334d7a0bcfa82c9c5dda03fc1f80f1cab5c48e  connection_single_column.txt
+9e07ce292932c4fff327ed8cb06274c09acca556bd8bdf7c7ef1f6173eae3b61  dictionary00.txt
+836fd5fd8399510de0d8ef7b33be913cca6bbaee7b712cc8045fba03f4c75a89  dictionary01.txt
+93943858d0cfd092b849a78def6901eaf228177e1ac5663544e865a3a1e45a9e  dictionary02.txt
+cb9f1b0b4a7550d682d86244a021cd17e0b15366328819e69135b5f183a1a24b  dictionary03.txt
+9fdc4e3948d03463de13ab5782adffbc11dd06e934cb80138c5920029cd3d2f6  dictionary04.txt
+199e3b0f050b691823ae7ba943090d437f51af6436b27c5f3dc69cafa12000e4  dictionary05.txt
+b95b14f7770ae2a824bc8e9fad8b03c1bc45c504f93a36554b8b56daa0368d2a  dictionary06.txt
+7f53649b529d4c8c495d3a8dd9c4d489dfe7696080f7423107ff01331174be48  dictionary07.txt
+50a31bb5fc1646721b00be371a5695dffab1292bda143e1e59cc70cbbdd8643f  dictionary08.txt
+4e5fcd4cbfbf11395166a37b506f547fc54d20edc0884f5184ecd3fc705f0d9a  dictionary09.txt
+802f2c76516bf1bbb30cd501cc343abf59aa179d3f98917297d961fb9921a2fb  dictionary_filter.tsv
+07a05a268c3783b7e02b36e4aa591555a2dd19a1f3c93891576740761c154f2d  id.def
+44cdd923b91ea9199293abecc2762c70c87dbf1e581c027a94c416368d1a648c  LICENSE
+6b1de66bc6fa30e0b45dc45b8c8f6c57bd78aff923c261a3efffac8eb86f7bac  README.txt
+```
+
+完整清單也放在 `data/sources/ja-mozc-3.35.6354.sha256`。原始檔、`build/mozc-*`、`build/ja-mozc*` 都在 `.gitignore` 的 `build/` 範圍，不進 Git。
+
+### 格式盤點
+
+| 資料 | 格式 | 數量／大小 |
+|---|---|---|
+| `dictionary00.txt`～`dictionary09.txt` | 5 欄 TSV：讀音、左 ID、右 ID、成本、詞面 | 1,289,076 筆，約 58 MB |
+| `id.def` | `ID<空白>POS1,POS2,POS3,POS4,活用型,活用形,語彙素` | 2,672 個 ID，151,747 bytes |
+| `connection_single_column.txt` | 第一行 N=2,672，之後 row-major N×N 成本 | 7,139,584 筆，36,428,642 bytes |
+| `dictionary_filter.tsv` | `key<TAB>value` 正規表示式 | 4 條規則，實際移除 15 筆 |
+| `aux_dictionary.tsv` | `key,value,base_key,base_value,cost_offset` | 6 筆追加詞 |
+| `suffix.txt` | 5 欄後綴／預測詞 | 1,150 筆；只供 Mozc 的 suffix dictionary，不用於轉換詞典 |
+| 記号 | `id.def` 中 POS1=`記号` | 159 筆；158 筆寫進 `symbols/jadic.tsv` |
+
+詞成本範圍 0～18,318；連接成本範圍 0～15,281，平均 7,895.29。兩者都是 Mozc 的整數成本，匯入時共用同一個 scale。
+
+### 匯入器設計
+
+`cmd/0c-jadic mozc` 呼叫 `internal/jadic.ImportMozc`，輸出引擎直接載入的執行期布局：
+
+```text
+lexicon/words.tsv   詞面、空白分隔讀音、成本、POS、來源、活用型、left ID、right ID
+symbols/jadic.tsv   讀音、詞面、描述、分類
+connection.tsv      POS 對聚合成本，供沒有 context ID 的詞與文節合併使用
+connection.bin      Mozc context ID 矩陣，magic 0CJCON01
+connection.source   連接矩陣來源 ID（ja-mozc），供 0c-compile 寫 NOTICE
+mozc-import.json    來源檔名、大小、SHA-256、commit、成本規則與計數
+```
+
+處理順序與 Mozc 上游一致：先套用 `dictionary_filter.tsv` 移除指定詞條，再用 `aux_dictionary.tsv` 複製基準詞條的 left/right ID 與成本並加 offset。詞條依 `surface + 讀音 + POS + left ID + right ID` 去重，同鍵只留最低成本。**不能只用 `surface + 讀音 + POS` 去重**：Mozc 的 `で` 有格助詞、接続助詞、終助詞等不同 left ID，合併後會把「車で行く」誤判成「来るまで行く」。P2-53 實測，只按 POS 去重合併時 modern-500 top-1 是 28.2%，保留 context ID 後是 86.0%。
+
+非かな讀音（阿拉伯數字、`～`、`・` 等）共 3,322 筆直接跳過，因為 kana lattice 永遠不會查到；非日文詞面 1,011 筆也跳過；另有 1 筆讀音 33 單位超過引擎上限 32 而跳過。記号不進 `words.tsv`，負成本記号丟棄。
+
+### POS 對應
+
+`MapMozcPOS` 先用 `POS1,POS2` 的明確表，再退回 POS1。沒有新增 POS 值，現有 15 個值已足以表達會影響連接與文節的差異。
+
+| Mozc POS | 引擎 POS | 理由 |
+|---|---|---|
+| `名詞,形容動詞語幹` | `adjectival_noun` | な形容詞 |
+| `名詞,数` | `number` | 數詞 |
+| `名詞,接尾` | `suffix` | 接尾語 |
+| `動詞,接尾`、`形容詞,接尾` | `suffix` | 接尾語 |
+| `動詞,非自立` | `auxiliary` | 補助動詞，依附前一個文節 |
+| `フィラー`、`その他,間投` | `interjection` | 間投表現 |
+| `名詞` 其餘 | `noun` | 一般名詞、固有名詞、サ変接続、非自立名詞 |
+| `動詞` 其餘 | `verb` | 自立動詞 |
+| `形容詞` 其餘 | `adjective` | 形容詞 |
+| `助動詞` | `auxiliary` | 助動詞 |
+| `助詞` | `particle` | 助詞 |
+| `接頭詞` | `prefix` | 接頭語 |
+| `副詞` | `adverb` | 副詞 |
+| `連体詞` | `determiner` | 連体詞 |
+| `接続詞` | `conjunction` | 接続詞 |
+| `感動詞` | `interjection` | 感動詞 |
+| `記号` | `symbol` | 只進記号辭典 |
+| `BOS/EOS` | `<s>`／`</s>` | 只用於連接矩陣 |
+| 其他 | `other` | 保守 fallback |
+
+對應表在 `internal/jadic/mozc.go`，測試 `TestMapMozcPOS` 逐項固定。
+
+### 連接成本決策：使用 context ID，不用 POS 聚合
+
+引擎原本的 `lexicon.Connection` 是 POS 對 POS。P2-53 先實作 POS 聚合，再擴充 runtime 使用 Mozc 的 2,672 個 context ID：
+
+| 方案 | modern-500 top-1 | 成本 |
+|---|---:|---|
+| POS 對 median 聚合 | 28.2% | 5 KB `connection.tsv`，runtime 不變 |
+| POS 對 mean 聚合 | 28.4% | 同上 |
+| POS 對 min 聚合 | 0.0% | 同上；min 會過度獎勵罕見轉移 |
+| **context ID 矩陣** | **86.0%** | 13.6 MiB `connection.bin`，decoder state 多帶 right ID |
+
+因此正式路徑用 context ID：`Entry` 增加選填的 `LeftID`、`RightID`、`HasContext`；`Decoder` 在左右兩側都有 ID 時查 `ContextConnection.ContextCost`，缺少 ID 的未知詞才退回 POS 矩陣。`connection.tsv` 仍保留給文節合併與舊資料。這是多出的 13.6 MiB 記憶體與少量 decoder 複雜度換來的 57.8 個百分點 top-1。
+
+### 成本換算
+
+詞成本與連接成本都用 `cost * 0.001`，和 Mozc 原始整數成本同尺度。這是實測後的固定值：
+
+- `0.0005` 與 `0.001` 的四語料 top-1 完全相同；再縮小只會讓未知詞 fallback 相對變貴。
+- `0.002` 會讓最大詞成本 18,318 換算成 36.636，超過 `core/ja/lexicon.MaxWordCost` 的 32.767，匯入直接拒絕。理論上限約 `0.001788`。
+- 因此不調 scale，維持 `0.001`。
+
+### 四語料量測
+
+同一台機器、同一份凍結題庫與規則，`0c-eval-ja`、NBest=5。public-core 是 P2-45B 的 1,137,895 筆詞條加 curated 連接；Mozc 是 1,219,525 筆詞條加 context 矩陣。
+
+| Corpus | 系統 | top-1 | top-5 | boundary exact | boundary F1 |
+|---|---|---:|---:|---:|---:|
+| ajimee-200 | public-core | 1.0% | 3.5% | 0.0% | 0.000 |
+| ajimee-200 | **Mozc** | **46.0%** | **65.5%** | **0.0%** | **0.000** |
+| anthy-corpus1 | public-core | 1.0% | 3.5% | 6.0% | 0.327 |
+| anthy-corpus1 | **Mozc** | **62.0%** | **84.5%** | **35.2%** | **0.727** |
+| hard-cases | public-core | 2.9% | 5.7% | 2.9% | 0.302 |
+| hard-cases | **Mozc** | **54.3%** | **97.1%** | **68.6%** | **0.863** |
+| modern-500 | public-core | 0.0% | 0.0% | 0.8% | 0.280 |
+| modern-500 | **Mozc** | **86.0%** | **98.0%** | **88.2%** | **0.902** |
+
+ajimee-200 沒有 boundary 參考，所以 boundary 一直是 0。剩餘錯誤主要是詞彙偏好與同音詞，例如 Mozc OSS 偏「子ども」而題庫要「子供」、偏「写真を取る」而題庫要「撮る」；沒有 sentence-level LM 時，雨／飴、橋／箸這類同音詞仍會錯。這不是連接矩陣或成本尺度的問題，P2-53 不引入 LM。
+
+### 重現
+
+```sh
+# 下載固定 commit、驗 SHA-256、匯入 build/ja-mozc
+make ja-mozc
+
+# 匯入後的煙霧測試
+go run ./cmd/0c-jadic convert -data build/ja-mozc -romaji -top 5 kyouha ashita
+
+# 量測
+go run ./cmd/0c-eval-ja -data build/ja-mozc
+
+# 編譯 Windows 日文包；runtime words/connection 會保留 context ID
+make ja-mozc-assets
+```
+
 ## 建議來源
 
 | 用途 | 首選 | 備案 | 理由 |
@@ -170,7 +330,7 @@ P2-22E 固定了 `internal/jadic` 的讀音與排序契約，完整量測與成�
 - 成本：P2-22F 起採用 P2-22E 的 mapping D，`words.tsv` 的成本是 `pack_i16_cost * 0.001`，保留正負號，不 clamp、不 offset。單位是 0.001／MeCab・Sudachi 成本單位，越小越優先；負成本是原資料的語意，不是錯誤。P2-45E 之後，POS 為記号的詞條不進 `words.tsv`，其中負成本者直接丟棄；P2-45F 的非日文詞面過濾後，其餘 104 筆負成本（最低 `-8.313`）原樣寫入，例如「研究所」的 `けんきゅうじょ -4.215` 排在 `けんきゅうしょ -3.955` 之前。
 - 與連接成本結合：解碼器對每條路徑累加「每個詞的詞成本 + 相鄰詞性的 `connection.tsv` 成本」，再取最低總成本。詞成本與連接成本共用同一尺度，可以直接相加；mapping D 不改變任何一筆的相對權重，也不引入每詞固定偏移。connection 的中位數是 `0.4`，若用 `+8.313` offset 會是它的 20.8 倍，會系統性偏向短分割。
 
-### 完整公開核心詞典（P2-45B）
+### 完整公開核心詞典（P2-45B，歷史對照）
 
 repo 內的 `lexicon/words.tsv` 只有 140 行（138 筆）curated 種子。完整的 0c-jadic public-core pack 放在外部，不進 Git；P2-45E 記号過濾與 P2-45F 非日文詞面過濾後，匯入結果是 `words.tsv` 1,137,895 筆詞條、861,582 個 surface，加上 `symbols/jadic.tsv` 333 筆記号。非日文詞面共丟棄 8,792 筆（emoji、拉丁字母、數字、符號）。匯入命令是：
 
@@ -201,9 +361,9 @@ go run ./cmd/0c-jadic convert -data build/ja-import -romaji -top 5 kyouha ashita
 
 **連接成本來自種子。** pack 沒有連接成本矩陣，匯入與打包都用 `data/ja/connection.tsv` 的 82 筆 curated 成本。它是為 1～3 的 curated 詞成本設計的；public-core 的詞成本中位數約 10，兩者尺度不同。repo 內沒有 Mozc 或 IPADic 的完整連接矩陣，這不是可替換的既有來源。
 
-P2-45C 檢查過 public-core pack：v1 的 entry 固定 20 位元組，只有 surface／reading offset、POS、活用型、活用形、成本與 split flags，沒有 `left_id`／`right_id`；檔頭與 section 也沒有矩陣。`0c-jadic inspect` 會明確印出 `connections: none` 與 `context ids: none`，匯入回執的 `pack.context_ids`／`pack.connection_matrix` 都是 `false`。即使另外取得 UniDic `matrix.bin`，`legal/unidic/README.md` 也規定原始 `matrix.bin` 與整份連接矩陣不進 Git、不隨詞典包散布；沒有 entry 的 context ID 時，POS 聚合矩陣會丟掉 matrix 真正有用的下位分類，無法重現 context-ID 成本。因此 runtime 維持 POS 矩陣，等有可散布的 context-ID 詞典來源再處理。
+P2-45C 檢查過 public-core pack：v1 的 entry 固定 20 位元組，只有 surface／reading offset、POS、活用型、活用形、成本與 split flags，沒有 `left_id`／`right_id`；檔頭與 section 也沒有矩陣。`0c-jadic inspect` 會明確印出 `connections: none` 與 `context ids: none`，匯入回執的 `pack.context_ids`／`pack.connection_matrix` 都是 `false`。即使另外取得 UniDic `matrix.bin`，`legal/unidic/README.md` 也規定原始 `matrix.bin` 與整份連接矩陣不進 Git、不隨詞典包散布；沒有 entry 的 context ID 時，POS 聚合矩陣會丟掉 matrix 真正有用的下位分類，無法重現 context-ID 成本。因此當時 runtime 維持 POS 矩陣。P2-53 已改用 Mozc 的 left/right ID 與 `connection_single_column.txt`，把 runtime 擴充成 context 矩陣，這條限制只保留在 public-core 歷史路徑。
 
-**目前不是可出貨的日文轉換品質。** 用這份資料跑 `core/ja` 統計引擎，`kyouha` 的第一名是「教派」，`ashita` 的第一名是「アシタ」；`東京大学` 這類長詞可以正確合併。`0c-eval-ja --data build/ja-import` 的 top1：hard-cases 2.9%、anthy-corpus1 1.0%、ajimee-200 1.0%、modern-500 0.0%。候選與量測細節見本節。原因是 public-core 的 UniDic 詞成本偏向かな與片假名，加上 curated 連接矩陣尺度不合；在補上 IME 用的詞成本或連接矩陣前，`JA_SRC` 只適合驗證與內部打包，不應當成正式日文輸入品質。
+**這條路徑已被 P2-53 取代。** 用這份資料跑 `core/ja` 統計引擎，`kyouha` 的第一名是「教派」，`ashita` 的第一名是「アシタ」；`0c-eval-ja --data build/ja-public-core` 的 top1：hard-cases 2.9%、anthy-corpus1 1.0%、ajimee-200 1.0%、modern-500 0.0%。原因是 public-core 的 UniDic 詞成本偏向かな與片假名，加上 curated 連接矩陣尺度不合。P2-53 改用 Mozc OSS 的 IME 詞成本與 context 連接矩陣後，modern-500 top1 是 86.0%；完整對照見本文件前面的 P2-53 章節。public-core 只保留作歷史重現與對照。
 
 ### 資料包內容
 

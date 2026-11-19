@@ -79,7 +79,25 @@ func loadRuntimeDecoder(dir string) (*decode.Decoder, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s：%w", conns, err)
 	}
-	return &decode.Decoder{Lex: lex, Conn: conn}, nil
+	var c lexicon.Connection = conn
+	if binPath := filepath.Join(dir, "connection.bin"); fileExists(binPath) {
+		bf, err := os.Open(binPath)
+		if err != nil {
+			return nil, err
+		}
+		ctx, err := lexicon.LoadContextMatrix(bf)
+		bf.Close()
+		if err != nil {
+			return nil, fmt.Errorf("%s：%w", binPath, err)
+		}
+		c = &lexicon.Connections{POS: conn, Context: ctx}
+	}
+	return &decode.Decoder{Lex: lex, Conn: c}, nil
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // inputSequence 依 -romaji 決定是否先走正式羅馬字組字器。

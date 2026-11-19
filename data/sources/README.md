@@ -5,6 +5,7 @@
 | 路徑 | 範圍 |
 |---|---|
 | `ledger.tsv`、`ja-sources.tsv`、`ja-files.tsv` | 產品詞庫、中文資料與既有日文詞典來源 |
+| `ja-mozc-3.35.6354.sha256` | Mozc OSS dictionary_oss 固定版本的逐檔 SHA-256；原始資料不進 Git |
 | `licenses/` | 產品資料包 NOTICE 用的授權全文與聲明 |
 | `corpus/` | Phase 2 日文訓練語料：public core 與 CC BY-SA experimental 分開列帳 |
 

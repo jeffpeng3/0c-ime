@@ -1,9 +1,11 @@
 # 日文來源逐檔授權清單。T02 產出；source 欄對應 ja-sources.tsv 與 ledger.tsv 的來源 ID。
 # Mozc 的 dictionary_oss 是混合授權：詞典、品詞、連接成本類檔案同時帶 NAIST/IPAdic 與 ICOT 條款；不可只看 Mozc 的 BSD-3。
+# 目前固定 tag 3.35.6354 / commit 0136c35782536cb43d710575c311cd4185982738；逐檔 SHA-256 見 ja-mozc-3.35.6354.sha256。
 # 欄位：source	file	lineage	license	distributable	notes
 ja-mozc	BUILD.bazel	Google 建置設定	BSD-3-Clause	yes	只描述建置規則，不含詞條。
 ja-mozc	README.md	Google 說明	BSD-3-Clause	yes	aux_dictionary.tsv 與 dictionary_filter.tsv 的格式說明。
-ja-mozc	README.txt	Google 說明，內含 IPAdic 與沖繩辭書授權全文	BSD-3-Clause	yes	散布時必須保留；本檔是混合授權的主要依據。
+ja-mozc	LICENSE	Mozc 專案 BSD-3-Clause 與 dictionary_oss 的 NAIST/IPAdic、ICOT、沖繩辭書全文	BSD-3-Clause + NAIST-IPAdic + ICOT + Public-Domain	yes	散布時必須保留；本檔是混合授權的主要依據。
+ja-mozc	README.txt	Google 說明，內含 IPAdic 與沖繩辭書授權全文	BSD-3-Clause	yes	散布時必須保留；和 LICENSE 一起確認為 BSD-3 混合授權，不是 Apache-2.0。
 ja-mozc	aux_dictionary.tsv	Google 追加詞	BSD-3-Clause	yes	以既有詞條為基準追加。
 ja-mozc	collocation.txt	Google 共起詞	BSD-3-Clause	yes	轉換候選整理用。
 ja-mozc	collocation_suppression.txt	Google 共起抑制	BSD-3-Clause	yes	轉換候選整理用。

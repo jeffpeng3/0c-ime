@@ -57,8 +57,10 @@ type hypothesis struct {
 // stateKey 是 Viterbi 的狀態。沒有 LM 時 ctx 永遠是空字串，行為與只依詞性
 // 分組完全相同；有 LM 時，只有會成為 bigram 左詞的前一個詞面才需要拆狀態。
 type stateKey struct {
-	pos lexicon.POS
-	ctx string
+	pos    lexicon.POS
+	rid    uint16 // 前一個詞的 right context ID
+	hasRID bool   // Conn 是 context 矩陣且前一個詞有 ID
+	ctx    string // LM bigram 的左詞面
 }
 
 type posHypotheses struct {
@@ -168,7 +170,7 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 	for i := range states {
 		states[i] = newStateSet()
 	}
-	states[0].add(stateKey{pos: lexicon.POSBOS}, &hypothesis{}, k)
+	states[0].add(d.initialKey(), &hypothesis{}, k)
 	for start := 0; start < len(seq); start++ {
 		set := states[start]
 		if len(set.order) == 0 {
@@ -176,10 +178,14 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 		}
 		for _, node := range lat[start] {
 			for _, key := range set.order {
-				conn := connectionCost(d.Conn, key.pos, node.Entry.POS)
+				conn := d.connectionCost(key, node.Entry)
 				for _, h := range set.get(key) {
 					lm := d.lmCost(h.node.Entry.Surface, node.Entry.Surface)
 					next := stateKey{pos: node.Entry.POS}
+					if node.Entry.HasContext {
+						next.rid = node.Entry.RightID
+						next.hasRID = true
+					}
 					if d.LM != nil && d.LMWeight != 0 && d.LM.HasLeft(node.Entry.Surface) {
 						next.ctx = node.Entry.Surface
 					}
@@ -198,7 +204,7 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 	var finals []searchResult
 	last := states[len(seq)]
 	for _, key := range last.order {
-		conn := connectionCost(d.Conn, key.pos, lexicon.POSEOS)
+		conn := d.finalConnectionCost(key)
 		for _, h := range last.get(key) {
 			finals = append(finals, searchResult{h: h, cost: h.cost + conn})
 		}
@@ -213,6 +219,33 @@ func (d *Decoder) search(seq reading.Sequence, ctx lang.Context, k int) []search
 		finals = finals[:k]
 	}
 	return finals
+}
+
+// initialKey 是句首狀態。Conn 提供 context 矩陣時用 Mozc 的 BOS context ID 0；
+// 否則只用 POS，行為與舊資料完全相同。
+func (d *Decoder) initialKey() stateKey {
+	k := stateKey{pos: lexicon.POSBOS}
+	if _, ok := d.Conn.(lexicon.ContextConnection); ok {
+		k.hasRID = true
+	}
+	return k
+}
+
+// connectionCost 依序嘗試 context 矩陣與 POS 矩陣。只要左或右缺少 context ID，
+// 就退回 POS，讓未知詞 fallback 與舊資料仍可運作。
+func (d *Decoder) connectionCost(left stateKey, right lexicon.Entry) float64 {
+	if cc, ok := d.Conn.(lexicon.ContextConnection); ok && left.hasRID && right.HasContext {
+		return cc.ContextCost(left.rid, right.LeftID)
+	}
+	return connectionCost(d.Conn, left.pos, right.POS)
+}
+
+// finalConnectionCost 是句尾連接成本。context 模式使用 right ID 0（EOS）。
+func (d *Decoder) finalConnectionCost(left stateKey) float64 {
+	if cc, ok := d.Conn.(lexicon.ContextConnection); ok && left.hasRID {
+		return cc.ContextCost(left.rid, 0)
+	}
+	return connectionCost(d.Conn, left.pos, lexicon.POSEOS)
 }
 
 // pathNodes 把假設還原成詞序列。

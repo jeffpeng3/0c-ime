@@ -1,4 +1,4 @@
-.PHONY: help assets ja-import upgrade test-upgrade test-release test-source-release test-windows-package test-sim
+.PHONY: help assets ja-import ja-mozc ja-mozc-assets upgrade test-upgrade test-release test-source-release test-windows-package test-sim
 .DEFAULT_GOAL := help
 
 PULL ?= 1
@@ -12,6 +12,11 @@ JA_SRC ?=
 # 0c-jadic 匯入的來源 pack 與輸出目錄（pack 檔不進 Git）。
 JA_PACK ?=
 JA_IMPORT ?= build/ja-import
+# Mozc OSS 詞典：固定 tag/commit，原始資料下載到 build/，產物也只在 build/。
+MOZC_TAG ?= 3.35.6354
+MOZC_COMMIT ?= 0136c35782536cb43d710575c311cd4185982738
+MOZC_DIR ?= build/mozc-$(MOZC_TAG)
+JA_MOZC ?= build/ja-mozc
 
 help:
 	@echo 'make assets           下載與這份原始碼相符的字典與模型（RELEASE=vX.Y.Z 指定版本，MODELS=0 只取字典）'
@@ -20,7 +25,9 @@ help:
 	@echo 'make assets LANG=all  同時取得注音字典與模型，並編譯日文資料包'
 	@echo 'make assets LANG=ja JA_OUT=build/ja  指定日文資料包輸出目錄'
 	@echo 'make ja-import JA_PACK=<ja-lexicon-public-core.pack>  匯入完整公開核心詞典到 build/ja-import'
-	@echo 'make assets LANG=ja JA_SRC=build/ja-import  用匯入的詞典產生 Windows 日文包'
+	@echo 'make ja-mozc          下載並匯入固定版本 Mozc OSS 詞典到 build/ja-mozc（需要 curl）'
+	@echo 'make ja-mozc-assets   下載 Mozc、匯入並編譯 Windows 日文包到 build/ja'
+	@echo 'make assets LANG=ja JA_SRC=build/ja-mozc  用 Mozc 詞典產生 Windows 日文包'
 	@echo 'make upgrade          更新已安裝的 Linux Fcitx5 輸入法（含 git pull）'
 	@echo 'make upgrade PULL=0   使用目前工作目錄，略過 git pull'
 	@echo 'make test-release     驗證套件檢查與隔離安裝／回復流程'
@@ -43,6 +50,15 @@ assets:
 ja-import:
 	@test -n "$(JA_PACK)" || { echo '需要 JA_PACK=<ja-lexicon-public-core.pack>；pack 不進 Git' >&2; exit 2; }
 	go run ./cmd/0c-jadic import -pack "$(JA_PACK)" -out "$(JA_IMPORT)" -connections data/ja/connection.tsv -force
+
+# 一個指令重現 Mozc 日文資料：下載固定 commit、驗證 SHA-256、匯入執行期布局。
+ja-mozc:
+	scripts/fetch_mozc_dictionary.sh "$(MOZC_DIR)"
+	go run ./cmd/0c-jadic mozc -package-dir "$(MOZC_DIR)" -out "$(JA_MOZC)" \
+		-source-repo https://github.com/google/mozc -source-commit "$(MOZC_COMMIT)" -force
+
+ja-mozc-assets: ja-mozc
+	$(MAKE) assets LANG=ja JA_SRC="$(JA_MOZC)" JA_OUT=build/ja
 
 upgrade:
 	python3 scripts/upgrade.py $(if $(filter 0,$(PULL)),--no-pull,)

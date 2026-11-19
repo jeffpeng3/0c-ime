@@ -150,7 +150,22 @@ func loadJapanese(path string) (*jadecode.Decoder, string, string, error) {
 	if err != nil {
 		return nil, lexiconPath, connPath, err
 	}
-	dec := &jadecode.Decoder{Lex: lex, Conn: connectionOrNil(conn), PreferHiragana: true, LM: model}
+	var decConn jalexicon.Connection = connectionOrNil(conn)
+	if conn != nil {
+		if binPath := filepath.Join(filepath.Dir(connPath), "connection.bin"); fileExists(binPath) {
+			bf, err := os.Open(binPath)
+			if err != nil {
+				return nil, lexiconPath, connPath, err
+			}
+			ctx, err := jalexicon.LoadContextMatrix(bf)
+			bf.Close()
+			if err != nil {
+				return nil, lexiconPath, connPath, fmt.Errorf("%s: %w", binPath, err)
+			}
+			decConn = &jalexicon.Connections{POS: conn, Context: ctx}
+		}
+	}
+	dec := &jadecode.Decoder{Lex: lex, Conn: decConn, PreferHiragana: true, LM: model}
 	if model != nil {
 		dec.LMWeight = jadecode.DefaultLMWeight
 	}

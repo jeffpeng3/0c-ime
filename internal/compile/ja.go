@@ -50,6 +50,8 @@ type JAData struct {
 	Sources     map[string]Source
 	Entries     []jaimport.Entry
 	Connections []jaimport.Connection
+	// ConnectionOrigin 是 connection.tsv 的來源 ID；空白時沿用舊的 curated 推測。
+	ConnectionOrigin string
 	// Counts 是來源 ID → 詞面 → 次數，用來估算 unigram 成本。
 	Counts map[string]map[string]float64
 	// Bigrams 是詞面配對 → P(右|左)；BigramOrigins 是同一配對的來源 ID。
@@ -182,6 +184,16 @@ func LoadJAWithMozcScale(dir, root string, mozcScale float64) (*JAData, []Proble
 		} else {
 			d.Connections = conns
 			addJAInput(d, connPath, root)
+		}
+	}
+	// connection.source 由匯入器寫入，讓 NOTICE 能把矩陣歸給正確來源。
+	if p := filepath.Join(dir, "connection.source"); fileExists(p) {
+		raw, err := os.ReadFile(p)
+		if err != nil {
+			errs = append(errs, Problem{p, err.Error()})
+		} else if id := strings.TrimSpace(string(raw)); id != "" {
+			d.ConnectionOrigin = id
+			addJAInput(d, p, root)
 		}
 	}
 
@@ -326,7 +338,11 @@ func BuildJA(d *JAData, o JAOptions) *JAResult {
 }
 
 func connectionOrigin(d *JAData) string {
-	// 連接成本沒有逐列來源；優先標成 curated，沒有 curated 時標成第一個實際使用的來源。
+	// 匯入器可用 connection.source 明確指定來源；舊資料沒有這個檔時，
+	// 沿用 curated 推測，避免改變既有 public-core 的 NOTICE。
+	if d.ConnectionOrigin != "" {
+		return d.ConnectionOrigin
+	}
 	if _, ok := d.Sources["curated"]; ok {
 		return "curated"
 	}
