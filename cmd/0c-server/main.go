@@ -172,7 +172,11 @@ func serve() string {
 	// 其他平台仍照設定檔（舊外殼的 mixed_input 選項）。
 	eng.MixedInput = mixedInputEnabled(runtime.GOOS, config.MixedInput)
 	eng.JaKanaFirst = config.JaAmbiguousKanaFirst() // P2-52：同形時優先かな
-	eng.Toneless = config.EffectiveToneless()       // #150：開啟時 session 停用混打的自動判斷；health 的 mixed_input 照引擎實際值回報。所有符號鍵打半形時暫停（#282）
+	eng.JaAmbiguous = config.JaAmbiguous            // P2-54：預設 both，日英並列；舊值 english／kana 照原意
+	if eng.JaAmbiguous == "" {
+		eng.JaAmbiguous = settings.JaAmbiguousBoth
+	}
+	eng.Toneless = config.EffectiveToneless() // #150：開啟時 session 停用混打的自動判斷；health 的 mixed_input 照引擎實際值回報。所有符號鍵打半形時暫停（#282）
 	eng.EnglishAutocomplete = config.EnglishAutocomplete
 	eng.CandidateBeforeCursor = config.CandidateCursor == "before"
 	eng.EmojiShortcut = config.EmojiShortcut
@@ -638,8 +642,8 @@ func serve() string {
 		"fuzzy": eng.Fuzzy.Key(), "mixed_input": fmt.Sprint(eng.MixedInput), "english_autocomplete": fmt.Sprint(config.EnglishAutocomplete), "left_shift": fmt.Sprint(config.TogglesLeft()), "right_shift": fmt.Sprint(config.TogglesRight()), "toggle_key": config.ToggleKey, "shift_tap_ms": "300", "mode_memory": config.ModeMemory, "start_mode": config.EffectiveStartMode(), "esc_clear": fmt.Sprint(config.EscClear), "space_selects": fmt.Sprint(config.SpaceSelects), "advance_after_select": fmt.Sprint(config.AdvanceAfterSelect),
 		"selection_keys": config.SelectionKeys, "candidate_cursor": config.CandidateCursor, "candidate_layout": config.CandidateLayout, "emoji_shortcut": config.EmojiShortcut, "emoji_equals_first": fmt.Sprint(config.EmojiEqualsFirst),
 		"keyboard_layout": config.KeyboardLayout, "preview_0_2": fmt.Sprint(eng.Preview02), "vocab_state": vocabState,
-		// P2-52：日英同形時的優先順序；設定改了會重啟引擎，舊引擎沒有這一項時照舊英文優先。
-		"ja_ambiguous": config.JaAmbiguous,
+		// P2-54：日英同形模式；預設 both（日英並列），舊值 english／kana 照原意。設定改了會重啟引擎。
+		"ja_ambiguous": eng.JaAmbiguous,
 		// #123：外殼據此決定要不要把組字中的 Shift＋←／→、候選窗的 Shift＋Delete／⌫ 送給引擎。
 		"vocab_keys": fmt.Sprint(eng.Preview02 && vocabDisabled == ""),
 		// #135：沒在組字時的聲調鍵要交給核心（單按＋空白是聲調符號）；Windows 外殼在 TestKeyDown 依此決定。

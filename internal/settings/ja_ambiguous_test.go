@@ -8,27 +8,32 @@ import (
 	"testing"
 )
 
-// P2-52：日英同形時的優先順序。預設 english 保留舊行為；kana 是明確的選項。
-func TestJaAmbiguousDefaultsToEnglishAndPersistsKana(t *testing.T) {
+// P2-54：日英同形預設 both，英文與かな並列；english／kana 維持 P2-52 的意義。
+func TestJaAmbiguousDefaultsToBothAndPersistsAllModes(t *testing.T) {
 	s := Default()
-	if s.JaAmbiguous != JaAmbiguousEnglish || s.JaAmbiguousKanaFirst() {
-		t.Fatalf("預設應是英文優先：%+v", s)
+	if s.JaAmbiguous != JaAmbiguousBoth || s.JaAmbiguousKanaFirst() || !s.JaAmbiguousListsBoth() {
+		t.Fatalf("預設應是日英並列：%+v", s)
 	}
-	if v, ok := s.Value("ja-ambiguous"); !ok || v != JaAmbiguousEnglish {
+	if v, ok := s.Value("ja-ambiguous"); !ok || v != JaAmbiguousBoth {
 		t.Fatalf("Value(ja-ambiguous) = %q %v", v, ok)
 	}
-	if err := s.Set("ja-ambiguous", JaAmbiguousKana); err != nil {
-		t.Fatal(err)
-	}
-	if s.JaAmbiguous != JaAmbiguousKana || !s.JaAmbiguousKanaFirst() {
-		t.Fatalf("かな優先沒有套用：%+v", s)
+	for _, mode := range []string{JaAmbiguousEnglish, JaAmbiguousKana, JaAmbiguousBoth} {
+		if err := s.Set("ja-ambiguous", mode); err != nil {
+			t.Fatal(err)
+		}
+		if s.JaAmbiguous != mode {
+			t.Fatalf("Set(%q) = %q", mode, s.JaAmbiguous)
+		}
+		if s.JaAmbiguousKanaFirst() != (mode == JaAmbiguousKana) || s.JaAmbiguousListsBoth() != (mode == JaAmbiguousBoth) {
+			t.Fatalf("%s 的引擎投影不對：%+v", mode, s)
+		}
 	}
 	path := filepath.Join(t.TempDir(), FileName)
 	if err := Save(path, s); err != nil {
 		t.Fatal(err)
 	}
 	back, err := Load(path)
-	if err != nil || back != s || !back.JaAmbiguousKanaFirst() {
+	if err != nil || back != s || !back.JaAmbiguousListsBoth() {
 		t.Fatalf("來回不一致：%+v %v", back, err)
 	}
 }
@@ -49,8 +54,8 @@ func TestJaAmbiguousRejectsUnknownValuesAndKeepsOldOnes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if r.Settings.JaAmbiguous != JaAmbiguousEnglish || len(r.Notes) == 0 {
-		t.Fatalf("讀不懂的值應退回英文並說明：%+v %v", r.Settings, r.Notes)
+	if r.Settings.JaAmbiguous != JaAmbiguousBoth || !r.Settings.JaAmbiguousListsBoth() || len(r.Notes) == 0 {
+		t.Fatalf("讀不懂的值應退回日英並列並說明：%+v %v", r.Settings, r.Notes)
 	}
 	if err := Save(path, r.Settings); err != nil {
 		t.Fatal(err)
@@ -69,14 +74,16 @@ func TestJaAmbiguousAppearsWithJapaneseSettings(t *testing.T) {
 			item = it
 		}
 	}
-	if item.Key != "ja-ambiguous" || item.Default != JaAmbiguousEnglish || item.Value != JaAmbiguousEnglish {
+	if item.Key != "ja-ambiguous" || item.Default != JaAmbiguousBoth || item.Value != JaAmbiguousBoth {
 		t.Fatalf("日文選項應有 ja-ambiguous：%+v", item)
 	}
 	if len(item.Languages) != 1 || item.Languages[0] != LanguageJa {
 		t.Fatalf("ja-ambiguous 只在日文模式出現：%v", item.Languages)
 	}
-	if item.ValueLabels[JaAmbiguousEnglish] == "" || item.ValueLabels[JaAmbiguousKana] == "" {
-		t.Fatalf("選項應有顯示名稱：%v", item.ValueLabels)
+	for _, mode := range []string{JaAmbiguousBoth, JaAmbiguousEnglish, JaAmbiguousKana} {
+		if item.ValueLabels[mode] == "" {
+			t.Fatalf("選項應有顯示名稱：%v", item.ValueLabels)
+		}
 	}
 	if _, ok := Keys()["ja-ambiguous"]; !ok {
 		t.Fatal("命令列說明應列出 ja-ambiguous")

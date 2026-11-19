@@ -96,3 +96,9 @@ func IsKana(raw string, cfg Config) bool {
 	_, _, ok := mixed.KanaFor(raw, cfg)
 	return ok
 }
+
+// KanaFor 回傳一段 ASCII 按鍵組成的かな與尚未完成的羅馬字。session 用它判斷
+// 日英同形：要有完整かな（pending 為空）才列跨語言候選。
+func KanaFor(raw string, cfg Config) (kana, pending string, ok bool) {
+	return mixed.KanaFor(raw, cfg)
+}

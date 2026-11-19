@@ -43,9 +43,9 @@ Emoji 選單以一個開關控制（`emoji-shortcut`：off／equals），預設�
 
 P2-42 起 Mixed profile 不再有分開的「輸入語言」：主要語言是 `primary-language`（在 Mixed 頁最上面），舊的 `language`、`language-memory`、`language-hotkey` 只留在舊設定檔遷移與命令列相容。設定程式原本的語言區塊只剩日文選項：
 
-- **日文輸入方式**（`ja-input-method`，`romaji` 羅馬字／`kana` 直接かな）、**日英同形時優先**（`ja-ambiguous`，`english` 英文優先／`kana` かな優先，P2-52）、**ライブ変換**（`ja-live-conversion`，預設關）、**記号與顔文字**（`ja-symbols`）、**日文學習**（`ja-learning`）、**日文神經模型**（`ja-model`）。
+- **日文輸入方式**（`ja-input-method`，`romaji` 羅馬字／`kana` 直接かな）、**日英同形時**（`ja-ambiguous`，`both` 日英並列／`english` 只打英文／`kana` かな優先，P2-54）、**ライブ変換**（`ja-live-conversion`，預設關）、**記号與顔文字**（`ja-symbols`）、**日文學習**（`ja-learning`）、**日文神經模型**（`ja-model`）。
 
-`ja-ambiguous` 由引擎在建立 session 時套用（P2-52）：預設 `english` 與舊版相同；`kana` 讓合法羅馬字優先於詞典英文詞，仍保留大寫、網址、識別字與「我的詞彙」英文詞。其他日文選項目前只保存設定：`0c-server` 的日文路徑仍固定使用羅馬字 composer，`core/ja/live`、`core/ja/rewrite` 與 `core/ja/personal` 的程式尚未接進正式 session，`ja-model` 也沒有可用的日文推論模型。P2-30 接上模型與能力旗標前，不要把它們當成已生效的功能。
+`ja-ambiguous` 由引擎在建立 session 時套用（P2-54）：預設 `both` 把かな、日文漢字候選與英文原文放在同一份清單（かな第一、英文最後），Enter 直接送かな；`english` 是 P2-52 以前的英文優先，`kana` 讓合法羅馬字優先於詞典英文詞。大寫、網址、識別字、英數混合與打不成羅馬字的輸入仍照英文。其他日文選項目前只保存設定：`0c-server` 的日文路徑仍固定使用羅馬字 composer，`core/ja/live`、`core/ja/rewrite` 與 `core/ja/personal` 的程式尚未接進正式 session，`ja-model` 也沒有可用的日文推論模型。P2-30 接上模型與能力旗標前，不要把它們當成已生效的功能。
 
 日文選項沒有放進 `settings.items`，而是由 `settings.Profiles().Language` 帶出，0c-update 原樣轉送成 `profiles.language`。設定程式從那裡讀；`Set ja-model …` 等照常可用，舊版 0c-update 沒有這個欄位時不顯示日文區塊。
 
@@ -65,7 +65,7 @@ Windows 只有一個 TSF profile「Mixed」（P2-40），設定程式的第一�
 - **輸出變體**（`output-variant`，放在「輸出設定」）：`traditional` 繁中、`simplified` 簡中、`shinjitai` 日文新字體。舊的 `output-simplified` 只留給命令列與外殼選單，設定檔存檔只寫新欄位；「用快捷鍵切換簡體字」只在 `simplified` 時作用。
 - **English profile 設定移除**：`language`、`language-memory`、`language-hotkey`、`start-mode` 不再出現在 Mixed 畫面。設定檔的舊值由 Go 端遷移：`language` 併入 `primary_language`，`output_simplified` 併入 `output_variant`，`language_*`、`english_profile` 與舊鍵在存檔時移除；`start-mode`、`toggle-key`、`mode-memory` 仍有引擎使用，只從 Mixed 畫面收起。
 - **注音專屬但不適用的選項**：`mixed-input`、`space-selects`、`toneless`、`zhuyin-error-hint` 在 Mixed 畫面標示「Mixed 模式不適用」並停用控制項，設定值保留，切到其他平台或關閉混打時照舊。
-- **日英同形時優先**（`ja-ambiguous`，P2-52）放在 Mixed 畫面的「日文」分組、日文輸入方式後面：預設「英文優先」，可改「かな優先」。這段文字直接來自 `languageSpecs()` 的 label／description（設定程式照契約顯示，不必另做版面）；按 Shift+Tab 則是不改設定的臨時出口。
+- **日英同形時**（`ja-ambiguous`，P2-54）放在 Mixed 畫面的「日文」分組、日文輸入方式後面：預設「日英並列」，可改「只打英文」或「かな優先」。這段文字直接來自 `languageSpecs()` 的 label／description（設定程式照契約顯示，不必另做版面）；Shift+Tab 仍是不改設定的臨時かな出口，但預設不需要它。
 
 「模型」頁多了「模型包與常駐」卡：Tauri 指令 `model_report` 以 0c-update status／settings 找使用中的安裝、字典與個人資料檔，再執行 `0c-server -model-report`（獨立 socket、`-lock-wait 0s`，30 秒逾時），把 `model_package`（`version`、`placeholder`）、`resident_bytes`、`budget_bytes` 與 `within_budget` 交給 `ZcMixed.reportFacts` 顯示。`ZC_SERVER`／`ZC_DATA`／`ZC_USER` 可覆寫路徑，`ZC_MODEL_REPORT` 直接回一份現成 JSON（測試用）。找不到 0c-server 或報告失敗時只顯示錯誤，不影響上面的 0c-update 狀態。
 

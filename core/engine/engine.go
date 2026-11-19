@@ -51,9 +51,11 @@ type Engine struct {
 	ZhuyinErrorHint      bool              // 「打錯注音時提示」開著時由宿主設定（#300，預設開）；零值時沒有字的音節照舊原樣留下。
 	EnglishAutocomplete  bool
 	MixedInput           bool // opt-in bilingual keys; disabled preserves legacy behavior.
-	// JaKanaFirst：日英同形時優先かな（P2-52，設定 ja-ambiguous=kana）；零值維持英文優先。
+	// JaKanaFirst：日英同形時優先かな（P2-52，舊設定 ja-ambiguous=kana）；零值不啟用。
+	// JaAmbiguous 是完整模式："" 或 "both" 為日英並列（預設），"english" 只打英文。
 	// 由宿主在建立 session 前設定，session 註冊日文 profile 時套用。
 	JaKanaFirst           bool
+	JaAmbiguous           string
 	English               *english.Dictionary // nil uses the authored prototype vocabulary.
 	EnglishPack           string              // host-supplied pack version for diagnostics; empty means prototype.
 	EmojiShortcut         string
@@ -164,7 +166,10 @@ func (e *Engine) OpenSession() uint64 {
 	e.sessions[e.next].ZhuyinErrorHint = e.ZhuyinErrorHint
 	e.sessions[e.next].EnglishAutocomplete = e.EnglishAutocomplete
 	e.sessions[e.next].MixedInput = e.MixedInput
-	e.sessions[e.next].SetJapaneseKanaFirst(e.JaKanaFirst)
+	e.sessions[e.next].SetJapaneseAmbiguous(e.JaAmbiguous)
+	if e.JaKanaFirst {
+		e.sessions[e.next].SetJapaneseKanaFirst(true)
+	}
 	e.sessions[e.next].EmojiShortcut = e.EmojiShortcut
 	e.sessions[e.next].EmojiEqualsFirst = e.EmojiEqualsFirst
 	e.sessions[e.next].SetLayout(e.Layout)

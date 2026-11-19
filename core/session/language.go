@@ -267,7 +267,11 @@ func (s *Session) languageKey(k string) (handled bool, commit string, ok bool) {
 	case lang.ActionInsert:
 		handled := s.languageInsert(k)
 		if handled {
-			s.leaveLiteralJapanese(k)
+			if s.leaveLiteralJapanese(k) {
+				s.japaneseCross = japaneseCrossState{}
+			} else {
+				s.afterJapaneseInsert(k)
+			}
 		}
 		return handled, "", true
 	case lang.ActionConvert:
@@ -293,6 +297,7 @@ func (s *Session) languageKey(k string) (handled bool, commit string, ok bool) {
 			r.reset()
 			s.finishJapaneseRun()
 		}
+		s.japaneseCross = japaneseCrossState{}
 		return true, "", true
 	case lang.ActionSelect:
 		s.languageSelectKey(k)
@@ -336,6 +341,12 @@ func (s *Session) languageInsert(k string) bool {
 }
 
 func (s *Session) languageBackspace() bool {
+	if s == nil {
+		return false
+	}
+	if s.crossActive() {
+		return s.crossBackspace()
+	}
 	r, ok := s.activeRuntime()
 	if !ok {
 		return false
@@ -421,6 +432,10 @@ func (s *Session) languageNextCandidate() {
 }
 
 func (s *Session) languageLoadCandidates() {
+	if s.crossActive() {
+		s.rebuildJapaneseCross()
+		return
+	}
 	r, ok := s.activeRuntime()
 	if !ok || !r.converting || r.converter == nil || r.clause >= len(r.clauses) {
 		return
@@ -689,13 +704,17 @@ func (s *Session) languagePages(r *languageRuntime) int {
 func (s *Session) languageCandidateList(r *languageRuntime) *proto.CandidateList {
 	start, length := s.languageClauseSpan(r)
 	page := r.candidate / perPage
+	title := "変換 · Space 換候選 · Tab 換文節"
+	if s.crossActive() {
+		title = "日英同形 · ↑↓ 選擇 · Enter 確定"
+	}
 	cl := &proto.CandidateList{
 		Page:      page,
 		Pages:     s.languagePages(r),
 		Start:     start,
 		Length:    length,
 		Highlight: r.candidate % perPage,
-		Title:     "変換 · Space 換候選 · Tab 換文節",
+		Title:     title,
 	}
 	lo := page * perPage
 	for id := lo; id < min(lo+perPage, len(r.candidates)); id++ {
