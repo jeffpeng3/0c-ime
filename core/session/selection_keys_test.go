@@ -52,11 +52,15 @@ func TestSelectionKeysDefaultLabelsDigits(t *testing.T) {
 		if snap := key(s, proto.KeyPageDown); itemKeys(snap) != "1234567890"[:len(snap.Candidates.Items)] {
 			t.Fatalf("第二頁也從 1 開始：%q", itemKeys(snap))
 		}
-		// 預設時 q 跟以前一樣沒有作用（候選開著時吃掉）。
+		// q 不是選字鍵時，打字離開選取模式並照注音鍵繼續組字（P2-51）。
 		key(s, proto.KeyPageUp)
 		before := s.snapshot().Text()
-		if snap := key(s, "q"); !snap.Handled || snap.Candidates == nil || snap.Text() != before {
-			t.Fatalf("SelectionKeys=%q 時 q 不選字：%+v", keys, snap)
+		snap = key(s, "q")
+		if s.selectionIndex("q") >= 0 {
+			continue // 這個設定裡 q 是選字鍵，上面已選字
+		}
+		if !snap.Handled || snap.Text() == before || s.navigating {
+			t.Fatalf("SelectionKeys=%q 時 q 應離開選取模式並繼續組字：%+v", keys, snap)
 		}
 	}
 }

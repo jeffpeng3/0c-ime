@@ -77,6 +77,7 @@ func (s *Session) vocabKey(k string) (handled, consumed bool) {
 		}
 		s.cursor = next
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		return true, true
 	}
 	if s.mark == nil {

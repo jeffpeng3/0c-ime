@@ -282,6 +282,12 @@ type Session struct {
 	sug            *suggest.Suggestion
 	previewRewrite bool // 使用者要求的同音替換預覽；下一個非 Tab 操作即清除
 	cand           *candState
+	// navigating 是明確的候選選取模式：↓ 進入，Esc／打字／選字／提交離開。
+	// cand != nil 只表示候選窗正顯示，不代表左右鍵要翻頁（P2-51）。
+	navigating bool
+	// keepCandidates 表示候選窗一經開啟就隨著組字留在畫面上：打完一個音節、游標移動或
+	// 繼續打字都重算，不必每次重按空白／↓。關窗、選字、提交與切換模式時清掉。
+	keepCandidates bool
 	rev            int
 }
 
@@ -399,6 +405,7 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 		s.localBlocked = true
 		if s.cand != nil && (s.cand.mixed || s.cand.kind != "" || s.cand.symbols == symbols.Recent) {
 			s.cand = nil // 不讓已開啟的個人英文候選、最近用過的符號跨入保護狀態。
+			s.navigating, s.keepCandidates = false, false
 		}
 	}
 	s.model.SyncTime()
@@ -425,10 +432,12 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 	case proto.Backspace:
 		s.englishDismissed = false
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		handled = s.backspace()
 	case proto.Cursor:
 		if s.Language() == lang.Zh {
 			s.flushMixed()
+			s.keepCandidates = false // 滑鼠移動游標就收起，不自動跟到新片段
 			s.moveTo(r.To)
 		}
 	case proto.Candidates:
@@ -455,6 +464,7 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 			s.englishDismissed = true
 		}
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		if rt, ok := s.activeRuntime(); ok {
 			rt.candidates = nil
 			rt.candidate = 0
@@ -582,6 +592,8 @@ func (s *Session) setMode(english, restore bool, stash *pendingStash) {
 	s.flushMixed()
 	s.clearDocumentContext()
 	s.cand = nil
+	s.navigating = false
+	s.keepCandidates = false
 	if !english && s.english && restore && stash != nil {
 		s.comp, s.mixed = stash.comp, stash.mixed
 	}
@@ -623,6 +635,13 @@ func (s *Session) CapsLockOn() bool { return s.capsLock }
 func (s *Session) EnglishMode() bool { return s.english }
 
 func (s *Session) key(k string) (handled bool, commit string) {
+	// 候選已經關掉時，選取模式一定也結束；避免任何關窗路徑留下過期的模式。
+	if s.cand == nil {
+		s.navigating = false
+	}
+	if s.keepCandidates {
+		defer s.reopenShownCandidates()
+	}
 	// 日文 runtime 已經沒有組字時先回到注音，下一個按鍵重新依按鍵推斷語言。
 	s.leaveEmptyJapanese()
 	// P2-52：Shift+Tab 把目前的待定英數段明確改成かな。只在注音路徑、沒有
@@ -691,15 +710,26 @@ func (s *Session) key(k string) (handled bool, commit string) {
 			return handled, ""
 		}
 	}
+	if s.cand != nil && !s.navigating {
+		if handled, commit, done := s.shownCandidateKey(k); done {
+			return handled, commit
+		}
+		// 這是一般的文字鍵：先離開「只是顯示」的清單，照正常組字路徑處理。
+		// keepCandidates 讓 key 結束時為新的片段重算清單（P2-51）。
+		s.cand = nil
+		s.navigating = false
+	}
 	if s.cand != nil {
 		if s.paletteKey(k) || s.symbolMenuKey(k) {
 			return true, ""
 		}
+		typing := false
 		switch k {
 		case proto.KeyShiftDelete, proto.KeyShiftBackspace:
 			s.forgetCandidate() // normalizeVocabKey 已確認開關打開、是一般候選
 		case proto.KeyEscape, proto.KeyBackspace, proto.KeyDelete:
 			s.cand = nil // 關閉候選、保留組字；Backspace／Del 不刪字（#106）
+			s.navigating, s.keepCandidates = false, false
 		case proto.KeyEnter:
 			s.selectCandidate(s.candidateID(s.cand.cursor))
 			if s.InputStyle.CandidateEnter == "commit" {
@@ -751,13 +781,30 @@ func (s *Session) key(k string) (handled bool, commit string) {
 		default:
 			if n := s.selectionIndex(k); n >= 0 {
 				s.selectCandidate(s.candidateID(s.candidatePage()*s.pageSize() + n))
-			} else if k == "j" { // 選字鍵優先：asdfghjkl; 時上面已選字（#193）
+				return true, ""
+			}
+			if k == "j" { // 選字鍵優先：asdfghjkl; 時上面已選字（#193）
 				s.stepCandidate(-1)
-			} else if k == "k" {
+				return true, ""
+			}
+			if k == "k" {
 				s.stepCandidate(1)
+				return true, ""
+			}
+			if len([]rune(k)) == 1 && unicode.IsPrint([]rune(k)[0]) {
+				// 打字離開選取模式：清掉反白，按鍵照正常組字路徑處理（P2-51）。
+				s.cand = nil
+				s.navigating = false
+				typing = true
+			} else {
+				return true, "" // 沒有作用的具名鍵仍由組字區吃掉
 			}
 		}
-		return true, "" // 候選開啟時吃掉所有按鍵（含 Shift+Tab 等沒有作用的鍵），不與注音鍵同時解讀、不交給應用程式
+		if !typing {
+			// 候選選取模式吃掉所有候選按鍵（含 Esc、Shift+Tab 等沒有作用的鍵），
+			// 不與注音鍵同時解讀。
+			return true, ""
+		}
 	}
 	if k == "=" && s.emojiEquals() && !s.private && s.paletteTriggerAllowed() {
 		s.openPalette()
@@ -883,6 +930,9 @@ func (s *Session) key(k string) (handled bool, commit string) {
 			return false, ""
 		}
 		s.openCandidates(0)
+		if s.cand != nil {
+			s.navigating = true // ↓ 是明確進入候選選取模式（P2-51）
+		}
 		return true, ""
 	}
 	if k == "`" {
@@ -1149,6 +1199,7 @@ func (s *Session) moveTo(to int) {
 	}
 	s.cursor = s.literalFloor(max(0, min(to, len(s.syls))))
 	s.cand = nil
+	s.navigating = false
 }
 
 func (s *Session) lattice() input.Lattice { return s.lockLattice(s.expand(s.syls), 0, 0) }
@@ -1322,10 +1373,16 @@ func writePath(b *strings.Builder, path []decode.Seg) {
 func (s *Session) openCandidates(length int) {
 	s.cancelAsync()
 	s.openCandidatesNow(length)
+	if s.cand != nil {
+		s.keepCandidates = true // 開過的清單跟著之後的組字留在畫面上（P2-51）
+	}
 	s.startAsyncCandidates()
 }
 
 func (s *Session) openCandidatesNow(length int) {
+	// 由空白、外殼請求或游標跟隨開的清單只是顯示；↓ 的呼叫端會在回來後自己設
+	// navigating。符號選單與 Emoji 直接走 openSymbols，不經過這裡。
+	defer func() { s.navigating = false }()
 	s.styleGrid = false
 	if s.englishWord {
 		s.englishDismissed = false
@@ -1690,6 +1747,7 @@ func (s *Session) selectCandidate(id int) bool {
 	if s.cand.english {
 		s.mixed.accepted = s.cand.items[id].Entry.Surface
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		return true
 	}
 	if s.cand.mixed {
@@ -1725,6 +1783,7 @@ func (s *Session) selectCandidate(id int) bool {
 		}
 	}
 	s.cand = nil
+	s.navigating, s.keepCandidates = false, false
 	s.refreshSelection(shown, auto, decode.Seg{Word: c.Surface, Start: start, End: end, Correction: c.Correction, Matched: lock.Matched})
 	return true
 }
@@ -1948,6 +2007,7 @@ func (s *Session) reset() {
 		s.localBlocked = false
 		s.learningCleared = false
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		if r, ok := s.activeRuntime(); ok {
 			r.reset()
 		}
@@ -1979,6 +2039,7 @@ func (s *Session) reset() {
 	s.learningCleared = false
 	s.comp.Reset()
 	s.syls, s.cursor, s.locks, s.rejected, s.cand = nil, 0, map[int]decode.Lock{}, nil, nil
+	s.navigating, s.keepCandidates = false, false
 	s.literals = nil
 	s.pendingLiterals = nil
 	s.displayed = nil

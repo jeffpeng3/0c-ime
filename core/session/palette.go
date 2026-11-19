@@ -236,6 +236,7 @@ func (s *Session) paletteKey(key string) bool {
 		return true
 	case proto.KeyBackspace:
 		s.cand = nil // close only; no deletion of existing composition.
+		s.navigating, s.keepCandidates = false, false
 		return true
 	}
 	return false
@@ -259,6 +260,7 @@ func (s *Session) selectEmoji(id int) bool {
 		s.paletteChanged = true
 	}
 	s.cand = nil
+	s.navigating, s.keepCandidates = false, false
 	// 含換行的片語不留在組字區（外殼的組字區多半畫不了換行）：連同前面的組字一起提交。
 	s.paletteCommit = c.direct || c.kind == "phrases" && strings.ContainsAny(text, "\r\n")
 	return true

@@ -124,7 +124,8 @@ func (s *Session) styleKey(k string) (handled bool, commit string, done bool) {
 		}
 	}
 	if s.cand != nil {
-		if s.InputStyle.CandidateNavigation == "horizontal" && s.cand.kind == "" {
+		// 只有明確的選取模式才由候選接收方向鍵；清單只是顯示時，左右鍵仍移動組字游標（P2-51）。
+		if s.InputStyle.CandidateNavigation == "horizontal" && s.cand.kind == "" && s.navigating {
 			switch k {
 			case proto.KeyLeft:
 				s.moveHighlight(-1)
@@ -140,7 +141,7 @@ func (s *Session) styleKey(k string) (handled bool, commit string, done bool) {
 				return true, "", true
 			}
 		}
-		if s.InputStyle.CandidateTab == "grid" && k == proto.KeyRight && !s.styleGrid {
+		if s.InputStyle.CandidateTab == "grid" && k == proto.KeyRight && !s.styleGrid && s.navigating {
 			s.styleGrid = true
 			return true, "", true
 		}

@@ -89,15 +89,16 @@ pub fn covers_segments(segments: &[Span], start: usize, length: usize) -> usize 
         .count()
 }
 
-/// 會移動組字游標的按鍵。候選窗開著時左右鍵是翻頁，不會走到這裡。
+/// 會移動組字游標的按鍵。核心在候選窗只是顯示時自己移動游標並回傳新片段
+/// 候選；進入選取模式後左右鍵才改由核心翻頁。
 pub fn moves_cursor(key: &str) -> bool {
     matches!(key, "Left" | "Right" | "Home" | "End")
 }
 
 /// 這一鍵之後是否要為新的片段自動重開候選。
 ///
-/// 只在中文組字、按鍵確實移動游標、而且這次快照沒有候選時才成立：候選窗
-/// 開著時的方向鍵由引擎處理翻頁，不會移動片段。
+/// 只在中文組字、按鍵確實移動游標、而且這次快照沒有候選時才成立：核心已經
+/// 回傳新片段候選時不必再問；沒有候選時才由外殼補一次請求，這是舊核心的保險。
 pub fn follows_cursor(snapshot: &Snapshot, key: &str) -> bool {
     if !snapshot.ok || !snapshot.handled || snapshot.commit != "" {
         return false;
@@ -206,7 +207,10 @@ mod tests {
         assert!(!follows_cursor(&s, "Down"), "下鍵由引擎開候選，不再重送");
         assert!(!follows_cursor(&s, "a"), "打字不重開候選");
         s.candidates = vec![(1, "風景".into())];
-        assert!(!follows_cursor(&s, "Left"), "候選開著時左右鍵是翻頁");
+        assert!(
+            !follows_cursor(&s, "Left"),
+            "核心已回傳候選時不再重送；選取模式的翻頁也由核心處理"
+        );
         s.candidates.clear();
         s.english = true;
         assert!(!follows_cursor(&s, "Left"), "英文模式不自動開中文候選");

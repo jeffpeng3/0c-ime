@@ -83,6 +83,10 @@ func (s *Session) openSymbols(items []string, start, length int, pending bool) {
 		c.items = append(c.items, rawCandidate(text))
 	}
 	s.cand = c
+	// 符號選單、Emoji 與最近的符號都是明確開啟的清單，直接進入選取模式；
+	// 由 ↓ 或空白開的一般候選不經過這裡（openCandidatesNow 會把模式清掉）。
+	s.navigating = true
+	s.keepCandidates = true
 }
 
 func (s *Session) insertLiteral(text string) {
@@ -237,6 +241,7 @@ func (s *Session) selectLiteral(id int) bool {
 		return s.selectEmoji(id)
 	}
 	c := s.cand
+	s.navigating, s.keepCandidates = false, false
 	text := c.items[id].Entry.Surface
 	if c.pending {
 		s.comp.Reset()
