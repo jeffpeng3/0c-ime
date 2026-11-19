@@ -32,7 +32,7 @@
     { title: '主要語言', keys: ['primary-language'] },
     { title: '混合輸入', keys: ['mixed-input', 'english-autocomplete', 'cjk-latin-space'] },
     { title: '模型', keys: ['model-mode', 'model-residency-mb', 'allow-placeholders'] },
-    { title: '日文', keys: ['ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'] },
+    { title: '日文', keys: ['ja-input-method', 'ja-ambiguous', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model'] },
   ];
 
   const MIXED_KEYS = GROUPS.flatMap((group) => group.keys);

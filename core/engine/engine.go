@@ -32,25 +32,28 @@ type Engine struct {
 	DocumentContextWeight *float64
 	Rerank                rerank.Options // 宿主在建立 session 前設定；可選、同步、有界評分器。
 	// DisableModelScoring 由宿主依「不用模型」設定：新 session 同步與非同步評分都停用。
-	DisableModelScoring   bool
-	Punct                 punct.Punctuator  // 宿主在建立 session 前設定；提交時補標點，nil 停用。
-	JaPunct               punct.Punctuator  // Japanese punctuation model; nil falls back to Punct on Japanese commits.
-	DocumentContextOff    bool              // 使用者關閉前文時由宿主設定；外殼的前文確認一律忽略。
-	EscKeepComposition    bool              // 使用者關閉「按 Esc 清除整段組字」時由宿主設定。
-	SpaceInsertsSpace     bool              // 使用者關閉「空白鍵選字」時由宿主設定。
-	AdvanceAfterSelect    bool              // 使用者開啟「選字後游標移到下一個字」時由宿主設定（#133）。
-	Simplified            *zhconv.Converter // 使用者開啟「輸出簡體字」時由宿主設定（#118）；nil 送出繁體。
-	SelectionKeys         string            // 使用者選的選字鍵（#112）；空字串為 1234567890。
-	CtrlPunct             bool              // 「Ctrl＋標點打全形」開著時由宿主設定（#168）；零值時 Ctrl＋標點交給應用程式。
-	ShiftSymbolHalfwidth  bool              // 「Shift＋符號打半形」開著時由宿主設定（#258）；零值時 Shift＋符號照舊打全形標點。
-	AllSymbolsHalfwidth   bool              // 「所有符號鍵打半形」時由宿主設定（#282）；零值時照舊。
-	CJKLatinSpace         bool              // 「中英文之間自動加空格」開著時由宿主設定（#273）；零值時送出的文字不補空格。
-	CapsLockEnglish       bool              // 「Caps Lock 開著時直接打英文」開著時由宿主設定（#173）；零值時 caps_lock 請求不起作用。
-	Fuzzy                 fuzzy.Config      // 使用者逐對啟用的模糊音；零值全部關閉。
-	Toneless              bool              // 「不打聲調也能選字」開著時由宿主設定（#150）；開啟時停用中英混打的自動判斷。
-	ZhuyinErrorHint       bool              // 「打錯注音時提示」開著時由宿主設定（#300，預設開）；零值時沒有字的音節照舊原樣留下。
-	EnglishAutocomplete   bool
-	MixedInput            bool                // opt-in bilingual keys; disabled preserves legacy behavior.
+	DisableModelScoring  bool
+	Punct                punct.Punctuator  // 宿主在建立 session 前設定；提交時補標點，nil 停用。
+	JaPunct              punct.Punctuator  // Japanese punctuation model; nil falls back to Punct on Japanese commits.
+	DocumentContextOff   bool              // 使用者關閉前文時由宿主設定；外殼的前文確認一律忽略。
+	EscKeepComposition   bool              // 使用者關閉「按 Esc 清除整段組字」時由宿主設定。
+	SpaceInsertsSpace    bool              // 使用者關閉「空白鍵選字」時由宿主設定。
+	AdvanceAfterSelect   bool              // 使用者開啟「選字後游標移到下一個字」時由宿主設定（#133）。
+	Simplified           *zhconv.Converter // 使用者開啟「輸出簡體字」時由宿主設定（#118）；nil 送出繁體。
+	SelectionKeys        string            // 使用者選的選字鍵（#112）；空字串為 1234567890。
+	CtrlPunct            bool              // 「Ctrl＋標點打全形」開著時由宿主設定（#168）；零值時 Ctrl＋標點交給應用程式。
+	ShiftSymbolHalfwidth bool              // 「Shift＋符號打半形」開著時由宿主設定（#258）；零值時 Shift＋符號照舊打全形標點。
+	AllSymbolsHalfwidth  bool              // 「所有符號鍵打半形」時由宿主設定（#282）；零值時照舊。
+	CJKLatinSpace        bool              // 「中英文之間自動加空格」開著時由宿主設定（#273）；零值時送出的文字不補空格。
+	CapsLockEnglish      bool              // 「Caps Lock 開著時直接打英文」開著時由宿主設定（#173）；零值時 caps_lock 請求不起作用。
+	Fuzzy                fuzzy.Config      // 使用者逐對啟用的模糊音；零值全部關閉。
+	Toneless             bool              // 「不打聲調也能選字」開著時由宿主設定（#150）；開啟時停用中英混打的自動判斷。
+	ZhuyinErrorHint      bool              // 「打錯注音時提示」開著時由宿主設定（#300，預設開）；零值時沒有字的音節照舊原樣留下。
+	EnglishAutocomplete  bool
+	MixedInput           bool // opt-in bilingual keys; disabled preserves legacy behavior.
+	// JaKanaFirst：日英同形時優先かな（P2-52，設定 ja-ambiguous=kana）；零值維持英文優先。
+	// 由宿主在建立 session 前設定，session 註冊日文 profile 時套用。
+	JaKanaFirst           bool
 	English               *english.Dictionary // nil uses the authored prototype vocabulary.
 	EnglishPack           string              // host-supplied pack version for diagnostics; empty means prototype.
 	EmojiShortcut         string
@@ -161,6 +164,7 @@ func (e *Engine) OpenSession() uint64 {
 	e.sessions[e.next].ZhuyinErrorHint = e.ZhuyinErrorHint
 	e.sessions[e.next].EnglishAutocomplete = e.EnglishAutocomplete
 	e.sessions[e.next].MixedInput = e.MixedInput
+	e.sessions[e.next].SetJapaneseKanaFirst(e.JaKanaFirst)
 	e.sessions[e.next].EmojiShortcut = e.EmojiShortcut
 	e.sessions[e.next].EmojiEqualsFirst = e.EmojiEqualsFirst
 	e.sessions[e.next].SetLayout(e.Layout)

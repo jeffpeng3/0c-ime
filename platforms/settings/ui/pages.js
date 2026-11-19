@@ -11,7 +11,7 @@
       title: '語言與中英切換', lead: '選擇主要語言、混合輸入與模型，以及中英切換鍵與換程式後回到哪個模式。Mixed profile 直接接受注音、日文與英文。',
       keys: ['primary-language', 'language', 'language-memory', 'language-hotkey', 'mixed-input', 'english-autocomplete', 'cjk-latin-space',
         'model-mode', 'model-residency-mb', 'allow-placeholders',
-        'ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
+        'ja-input-method', 'ja-ambiguous', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
         'toggle-key', 'start-mode', 'mode-memory', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
     },
     candidates: {

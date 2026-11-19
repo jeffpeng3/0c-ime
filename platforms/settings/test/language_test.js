@@ -24,7 +24,7 @@ test('Mixed 設定在 mode 頁，P2-42 的鍵都在頁面順序裡', () => {
   const mode = /mode: \{[\s\S]*?keys: \[([\s\S]*?)\]/.exec(pages);
   assert.ok(mode);
   const keys = [...mode[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
-  for (const key of ['primary-language', 'mixed-input', 'english-autocomplete', 'cjk-latin-space', 'model-mode', 'model-residency-mb', 'allow-placeholders', 'ja-input-method', 'ja-model']) {
+  for (const key of ['primary-language', 'mixed-input', 'english-autocomplete', 'cjk-latin-space', 'model-mode', 'model-residency-mb', 'allow-placeholders', 'ja-input-method', 'ja-ambiguous', 'ja-model']) {
     assert.ok(keys.includes(key), key);
   }
   // English profile 與分開的語言切換不出現在 Mixed 畫面。
