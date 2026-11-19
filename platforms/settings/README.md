@@ -9,8 +9,8 @@
 | `src/updater.rs` | 找出並啟動 `0c-update`、逾時、解析 JSON、匯出摘要；附單元測試 |
 | `src/main.rs` | 指令白名單、視窗、單一實例 |
 | `src/watch.rs` | 「我的詞彙」的即時同步：常駐 `0c-update vocab watch`、轉成 `vocab-changed` 事件、意外結束時重新連上 |
-| `ui/` | `index.html`、`app.css`、`app.js`；設定項目依契約動態產生。`vocab.js` 是「我的詞彙」頁，`models.js` 是「模型」頁，`personal-reset.js` 是「我的詞彙」頁「靈犀學到的」底下的「清除學習紀錄」，`input-styles.js` 是「輸入習慣」頁，`update-mode.js` 是更新方式的顯示名稱與說明 |
-| `test/` | `smoke.sh`（容器 Xvfb 冒煙測試）、`vocab.sh`（我的詞彙）、`models.sh`（模型）、`styles.sh`（輸入習慣）、`scroll.sh`（背景更新保留捲動位置，#268）、`personal.sh`（清除學習紀錄，#301）、`fake-update.py`（測試用的 0c-update 替身，只模擬 vocab、api 與 models）、`*_test.js`（`node --test`，不碰畫面的判斷）、`scroll_position_test.py`（Playwright 在 Chromium 與 WebKit 跑真的頁面，各缺一個就跳過） |
+| `ui/` | `index.html`、`app.css`、`app.js`；設定項目依契約動態產生。`pages.js` 是各頁的項目與順序（含 Mixed 頁沿用 mode 的 `keys`），`vocab.js` 是「我的詞彙」頁，`models.js` 是「模型」頁，`personal-reset.js` 是「我的詞彙」頁「靈犀學到的」底下的「清除學習紀錄」，`input-styles.js` 是「輸入習慣」頁，`update-mode.js` 是更新方式的顯示名稱與說明 |
+| `test/` | `smoke.sh`（容器 Xvfb 冒煙測試）、`vocab.sh`（我的詞彙）、`models.sh`（模型）、`styles.sh`（輸入習慣）、`scroll.sh`（背景更新保留捲動位置，#268）、`personal.sh`（清除學習紀錄，#301）、`fake-update.py`（測試用的 0c-update 替身，只模擬 vocab、api 與 models）、`*_test.js`（`node --test`，不碰畫面的判斷）、`scroll_position_test.py` 與 `mixed_page_test.py`（Playwright 在 Chromium 與 WebKit 跑真的頁面，各缺一個就跳過） |
 | `build.rs`、`capabilities/main.json` | 只有 `build.rs` 列出的指令能被前端呼叫，capability 只授權這些指令與事件監聽 |
 | `tauri.linux.conf.json` | Linux 的 identifier 改為 `com.biggo.zc.settings`：外掛用它組 D-Bus 服務名，而服務名的每一段不能以數字開頭，`com.biggo.0c.settings` 會讓程式一啟動就 panic。macOS 與 Windows 維持 `com.biggo.0c.settings` |
 | `tauri.conf.json` | CSP：`default-src 'none'; script-src 'self'; style-src 'self'`；不載入任何遠端內容 |
@@ -25,7 +25,7 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 
 ## 中英切換、選字、鍵盤與符號（輸入設定，#207）
 
-0.2.5 起原本一頁 19 項的「輸入設定」拆成側欄的三頁，不摺疊（摺起來的設定會找不到）。各頁依 `app.js` 的 `INPUT_PAGES` 排列，順序也是 Tab 順序：
+0.2.5 起原本一頁 19 項的「輸入設定」拆成側欄的三頁，不摺疊（摺起來的設定會找不到）。各頁依 `pages.js` 的 `INPUT_PAGES` 排列，順序也是 Tab 順序：
 
 | 頁面（`--page`） | 項目 |
 |---|---|
@@ -33,7 +33,7 @@ Rust 的 `profile_command(action,id,name)` 只允許 `select`、`copy`、`rename
 | 選字（`candidates`） | 選字方式（神經選字）、依前文選字、空白鍵選字、修改字詞的位置、選字後游標移到下一個字、選字排列、選字鍵、按 Esc 清除整段組字，另一張卡是模糊音總開關 |
 | 鍵盤與符號（`keyboard`） | 鍵盤排列、Ctrl＋標點打全形、標點寬度、提交時補標點（Beta）、Emoji 選單（子選項「將 = 放在第一項」） |
 
-側欄順序：總覽、輸入習慣、語言與中英切換、選字、鍵盤與符號、輸出設定、我的詞彙、模型、更新、問題排解、關於。「輸出設定」（`output`）照舊獨立。契約裡不在任何一頁的新項目（較新的 0c-update 才有）畫在「選字」最後，所以新增設定不必先改畫面；要放別頁再加進 `INPUT_PAGES`。舊的頁名 `input`（0.2.5 以前的 `0c-update open-settings input`、說明文件）照樣接受，畫面導到側欄第一頁「語言與中英切換」（`PAGE_ALIAS`；Go 與 Rust 的白名單也保留它，舊版設定程式照舊開輸入設定）。三份頁名清單由 `internal/settingsapp` 的 `TestPageNamesMatchTheSettingsApp` 核對。總覽的「有設定已儲存、尚未套用」帶到第一個尚未套用的項目所在的那一頁。
+側欄順序：總覽、輸入習慣、語言與中英切換、選字、鍵盤與符號、輸出設定、我的詞彙、模型、更新、問題排解、關於。「輸出設定」（`output`）照舊獨立。契約裡不在任何一頁的新項目（較新的 0c-update 才有）畫在「選字」最後，所以新增設定不必先改畫面；要放別頁再加進 `pages.js` 的 `INPUT_PAGES`。舊的頁名 `input`（0.2.5 以前的 `0c-update open-settings input`、說明文件）照樣接受，畫面導到側欄第一頁「語言與中英切換」（`PAGE_ALIAS`；Go 與 Rust 的白名單也保留它，舊版設定程式照舊開輸入設定）。三份頁名清單由 `internal/settingsapp` 的 `TestPageNamesMatchTheSettingsApp` 核對。總覽的「有設定已儲存、尚未套用」帶到第一個尚未套用的項目所在的那一頁。
 
 契約的項目帶 `disabled` 時（倚天 41 鍵時的中英混打、Emoji 選單與等號首項，許氏時的中英混打，#183；不用 Shift 時的開始模式，#184）開關反灰、畫成關閉，名稱旁顯示 `disabled_reason`，不在 Tab 順序裡；設定檔的值不動，切回標準排列照原值顯示（#83）。造成停用的那一項（`disabled_by`）在別頁時，說明下面多一個「到「鍵盤與符號」修改「鍵盤排列」」，按了切到那一頁並把焦點放在那一項（例如中英混打在「中英切換」、鍵盤排列在「鍵盤與符號」）；在同一頁（開始模式就在中英切換鍵下面）不另外放。
 
@@ -68,7 +68,9 @@ Windows 只有一個 TSF profile「Mixed」（P2-40），設定程式的第一�
 
 「模型」頁多了「模型包與常駐」卡：Tauri 指令 `model_report` 以 0c-update status／settings 找使用中的安裝、字典與個人資料檔，再執行 `0c-server -model-report`（獨立 socket、`-lock-wait 0s`，30 秒逾時），把 `model_package`（`version`、`placeholder`）、`resident_bytes`、`budget_bytes` 與 `within_budget` 交給 `ZcMixed.reportFacts` 顯示。`ZC_SERVER`／`ZC_DATA`／`ZC_USER` 可覆寫路徑，`ZC_MODEL_REPORT` 直接回一份現成 JSON（測試用）。找不到 0c-server 或報告失敗時只顯示錯誤，不影響上面的 0c-update 狀態。
 
-UI 測試：`test/mixed_test.js` 驗證 English profile 收起清單、不適用標示、分組與模型報告摘要；`test/language_test.js` 驗證主要語言與舊契約讀法。Go 測試在 `internal/settings/mixed_profile_test.go`：舊鍵遷移、移除、模型與輸出設定持久化。
+UI 測試：`test/mixed_test.js` 驗證 English profile 收起清單、不適用標示、分組與模型報告摘要；`test/language_test.js` 驗證主要語言與舊契約讀法；`test/pages_test.js` 驗證 Mixed 頁沿用 mode 的 `keys`，以及缺少 key 的舊資料會落到預設頁面而不丟錯。Go 測試在 `internal/settings/mixed_profile_test.go`：舊鍵遷移、移除、模型與輸出設定持久化。
+
+P2-48 的回歸：0.2.13-preview.1 搭配的 `0c-update`（`8a18db0`）沒有 `features.mixed`，設定程式因此依平台選 Mixed 頁；混合頁若拿一份沒有 `keys` 的頁面描述去排序，會在畫完標題與說明後丟 `TypeError: ... reading 'includes'`。現在混合頁是 mode 頁的複本，只換標題與說明；`spec.keys` 不是陣列、項目沒有 `key`、或 `settings.file` 缺少時都退回預設值。`test/mixed_page_test.py` 用那份舊 `settings -json` 形狀在 Chromium 與 WebKit 真的開頁面，核對分組、固定開啟、鎖定說明與其他頁面都不再出現錯誤。
 
 ## 我的詞彙（0.2.0，#125）
 
