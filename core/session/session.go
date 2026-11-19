@@ -239,7 +239,9 @@ type Session struct {
 	japaneseRun       bool
 	japaneseCfg       jlang.Config
 	japaneseConfigure jlang.ConverterConfig
-	japaneseKanaFirst bool          // P2-52：同形時優先かな（設定 ja-ambiguous=kana）
+	japaneseKanaFirst bool   // P2-52：同形時優先かな（ja-ambiguous=kana）
+	japaneseAmbiguous string // P2-52：日英同形模式，空字串與 both 都是並列（預設）
+	japaneseCross     japaneseCrossState
 	japaneseLex       jlang.Source  // 重新安裝 profile 時沿用同一個詞典
 	japaneseConn      *jlang.Matrix // 重新安裝 profile 時沿用同一個連接矩陣
 	// lastLanguage 是上一次送出的最後一個片段語言（P2-15）。選字時用它判斷跨語言偏好：
@@ -441,7 +443,9 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 			s.moveTo(r.To)
 		}
 	case proto.Candidates:
-		if rt, ok := s.activeRuntime(); ok && rt.converting {
+		if s.crossActive() {
+			s.rebuildJapaneseCross()
+		} else if rt, ok := s.activeRuntime(); ok && rt.converting {
 			s.languageLoadCandidates()
 		} else if s.Language() == lang.Zh {
 			s.openCandidates(r.Length)
@@ -455,7 +459,13 @@ func (s *Session) Handle(r proto.Request) proto.Snapshot {
 			s.cand.cursor = r.Index * s.pageSize()
 		}
 	case proto.Select:
-		if !s.selectCandidate(r.Index) {
+		if s.crossActive() {
+			if text, ok := s.selectJapaneseCross(r.Index); ok {
+				commit = text
+			} else {
+				notices = append(notices, "沒有這個候選")
+			}
+		} else if !s.selectCandidate(r.Index) {
 			notices = append(notices, "沒有這個候選")
 		}
 	case proto.Close:
@@ -636,7 +646,8 @@ func (s *Session) EnglishMode() bool { return s.english }
 
 func (s *Session) key(k string) (handled bool, commit string) {
 	// 候選已經關掉時，選取模式一定也結束；避免任何關窗路徑留下過期的模式。
-	if s.cand == nil {
+	// 日英並列清單（P2-54）不走 s.cand，但同樣有顯示與選取兩種狀態，不能在這裡清掉。
+	if s.cand == nil && !s.crossActive() {
 		s.navigating = false
 	}
 	if s.keepCandidates {
@@ -644,6 +655,11 @@ func (s *Session) key(k string) (handled bool, commit string) {
 	}
 	// 日文 runtime 已經沒有組字時先回到注音，下一個按鍵重新依按鍵推斷語言。
 	s.leaveEmptyJapanese()
+	// P2-54：日英並列清單開著時，上下鍵換反白、Enter 直接送出目前候選、退格
+	// 退回上一個按鍵；字母照一般日文路徑追加，清單即時重建。
+	if handled, commit, ok := s.crossKey(k); ok {
+		return handled, commit
+	}
 	// P2-52：Shift+Tab 把目前的待定英數段明確改成かな。只在注音路徑、沒有
 	// 候選窗、有待定按鍵時作用；打不成合法羅馬字時照舊吃掉、原樣保留。
 	if k == proto.KeyBackTab && s.japaneseOn && s.Language() == lang.Zh && !s.english && s.cand == nil && s.mixed.raw != "" {
@@ -1988,6 +2004,7 @@ func (s *Session) punctuateWith(p punct.Punctuator, text string, apply func(stri
 func (s *Session) reset() {
 	s.cancelAsync()
 	s.languageSelections = nil
+	s.japaneseCross = japaneseCrossState{}
 	if s.Language() != lang.Zh {
 		// 只清目前語言；切走時另一邊未完成的組字保留。
 		s.styleCycle = nil

@@ -77,13 +77,34 @@ func (s *Session) JapaneseEnabled() bool {
 }
 
 // SetJapaneseKanaFirst 設定日英同形時是否優先かな（P2-52，settings 的 ja-ambiguous=kana）。
-// 必須在開始打字前設定；已經註冊日文 profile 時會用同一個詞典重建 runtime，
-// 未完成的日文組字會清掉。零值維持英文優先，既有使用者行為不變。
+// on=false 是明確的英文優先（舊版行為），不是新版預設的日英並列；日英並列請用
+// SetJapaneseAmbiguous("both")。必須在開始打字前設定；已經註冊日文 profile 時會用
+// 同一個詞典重建 runtime，未完成的日文組字會清掉。
 func (s *Session) SetJapaneseKanaFirst(on bool) {
-	if s == nil || s.japaneseKanaFirst == on {
+	if on {
+		s.SetJapaneseAmbiguous("kana")
 		return
 	}
-	s.japaneseKanaFirst = on
+	s.SetJapaneseAmbiguous("english")
+}
+
+// SetJapaneseAmbiguous 設定日英同形模式（P2-52）：空字串或 both 是日英並列
+// （新版預設），english 是詞典英文優先（P2-52 以前），kana 是合法羅馬字優先。
+func (s *Session) SetJapaneseAmbiguous(mode string) {
+	if s == nil {
+		return
+	}
+	switch mode {
+	case "english", "kana":
+	default:
+		mode = "both"
+	}
+	if s.japaneseAmbiguous == mode {
+		return
+	}
+	s.japaneseAmbiguous = mode
+	s.japaneseKanaFirst = mode == "kana"
+	s.japaneseCross = japaneseCrossState{}
 	if s.japaneseOn {
 		s.installJapanese(s.japaneseLex, s.japaneseConn)
 		s.japaneseOn = true
@@ -92,6 +113,17 @@ func (s *Session) SetJapaneseKanaFirst(on bool) {
 
 // JapaneseKanaFirst 回報日英同形時是否優先かな。
 func (s *Session) JapaneseKanaFirst() bool { return s != nil && s.japaneseKanaFirst }
+
+// JapaneseAmbiguous 回報目前的日英同形模式；零值是新版預設的 both。
+func (s *Session) JapaneseAmbiguous() string {
+	if s == nil || s.japaneseAmbiguous == "" {
+		return "both"
+	}
+	return s.japaneseAmbiguous
+}
+
+// japaneseAmbiguousBoth 回報是否使用日英並列。
+func (s *Session) japaneseAmbiguousBoth() bool { return s.JapaneseAmbiguous() == "both" }
 
 // japanesePending 回報目前的待定按鍵是否應該交給日文 runtime。
 //
@@ -183,6 +215,7 @@ func (s *Session) leaveLiteralJapanese(k string) bool {
 	r.reset()
 	s.languageID = lang.Zh
 	s.japaneseRun = false
+	s.japaneseCross = japaneseCrossState{}
 	s.mixed = pendingKeys{raw: text}
 	s.mixedOrigins = nil
 	s.cand = nil
@@ -224,6 +257,7 @@ func (s *Session) beginJapaneseRun(raw string, forceKana bool) bool {
 	s.mixedOrigins = nil
 	s.cand = nil
 	s.navigating, s.keepCandidates = false, false
+	s.japaneseCross = japaneseCrossState{}
 	s.languageID = lang.Ja
 	r, ok := s.runtime(lang.Ja)
 	if !ok {
@@ -252,6 +286,9 @@ func (s *Session) maybeJapanese() bool {
 	if len(s.syls) > 0 || !s.comp.Empty() {
 		return false
 	}
+	if _, ok := s.japaneseCrossAmbiguous(s.mixed.raw); ok {
+		return s.startJapaneseCross()
+	}
 	return s.startJapaneseRun()
 }
 
@@ -267,6 +304,7 @@ func (s *Session) leaveEmptyJapanese() {
 	}
 	s.languageID = lang.Zh
 	s.japaneseRun = false
+	s.japaneseCross = japaneseCrossState{}
 }
 
 // finishJapaneseRun 在送出或取消一段由推斷開始的日文後回到注音，讓下一個
@@ -276,6 +314,8 @@ func (s *Session) finishJapaneseRun() {
 		return
 	}
 	s.japaneseRun = false
+	s.japaneseCross = japaneseCrossState{}
+	s.navigating = false
 	s.languageID = lang.Zh
 }
 
