@@ -667,10 +667,15 @@ int main(int argc, char **argv) {
             for (const char *k : {"z", "/", " ", "r", "u", "/", "3"}) { snap = s.key(k); } // ㄈㄥ ㄐㄧㄥˇ
             return snap;
         };
-        auto stored = [&] {
+        auto saved = [&] {
             std::ifstream in(home + "/settings.json");
-            auto j = nlohmann::json::parse(in, nullptr, false);
-            return j.is_object() && j.value("output_simplified", false);
+            return nlohmann::json::parse(in, nullptr, false);
+        };
+        // P2-42 起設定檔只寫 output_variant；output_simplified 是讀舊檔時的
+        // 相容欄位，存檔會遷移並移除，因此不能再拿它檢查寫入結果。
+        auto stored = [&] {
+            auto j = saved();
+            return j.is_object() && j.value("output_variant", std::string()) == "simplified";
         };
         zuin::Session menu(client, nullptr), editor(client, nullptr);
         CHECK(menu.ensureLive() && !menu.simplifiedAtOpen(), "引擎應回報 output_simplified_live、目前是繁體");
@@ -679,7 +684,9 @@ int main(int argc, char **argv) {
         auto toggled = menu.outputSimplified(true);
         CHECK(toggled.ok && toggled.handled && toggled.outputSimplified && !toggled.notices.empty() &&
               toggled.notices.front() == "已切換為輸出簡體字", "切換：%d %d", toggled.handled, toggled.outputSimplified);
-        CHECK(stored(), "settings.json 應寫入 output_simplified=true");
+        auto written = saved();
+        CHECK(stored() && written.is_object() && !written.contains("output_simplified"),
+              "settings.json 應寫入 output_variant=simplified、不寫舊鍵：%s", written.dump().c_str());
         snap = editor.key("Enter");
         CHECK(snap.commit == "风景" && snap.outputSimplified, "組字中切換後送出 %s", snap.commit.c_str());
         // 組字中切換：組字不動，也不進重播紀錄。引擎重啟後設定檔改回繁體，重播不能再把它切成簡體。
