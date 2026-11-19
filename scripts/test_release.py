@@ -3019,7 +3019,7 @@ Successfully verified: 0c-update.exe
         node = shutil.which("node")
         if not node:
             self.skipTest("沒有 node")
-        for name in ("app.js", "models.js", "vocab.js", "vocab-text.js", "personal-reset.js"):
+        for name in ("app.js", "pages.js", "models.js", "vocab.js", "vocab-text.js", "personal-reset.js"):
             app = Path(__file__).resolve().parents[1] / "platforms/settings/ui" / name
             result = subprocess.run([node, "--check", str(app)], capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, name + "：" + result.stderr)
@@ -3030,6 +3030,15 @@ Successfully verified: 0c-update.exe
         if not node:
             self.skipTest("沒有 node")
         test = Path(__file__).resolve().parents[1] / "platforms/settings/test/engine_state_test.js"
+        result = subprocess.run([node, "--test", str(test)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_settings_ui_pages(self):
+        # #207／P2-48：各頁的項目與順序；Mixed 頁沿用 mode 的 keys，缺少 keys 或項目沒有 key 時不丟錯。
+        node = shutil.which("node")
+        if not node:
+            self.skipTest("沒有 node")
+        test = Path(__file__).resolve().parents[1] / "platforms/settings/test/pages_test.js"
         result = subprocess.run([node, "--test", str(test)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 

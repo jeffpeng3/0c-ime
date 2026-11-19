@@ -25,7 +25,8 @@ def launch_chromium(playwright):
     executable = shutil.which(os.environ.get("CHROMIUM", "chromium"))
     if not executable:
         raise unittest.SkipTest("requires Chromium (or CHROMIUM)")
-    return playwright.chromium.launch(executable_path=executable, headless=True, args=["--no-sandbox"])
+    # --password-store=basic keeps a headless test run away from the desktop keyring.
+    return playwright.chromium.launch(executable_path=executable, headless=True, args=["--no-sandbox", "--password-store=basic"])
 
 
 def launch_webkit(playwright):

@@ -326,7 +326,7 @@
   function fileNotices(settings) {
     const out = [];
     if (!settings) return out;
-    const file = settings.file;
+    const file = settings.file || {};
     if (file.state === 'corrupt') {
       out.push(h('div', { class: 'notice error' },
         h('p', {}, '設定檔無法解析，目前顯示的是預設值。'),
@@ -514,39 +514,13 @@
   }
 
   // ---- 語言、中英切換、選字、鍵盤與符號（#207：原本的「輸入設定」一頁 19 項，拆成三頁、不摺疊） ----
-  // 各頁依這裡的順序畫（也是 Tab 順序）。不在任何一頁的新項目（較新的 0c-update 才有的設定）放在「選字」最後，
-  // 所以契約新增設定時畫面不必先改；要放別頁再加進 keys。輸出設定的兩項在 output()。
-  // T27：語言選擇與日文選項放在第一頁最上面；日文模式只留通用項目與日文選項（item.languages）。
+  // 各頁依 pages.js 的順序畫（也是 Tab 順序）。不在任何一頁的新項目（較新的 0c-update 才有的設定）放在
+  // 「選字」最後，所以契約新增設定時畫面不必先改；要放別頁再加進 keys。
   const SAVE_NOTE = '改動會立即儲存，並在沒有組字時讓輸入法套用。';
-  const INPUT_PAGES = {
-    mode: {
-      title: '語言與中英切換', lead: '選擇主要語言、混合輸入與模型，以及中英切換鍵與換程式後回到哪個模式。Mixed profile 直接接受注音、日文與英文。',
-      keys: ['primary-language', 'language', 'language-memory', 'language-hotkey', 'mixed-input', 'english-autocomplete', 'cjk-latin-space',
-        'model-mode', 'model-residency-mb', 'allow-placeholders',
-        'ja-input-method', 'ja-live-conversion', 'ja-symbols', 'ja-learning', 'ja-model',
-        'toggle-key', 'start-mode', 'mode-memory', 'caps-lock-english', 'style-shift-letter', 'style-caps-letter'],
-    },
-    candidates: {
-      title: '選字', lead: '候選字怎麼排、怎麼選，以及要不要列出近音的字（模糊音）。',
-      // zhuyin-error-hint（#300，打錯注音時提示）跟不打聲調一樣是按聲調時的規則，接在它後面。
-      keys: ['selection', 'document-context', 'space-selects', 'candidate-cursor', 'advance-after-select', 'candidate-layout', 'selection-keys', 'esc-clear', 'toneless', 'zhuyin-error-hint', 'style-tab', 'style-up', 'style-candidate-tab', 'style-candidate-space', 'style-candidate-enter', 'style-page-size', 'style-candidate-navigation'],
-    },
-    keyboard: {
-      title: '鍵盤與符號', lead: '注音的鍵盤排列，以及標點符號和 Emoji 怎麼打。',
-      // emoji-equals-first 是 Emoji 選單的子選項，畫在它下面。
-      // shift-symbol-halfwidth（標點寬度，#258、#282 三選一）跟 Ctrl＋標點是一對（半形與全形），排在它下面；
-      // cjk-latin-space（#273，中英文之間自動加空格）也是半形排版，接在後面。
-      keys: ['keyboard-layout', 'ctrl-punctuation', 'shift-symbol-halfwidth', 'cjk-latin-space', 'punctuation', 'emoji-shortcut', 'emoji-equals-first', 'style-punctuation', 'style-shift-space', 'style-shift-delete'],
-    },
-  };
-  const OUTPUT_KEYS = ['output-variant', 'output-simplified', 'simplified-hotkey'];
-  const pageTitle = (name) => (name === 'mode' && mixedMode() ? 'Mixed 輸入' : INPUT_PAGES[name] ? INPUT_PAGES[name].title : '輸入設定');
-  function pageOfKey(key) {
-    if (OUTPUT_KEYS.includes(key)) return 'output';
-    if (key.startsWith('fuzzy-')) return 'candidates';
-    for (const [name, spec] of Object.entries(INPUT_PAGES)) if (spec.keys.includes(key)) return name;
-    return 'candidates';
-  }
+  const pageTitle = (name) => window.ZcPages.title(name, mixedMode());
+  const pageOfKey = (key) => window.ZcPages.pageOfKey(key);
+  // 舊資料或壞掉的項目可能沒有 key；字串以外的值一律當空字串，避免 startsWith／includes 丟錯。
+  const keyOf = (item) => (item && typeof item.key === 'string' ? item.key : '');
 
   // 停用的原因在另一頁時（許氏時的中英混打在「中英切換」、鍵盤排列在「鍵盤與符號」），說明要去哪裡改，按了就過去。
   // 原因在同一頁（不用 Shift 時的開始模式就在中英切換鍵下面）不必另外寫。
@@ -572,12 +546,14 @@
 
   function settingsPage(name, root) {
     const mixed = mixedMode() && name === 'mode';
-    const spec = mixed ? { title: 'Mixed 輸入', lead: '主要語言、混合輸入與模型設定。Mixed profile 直接接受注音、日文與英文，不需要切換輸入語言或 English profile。' } : INPUT_PAGES[name];
+    // 混合頁沿用 mode 的 keys，只換標題與說明（pages.js）。
+    const spec = window.ZcPages.spec(name, mixed) || { title: '輸入設定', lead: '', keys: [] };
     root.append(h('h1', {}, spec.title), h('p', { class: 'lead' }, spec.lead + SAVE_NOTE));
     if (problem(root)) return;
     const settings = state.settings;
+    const file = settings.file || {};
     root.append(...fileNotices(settings));
-    const locked = settings.file.read_only;
+    const locked = !!file.read_only;
     const items = settings.items || [];
     if (items.some((item) => item.locked && pageOfKey(item.key) === name)) {
       root.append(h('div', { class: 'notice info' }, h('p', {}, '部分設定' + profileLockLabel() + '，不能直接修改。點一下想改的項目，可以複製成自訂後修改；不相容的功能仍會停用。'),
@@ -588,10 +564,10 @@
     const language = window.ZcLanguage.activeLanguage(settings);
     const emoji = items.find((item) => item.key === 'emoji-shortcut');
     const equalsFirst = items.find((item) => item.key === 'emoji-equals-first');
-    const order = (item) => (spec.keys.includes(item.key) ? spec.keys.indexOf(item.key) : spec.keys.length);
-    const inPage = items.filter((item) => pageOfKey(item.key) === name &&
-      !item.key.startsWith('fuzzy-') && !(emoji && item === equalsFirst));
-    const mine = inPage.filter((item) => (mixed ? window.ZcMixed.visible(item.key) : window.ZcLanguage.applies(item, language)))
+    const order = (item) => window.ZcPages.order(spec.keys, keyOf(item));
+    const inPage = items.filter((item) => pageOfKey(keyOf(item)) === name &&
+      !keyOf(item).startsWith('fuzzy-') && !(emoji && item === equalsFirst));
+    const mine = inPage.filter((item) => (mixed ? window.ZcMixed.visible(keyOf(item)) : window.ZcLanguage.applies(item, language)))
       .map((item, i) => [order(item), i, item]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map(([, , item]) => item);
     const rows = (list) => list.map((item) => {
       const parent = itemRow(item, locked ||
@@ -605,10 +581,10 @@
       root.append(h('div', { class: 'notice info' }, h('p', {},
         'English profile 設定已移除：英文直接在 Mixed 內輸入。舊設定檔的輸入語言、語言記憶與語言切換熱鍵已遷移到主要語言並清除。')));
       for (const group of window.ZcMixed.groups()) {
-        const list = mine.filter((item) => group.keys.includes(item.key));
+        const list = mine.filter((item) => group.keys.includes(keyOf(item)));
         if (list.length) root.append(h('h2', {}, group.title), h('div', { class: 'card' }, ...rows(list)));
       }
-      const other = mine.filter((item) => !window.ZcMixed.MIXED_KEYS.includes(item.key));
+      const other = mine.filter((item) => !window.ZcMixed.MIXED_KEYS.includes(keyOf(item)));
       if (other.length) root.append(h('h2', {}, '輸入習慣'), h('div', { class: 'card' }, ...rows(other)));
     } else if (name === 'mode') {
       // 語言選項不在 settings.items：0c-update 從 profiles.language 帶過來（見 ui/language.js）。
@@ -624,7 +600,7 @@
     } else if (language === 'ja') {
       root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用這一頁的注音設定；切回注音就會出現。')));
     }
-    const fuzzy = name === 'candidates' && language === 'zh' ? items.filter((item) => item.key.startsWith('fuzzy-')) : [];
+    const fuzzy = name === 'candidates' && language === 'zh' ? items.filter((item) => keyOf(item).startsWith('fuzzy-')) : [];
     if (fuzzy.length) {
       const enabled = fuzzy.some((item) => item.value !== 'off');
       const label = h('span', {}, '模糊音');
@@ -638,8 +614,8 @@
           onclick: () => changePairs(fuzzy.map((item) => [item.key, enabled ? 'off' : 'select'])),
         }))));
     }
-    if ((settings.file.notes || []).length) {
-      root.append(h('h2', {}, '注意'), h('div', { class: 'notice' }, ...settings.file.notes.map((note) => h('p', {}, note))));
+    if ((file.notes || []).length) {
+      root.append(h('h2', {}, '注意'), h('div', { class: 'notice' }, ...file.notes.map((note) => h('p', {}, note))));
     }
   }
 
@@ -760,6 +736,7 @@
     root.append(h('h1', {}, '輸出設定'), h('p', { class: 'lead' }, '決定送到應用程式的字形；組字和候選照常顯示原字。改動會立即儲存並馬上套用，正在組字的字送出時也照新的設定。'));
     if (problem(root)) return;
     const settings = state.settings;
+    const file = settings.file || {};
     root.append(...fileNotices(settings));
     // 「輸出變體」取代舊的「輸出簡體字」（#118）；「用快捷鍵切換簡體字」（#192）只在簡體時作用。
     // T27：簡繁轉換是中文專屬選項；日文模式不顯示。
@@ -771,7 +748,7 @@
       if (window.ZcMixed.outputVariantLabel(outputVariant())) {
         root.append(h('p', { class: 'muted small' }, '目前：' + window.ZcMixed.outputVariantLabel(outputVariant())));
       }
-      root.append(h('div', { class: 'card' }, ...items.map((item) => itemRow(item, settings.file.read_only))));
+      root.append(h('div', { class: 'card' }, ...items.map((item) => itemRow(item, !!file.read_only))));
     } else if (language === 'ja') {
       root.append(h('div', { class: 'notice info' }, h('p', {}, '日文模式不使用簡繁轉換；切回注音就會出現。')));
     }
