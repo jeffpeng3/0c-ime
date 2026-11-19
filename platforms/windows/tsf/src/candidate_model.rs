@@ -156,13 +156,29 @@ mod tests {
         );
         assert_eq!(model.active, Some(0), "游標在開頭");
         assert_eq!(model.active_span(), Some(Span { start: 0, end: 1 }));
-        for (cursor, want) in [(1, 0), (2, 1), (3, 1), (4, 2), (6, 2)] {
+        // Span 是半開區間，游標剛好在片段結尾時屬於下一個片段，和核心的
+        // ActiveSegment 相同：1 是「我」和「風景」的交界，屬於「風景」；
+        // 3 是「風景」和「abc」的交界，屬於「abc」。
+        for (cursor, want) in [(1, 1), (2, 1), (3, 2), (4, 2), (6, 2)] {
             let model = CandidateModel::from_snapshot(&snapshot(
                 &[("我", "normal"), ("風景", "normal"), ("abc", "normal")],
                 cursor,
             ));
             assert_eq!(model.active, Some(want), "游標 {cursor}");
         }
+    }
+
+    #[test]
+    fn cursor_offsets_are_runes_not_utf16_units() {
+        // 引擎快照的 cursor.rune 以顯示字元計；UTF-16 的另一個欄位只給 TSF
+        // 的範圍用。𠮷 是一個 rune、兩個 UTF-16 單位，不能用來切片段。
+        let model =
+            CandidateModel::from_snapshot(&snapshot(&[("𠮷", "normal"), ("我", "normal")], 1));
+        assert_eq!(
+            model.segments,
+            vec![Span { start: 0, end: 1 }, Span { start: 1, end: 2 }]
+        );
+        assert_eq!(model.active, Some(1), "游標 1 是 rune 邊界，屬於「我」");
     }
 
     #[test]
