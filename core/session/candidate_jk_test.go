@@ -180,11 +180,14 @@ func TestCandidateJKSelectionKeysWin(t *testing.T) {
 			t.Fatalf("SelectionKeys=%q: j/k 不能選字：%q", keys, s.snapshot().Text())
 		}
 	}
-	// 大寫（Shift＋J）不是換字鍵，跟以前一樣吃掉不動作。
+	// 大寫（Shift＋J／K）不是換字鍵：打字離開選取模式，字母照字面留在組字區（P2-51）。
 	s = jkSession(false)
 	key(s, proto.KeyLeft)
 	key(s, proto.KeyDown)
-	jkWalk(t, s, "JK", [][2]int{{2, 1}, {2, 1}})
+	key(s, "J")
+	if snap := key(s, "K"); s.navigating || snap.Text() != "他好JK我" {
+		t.Fatalf("Shift＋J／K 應離開選取模式並照字面插入：%+v", snap)
+	}
 }
 
 // Emoji／顏文字選單、中英混打的按鍵候選、注音打到一半的符號候選、` 符號選單都不是「改某個字」，j/k 不動。

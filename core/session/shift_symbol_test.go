@@ -168,9 +168,8 @@ func TestShiftSymbolHalfwidthOtherStatesUnchanged(t *testing.T) {
 	s = halfShiftSession()
 	typeSyl(s, "ㄨㄛˇ")
 	key(s, proto.KeyDown)
-	before := candidateTexts(s)
-	if snap := key(s, "("); !snap.Handled || snap.Text() != "我" || !reflect.DeepEqual(candidateTexts(s), before) {
-		t.Fatalf("候選開著時吃掉不動作：%+v", snap)
+	if snap := key(s, "("); !snap.Handled || snap.Text() != "我(" || s.navigating {
+		t.Fatalf("選取模式中打字應離開模式並插入符號：%+v", snap)
 	}
 	for _, style := range []string{"microsoft", "chewing"} {
 		a, b := styleSession(style), styleSession(style)

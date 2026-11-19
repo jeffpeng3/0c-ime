@@ -191,8 +191,8 @@ func TestMicrosoftRawPunctuationInComposition(t *testing.T) {
 		}
 		typeSyl(s, "ㄨㄛˇ")
 		key(s, proto.KeyDown)
-		if a := key(s, r); a.Candidates == nil || a.Text() != "我" || a.Commit != "" {
-			t.Fatalf("candidate raw must be ignored: %+v", a)
+		if a := key(s, r); a.Text() == "我" || a.Commit != "" || s.navigating {
+			t.Fatalf("selection mode must leave on typing and keep the raw punctuation: %+v", a)
 		}
 	}
 }
@@ -389,8 +389,12 @@ func TestStyleCandidatePageSizeAndSpace(t *testing.T) {
 	if len(a.Candidates.Items) != 9 {
 		t.Fatalf("page size: %+v", a.Candidates)
 	}
-	if a = key(s, "0"); a.Candidates == nil {
-		t.Fatal("0 should not select tenth item in 9-item page")
+	if a = key(s, "0"); a.Text() != "是ㄢ" || s.navigating {
+		t.Fatalf("0 must not select a tenth item on a 9-item page; it types and leaves selection: %+v", a)
+	}
+	key(s, proto.KeyEscape) // 清掉剛剛打出的未完成注音，組字仍是「是」
+	if a = key(s, proto.KeyDown); a.Candidates == nil {
+		t.Fatal("Down reopens candidates")
 	}
 	if a = key(s, " "); a.Candidates.Page != 1 {
 		t.Fatalf("Space pages: %+v", a)

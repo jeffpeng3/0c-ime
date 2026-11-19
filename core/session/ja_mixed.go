@@ -154,6 +154,7 @@ func (s *Session) leaveLiteralJapanese(k string) bool {
 	s.mixed = pendingKeys{raw: text}
 	s.mixedOrigins = nil
 	s.cand = nil
+	s.navigating, s.keepCandidates = false, false
 	s.refresh()
 	return true
 }
@@ -168,6 +169,7 @@ func (s *Session) startJapaneseRun() bool {
 	s.clearMixed()
 	s.mixedOrigins = nil
 	s.cand = nil
+	s.navigating, s.keepCandidates = false, false
 	s.languageID = lang.Ja
 	r, ok := s.runtime(lang.Ja)
 	if !ok {

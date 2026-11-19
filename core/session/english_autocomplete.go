@@ -167,6 +167,7 @@ func (s *Session) refreshEnglishCandidates() {
 	}
 	if len(c.items) > 0 {
 		s.cand = c
+		s.navigating = true // 英文補全清單沿用上下鍵選取，不經過中文的「只是顯示」路徑
 	}
 }
 

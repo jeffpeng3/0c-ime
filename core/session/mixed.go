@@ -318,6 +318,7 @@ func (s *Session) openMixedCandidates() {
 		add(word.Text)
 	}
 	s.cand = c
+	s.keepCandidates = true
 }
 
 func (s *Session) selectMixed(id int) bool {
@@ -327,6 +328,7 @@ func (s *Session) selectMixed(id int) bool {
 	if char, ok := s.cand.mixedChars[id]; ok {
 		at, syl, raw := s.cand.mixedAt, s.cand.mixedSyl, s.mixed.raw
 		s.cand = nil
+		s.navigating, s.keepCandidates = false, false
 		s.clearMixed()
 		if at > 0 {
 			s.insertMixedLiteral(raw[:at], false, false)
@@ -348,6 +350,7 @@ func (s *Session) selectMixed(id int) bool {
 		}
 	}
 	s.cand = nil
+	s.navigating, s.keepCandidates = false, false
 	return true
 }
 

@@ -160,6 +160,8 @@ func TestStyleHorizontalCandidateColumnsSurviveDisplayNegotiation(t *testing.T) 
 		if snap.Candidates.Columns != size {
 			t.Fatalf("display still clamped to grid: %+v", snap)
 		}
+		// P2-51：候選清單只是顯示時左右鍵移動組字游標；先按 ↓ 進入選取模式再測水平移動。
+		snap = styleDo(t, e, id, proto.Request{Type: proto.Key, Key: proto.KeyDown})
 		snap = styleDo(t, e, id, proto.Request{Type: proto.Key, Key: proto.KeyRight})
 		if snap.Candidates.Highlight != 1 {
 			t.Fatalf("horizontal navigation changed: %+v", snap)
