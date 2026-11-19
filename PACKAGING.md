@@ -127,6 +127,20 @@ python scripts\package_windows.py --data assets\data --ja-data build\ja --ort-ru
 python scripts\package_windows_installer.py --archive build\release\<ZIP> --out build\release
 ```
 
+### CI 產生完整安裝包
+
+[.github/workflows/windows-installer.yml](.github/workflows/windows-installer.yml) 在 `windows-2022` 從零產生同一個完整套件：`workflow_dispatch` 輸入版本，或 push `v*` tag 時執行。它會：
+
+1. 用 `scripts/fetch_assets.py --release v0.2.12 --no-models` 取得 pinned 的注音字典；日文 pack、manifest 與 tokenizer 由 `scripts/fetch_pinned_payload.py` 依 [models/payload-assets.lock.json](models/payload-assets.lock.json) 從本 repo 的 pinned assets release 下載並核對 SHA-256。
+2. 以 `0c-jadic import` 匯入 public-core pack，再用 `fetch_assets.py --lang ja --ja-source` 執行 `0c-compile` 與 `0c-japack` 產生 `build/ja`。
+3. 從 Hugging Face 的 pinned revision 下載注音 select／punct 與日文 reranker／punctuation，逐檔核對 `models.lock.json`、`pairing.lock.json`；`tokenizer.model` 使用同一個 assets release。
+4. 從 runtime lock 的 pinned wheel 取出 `onnxruntime.dll` 與四個 MSVC DLL。
+5. 建置 `0c-server.exe`（CGO＋`onnxruntime`）、`0c-update.exe`、`0c-updatew.exe`、`0c-mcp.exe`、x64／x86 TSF DLL、`0c-ui.exe` 與 `0c-settings.exe`。
+6. 用 `scripts/package_windows.py --settings --x86` 與 `scripts/package_windows_installer.py` 產生 ZIP、`setup.exe` 與 `SHA256SUMS`。
+7. 用 `scripts/check_windows_payload.py` 驗證完成品：必要檔一個都不能少、不得有 Python 檔或未預期的 x86 執行檔；再把套件模擬安裝到 `%LOCALAPPDATA%\Zuin\versions\…`，執行套件內的 `0c-update status -json`，確認設定程式解析到的 `0c-server` 與 `-data` 都存在，並用同一個 data 執行 `0c-server -check-data`。
+
+CI 不執行任何 ONNX 推論，也不把字典、模型或二進位提交到 Git。公開版仍需要簽章；CI 產生的是 `internal-preview` 套件。
+
 `--ja-data` 是選用的。有指定時，日文包以 `data/ja/` 放進 ZIP，`release.json` 多了 `ja_data_format` 與 `ja_data_manifest_sha256`；安裝後位於 `%LOCALAPPDATA%\Zuin\versions\<版本>-<雜湊>\data\ja\`。沒有指定時，ZIP 與原本的注音套件相同。日文包會經過 `check_ja_data`：format 2、`language: ja`、manifest 內的檔案雜湊、公開包的來源聲明與 `symbols/*.tsv` 都會檢查。`copy_ja_data` 另外放入引擎載入的 `lexicon/words.tsv`、`connection.tsv`；來源只有一般 `0c-compile` 產物時，會呼叫 `0c-japack` 從 `lexicon.bin` 匯出。日文資料不經過 `-seal`，因為 `0c-compile -seal` 目前只驗證注音 manifest；ZIP 的逐檔 SHA-256 與安裝收據仍會保護它。
 
 `release.json` 的 `native_runtime` 記錄出貨的 ONNX Runtime／MSVC 版本與五個 DLL 的 SHA-256。`--statistical-only` 只供診斷，不建置原生後端、不出貨 DLL；公開套件必須用 `--ort-runtime`。`--neural` 已移除，指定時直接失敗。

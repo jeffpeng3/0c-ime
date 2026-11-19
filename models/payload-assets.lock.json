@@ -1,0 +1,36 @@
+{
+  "schema": "0c.payload-assets/1",
+  "updated": "2026-11-19",
+  "comment": "Inputs for the complete Windows installer that are not on Hugging Face and never enter Git. The Chinese dictionary comes from this pinned upstream source release; the Japanese public-core pack, its manifest and the SentencePiece tokenizer are assets on this repository's pinned assets release. Every download is checked against the size and SHA-256 recorded here.",
+  "chinese": {
+    "repository": "0c-biggo/0c-ime",
+    "tag": "v0.2.12"
+  },
+  "release": {
+    "repository": "jeffpeng3/0c-ime",
+    "tag": "p2-assets-2026.11.0"
+  },
+  "assets": {
+    "ja_pack": {
+      "name": "ja-lexicon-public-core.pack",
+      "download_name": "ja-lexicon-public-core.pack",
+      "url": "https://github.com/jeffpeng3/0c-ime/releases/download/p2-assets-2026.11.0/ja-lexicon-public-core.pack",
+      "bytes": 60369880,
+      "sha256": "8e57a18deb64d0fdc8147b53b5e234ecda412fa49feb0e8096addc4349582840"
+    },
+    "ja_manifest": {
+      "name": "ja-pack-manifest.json",
+      "download_name": "manifest.json",
+      "url": "https://github.com/jeffpeng3/0c-ime/releases/download/p2-assets-2026.11.0/ja-pack-manifest.json",
+      "bytes": 17946,
+      "sha256": "4ba021b1a42c17011127595451bede03aa3c8bb010933fe6dedcb507a5e937c1"
+    },
+    "ja_tokenizer": {
+      "name": "public_core_ja.model",
+      "download_name": "public_core_ja.model",
+      "url": "https://github.com/jeffpeng3/0c-ime/releases/download/p2-assets-2026.11.0/public_core_ja.model",
+      "bytes": 614451,
+      "sha256": "b25260c9c3d90a754c719e62eea6b8125f08448d48dd4d1755c18edbd00e2078"
+    }
+  }
+}
