@@ -90,11 +90,11 @@ class RuntimeTreeTests(unittest.TestCase):
         source = tmp / "pinned.whl"
         source.write_bytes(data)
         cache = tmp / "cache"
-        got = windows_runtime.fetch("file://" + str(source), sha(data), cache)
+        got = windows_runtime.fetch(source.as_uri(), sha(data), cache)
         self.assertEqual(got, cache / "pinned.whl")
         self.assertEqual(got.read_bytes(), data)
         with self.assertRaises(ValueError):
-            windows_runtime.fetch("file://" + str(source), "0" * 64, cache)
+            windows_runtime.fetch(source.as_uri(), "0" * 64, cache)
 
     def test_extract_takes_only_the_five_dlls(self):
         # Two tiny wheels with the same layout as the pinned wheels.
@@ -116,7 +116,7 @@ class RuntimeTreeTests(unittest.TestCase):
                                  ("msvc_runtime", ["vcruntime140.dll", "vcruntime140_1.dll",
                                                    "msvcp140.dll", "msvcp140_1.dll"])):
             part = {"version": "test", "wheel_sha256": windows_runtime.digest(wheels[component]),
-                    "url": "file://" + str(wheels[component]), "files": {}}
+                    "url": wheels[component].as_uri(), "files": {}}
             for name in names:
                 part["files"][name] = {"wheel_path": f"{component}/data/{name}",
                                        "bytes": len((name + "-fixture").encode()),

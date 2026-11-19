@@ -34,7 +34,7 @@ class FetchPinnedPayloadTests(unittest.TestCase):
         files = {}
         for name, body in {"pack": b"pack-bytes", "manifest.json": b"{}", "public_core_ja.model": b"tokenizer"}.items():
             (source / name).write_bytes(body)
-            files[name] = (body, "file://" + str(source / name))
+            files[name] = (body, (source / name).as_uri())
         lock = {
             "schema": "0c.payload-assets/1",
             "assets": {
