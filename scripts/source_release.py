@@ -139,6 +139,21 @@ def inventory(root, skip=(RECORD, MODELS_RECORD)):
     return files
 
 
+def inventory_matches(actual, expected):
+    """Compare inventories; Windows does not preserve Unix executable bits.
+
+    The published record marks scripts 0755 and data files 0644. tarfile on
+    Windows leaves every extracted file with the same mode, so the mode field
+    cannot be verified there; size, SHA-256 and links still are.
+    """
+    if os.name != "nt":
+        return actual == expected
+    def without_mode(files):
+        return {path: {key: value for key, value in entry.items() if key != "mode"}
+                for path, entry in files.items()}
+    return without_mode(actual) == without_mode(expected)
+
+
 def extract(archive, destination):
     # Python 3.12's data filter rejects traversal, devices and escaping links.
     seen = set()
@@ -265,7 +280,7 @@ def verify(tarball, models=None):
             raise ValueError("source directory does not match version")
         if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", record["commit"]):
             raise ValueError("invalid source commit")
-        if inventory(root, skip=(RECORD,)) != record["files"]:
+        if not inventory_matches(inventory(root, skip=(RECORD,)), record["files"]):
             raise ValueError("source release file inventory mismatch")
         check_paths(record["files"], read_rules((root / RULES).read_text(encoding="utf-8")))
         if digest(root / LOCK) != record["models_lock_sha256"]:
@@ -305,7 +320,7 @@ def verify_models(models, destination, root, record):
         raise ValueError("models tarball belongs to another release")
     files = {path: entry for path, entry in inventory(root, skip=(RECORD, MODELS_RECORD)).items()
              if path.startswith("models/") and path.split("/")[1] in ROLES}
-    if files != models_record["files"]:
+    if not inventory_matches(files, models_record["files"]):
         raise ValueError("models tarball file inventory mismatch")
     if (models_record["models_lock_sha256"] != digest(root / LOCK)
             or models_record["pairing_lock_sha256"] != digest(root / PAIR_LOCK)
