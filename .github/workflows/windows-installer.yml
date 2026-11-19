@@ -76,6 +76,9 @@ jobs:
     timeout-minutes: 120
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
+      # Windows 主控台預設 CP950；hf_models.py 等腳本會印中文與全形標點。
+      PYTHONUTF8: '1'
+      PYTHONIOENCODING: utf-8
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
