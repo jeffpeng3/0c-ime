@@ -29,7 +29,7 @@
 
 產品只有這一個模型包，沒有其他模型組或 variant。兩個模型分別來自 `jeffpeng3/0c-ja-reranker`（CC BY-SA 4.0）與 `jeffpeng3/0c-ja-punct`（MIT）。每個 artifact 的 `hf` 記錄 repo、revision、授權與逐檔名稱／大小／SHA-256。Git 只保存 lock；`0c-model-set fetch` 從 HF 下載權重、`manifest.json`、`vocab.json` 與 `tokenizer.model`，逐檔核對後放進安裝包。每個 artifact 是獨立目錄，manifest、字表、分詞器與權重必須同在一處。`revision` 與大小／雜湊尚未 pin 時，development 驗證只警告，`-release` 與正式打包直接失敗。placeholder 只在 `testdata/models/placeholder/pairing.lock.json` 作測試 fixture，不在正式 lock；`-allow-placeholders` 仍可用來驗證或安裝這份 fixture。
 
-**Tokenizer 來源註記（2026-11-19）**：`jeffpeng3/0c-ja-reranker` 與 `jeffpeng3/0c-ja-punct` 在鎖定的 revision 只公開 `manifest.json`、`vocab.json` 與 ONNX 權重，沒有公開 `tokenizer.model`。套件仍依 lock 的 SHA-256 `b25260c9c3d90a754c719e62eea6b8125f08448d48dd4d1755c18edbd00e2078` 放入 614,451 bytes 的 `tokenizer.model`，內容取自 pinned training reference；重跑 `fetch` 前必須把同名檔案補到 HF repo 或改用 `--model-source`，否則下載會在 tokenizer 得到 HTTP 404。
+**Tokenizer 來源註記（P2-50）**：`jeffpeng3/0c-ja-reranker` 與 `jeffpeng3/0c-ja-punct` 在鎖定的 revision 只公開 `manifest.json`、`vocab.json` 與 ONNX 權重，沒有公開 `tokenizer.model`。套件仍依 lock 的 SHA-256 `b25260c9c3d90a754c719e62eea6b8125f08448d48dd4d1755c18edbd00e2078` 放入 614,451 bytes 的 `tokenizer.model`；檔案現在固定在本 repo 的 `p2-assets-2026.11.0` assets release，URL 與大小記錄在 [payload-assets.lock.json](payload-assets.lock.json)。`scripts/fetch_pinned_payload.py` 會下載並核對它，放進 `0c-model-set` 的快取後再執行 `fetch`，所以 CI 不需要依賴 HF 上的同名檔案，也不會因 HTTP 404 中斷。手動改用 `--model-source` 時仍須提供同一個檔案。
 
 產品側 manifest schema 在 [model-package.schema.json](model-package.schema.json)（JSON Schema 2020-12）。每個模型記錄：
 

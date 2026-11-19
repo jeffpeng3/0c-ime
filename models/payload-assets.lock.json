@@ -1,0 +1,22 @@
+{
+  "schema": "0c.payload-assets/1",
+  "updated": "2026-11-19",
+  "comment": "Inputs for the complete Windows installer that are not on Hugging Face and never enter Git. The Chinese dictionary comes from this pinned upstream source release; the Japanese SentencePiece tokenizer is an asset on this repository's pinned assets release. The Japanese dictionary now comes from pinned Mozc OSS dictionary_oss 3.35.6354 and is downloaded by scripts/fetch_mozc_dictionary.sh. Every download is checked against the size and SHA-256 recorded here.",
+  "chinese": {
+    "repository": "0c-biggo/0c-ime",
+    "tag": "v0.2.12"
+  },
+  "release": {
+    "repository": "jeffpeng3/0c-ime",
+    "tag": "p2-assets-2026.11.0"
+  },
+  "assets": {
+    "ja_tokenizer": {
+      "name": "public_core_ja.model",
+      "download_name": "public_core_ja.model",
+      "url": "https://github.com/jeffpeng3/0c-ime/releases/download/p2-assets-2026.11.0/public_core_ja.model",
+      "bytes": 614451,
+      "sha256": "b25260c9c3d90a754c719e62eea6b8125f08448d48dd4d1755c18edbd00e2078"
+    }
+  }
+}

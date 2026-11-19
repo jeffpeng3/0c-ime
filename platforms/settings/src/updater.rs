@@ -219,9 +219,14 @@ fn server_name() -> &'static str {
 }
 
 /// 找 0c-server（P2-42 的 -model-report）。優先 ZC_SERVER，其次是 0c-update 旁邊、
-/// macOS 外層 App 的 Contents/MacOS、Windows 的穩定副本。找不到時回 None，畫面只顯示
-/// 0c-update 的模型狀態。
-pub fn find_server(env_server: Option<&str>, updater: &Path) -> Option<PathBuf> {
+/// macOS 外層 App 的 Contents/MacOS、Windows 使用中的版本目錄與 bin 穩定副本。找不到時回 None，
+/// 畫面只顯示 0c-update 的模型狀態。
+///
+/// P2-50：Windows 的安裝把引擎放在 versions\<版本>-<雜湊>\，只有 0c-update、0c-settings 等
+/// 小程式有 bin\ 穩定副本。設定程式從 bin\ 啟動時，旁邊沒有 0c-server.exe；所以要讀
+/// engine.json 與安裝收據，找使用中的版本目錄。這比另外複製一份 0c-server.exe 到 bin\ 小：
+/// 不必在每次更新時同步兩份引擎，也不會遇到執行中的檔案無法覆寫。
+pub fn find_server(env_server: Option<&str>, updater: &Path, local_app_data: Option<&Path>) -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
     if let Some(p) = env_server.filter(|p| !p.is_empty()) {
         candidates.push(PathBuf::from(p));
@@ -232,10 +237,55 @@ pub fn find_server(env_server: Option<&str>, updater: &Path) -> Option<PathBuf> 
     for contents in updater.ancestors().filter(|a| a.file_name().is_some_and(|n| n == "Contents")) {
         candidates.push(contents.join("MacOS").join(server_name()));
     }
-    if let Some(base) = std::env::var_os("LOCALAPPDATA").map(PathBuf::from) {
-        candidates.push(base.join("Zuin").join("bin").join(server_name()));
+    if let Some(base) = local_app_data {
+        let zuin = base.join("Zuin");
+        if let Some(dir) = active_version_dir(&zuin) {
+            candidates.push(dir.join(server_name()));
+        }
+        candidates.push(zuin.join("bin").join(server_name()));
     }
     candidates.into_iter().find(|p| usable(p))
+}
+
+/// Windows 使用中的版本目錄：先看 engine.json（核心更新後的引擎指標），再看安裝收據。
+/// 只接受 versions/<名稱>，不讓指標把程式帶到個人資料目錄之外。
+fn active_version_dir(zuin: &Path) -> Option<PathBuf> {
+    for name in ["engine.json", "install-receipt.json"] {
+        let Ok(text) = std::fs::read_to_string(zuin.join(name)) else { continue };
+        let Ok(value) = serde_json::from_str::<Value>(&text) else { continue };
+        if name == "install-receipt.json" && value.get("active").and_then(Value::as_bool) == Some(false) {
+            continue;
+        }
+        let Some(dir) = value.get("directory").and_then(Value::as_str) else { continue };
+        let Some(rest) = dir.strip_prefix("versions/") else { continue };
+        if rest.is_empty() || rest == "." || rest == ".." || rest.contains(['/', '\\', ':']) {
+            continue;
+        }
+        return Some(zuin.join("versions").join(rest));
+    }
+    None
+}
+
+/// 0c-update status 的 installs 裡使用中的那一份（設定程式的模型頁照引擎實際用的路徑啟動）。
+pub struct ActiveInstall {
+    pub server: Option<String>,
+    pub data: Option<String>,
+}
+
+pub fn active_install(status: &Value) -> Option<ActiveInstall> {
+    let installs = status.get("installs")?.as_array()?;
+    let pick = installs
+        .iter()
+        .find(|i| i.get("active").and_then(Value::as_bool) == Some(true))
+        .or_else(|| installs.first())?;
+    let field = |name: &str| {
+        pick.get(name)
+            .and_then(Value::as_str)
+            .filter(|v| !v.is_empty())
+            .map(str::to_string)
+    };
+    let install = ActiveInstall { server: field("server"), data: field("data") };
+    (install.server.is_some() || install.data.is_some()).then_some(install)
 }
 
 /// `0c-server -model-report` 的參數。用獨立的 socket 與 0 秒鎖等待，不和執行中的引擎
@@ -921,10 +971,72 @@ mod tests {
         let dir = temp("server");
         let updater = script(&dir, "0c-update", "exit 0");
         let server = script(&dir, server_name(), "echo '{}'");
-        assert_eq!(find_server(None, &updater), Some(server.clone()));
+        assert_eq!(find_server(None, &updater, None), Some(server.clone()));
         let other = script(&dir, "other-server", "echo '{}'");
-        assert_eq!(find_server(Some(other.to_str().unwrap()), &updater), Some(other));
-        assert_eq!(find_server(Some("/no/such/0c-server"), &updater), Some(server));
+        assert_eq!(find_server(Some(other.to_str().unwrap()), &updater, None), Some(other));
+        assert_eq!(find_server(Some("/no/such/0c-server"), &updater, None), Some(server));
+    }
+
+    #[test]
+    fn find_server_reads_the_active_version_directory_from_the_receipt() {
+        let dir = temp("serverreceipt");
+        let local = dir.join("Local");
+        let zuin = local.join("Zuin");
+        let bin = zuin.join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        let updater = script(&bin, updater_name(), "exit 0");
+        let version = zuin.join("versions/0.2.13-preview.1-83ff48cf6e9b");
+        fs::create_dir_all(version.join("data")).unwrap();
+        let server = script(&version, server_name(), "echo '{}'");
+        fs::write(version.join("data/manifest.json"), "{}").unwrap();
+        fs::write(zuin.join("install-receipt.json"),
+                  r#"{"directory":"versions/0.2.13-preview.1-83ff48cf6e9b","active":true}"#).unwrap();
+        // bin 裡沒有 0c-server.exe；收據的版本目錄才是安裝引擎的位置。
+        assert_eq!(find_server(None, &updater, Some(&local)), Some(server.clone()));
+
+        // 核心更新後 engine.json 指向另一個版本：設定程式跟引擎用同一份。
+        let newer = zuin.join("versions/0.2.13-preview.2-111111111111");
+        fs::create_dir_all(newer.join("data")).unwrap();
+        let newer_server = script(&newer, server_name(), "echo '{}'");
+        fs::write(newer.join("data/manifest.json"), "{}").unwrap();
+        fs::write(zuin.join("engine.json"),
+                  r#"{"schema":1,"directory":"versions/0.2.13-preview.2-111111111111","version":"0.2.13-preview.2"}"#).unwrap();
+        assert_eq!(find_server(None, &updater, Some(&local)), Some(newer_server));
+        fs::remove_file(zuin.join("engine.json")).unwrap();
+        assert_eq!(find_server(None, &updater, Some(&local)), Some(server));
+    }
+
+    #[test]
+    fn find_server_falls_back_when_the_receipt_directory_is_gone() {
+        let dir = temp("servergone");
+        let local = dir.join("Local");
+        let zuin = local.join("Zuin");
+        fs::create_dir_all(zuin.join("bin")).unwrap();
+        let updater = script(&zuin.join("bin"), updater_name(), "exit 0");
+        let stable = script(&zuin.join("bin"), server_name(), "echo '{}'");
+        fs::write(zuin.join("install-receipt.json"), r#"{"directory":"versions/gone","active":true}"#).unwrap();
+        assert_eq!(find_server(None, &updater, Some(&local)), Some(stable));
+        // 停用的收據不算使用中的安裝，仍可用 bin 的副本（若存在）。
+        fs::remove_file(zuin.join("bin").join(server_name())).unwrap();
+        fs::write(zuin.join("install-receipt.json"), r#"{"directory":"versions/gone","active":false}"#).unwrap();
+        assert_eq!(find_server(None, &updater, Some(&local)), None);
+    }
+
+    #[test]
+    fn active_install_reads_the_marked_entry_and_ignores_empty_fields() {
+        let status: Value = serde_json::from_str(r#"{"installs":[
+            {"server":"/old/0c-server.exe","data":"/old/data","active":false},
+            {"server":"/z/versions/x/0c-server.exe","data":"/z/versions/x/data","active":true},
+            {"server":"","data":""}]}"#).unwrap();
+        let install = active_install(&status).unwrap();
+        assert_eq!(install.server.as_deref(), Some("/z/versions/x/0c-server.exe"));
+        assert_eq!(install.data.as_deref(), Some("/z/versions/x/data"));
+        assert!(active_install(&serde_json::json!({"installs": []})).is_none());
+        assert!(active_install(&serde_json::json!({})).is_none());
+        assert!(active_install(&serde_json::json!({"installs":[{"server":"","data":""}]})).is_none());
+        // 沒有 active 標記時取第一份（與舊版 status 的順序相同）。
+        let first: Value = serde_json::from_str(r#"{"installs":[{"data":"/data"}]}"#).unwrap();
+        assert_eq!(active_install(&first).unwrap().data.as_deref(), Some("/data"));
     }
 
     #[test]

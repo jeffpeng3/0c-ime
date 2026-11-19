@@ -203,6 +203,10 @@ async fn models_command(action: String) -> Result<Value, String> {
 /// P2-42：`0c-server -model-report` 的摘要（模型包版本、placeholder、常駐位元組）。
 /// 用 0c-update status 找使用中的安裝與字典，settings 找個人資料檔；ZC_SERVER／ZC_DATA／
 /// ZC_USER 可覆寫，ZC_MODEL_REPORT 直接回一份測試或外部產生的報告。
+///
+/// P2-50：安裝把引擎與字典放在 versions\<版本>-<雜湊>\，不是 %LOCALAPPDATA%\Zuin\data。
+/// 模型頁必須用和引擎相同的 0c-server 與 -data 啟動，否則會載入不存在的 Zuin\data 而顯示
+/// 「找不到 lexicon.tsv」。字典以 manifest.json 判斷（打包只出 lexicon.bin，不出 lexicon.tsv）。
 #[tauri::command]
 async fn model_report() -> Result<Value, String> {
     if let Some(path) = std::env::var_os("ZC_MODEL_REPORT") {
@@ -211,7 +215,11 @@ async fn model_report() -> Result<Value, String> {
     let status = call(args(&["status", "-json"]), 20).await?;
     let settings = call(args(&["settings", "-json"]), 20).await?;
     let updater = updater_path()?;
-    let server = updater::find_server(std::env::var("ZC_SERVER").ok().as_deref(), &updater)
+    let local_app_data = std::env::var_os("LOCALAPPDATA").map(PathBuf::from);
+    let install = updater::active_install(&status);
+    let server: PathBuf = std::env::var_os("ZC_SERVER").map(PathBuf::from).filter(|p| p.is_file())
+        .or_else(|| install.as_ref().and_then(|i| i.server.clone()).map(PathBuf::from).filter(|p| p.is_file()))
+        .or_else(|| updater::find_server(None, &updater, local_app_data.as_deref()))
         .ok_or_else(|| "找不到 0c-server；請重新安裝靈犀注音".to_string())?;
     let user = std::env::var("ZC_USER").ok()
         .or_else(|| settings.get("file").and_then(|f| f.get("path")).and_then(Value::as_str).map(|p| {
@@ -219,8 +227,14 @@ async fn model_report() -> Result<Value, String> {
             Path::new(p).parent().map(|dir| dir.join("user.json").display().to_string()).unwrap_or_else(|| p.to_string())
         }))
         .ok_or_else(|| "找不到設定檔路徑，無法讀取模型報告".to_string())?;
-    let data = std::env::var("ZC_DATA").ok().or_else(|| active_data(&status));
-    let report_args = updater::model_report_args(&user, data.as_deref());
+    // 和引擎一樣用版本目錄的 data（manifest.json 在其中）；status 沒有 installs 的舊版
+    // 0c-update 從 server 旁邊推回去。明確指定的 ZC_DATA 照舊原樣使用。
+    let data = std::env::var("ZC_DATA").ok()
+        .or_else(|| install.as_ref().and_then(|i| i.data.clone()).filter(|d| data_package(d)))
+        .or_else(|| server.parent().map(|p| p.join("data")).filter(|d| data_package(&d.display().to_string()))
+            .map(|d| d.display().to_string()))
+        .ok_or_else(|| format!("找不到使用中的資料目錄；請重新安裝靈犀注音（0c-server：{}）", server.display()))?;
+    let report_args = updater::model_report_args(&user, Some(&data));
     tauri::async_runtime::spawn_blocking(move || {
         updater::run_blocking(&server, &report_args, Duration::from_secs(30))
     })
@@ -228,11 +242,8 @@ async fn model_report() -> Result<Value, String> {
     .map_err(|e| e.to_string())?
 }
 
-/// status 的 installs：使用中那一份安裝的字典目錄（P2-42）。
-fn active_data(status: &Value) -> Option<String> {
-    let installs = status.get("installs")?.as_array()?;
-    let active = installs.iter().find(|i| i.get("active").and_then(Value::as_bool) == Some(true)).or_else(|| installs.first())?;
-    active.get("data").and_then(Value::as_str).filter(|d| !d.is_empty()).map(str::to_string)
+fn data_package(dir: &str) -> bool {
+    Path::new(dir).join("manifest.json").is_file()
 }
 
 /// 「我的詞彙」頁「靈犀學到的」底下的「清除學習紀錄」（#301）：0c-update personal reset -json。結果（成功或契約錯誤）原樣交給前端。

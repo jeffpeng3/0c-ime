@@ -42,6 +42,17 @@ def fixture_dictionary(directory):
 
 
 class SourceReleaseTests(unittest.TestCase):
+    def test_windows_inventory_ignores_unix_executable_bits(self):
+        expected = {"run.sh": {"sha256": "a" * 64, "size": 3, "mode": 0o755},
+                    "data.bin": {"sha256": "b" * 64, "size": 4, "mode": 0o644}}
+        actual = {name: {**entry, "mode": 0o755} for name, entry in expected.items()}
+        self.assertFalse(release.inventory_matches(actual, expected))
+        with patch("source_release.os.name", "nt"):
+            self.assertTrue(release.inventory_matches(actual, expected))
+        actual["data.bin"]["sha256"] = "c" * 64
+        with patch("source_release.os.name", "nt"):
+            self.assertFalse(release.inventory_matches(actual, expected))
+
     SELECT_SCHEMA = "zuin-sequence-runtime-v2"
 
     def setUp(self):

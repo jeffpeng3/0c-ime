@@ -116,6 +116,10 @@ JA_FILES = ("lexicon.bin", "lm.bin", "manifest.json", "NOTICE.txt", "report.txt"
 #   connection.tsv     <- 編譯後的連接成本矩陣／0c-japack 匯出
 # 編譯產物與 runtime 布局一起放進 data/ja/，manifest 仍只描述編譯產物。
 JA_RUNTIME_FILES = ("lexicon/words.tsv", "connection.tsv")
+# P2-53：Mozc 匯入的資料帶 left/right context id 與 ContextMatrix。0c-server 在
+# connection.bin 存在時優先使用它；connection.source 說明矩陣來源，NOTICE 會用到。
+# 舊的 public-core 資料沒有這兩個檔，所以它們是選用的，但成對出現。
+JA_CONTEXT_FILES = ("connection.bin", "connection.source")
 
 
 def check_ja_data(directory, public):
@@ -151,6 +155,18 @@ def check_ja_data(directory, public):
             regular(path)
             if not path.read_text(encoding="utf-8").strip():
                 raise ValueError(f"日文資料包的執行期檔案不可為空：{path.name}")
+    context = [directory / name for name in JA_CONTEXT_FILES]
+    present = [path.is_file() for path in context]
+    if any(present) and not all(present):
+        missing = next(name for name, ok in zip(JA_CONTEXT_FILES, present) if not ok)
+        raise ValueError(f"日文資料包的 context 布局不完整，缺少 {missing}")
+    if present[0]:
+        for path in context:
+            regular(path)
+        if context[0].stat().st_size < 1 << 20:
+            raise ValueError("日文資料包的 connection.bin 太小，不是完整的 context 矩陣")
+        if not context[1].read_text(encoding="utf-8").strip():
+            raise ValueError("日文資料包的 connection.source 不可為空")
     symbols = directory / "symbols"
     if symbols.exists() or symbols.is_symlink():
         if symbols.is_symlink() or not symbols.is_dir():
@@ -204,6 +220,10 @@ def copy_ja_data(source, destination, public=True, go="go"):
             copy = target / name
             copy.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(path, copy)
+        for name in JA_CONTEXT_FILES:
+            path = source / name
+            if path.is_file():
+                shutil.copy2(path, target / name)
         symbols = source / "symbols"
         if symbols.is_dir():
             for path in sorted(symbols.rglob("*")):
